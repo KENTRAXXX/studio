@@ -1,13 +1,80 @@
+'use client';
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import SomaLogo from "@/components/logo";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { cn } from "@/lib/utils";
+
+function LiveCounter() {
+    const [count, setCount] = useState(1240);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCount(prev => prev + Math.floor(Math.random() * 3) + 1);
+        }, 3000);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <div className="inline-flex items-center gap-2 rounded-full border border-primary/50 bg-primary/10 px-4 py-1.5 text-sm">
+            <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+            </span>
+            <span className="text-primary-foreground/80">[Live]</span>
+            <AnimatePresence mode="wait">
+                <motion.span
+                    key={count}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    transition={{ duration: 0.3 }}
+                    className="font-mono font-bold text-primary"
+                >
+                    {count.toLocaleString()}+
+                </motion.span>
+            </AnimatePresence>
+            <span className="text-primary-foreground/80">Active Stores</span>
+        </div>
+    )
+}
 
 export default function Home() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <h1 className="text-4xl font-bold mb-4">Welcome to SOMA</h1>
-      <Button asChild>
-        <Link href="/plan-selection">Go to Plan Selection</Link>
-      </Button>
+    <div className="relative flex flex-col items-center justify-center min-h-screen w-full bg-black gold-mesh-gradient overflow-hidden">
+        <header className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center">
+            <div className="flex items-center gap-2">
+                <SomaLogo />
+                <span className="font-headline font-bold text-xl text-primary">SomaDS</span>
+            </div>
+             <Button variant="ghost" asChild>
+                <Link href="/dashboard">Sign In</Link>
+             </Button>
+        </header>
+
+        <main className="container z-10 flex flex-col items-center text-center px-4">
+            <LiveCounter />
+
+            <h1 className="mt-6 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold font-headline max-w-4xl text-transparent bg-clip-text bg-gradient-to-br from-white via-neutral-200 to-primary">
+                Your <span className="text-primary">Luxury Empire</span>, Built in Seconds.
+            </h1>
+
+            <p className="mt-6 max-w-2xl text-base md:text-lg text-muted-foreground">
+                The only all-in-one dropshipping engine that launches your store, sources your products, and manages your logistics on your own custom domain.
+            </p>
+
+            <div className="mt-10 flex flex-col sm:flex-row items-center gap-4">
+                <Button asChild size="lg" className="h-12 text-lg w-full sm:w-auto btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+                    <Link href="/plan-selection">Get Started Now</Link>
+                </Button>
+                <Button asChild size="lg" variant="outline" className="h-12 text-lg w-full sm:w-auto border-primary/50 text-primary hover:bg-primary/10 hover:text-primary">
+                    <Link href="#">View Demo</Link>
+                </Button>
+            </div>
+        </main>
     </div>
   );
 }

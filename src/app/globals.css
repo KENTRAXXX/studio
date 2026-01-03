@@ -65,6 +65,19 @@
   body {
     @apply bg-background text-foreground;
   }
+  .gold-mesh-gradient {
+    background-image: radial-gradient(
+        at 27% 37%,
+        hsl(45.00, 74%, 51%, 0.1) 0px,
+        transparent 50%
+      ),
+      radial-gradient(at 97% 21%, hsl(45.00, 74%, 51%, 0.05) 0px, transparent 50%),
+      radial-gradient(at 0% 99%, hsl(45.00, 74%, 51%, 0.05) 0px, transparent 50%),
+      radial-gradient(at 13% 7%, hsl(45.00, 74%, 51%, 0.05) 0px, transparent 50%),
+      radial-gradient(at 97% 96%, hsl(45.00, 74%, 51%, 0.1) 0px, transparent 50%),
+      radial-gradient(at 33% 50%, hsl(45.00, 74%, 51%, 0.05) 0px, transparent 50%),
+      radial-gradient(at 79% 53%, hsl(45.00, 74%, 51%, 0.05) 0px, transparent 50%);
+  }
 }
 
 @layer components {
