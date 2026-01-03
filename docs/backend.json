@@ -114,6 +114,10 @@
                 "hasAccess": {
                     "type": "boolean",
                     "description": "Indicates if the user has paid for access to the platform."
+                },
+                "isAdmin": {
+                    "type": "boolean",
+                    "description": "Indicates if the user has admin privileges."
                 }
             },
             "required": ["email", "hasAccess"]

@@ -1,3 +1,9 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@/firebase';
+
 import {
   Card,
   CardContent,
@@ -15,13 +21,49 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { masterCatalog, storeOwners } from "@/lib/data";
-import { DollarSign, MoreHorizontal, Ban } from "lucide-react";
+import { DollarSign, MoreHorizontal, Ban, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
 export default function MasterAdminPage() {
+    const { user, loading: userLoading } = useUser();
+    const router = useRouter();
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!userLoading) {
+            if (!user) {
+                router.push('/dashboard');
+                return;
+            }
+
+            user.getIdTokenResult().then((idTokenResult) => {
+                const isAdminClaim = !!idTokenResult.claims.isAdmin;
+                if (isAdminClaim) {
+                    setIsAdmin(true);
+                } else {
+                    router.push('/dashboard');
+                }
+                setLoading(false);
+            });
+        }
+    }, [user, userLoading, router]);
+
     const totalPlatformSales = 1250340.50;
     const myCommission = totalPlatformSales * 0.05;
+
+    if (loading || userLoading) {
+        return (
+            <div className="flex justify-center items-center h-96">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        )
+    }
+
+    if (!isAdmin) {
+        return null; // Or a more explicit "Access Denied" component
+    }
 
     return (
         <div className="space-y-8">
