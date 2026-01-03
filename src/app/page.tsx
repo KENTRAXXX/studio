@@ -14,7 +14,7 @@ import { useToastWithRandomCity } from '@/hooks/use-toast-with-random-city';
 
 
 function LiveCounter() {
-  const [count, setCount] = useState(1240);
+  const [count, setCount] = useState(184);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -51,7 +51,7 @@ function LiveCounter() {
 function PlatformPulse() {
     const ref = useRef(null);
     const isInView = useInView(ref, { once: true, amount: 0.5 });
-    const [globalSalesSum, setGlobalSalesSum] = useState(87530982.45);
+    const [globalSalesSum, setGlobalSalesSum] = useState(142450.85);
     const [isGlowing, setIsGlowing] = useState(false);
     const { showRandomCityToast } = useToastWithRandomCity();
 
@@ -118,7 +118,7 @@ function PlatformPulse() {
                         </CardHeader>
                         <CardContent>
                             <p className="text-4xl font-bold">
-                               <AnimatedCounter from={0} to={5000} isInView={isInView} />+
+                               <AnimatedCounter from={0} to={1200} isInView={isInView} />+
                             </p>
                             <p className="text-muted-foreground mt-2">Premium products ready to clone</p>
                         </CardContent>
@@ -246,5 +246,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
