@@ -22,6 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import SomaLogo from '@/components/logo';
 import { useSignUp } from '@/hooks/use-signup';
 import { usePaystack } from '@/hooks/use-paystack';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -37,6 +38,36 @@ const plans: { [key: string]: { id: string; name: string; amount: number } } = {
     lifetime: { id: 'lifetime', name: 'The Mogul', amount: 50000 },
 };
 
+function LegalCompliance() {
+  return (
+    <div className="mt-6 space-y-6 text-sm text-muted-foreground">
+        <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-foreground">Terms of Service</h3>
+            <div className="space-y-2">
+                <h4 className="font-semibold text-foreground/80">1. License to Use</h4>
+                <p>Upon successful payment of the setup fee, you are granted a non-exclusive, non-transferable, revocable license to use the SOMA store engine for the purpose of creating and operating a single online storefront. This license is contingent upon your adherence to these terms.</p>
+            </div>
+            <div className="space-y-2">
+                <h4 className="font-semibold text-foreground/80">2. Prohibited Content</h4>
+                <p>You may not sell, offer, or display any illegal, counterfeit, or fraudulent goods. This includes, but is not limited to, items that infringe on third-party intellectual property rights. We reserve the right to suspend or terminate any store found in violation of this policy without notice.</p>
+            </div>
+        </div>
+
+        <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-foreground">No-Refund Policy</h3>
+            <div className="rounded-lg border-2 border-primary bg-primary/10 p-4">
+                <p className="font-semibold text-foreground">Due to the digital nature of the SOMA platform and the immediate delivery of the Master Catalog assets, all setup fees (including the $500 Lifetime Access) are strictly non-refundable once the Store Cloning process has been initiated.</p>
+            </div>
+        </div>
+
+        <div className="space-y-2">
+            <h3 className="text-lg font-semibold text-foreground">Privacy & Data</h3>
+            <p>We take your security seriously. All payments are processed securely via Paystack, a PCI-compliant payment gateway. SOMA does not store your full credit card details on our servers.</p>
+        </div>
+    </div>
+  )
+}
+
 function SignUpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -44,6 +75,7 @@ function SignUpForm() {
   const { mutate: signUp, isPending: isSigningUp } = useSignUp();
   const { initializePayment, isInitializing } = usePaystack();
   const [isSuccess, setIsSuccess] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const planId = searchParams.get('plan') || 'lifetime';
   const selectedPlan = plans[planId] || plans.lifetime;
@@ -61,7 +93,6 @@ function SignUpForm() {
           description: "Welcome! Let's get you set up.",
         });
 
-        // In a real app, template would be part of the user's choices
         const template = 'gold-standard';
 
         const onPaystackSuccess = () => {
@@ -70,7 +101,6 @@ function SignUpForm() {
             title: 'Payment Successful!',
             description: 'Your store is being provisioned. This may take a moment.',
           });
-          // The webhook handles store creation, so just redirect
           router.push('/dashboard/my-store');
         };
 
@@ -112,7 +142,7 @@ function SignUpForm() {
   const isPending = isSigningUp || isInitializing;
 
   return (
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-lg">
         <AnimatePresence mode="wait">
             {!isSuccess ? (
                  <motion.div
@@ -155,7 +185,24 @@ function SignUpForm() {
                                         </FormItem>
                                         )}
                                     />
-                                    <Button type="submit" disabled={isPending} className="w-full h-12 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+                                    
+                                    <LegalCompliance />
+                                    
+                                    <div className="flex items-center space-x-2 pt-4">
+                                        <Checkbox 
+                                            id="terms" 
+                                            checked={agreedToTerms}
+                                            onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+                                        />
+                                        <label
+                                            htmlFor="terms"
+                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                        >
+                                           I acknowledge that I have read and agree to the SOMA Terms of Service and No-Refund Policy.
+                                        </label>
+                                    </div>
+                                    
+                                    <Button type="submit" disabled={isPending || !agreedToTerms} className="w-full h-12 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed">
                                         {isPending ? <Loader2 className="animate-spin" /> : 'Create Account & Pay'}
                                     </Button>
                                 </form>
