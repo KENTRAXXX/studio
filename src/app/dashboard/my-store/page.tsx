@@ -2,26 +2,24 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Check, Rocket, UploadCloud, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Rocket, UploadCloud, ChevronRight, ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { createClientStore } from '@/ai/flows/create-client-store';
 import { Progress } from '@/components/ui/progress';
 import { AnimatePresence, motion } from 'framer-motion';
-
-const templates = [
-  { id: 'minimalist', name: 'The Minimalist' },
-  { id: 'gold-standard', name: 'The Gold Standard' },
-  { id: 'midnight-pro', name: 'The Midnight Pro' },
-];
+import { masterCatalog } from '@/lib/data';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const progressSteps = [
     { progress: 25, message: 'Building your luxury storefront...' },
-    { progress: 65, message: 'Importing premium catalog...' },
+    { progress: 65, message: 'Importing your curated collection...' },
     { progress: 100, message: 'Going Live!' },
 ];
 
@@ -122,14 +120,26 @@ const BrandingStep = ({ onNext, onBack, logoFile, setLogoFile, faviconFile, setF
                     <ChevronLeft className="mr-2 h-5 w-5" /> Back
                 </Button>
                 <Button size="lg" className="h-12" onClick={onNext}>
-                    Next: Template <ChevronRight className="ml-2 h-5 w-5" />
+                    Next: Curate Collection <ChevronRight className="ml-2 h-5 w-5" />
                 </Button>
             </div>
         </motion.div>
     );
 };
 
-const TemplateStep = ({ onBack, onLaunch, selectedTemplate, setSelectedTemplate, isLaunching, launchProgress, progressMessage }: any) => {
+const CollectionStep = ({ onBack, onLaunch, selectedProducts, setSelectedProducts, isLaunching, launchProgress, progressMessage }: any) => {
+    const productsToShow = masterCatalog.slice(0, 6);
+    
+    const handleProductSelect = (productId: string, checked: boolean) => {
+        setSelectedProducts((prev: string[]) => 
+            checked ? [...prev, productId] : prev.filter(id => id !== productId)
+        );
+    }
+    
+    const getPlaceholderImage = (id: string) => {
+        return PlaceHolderImages.find(img => img.id === id)?.imageUrl || 'https://picsum.photos/seed/placeholder/600/400';
+    }
+
     return (
         <motion.div
             initial={{ opacity: 0, x: 50 }}
@@ -138,27 +148,36 @@ const TemplateStep = ({ onBack, onLaunch, selectedTemplate, setSelectedTemplate,
             className="space-y-8"
         >
              <div>
-                <h2 className="text-2xl font-bold font-headline text-primary">Choose Your Aesthetic</h2>
-                <p className="text-muted-foreground">Select a template that best represents your brand.</p>
+                <h2 className="text-2xl font-bold font-headline text-primary">Curate Your Collection</h2>
+                <p className="text-muted-foreground">Select at least 3 signature pieces to feature on your homepage.</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {templates.map((template) => (
-                <Card
-                    key={template.id}
-                    onClick={() => !isLaunching && setSelectedTemplate(template.id)}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {productsToShow.map((product) => (
+                <div
+                    key={product.id}
+                    onClick={() => !isLaunching && handleProductSelect(product.id, !selectedProducts.includes(product.id))}
                     className={cn(
-                    'cursor-pointer transition-all duration-200 border-2 flex flex-col items-center justify-center p-6 text-center h-48',
-                    selectedTemplate === template.id
+                    'relative cursor-pointer transition-all duration-200 border-2 rounded-lg overflow-hidden',
+                    selectedProducts.includes(product.id)
                         ? 'border-primary bg-primary/10 shadow-lg'
                         : 'border-border hover:border-primary/50',
                     isLaunching && 'opacity-50 cursor-not-allowed'
                     )}
                 >
-                    <CardTitle className="text-lg">{template.name}</CardTitle>
-                    {selectedTemplate === template.id && (
-                    <Check className="h-6 w-6 text-primary mt-2" />
-                    )}
-                </Card>
+                    <div className="absolute top-2 right-2 z-10">
+                        <Checkbox 
+                            id={`product-${product.id}`}
+                            checked={selectedProducts.includes(product.id)}
+                            onCheckedChange={(checked) => handleProductSelect(product.id, !!checked)}
+                        />
+                    </div>
+                    <div className="relative w-full aspect-square">
+                        <Image src={getPlaceholderImage(product.imageId)} alt={product.name} fill className="object-cover" />
+                    </div>
+                     <div className="p-2 text-center bg-card">
+                         <p className="text-sm font-semibold truncate">{product.name}</p>
+                     </div>
+                </div>
                 ))}
             </div>
             
@@ -181,12 +200,12 @@ const TemplateStep = ({ onBack, onLaunch, selectedTemplate, setSelectedTemplate,
                 </Button>
                 <Button 
                     size="lg" 
-                    className="w-full md:w-auto h-12 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground"
+                    className="w-full md:w-auto h-16 text-xl btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground"
                     onClick={onLaunch}
-                    disabled={isLaunching}
+                    disabled={isLaunching || selectedProducts.length < 3}
                 >
                     <Rocket className="mr-2 h-5 w-5"/> 
-                    {isLaunching ? 'Provisioning Store...' : 'Launch Store'}
+                    {isLaunching ? 'Provisioning Store...' : 'LAUNCH MY EMPIRE'}
                 </Button>
             </div>
         </motion.div>
@@ -196,7 +215,7 @@ const TemplateStep = ({ onBack, onLaunch, selectedTemplate, setSelectedTemplate,
 export default function MyStorePage() {
   const [step, setStep] = useState(1);
   const [storeName, setStoreName] = useState('');
-  const [selectedTemplate, setSelectedTemplate] = useState('gold-standard');
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [faviconFile, setFaviconFile] = useState<File | null>(null);
   const [isLaunching, setIsLaunching] = useState(false);
@@ -221,10 +240,12 @@ export default function MyStorePage() {
             setProgressMessage(step.message);
         }
 
+        // The 'template' parameter is no longer needed in this flow,
+        // but the backend function might still expect it. We send a default.
         await createClientStore({
             userId,
             plan: 'lifetime',
-            template: selectedTemplate,
+            template: 'gold-standard', // Default template
             logoUrl,
             faviconUrl,
         });
@@ -232,7 +253,7 @@ export default function MyStorePage() {
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         toast({
-            title: 'Your store is live!',
+            title: 'Your empire is live!',
             description: 'Congratulations! Your store has been successfully launched.',
         });
 
@@ -257,7 +278,7 @@ export default function MyStorePage() {
   return (
     <div className="space-y-8">
       <div className="mb-12">
-        <h1 className="text-3xl font-bold font-headline text-primary">SOMA Store Launcher</h1>
+        <h1 className="text-3xl font-bold font-headline text-primary">SOMA Launch Wizard</h1>
         <p className="text-muted-foreground">Follow the steps to configure and launch your new luxury storefront.</p>
         <Progress value={(step / 3) * 100} className="w-full h-2 mt-4 bg-muted border border-primary/20" />
       </div>
@@ -285,12 +306,12 @@ export default function MyStorePage() {
                     />
                 )}
                  {step === 3 && (
-                    <TemplateStep
+                    <CollectionStep
                         key="step3" 
                         onBack={prevStep}
                         onLaunch={handleLaunch}
-                        selectedTemplate={selectedTemplate}
-                        setSelectedTemplate={setSelectedTemplate}
+                        selectedProducts={selectedProducts}
+                        setSelectedProducts={setSelectedProducts}
                         isLaunching={isLaunching}
                         launchProgress={launchProgress}
                         progressMessage={progressMessage}
@@ -302,3 +323,5 @@ export default function MyStorePage() {
     </div>
   );
 }
+
+    
