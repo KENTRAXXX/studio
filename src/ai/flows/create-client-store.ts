@@ -57,11 +57,11 @@ const createClientStoreFlow = ai.defineFlow(
     const userRef = doc(firestore, 'users', userId);
     const productsRef = collection(storeRef, 'products');
 
-    // 1. Update user document to grant access
+    // 1. Update user document to grant access and log payment
     await updateDoc(userRef, {
         hasAccess: true,
         plan: plan,
-        paidAt: new Date().toISOString()
+        paidAt: new Date().toISOString() // Timestamp of payment confirmation
     });
 
     // 2. Create the main store document
@@ -70,7 +70,7 @@ const createClientStoreFlow = ai.defineFlow(
       instanceId: instanceId,
       theme: template === 'gold-standard' ? 'Gold Standard' : template === 'midnight-pro' ? 'Midnight Pro' : 'The Minimalist',
       currency: 'USD',
-      createdAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(), // Timestamp of store creation
       storeName: "My SOMA Store", // Default name, user can change later
       logoUrl: logoUrl || '',
       faviconUrl: faviconUrl || '',

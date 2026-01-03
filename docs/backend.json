@@ -118,6 +118,16 @@
                 "isAdmin": {
                     "type": "boolean",
                     "description": "Indicates if the user has admin privileges."
+                },
+                "plan": {
+                    "type": "string",
+                    "description": "The user's subscription plan.",
+                    "enum": ["monthly", "lifetime"]
+                },
+                "paidAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "The timestamp when the user's payment was successfully processed."
                 }
             },
             "required": ["email", "hasAccess"]
