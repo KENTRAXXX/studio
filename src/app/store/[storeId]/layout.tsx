@@ -67,7 +67,7 @@ const getPlaceholderImage = (id: string): ImagePlaceholder | undefined => {
     return PlaceHolderImages.find(img => img.id === id);
 }
 
-function CartSheet() {
+function CartSheet({storeId}: {storeId: string}) {
     const { cart, removeFromCart, getCartTotal } = useCart();
     
     return (
@@ -114,7 +114,9 @@ function CartSheet() {
                                     <span>Subtotal</span>
                                     <span>${getCartTotal().toFixed(2)}</span>
                                 </div>
-                                <Button className="w-full h-12 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">Checkout</Button>
+                                <Button asChild className="w-full h-12 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+                                    <Link href={`/store/${storeId}/checkout`}>Checkout</Link>
+                                </Button>
                             </div>
                         </>
                     ) : (
@@ -162,7 +164,7 @@ export default function StoreLayout({
                     className="h-10 w-full rounded-md border border-primary/30 bg-transparent pl-10 pr-4 text-sm placeholder:text-muted-foreground focus:ring-primary"
                   />
                 </div>
-                <CartSheet />
+                <CartSheet storeId={params.storeId} />
               </div>
             </div>
           </header>
