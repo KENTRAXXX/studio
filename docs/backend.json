@@ -25,6 +25,37 @@
                 }
             },
             "required": ["template", "status"]
+        },
+        "clientStore": {
+            "title": "Client Store",
+            "description": "Represents a provisioned client store with its unique configuration.",
+            "type": "object",
+            "properties": {
+                "userId": {
+                    "type": "string",
+                    "description": "The ID of the user who owns the store."
+                },
+                "instanceId": {
+                    "type": "string",
+                    "description": "A unique identifier for the client store instance."
+                },
+                "theme": {
+                    "type": "string",
+                    "description": "The visual theme of the store.",
+                    "enum": ["Gold Standard", "Midnight Pro", "The Minimalist"]
+                },
+                "currency": {
+                    "type": "string",
+                    "description": "The default currency for the store.",
+                    "enum": ["USD", "EUR", "GBP"]
+                },
+                "createdAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "The timestamp when the store was created."
+                }
+            },
+            "required": ["userId", "instanceId", "theme", "currency", "createdAt"]
         }
     },
     "auth": {
@@ -33,9 +64,9 @@
     "firestore": {
         "/stores/{storeId}": {
             "schema": {
-                "$ref": "#/entities/store"
+                "$ref": "#/entities/clientStore"
             },
-            "description": "Stores all the storefront configurations."
+            "description": "Stores all the provisioned client storefronts."
         }
     }
 }
