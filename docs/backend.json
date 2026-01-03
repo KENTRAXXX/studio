@@ -1,0 +1,41 @@
+{
+    "entities": {
+        "store": {
+            "title": "Store",
+            "description": "Represents a user's storefront configuration.",
+            "type": "object",
+            "properties": {
+                "template": {
+                    "type": "string",
+                    "description": "The selected template for the store.",
+                    "enum": ["minimalist", "gold-standard", "midnight-pro"]
+                },
+                "logoUrl": {
+                    "type": "string",
+                    "description": "URL of the store's logo."
+                },
+                "faviconUrl": {
+                    "type": "string",
+                    "description": "URL of the store's favicon."
+                },
+                "status": {
+                    "type": "string",
+                    "description": "The current status of the store.",
+                    "enum": ["Draft", "Live"]
+                }
+            },
+            "required": ["template", "status"]
+        }
+    },
+    "auth": {
+        "providers": ["anonymous"]
+    },
+    "firestore": {
+        "/stores/{storeId}": {
+            "schema": {
+                "$ref": "#/entities/store"
+            },
+            "description": "Stores all the storefront configurations."
+        }
+    }
+}
