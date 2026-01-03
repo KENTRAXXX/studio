@@ -16,6 +16,10 @@ import {
   Boxes,
   Globe,
   BarChart2,
+  Accessibility,
+  Wallet,
+  ShoppingBag,
+  ShieldCheck,
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 
@@ -23,8 +27,12 @@ const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
   { href: '/dashboard/my-store', icon: Store, label: 'My Store' },
   { href: '/dashboard/product-catalog', icon: Boxes, label: 'Product Catalog' },
+  { href: '/dashboard/my-orders', icon: ShoppingBag, label: 'My Orders' },
   { href: '/dashboard/domain-settings', icon: Globe, label: 'Domain Settings' },
   { href: '/dashboard/analytics', icon: BarChart2, label: 'Analytics' },
+  { href: '/dashboard/wallet', icon: Wallet, label: 'SOMA Wallet' },
+  { href: '/dashboard/accessibility-checker', icon: Accessibility, label: 'A11y Checker' },
+  { href: '/dashboard/master-admin', icon: ShieldCheck, label: 'Master Admin' },
 ];
 
 export default function DashboardLayout({
@@ -45,7 +53,7 @@ export default function DashboardLayout({
           <SidebarMenu>
             {navItems.map((item) => (
               <SidebarMenuItem key={item.href}>
-                <Link href={item.href} legacyBehavior passHref>
+                <Link href={item.href}>
                   <SidebarMenuButton tooltip={item.label}>
                     <item.icon />
                     <span>{item.label}</span>
