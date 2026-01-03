@@ -1,5 +1,6 @@
 'use client';
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
@@ -26,6 +27,11 @@ const plans = [
 
 export default function PlanSelectionPage() {
     const [selectedPlan, setSelectedPlan] = useState('lifetime');
+    const router = useRouter();
+
+    const handleConfirm = () => {
+        router.push('/signup');
+    }
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 sm:p-6">
@@ -77,7 +83,7 @@ export default function PlanSelectionPage() {
                 ))}
             </div>
 
-            <Button size="lg" className="mt-10 w-full max-w-xs h-12 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Button size="lg" className="mt-10 w-full max-w-xs h-12 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleConfirm}>
                 Confirm Selection
             </Button>
             <p className="text-center text-sm text-muted-foreground mt-6 max-w-md">

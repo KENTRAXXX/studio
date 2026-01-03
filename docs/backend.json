@@ -100,10 +100,27 @@
                 }
             },
             "required": ["name", "price", "imageUrl"]
+        },
+        "userProfile": {
+            "title": "User Profile",
+            "description": "Represents a user's profile information in Firestore.",
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "The user's email address."
+                },
+                "hasAccess": {
+                    "type": "boolean",
+                    "description": "Indicates if the user has paid for access to the platform."
+                }
+            },
+            "required": ["email", "hasAccess"]
         }
     },
     "auth": {
-        "providers": ["anonymous"]
+        "providers": ["email-password"]
     },
     "firestore": {
         "/stores/{storeId}": {
@@ -117,6 +134,12 @@
                 "$ref": "#/entities/storefrontProduct"
             },
             "description": "Products for a specific client store."
+        },
+        "/users/{userId}": {
+            "schema": {
+                "$ref": "#/entities/userProfile"
+            },
+            "description": "Stores user profile information."
         }
     }
 }
