@@ -6,7 +6,7 @@ export default function Home() {
     <div className="flex flex-col items-center justify-center min-h-screen">
       <h1 className="text-4xl font-bold mb-4">Welcome to SOMA</h1>
       <Button asChild>
-        <Link href="/dashboard">Go to Dashboard</Link>
+        <Link href="/plan-selection">Go to Plan Selection</Link>
       </Button>
     </div>
   );
