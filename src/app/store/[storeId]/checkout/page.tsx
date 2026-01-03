@@ -52,6 +52,10 @@ type PaystackConfig = {
     email: string;
     amount: number;
     publicKey: string;
+    metadata: {
+        template: string;
+        custom_fields: { display_name: string; variable_name: string; value: string; }[];
+    }
 };
 
 
@@ -166,13 +170,37 @@ const PaymentStep = ({ onBack, storeId, checkoutData }: { onBack: () => void; st
     setIsInitializing(true);
     try {
       const amountInKobo = Math.round(total * 100);
-      const result = await initializePaystackTransaction({ email: checkoutData.email, amount: amountInKobo });
+      
+      // In a real app, you'd get the template from the store's settings.
+      const storeTemplate = "gold-standard"; 
+
+      const result = await initializePaystackTransaction({ email: checkoutData.email, amount: amountInKobo, metadata: {
+        template: storeTemplate,
+        // Paystack requires custom_fields to be an array of objects
+        custom_fields: [
+            {
+                display_name: "Store ID",
+                variable_name: "store_id",
+                value: storeId
+            }
+        ]
+      } });
       
       const config: PaystackConfig = {
         reference: result.reference,
         email: checkoutData.email,
         amount: amountInKobo,
         publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
+        metadata: {
+            template: storeTemplate,
+            custom_fields: [
+                {
+                    display_name: "Store ID",
+                    variable_name: "store_id",
+                    value: storeId
+                }
+            ]
+        }
       };
       setPaystackConfig(config);
 
@@ -185,6 +213,7 @@ const PaymentStep = ({ onBack, storeId, checkoutData }: { onBack: () => void; st
 
    const onSuccess = (reference: any) => {
     console.log('Payment successful', reference);
+    // The webhook will handle store creation. We just need to show confirmation to the user.
     const orderId = `SOMA-${reference.trxref.slice(-6).toUpperCase()}`;
     router.push(`/store/${storeId}/checkout/order-confirmation?orderId=${orderId}`);
   };
@@ -205,7 +234,7 @@ const PaymentStep = ({ onBack, storeId, checkoutData }: { onBack: () => void; st
       }, [paystackConfig]);
 
       return (
-         <Button onClick={initializePayment} disabled={isInitializing} size="lg" className="h-12 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+         <Button onClick={initializePayment} disabled={isInitializing} size="lg" className="h-12 text-lg w-full btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
             {isInitializing ? <Loader2 className="animate-spin" /> : 'Pay Now'}
         </Button>
       )
@@ -225,11 +254,11 @@ const PaymentStep = ({ onBack, storeId, checkoutData }: { onBack: () => void; st
             <div className="text-3xl font-bold text-primary mb-6">
               Total: ${total.toFixed(2)}
             </div>
+            <PaystackButton />
           </div>
 
           <div className="flex justify-between items-center pt-8">
             <Button variant="link" onClick={onBack}>&larr; Back to Shipping</Button>
-            <PaystackButton />
           </div>
         </div>
     </motion.div>

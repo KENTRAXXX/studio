@@ -14,6 +14,7 @@ import { z } from 'genkit';
 const InitializePaystackTransactionInputSchema = z.object({
   email: z.string().email().describe('The email of the customer.'),
   amount: z.number().int().positive().describe('The amount in the lowest currency unit (e.g., Kobo, Cents).'),
+  metadata: z.any().optional().describe('An object containing any extra data you want to pass to Paystack.'),
 });
 export type InitializePaystackTransactionInput = z.infer<typeof InitializePaystackTransactionInputSchema>;
 
@@ -51,6 +52,7 @@ const initializePaystackTransactionFlow = ai.defineFlow(
       body: JSON.stringify({
         email: input.email,
         amount: input.amount,
+        metadata: input.metadata
       }),
     });
 
