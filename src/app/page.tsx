@@ -17,11 +17,15 @@ function LiveCounter() {
   const [count, setCount] = useState(184);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCount((prev) => prev + Math.floor(Math.random() * 3) + 1);
-    }, 3000);
+    const updateCount = () => {
+        setCount((prev) => prev + 1);
+        const randomInterval = Math.random() * (600000 - 300000) + 300000; // 5 to 10 minutes
+        setTimeout(updateCount, randomInterval);
+    };
 
-    return () => clearInterval(interval);
+    const firstTimeout = setTimeout(updateCount, Math.random() * (600000 - 300000) + 300000);
+
+    return () => clearTimeout(firstTimeout);
   }, []);
 
   return (
