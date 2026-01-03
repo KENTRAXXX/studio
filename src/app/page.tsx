@@ -7,8 +7,9 @@ import { useEffect, useState, useRef } from 'react';
 import { AnimatePresence, motion, useInView } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Globe, DollarSign, Boxes } from 'lucide-react';
+import { Globe, DollarSign, Boxes, Check } from 'lucide-react';
 import AnimatedCounter from '@/components/ui/animated-counter';
+import Image from 'next/image';
 
 function LiveCounter() {
   const [count, setCount] = useState(1240);
@@ -101,9 +102,87 @@ function PlatformPulse() {
     )
 }
 
+function SneakPeek() {
+    const ref = useRef(null);
+    const isInView = useInView(ref, { once: true, amount: 0.3 });
+    const features = [
+        "One-Click Product Cloning",
+        "Auto-SSL Custom Domains",
+        "Paystack Integrated Payouts"
+    ];
+
+    return (
+        <section ref={ref} className="container z-10 py-20">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <motion.div 
+                    className="[perspective:800px]"
+                    initial={{ opacity: 0, y: 50 }} 
+                    animate={isInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
+                >
+                    <div className="relative w-full aspect-[9/18] max-w-sm mx-auto rounded-3xl bg-gray-900 p-2 border-4 border-gray-700 shadow-2xl shadow-primary/10" style={{ transform: "rotateY(-25deg) rotateX(10deg) scale(0.9)" }}>
+                        <div className="absolute inset-x-0 top-0 h-8 bg-gray-900 rounded-t-3xl flex items-center justify-center">
+                            <div className="w-20 h-2 bg-gray-800 rounded-full"></div>
+                        </div>
+                        <div className="h-full w-full rounded-2xl overflow-hidden bg-black">
+                             <Image 
+                                src="https://picsum.photos/seed/store-mockup/400/800" 
+                                alt="Store mockup"
+                                width={400}
+                                height={800}
+                                className="object-cover w-full h-full"
+                                data-ai-hint="ecommerce mobile"
+                             />
+                        </div>
+                    </div>
+                </motion.div>
+
+                <div className="space-y-8">
+                    <motion.h2 
+                        className="text-4xl sm:text-5xl font-bold font-headline text-transparent bg-clip-text bg-gradient-to-br from-white via-neutral-200 to-primary"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={isInView ? { opacity: 1, y: 0 } : {}}
+                        transition={{ duration: 0.5, delay: 0.4 }}
+                    >
+                        Everything You Need. Nothing You Don't.
+                    </motion.h2>
+                    <motion.ul 
+                        className="space-y-4"
+                        initial={{ opacity: 0 }}
+                        animate={isInView ? { opacity: 1 } : {}}
+                        transition={{ staggerChildren: 0.2, delayChildren: 0.6 }}
+                    >
+                        {features.map((feature, i) => (
+                            <motion.li 
+                                key={i} 
+                                className="flex items-center gap-3 text-lg"
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={isInView ? { opacity: 1, x: 0 } : {}}
+                            >
+                                <Check className="h-6 w-6 text-primary flex-shrink-0" />
+                                <span className="text-muted-foreground">{feature}</span>
+                            </motion.li>
+                        ))}
+                    </motion.ul>
+                    <motion.div
+                         initial={{ opacity: 0, y: 20 }}
+                         animate={isInView ? { opacity: 1, y: 0 } : {}}
+                         transition={{ duration: 0.5, delay: 1.0 }}
+                    >
+                        <Button asChild size="lg" className="h-12 text-lg w-full sm:w-auto btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+                            <Link href="/plan-selection">Claim Your Lifetime Access</Link>
+                        </Button>
+                    </motion.div>
+                </div>
+            </div>
+        </section>
+    );
+}
+
+
 export default function Home() {
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-screen w-full bg-black gold-mesh-gradient overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center min-h-screen w-full bg-black gold-mesh-gradient overflow-x-hidden">
       <header className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center z-20">
         <div className="flex items-center gap-2">
           <SomaLogo />
@@ -136,6 +215,7 @@ export default function Home() {
       </main>
 
       <PlatformPulse />
+      <SneakPeek />
     </div>
   );
 }
