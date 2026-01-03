@@ -17,7 +17,7 @@ export default function AnimatedCounter({
   const count = useMotionValue(from);
   const rounded = useSpring(count, {
     stiffness: 100,
-    damping: 40, // Increased damping for a smoother, slower stop
+    damping: 40,
     restDelta: 0.001,
   });
   const ref = useRef<HTMLSpanElement>(null);
@@ -28,13 +28,15 @@ export default function AnimatedCounter({
   useEffect(() => {
     if (effectiveIsInView) {
       count.set(to);
+    } else {
+      count.set(from);
     }
-  }, [count, to, effectiveIsInView]);
+  }, [count, to, from, effectiveIsInView]);
 
   useEffect(() => {
     const unsubscribe = rounded.on("change", (latest) => {
       if (ref.current) {
-        ref.current.textContent = latest.toLocaleString(undefined, formatOptions);
+        ref.current.textContent = latest.toLocaleString('en-US', formatOptions);
       }
     });
     return unsubscribe;
@@ -42,5 +44,3 @@ export default function AnimatedCounter({
 
   return <span ref={ref} />;
 }
-
-    

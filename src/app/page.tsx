@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Globe, DollarSign, Boxes, Check } from 'lucide-react';
 import AnimatedCounter from '@/components/ui/animated-counter';
 import Image from 'next/image';
+import { useToastWithRandomCity } from '@/hooks/use-toast-with-random-city';
+
 
 function LiveCounter() {
   const [count, setCount] = useState(1240);
@@ -49,23 +51,28 @@ function LiveCounter() {
 function PlatformPulse() {
     const ref = useRef(null);
     const isInView = useInView(ref, { once: true, amount: 0.5 });
-    // This would typically come from a Firestore listener.
-    const [globalSalesSum, setGlobalSalesSum] = useState(87530982.45); 
+    const [globalSalesSum, setGlobalSalesSum] = useState(87530982.45);
+    const [isGlowing, setIsGlowing] = useState(false);
+    const { showRandomCityToast } = useToastWithRandomCity();
 
     useEffect(() => {
         const updateSales = () => {
             const saleAmount = Math.random() * (185.00 - 14.50) + 14.50;
             setGlobalSalesSum(prev => prev + saleAmount);
+            showRandomCityToast(saleAmount);
 
-            const randomInterval = Math.random() * (5 * 60 * 1000 - 2 * 60 * 1000) + 2 * 60 * 1000; // 2-5 minutes
+            setIsGlowing(true);
+            setTimeout(() => setIsGlowing(false), 2000); // Glow duration
+
+            const randomInterval = Math.random() * (5000 - 2000) + 2000;
             setTimeout(updateSales, randomInterval);
         };
         
-        const timeoutId = setTimeout(updateSales, Math.random() * (5 * 60 * 1000 - 2 * 60 * 1000) + 2 * 60 * 1000);
+        const timeoutId = setTimeout(updateSales, Math.random() * (5000 - 2000) + 2000);
         
         return () => clearTimeout(timeoutId);
 
-    }, []);
+    }, [showRandomCityToast]);
 
     return (
         <section ref={ref} className="container z-10 py-20">
@@ -85,7 +92,7 @@ function PlatformPulse() {
                     </Card>
                 </motion.div>
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.5, delay: 0.2 }}>
-                    <Card className="h-full bg-card/50 border-primary/20 text-center">
+                    <Card className={cn("h-full bg-card/50 border-primary/20 text-center transition-all duration-500", isGlowing && "card-gold-pulse")}>
                         <CardHeader>
                             <DollarSign className="h-10 w-10 mx-auto text-primary"/>
                             <CardTitle className="font-headline text-2xl text-primary">Total Sales Processed</CardTitle>
