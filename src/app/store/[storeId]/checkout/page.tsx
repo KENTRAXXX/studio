@@ -42,10 +42,7 @@ const addressSchema = z.object({
 });
 
 const paymentSchema = z.object({
-  cardNumber: z.string().length(16, 'Card number must be 16 digits.'),
-  cardName: z.string().min(2, 'Name on card is required.'),
-  expiryDate: z.string().regex(/^(0[1-9]|1[0-2])\/\d{2}$/, 'Expiry must be in MM/YY format.'),
-  cvc: z.string().length(3, 'CVC must be 3 digits.'),
+  // We remove card details as Paystack handles the form
 });
 
 type AddressFormValues = z.infer<typeof addressSchema>;
@@ -148,57 +145,39 @@ const PaymentStep = ({ onBack, storeId }: { onBack: () => void; storeId: string 
   const shippingPrice = 4.99;
   const subtotal = getCartTotal();
   const total = subtotal + shippingPrice;
-  const form = useForm({
-    resolver: zodResolver(paymentSchema),
-    mode: 'onBlur',
-  });
 
-  const onSubmit = () => {
-    // In a real app, you would process payment with Stripe here.
+  const handlePaystackPayment = () => {
+    // In a real app, you would initialize Paystack here and redirect
+    // to their checkout page.
+    console.log("Initiating Paystack payment...");
+    
+    // For now, we'll just simulate a successful payment and redirect.
     const orderId = `SOMA-${Math.floor(Math.random() * 9000) + 1000}`;
     router.push(`/store/${storeId}/checkout/order-confirmation?orderId=${orderId}`);
   };
 
   return (
     <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }}>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="space-y-6">
           <CardHeader className="p-0">
             <CardTitle className="text-xl font-headline">Payment</CardTitle>
             <p className="text-sm text-muted-foreground">All transactions are secure and encrypted.</p>
           </CardHeader>
           
-          <div className="border border-primary/50 rounded-lg p-4 bg-card space-y-4">
-              <div className="relative">
-                <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <FormField control={form.control} name="cardNumber" render={({ field }) => (
-                  <FormItem><FormControl><Input placeholder="Card Number" {...field} className="pl-10" /></FormControl><FormMessage /></FormItem>
-                )} />
-              </div>
-              <FormField control={form.control} name="cardName" render={({ field }) => (
-                  <FormItem><FormControl><Input placeholder="Name on Card" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-              <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="expiryDate" render={({ field }) => (
-                    <FormItem><FormControl><Input placeholder="MM / YY" {...field} /></FormControl><FormMessage /></FormItem>
-                  )} />
-                <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                    <FormField control={form.control} name="cvc" render={({ field }) => (
-                        <FormItem><FormControl><Input placeholder="CVC" {...field} className="pl-10" /></FormControl><FormMessage /></FormItem>
-                    )} />
-                </div>
-              </div>
+          <div className="border border-primary/50 rounded-lg p-6 bg-card text-center">
+            <p className="text-muted-foreground mb-4">You will be redirected to Paystack to complete your payment securely.</p>
+            <div className="text-3xl font-bold text-primary mb-6">
+              Total: ${total.toFixed(2)}
+            </div>
           </div>
 
           <div className="flex justify-between items-center pt-8">
             <Button variant="link" onClick={onBack}>&larr; Back to Shipping</Button>
-            <Button type="submit" size="lg" className="h-12 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
-              Pay ${total.toFixed(2)}
+            <Button onClick={handlePaystackPayment} size="lg" className="h-12 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+              Pay with Paystack
             </Button>
           </div>
-        </form>
-      </Form>
+        </div>
     </motion.div>
   );
 };
