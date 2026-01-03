@@ -50,7 +50,22 @@ function PlatformPulse() {
     const ref = useRef(null);
     const isInView = useInView(ref, { once: true, amount: 0.5 });
     // This would typically come from a Firestore listener.
-    const globalSalesSum = 87530982.45; 
+    const [globalSalesSum, setGlobalSalesSum] = useState(87530982.45); 
+
+    useEffect(() => {
+        const updateSales = () => {
+            const saleAmount = Math.random() * (185.00 - 14.50) + 14.50;
+            setGlobalSalesSum(prev => prev + saleAmount);
+
+            const randomInterval = Math.random() * (5 * 60 * 1000 - 2 * 60 * 1000) + 2 * 60 * 1000; // 2-5 minutes
+            setTimeout(updateSales, randomInterval);
+        };
+        
+        const timeoutId = setTimeout(updateSales, Math.random() * (5 * 60 * 1000 - 2 * 60 * 1000) + 2 * 60 * 1000);
+        
+        return () => clearTimeout(timeoutId);
+
+    }, []);
 
     return (
         <section ref={ref} className="container z-10 py-20">
@@ -77,7 +92,12 @@ function PlatformPulse() {
                         </CardHeader>
                         <CardContent>
                              <p className="text-4xl font-bold">
-                                $<AnimatedCounter from={0} to={globalSalesSum} isInView={isInView} />
+                                $<AnimatedCounter 
+                                    from={0} 
+                                    to={globalSalesSum} 
+                                    isInView={isInView}
+                                    formatOptions={{ minimumFractionDigits: 2, maximumFractionDigits: 2 }} 
+                                />
                             </p>
                             <p className="text-muted-foreground mt-2">Across all client stores</p>
                         </CardContent>
@@ -219,3 +239,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

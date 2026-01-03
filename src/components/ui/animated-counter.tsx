@@ -17,16 +17,19 @@ export default function AnimatedCounter({
   const count = useMotionValue(from);
   const rounded = useSpring(count, {
     stiffness: 100,
-    damping: 30,
+    damping: 40, // Increased damping for a smoother, slower stop
     restDelta: 0.001,
   });
   const ref = useRef<HTMLSpanElement>(null);
+  const internalIsInView = useInView(ref, { once: true, margin: "0px 0px -50px 0px" });
+
+  const effectiveIsInView = isInView !== undefined ? isInView : internalIsInView;
 
   useEffect(() => {
-    if (isInView) {
+    if (effectiveIsInView) {
       count.set(to);
     }
-  }, [count, to, isInView]);
+  }, [count, to, effectiveIsInView]);
 
   useEffect(() => {
     const unsubscribe = rounded.on("change", (latest) => {
@@ -39,3 +42,5 @@ export default function AnimatedCounter({
 
   return <span ref={ref} />;
 }
+
+    
