@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -76,6 +76,7 @@ function SignUpForm() {
   const { initializePayment, isInitializing } = usePaystack();
   const [isSuccess, setIsSuccess] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [isTransitioning, startTransition] = useTransition();
 
   const planId = searchParams.get('plan') || 'lifetime';
   const selectedPlan = plans[planId] || plans.lifetime;
@@ -192,7 +193,11 @@ function SignUpForm() {
                                         <Checkbox 
                                             id="terms" 
                                             checked={agreedToTerms}
-                                            onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+                                            onCheckedChange={(checked) => {
+                                                startTransition(() => {
+                                                    setAgreedToTerms(checked as boolean)
+                                                });
+                                            }}
                                         />
                                         <label
                                             htmlFor="terms"
