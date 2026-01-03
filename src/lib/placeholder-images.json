@@ -89,6 +89,46 @@
       "description": "A luxury leather bound notebook",
       "imageUrl": "https://images.unsplash.com/photo-1701792606084-10fbd4a9eed1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bGVhdGhlciUyMG5vdGVib29rfGVufDB8fHx8MTc2NzQ3MDgzNXww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "leather notebook"
+    },
+    {
+      "id": "training-thumb-1",
+      "imageUrl": "https://images.unsplash.com/photo-1633533446213-a438ff5f0629?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8YnJhbmQlMjBpZGVudGl0eXxlbnwwfHx8fDE3Njc0Njg5NDR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "brand identity"
+    },
+    {
+      "id": "training-thumb-2",
+      "imageUrl": "https://images.unsplash.com/photo-1647210768891-e0a5f51f9ea9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHx3aXphcmQlMjBpbnRlcmZhY2V8ZW58MHx8fHwxNzY3NDgxNzMwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "wizard interface"
+    },
+    {
+      "id": "training-thumb-3",
+      "imageUrl": "https://images.unsplash.com/photo-1687524690542-2659f268cde8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkb21haW4lMjBzZXR0aW5nc3xlbnwwfHx8fDE3Njc0ODE3MzF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "domain settings"
+    },
+    {
+      "id": "training-thumb-4",
+      "imageUrl": "https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8c29jaWFsJTIwbWVkaWF8ZW58MHx8fHwxNzY3NDY5NjcyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "social media"
+    },
+    {
+      "id": "training-thumb-5",
+      "imageUrl": "https://images.unsplash.com/photo-1748439281934-2803c6a3ee36?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhbmFseXRpY3MlMjBjaGFydHxlbnwwfHx8fDE3Njc0NjUwNzl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "analytics chart"
+    },
+    {
+      "id": "training-thumb-6",
+      "imageUrl": "https://images.unsplash.com/photo-1759661966728-4a02e3c6ed91?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxkYXRhJTIwZ3JhcGh8ZW58MHx8fHwxNzY3Mzk1OTA5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "data graph"
+    },
+    {
+      "id": "training-thumb-7",
+      "imageUrl": "https://images.unsplash.com/photo-1691096675047-817e7a758f6f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxlY29tbWVyY2UlMjBwcm9kdWN0fGVufDB8fHx8MTc2NzQxNzYyOHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "ecommerce product"
+    },
+    {
+      "id": "training-thumb-8",
+      "imageUrl": "https://images.unsplash.com/photo-1500669950830-1a4f3a4b0879?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxwcmljZSUyMHRhZ3N8ZW58MHx8fHwxNzY3NDgxNzMwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "price tags"
     }
   ]
 }

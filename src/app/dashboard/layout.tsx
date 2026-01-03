@@ -21,6 +21,7 @@ import {
   Wallet,
   ShoppingBag,
   ShieldCheck,
+  GraduationCap,
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 
@@ -29,6 +30,7 @@ const navItems = [
   { href: '/dashboard/my-store', icon: Store, label: 'My Store' },
   { href: '/dashboard/product-catalog', icon: Boxes, label: 'Product Catalog' },
   { href: '/dashboard/my-orders', icon: ShoppingBag, label: 'My Orders' },
+  { href: '/dashboard/training-center', icon: GraduationCap, label: 'Training Center' },
   { href: '/dashboard/domain-settings', icon: Globe, label: 'Domain Settings' },
   { href: '/dashboard/analytics', icon: BarChart2, label: 'Analytics' },
   { href: '/dashboard/wallet', icon: Wallet, label: 'SOMA Wallet' },
