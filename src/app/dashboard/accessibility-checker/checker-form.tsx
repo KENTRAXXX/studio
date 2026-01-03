@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useFormState } from "react-dom";
+import { useState, useActionState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,7 +31,7 @@ export default function CheckerForm() {
     }
   }
 
-  const [state, dispatch] = useFormState(formAction, {});
+  const [state, dispatch] = useActionState(formAction, {});
 
   return (
     <form
