@@ -11,6 +11,7 @@ import { Globe, DollarSign, Boxes, Check } from 'lucide-react';
 import AnimatedCounter from '@/components/ui/animated-counter';
 import Image from 'next/image';
 import { useToastWithRandomCity } from '@/hooks/use-toast-with-random-city';
+import { LiveFeedTicker } from '@/components/ui/live-feed-ticker';
 
 
 function LiveCounter() {
@@ -247,6 +248,7 @@ export default function Home() {
 
       <PlatformPulse />
       <SneakPeek />
+      <LiveFeedTicker />
     </div>
   );
 }
