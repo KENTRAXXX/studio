@@ -73,6 +73,7 @@ const createClientStoreFlow = ai.defineFlow(
       createdAt: new Date().toISOString(),
       storeName: "My SOMA Store", // Default name, user can change later
       logoUrl: logoUrl || '',
+      faviconUrl: faviconUrl || '',
       heroImageUrl: '',
       heroTitle: 'Welcome to Your Store',
       heroSubtitle: 'Discover curated collections of timeless luxury.',

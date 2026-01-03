@@ -75,7 +75,7 @@ const NameStep = ({ storeName, setStoreName, onNext }: { storeName: string, setS
     );
 };
 
-const BrandingStep = ({ onNext, onBack, logoFile, setLogoFile, faviconFile, setFaviconFile, isLaunching }: { onNext: () => void, onBack: () => void, logoFile: File | null, setLogoFile: (file: File | null) => void, faviconFile: File | null, setFaviconFile: (file: File | null) => void, isLaunching: boolean }) => {
+const BrandingStep = ({ onNext, onBack, logoFile, setLogoFile, faviconFile, setFaviconFile }: { onNext: () => void, onBack: () => void, logoFile: File | null, setLogoFile: (file: File | null) => void, faviconFile: File | null, setFaviconFile: (file: File | null) => void }) => {
     return (
          <motion.div
             initial={{ opacity: 0, x: 50 }}
@@ -91,13 +91,13 @@ const BrandingStep = ({ onNext, onBack, logoFile, setLogoFile, faviconFile, setF
                  <div className="space-y-2">
                     <Label htmlFor="store-logo" className="text-base">Store Logo</Label>
                     <div className="flex items-center justify-center w-full">
-                        <label htmlFor="store-logo" className={cn("flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg bg-card", !isLaunching && "cursor-pointer hover:bg-muted border-primary/30 hover:border-primary")}>
+                        <label htmlFor="store-logo" className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted border-primary/30 hover:border-primary bg-card">
                             <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                 <UploadCloud className="w-8 h-8 mb-4 text-muted-foreground"/>
                                 <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Click to upload</span> or drag and drop</p>
                                 <p className="text-xs text-muted-foreground">SVG, PNG, JPG (REC. 240x80px)</p>
                             </div>
-                            <Input id="store-logo" type="file" className="hidden" disabled={isLaunching} onChange={(e) => setLogoFile(e.target.files?.[0] || null)} />
+                            <Input id="store-logo" type="file" className="hidden" onChange={(e) => setLogoFile(e.target.files?.[0] || null)} />
                         </label>
                     </div> 
                     {logoFile && <p className="text-sm text-muted-foreground">Selected: {logoFile.name}</p>}
@@ -105,13 +105,13 @@ const BrandingStep = ({ onNext, onBack, logoFile, setLogoFile, faviconFile, setF
                  <div className="space-y-2">
                     <Label htmlFor="favicon" className="text-base">Favicon</Label>
                     <div className="flex items-center justify-center w-full">
-                         <label htmlFor="favicon" className={cn("flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg bg-card", !isLaunching && "cursor-pointer hover:bg-muted border-primary/30 hover:border-primary")}>
+                         <label htmlFor="favicon" className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted border-primary/30 hover:border-primary bg-card">
                             <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                 <UploadCloud className="w-8 h-8 mb-4 text-muted-foreground"/>
                                 <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Click to upload</span> or drag and drop</p>
                                 <p className="text-xs text-muted-foreground">ICO, PNG, JPG (REC. 32x32px)</p>
                             </div>
-                            <Input id="favicon" type="file" className="hidden" disabled={isLaunching} onChange={(e) => setFaviconFile(e.target.files?.[0] || null)} />
+                            <Input id="favicon" type="file" className="hidden" onChange={(e) => setFaviconFile(e.target.files?.[0] || null)} />
                         </label>
                     </div>
                     {faviconFile && <p className="text-sm text-muted-foreground">Selected: {faviconFile.name}</p>}
@@ -223,6 +223,7 @@ export default function MyStorePage() {
 
         await createClientStore({
             userId,
+            plan: 'lifetime',
             template: selectedTemplate,
             logoUrl,
             faviconUrl,
@@ -281,7 +282,6 @@ export default function MyStorePage() {
                         setLogoFile={setLogoFile}
                         faviconFile={faviconFile}
                         setFaviconFile={setFaviconFile}
-                        isLaunching={isLaunching}
                     />
                 )}
                  {step === 3 && (
@@ -302,5 +302,3 @@ export default function MyStorePage() {
     </div>
   );
 }
-
-    
