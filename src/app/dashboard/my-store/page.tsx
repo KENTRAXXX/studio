@@ -18,9 +18,10 @@ import { masterCatalog } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const progressSteps = [
-    { progress: 25, message: 'Building your luxury storefront...' },
-    { progress: 65, message: 'Importing your curated collection...' },
-    { progress: 100, message: 'Going Live!' },
+    { progress: 25, message: 'Securing your custom domain...' },
+    { progress: 50, message: 'Syncing with Master Warehouse...' },
+    { progress: 75, message: 'Optimizing luxury theme assets...' },
+    { progress: 100, message: 'Store Live!' },
 ];
 
 const NameStep = ({ storeName, setStoreName, onNext }: { storeName: string, setStoreName: (name: string) => void, onNext: () => void }) => {
@@ -127,7 +128,7 @@ const BrandingStep = ({ onNext, onBack, logoFile, setLogoFile, faviconFile, setF
     );
 };
 
-const CollectionStep = ({ onBack, onLaunch, selectedProducts, setSelectedProducts, isLaunching, launchProgress, progressMessage }: any) => {
+const CollectionStep = ({ onBack, onLaunch, selectedProducts, setSelectedProducts }: any) => {
     const productsToShow = masterCatalog.slice(0, 6);
     
     const handleProductSelect = (productId: string, checked: boolean) => {
@@ -155,13 +156,12 @@ const CollectionStep = ({ onBack, onLaunch, selectedProducts, setSelectedProduct
                 {productsToShow.map((product) => (
                 <div
                     key={product.id}
-                    onClick={() => !isLaunching && handleProductSelect(product.id, !selectedProducts.includes(product.id))}
+                    onClick={() => handleProductSelect(product.id, !selectedProducts.includes(product.id))}
                     className={cn(
                     'relative cursor-pointer transition-all duration-200 border-2 rounded-lg overflow-hidden',
                     selectedProducts.includes(product.id)
                         ? 'border-primary bg-primary/10 shadow-lg'
-                        : 'border-border hover:border-primary/50',
-                    isLaunching && 'opacity-50 cursor-not-allowed'
+                        : 'border-border hover:border-primary/50'
                     )}
                 >
                     <div className="absolute top-2 right-2 z-10">
@@ -180,37 +180,76 @@ const CollectionStep = ({ onBack, onLaunch, selectedProducts, setSelectedProduct
                 </div>
                 ))}
             </div>
-            
-            {isLaunching && (
-                <Card className="border-primary/50">
-                    <CardContent className="p-6">
-                        <div className="flex items-center gap-4">
-                            <div className="w-full">
-                                <Progress value={launchProgress} className="w-full h-3 bg-muted border border-primary/20" />
-                                <p className="text-center text-sm text-primary font-medium mt-2">{progressMessage}</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
         
             <div className="flex justify-between items-center">
-                 <Button variant="ghost" onClick={onBack} disabled={isLaunching}>
+                 <Button variant="ghost" onClick={onBack}>
                     <ChevronLeft className="mr-2 h-5 w-5" /> Back
                 </Button>
                 <Button 
                     size="lg" 
                     className="w-full md:w-auto h-16 text-xl btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground"
                     onClick={onLaunch}
-                    disabled={isLaunching || selectedProducts.length < 3}
+                    disabled={selectedProducts.length < 3}
                 >
                     <Rocket className="mr-2 h-5 w-5"/> 
-                    {isLaunching ? 'Provisioning Store...' : 'LAUNCH MY EMPIRE'}
+                    LAUNCH MY EMPIRE
                 </Button>
             </div>
         </motion.div>
     );
 }
+
+const DeploymentOverlay = ({ messages, onComplete }: { messages: string[], onComplete: () => void }) => {
+    const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+
+    React.useEffect(() => {
+        if (currentMessageIndex < messages.length - 1) {
+            const timer = setTimeout(() => {
+                setCurrentMessageIndex(prev => prev + 1);
+            }, 1500);
+            return () => clearTimeout(timer);
+        } else {
+            const finalTimer = setTimeout(onComplete, 1500);
+            return () => clearTimeout(finalTimer);
+        }
+    }, [currentMessageIndex, messages, onComplete]);
+
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center"
+        >
+            <div className="relative flex items-center justify-center">
+                <motion.div
+                    className="absolute h-48 w-48 rounded-full border-4 border-primary/20"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
+                />
+                <motion.div
+                    className="absolute h-64 w-64 rounded-full border-4 border-dashed border-primary/50"
+                    animate={{ rotate: -360 }}
+                    transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
+                />
+                <Rocket className="w-16 h-16 text-primary" />
+            </div>
+            <AnimatePresence mode="wait">
+                <motion.p
+                    key={currentMessageIndex}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.5 }}
+                    className="text-xl text-primary-foreground mt-12 font-medium"
+                >
+                    {messages[currentMessageIndex]}
+                </motion.p>
+            </AnimatePresence>
+        </motion.div>
+    );
+};
+
 
 export default function MyStorePage() {
   const [step, setStep] = useState(1);
@@ -219,8 +258,6 @@ export default function MyStorePage() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [faviconFile, setFaviconFile] = useState<File | null>(null);
   const [isLaunching, setIsLaunching] = useState(false);
-  const [launchProgress, setLaunchProgress] = useState(0);
-  const [progressMessage, setProgressMessage] = useState('');
 
   const { toast } = useToast();
   const router = useRouter();
@@ -228,17 +265,13 @@ export default function MyStorePage() {
   const handleLaunch = async () => {
     setIsLaunching(true);
 
+    // No need to show progress here as the overlay will handle it.
+    // The backend call will happen in the background.
     try {
         const userId = "my-test-store"; 
         
         const logoUrl = logoFile ? `/uploads/${logoFile.name}` : '';
         const faviconUrl = faviconFile ? `/uploads/${faviconFile.name}` : '';
-
-        for (const step of progressSteps) {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            setLaunchProgress(step.progress);
-            setProgressMessage(step.message);
-        }
 
         // The 'template' parameter is no longer needed in this flow,
         // but the backend function might still expect it. We send a default.
@@ -250,33 +283,40 @@ export default function MyStorePage() {
             faviconUrl,
         });
 
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        toast({
-            title: 'Your empire is live!',
-            description: 'Congratulations! Your store has been successfully launched.',
-        });
-
-        router.push('/dashboard');
-
     } catch (error: any) {
+        // If the background call fails, we still proceed with the UI,
+        // but show an error toast.
         toast({
             variant: "destructive",
             title: 'Launch Failed',
-            description: error.message || 'An unexpected error occurred.',
+            description: error.message || 'An unexpected error occurred in the background.',
         });
-        setLaunchProgress(0);
-        setProgressMessage('');
-    } finally {
-        setIsLaunching(false);
+        // We don't block the UI flow, so we don't set isLaunching to false here.
     }
   };
+
+  const onLaunchComplete = () => {
+      toast({
+          title: 'Your empire is live!',
+          description: 'Congratulations! Your store has been successfully launched.',
+      });
+      router.push('/dashboard');
+  }
 
   const nextStep = () => setStep(s => s + 1);
   const prevStep = () => setStep(s => s - 1);
 
   return (
     <div className="space-y-8">
+      <AnimatePresence>
+        {isLaunching && (
+          <DeploymentOverlay 
+            messages={progressSteps.map(p => p.message)}
+            onComplete={onLaunchComplete}
+          />
+        )}
+      </AnimatePresence>
+
       <div className="mb-12">
         <h1 className="text-3xl font-bold font-headline text-primary">SOMA Launch Wizard</h1>
         <p className="text-muted-foreground">Follow the steps to configure and launch your new luxury storefront.</p>
@@ -312,9 +352,6 @@ export default function MyStorePage() {
                         onLaunch={handleLaunch}
                         selectedProducts={selectedProducts}
                         setSelectedProducts={setSelectedProducts}
-                        isLaunching={isLaunching}
-                        launchProgress={launchProgress}
-                        progressMessage={progressMessage}
                     />
                 )}
             </AnimatePresence>
