@@ -52,18 +52,20 @@ const initializePaystackTransactionFlow = ai.defineFlow(
       body: JSON.stringify({
         email: input.email,
         amount: input.amount,
-        metadata: input.metadata
+        metadata: input.metadata,
       }),
     });
 
     if (!response.ok) {
       const errorBody = await response.json();
+      console.error('Paystack API Error:', errorBody);
       throw new Error(`Paystack API Error: ${errorBody.message}`);
     }
 
     const data = await response.json();
 
     if (!data.status) {
+        console.error('Paystack API Error:', data);
         throw new Error(`Paystack API Error: ${data.message}`);
     }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -26,7 +26,7 @@ import {
 import { CreditCard, Loader2, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SomaLogo from '@/components/logo';
-import { initializePaystackTransaction } from '@/ai/flows/initialize-paystack-transaction';
+import { usePaystack } from '@/hooks/use-paystack';
 import { useToast } from '@/hooks/use-toast';
 
 const steps = [
@@ -47,16 +47,6 @@ const addressSchema = z.object({
 
 
 type AddressFormValues = z.infer<typeof addressSchema>;
-type PaystackConfig = {
-    reference: string;
-    email: string;
-    amount: number;
-    publicKey: string;
-    metadata: {
-        template: string;
-        custom_fields: { display_name: string; variable_name: string; value: string; }[];
-    }
-};
 
 
 const InformationStep = ({ onNext, setCheckoutData }: { onNext: () => void, setCheckoutData: (data: Partial<AddressFormValues>) => void }) => {
@@ -155,91 +145,39 @@ const PaymentStep = ({ onBack, storeId, checkoutData }: { onBack: () => void; st
   const router = useRouter();
   const { cart, getCartTotal } = useCart();
   const { toast } = useToast();
-  const [isInitializing, setIsInitializing] = useState(false);
-  const [paystackConfig, setPaystackConfig] = useState<PaystackConfig | null>(null);
+  const { initializePayment, isInitializing } = usePaystack();
 
   const shippingPrice = 4.99;
   const subtotal = getCartTotal();
   const total = subtotal + shippingPrice;
 
-  const initializePayment = async () => {
+  const handlePayment = async () => {
     if (!checkoutData.email) {
       toast({ variant: 'destructive', title: 'Error', description: 'Email is required to proceed.' });
       return;
     }
-    setIsInitializing(true);
-    try {
-      const amountInKobo = Math.round(total * 100);
-      
-      // In a real app, you'd get the template from the store's settings.
-      const storeTemplate = "gold-standard"; 
-
-      const result = await initializePaystackTransaction({ email: checkoutData.email, amount: amountInKobo, metadata: {
-        template: storeTemplate,
-        // Paystack requires custom_fields to be an array of objects
-        custom_fields: [
-            {
-                display_name: "Store ID",
-                variable_name: "store_id",
-                value: storeId
-            }
-        ]
-      } });
-      
-      const config: PaystackConfig = {
-        reference: result.reference,
+    
+    await initializePayment(
+      {
         email: checkoutData.email,
-        amount: amountInKobo,
-        publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
+        amount: Math.round(total * 100),
         metadata: {
-            template: storeTemplate,
-            custom_fields: [
-                {
-                    display_name: "Store ID",
-                    variable_name: "store_id",
-                    value: storeId
-                }
-            ]
+          cart: cart.map(item => ({id: item.product.id, name: item.product.name, quantity: item.quantity})),
+          shippingAddress: checkoutData,
+          storeId: storeId
         }
-      };
-      setPaystackConfig(config);
-
-    } catch (error: any) {
-      console.error("Paystack initialization failed", error);
-      toast({ variant: 'destructive', title: 'Payment Error', description: error.message || 'Could not initialize payment. Please try again.' });
-      setIsInitializing(false);
-    }
+      },
+      (reference) => {
+         console.log('Payment successful', reference);
+         const orderId = `SOMA-${reference.trxref.slice(-6).toUpperCase()}`;
+         router.push(`/store/${storeId}/checkout/order-confirmation?orderId=${orderId}`);
+      },
+      () => {
+        console.log('Payment popup closed.');
+        toast({ variant: 'default', title: 'Payment Canceled', description: 'Your payment was not completed.' });
+      }
+    );
   };
-
-   const onSuccess = (reference: any) => {
-    console.log('Payment successful', reference);
-    // The webhook will handle store creation. We just need to show confirmation to the user.
-    const orderId = `SOMA-${reference.trxref.slice(-6).toUpperCase()}`;
-    router.push(`/store/${storeId}/checkout/order-confirmation?orderId=${orderId}`);
-  };
-
-  const onClose = () => {
-    console.log('Payment popup closed.');
-    setIsInitializing(false);
-    setPaystackConfig(null);
-  };
-
-  const PaystackButton = () => {
-      const initializePaystack = usePaystackPayment(paystackConfig as PaystackConfig);
-      
-      React.useEffect(() => {
-        if(paystackConfig) {
-            initializePaystack(onSuccess, onClose);
-        }
-      }, [paystackConfig]);
-
-      return (
-         <Button onClick={initializePayment} disabled={isInitializing} size="lg" className="h-12 text-lg w-full btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
-            {isInitializing ? <Loader2 className="animate-spin" /> : 'Pay Now'}
-        </Button>
-      )
-  }
-
 
   return (
     <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }}>
@@ -254,7 +192,9 @@ const PaymentStep = ({ onBack, storeId, checkoutData }: { onBack: () => void; st
             <div className="text-3xl font-bold text-primary mb-6">
               Total: ${total.toFixed(2)}
             </div>
-            <PaystackButton />
+            <Button onClick={handlePayment} disabled={isInitializing} size="lg" className="h-12 text-lg w-full btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+                {isInitializing ? <Loader2 className="animate-spin" /> : 'Pay Now'}
+            </Button>
           </div>
 
           <div className="flex justify-between items-center pt-8">

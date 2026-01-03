@@ -12,6 +12,7 @@ const plans = [
         id: 'monthly',
         title: 'The Scaler',
         price: '$29/mo',
+        amount: 2900, // in kobo/cents
         features: ['Full Platform Access', 'Standard Support', 'Automated Sync'],
         bestValue: false
     },
@@ -19,6 +20,7 @@ const plans = [
         id: 'lifetime',
         title: 'The Mogul',
         price: '$500',
+        amount: 50000, // in kobo/cents
         priceSubtitle: 'One-Time',
         features: ['Everything in Monthly', 'VIP Priority Support', 'Zero Future Fees'],
         bestValue: true
@@ -30,7 +32,7 @@ export default function PlanSelectionPage() {
     const router = useRouter();
 
     const handleConfirm = () => {
-        router.push('/signup');
+        router.push(`/signup?plan=${selectedPlan}`);
     }
 
     return (

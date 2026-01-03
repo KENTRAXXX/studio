@@ -2,6 +2,11 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClientStore } from '@/ai/flows/create-client-store';
+import { doc, getDoc, getFirestore, updateDoc } from 'firebase/firestore';
+import { initializeFirebase } from '@/firebase';
+
+
+const { firestore } = initializeFirebase();
 
 export async function POST(req: Request) {
   const secret = process.env.PAYSTACK_SECRET_KEY;
@@ -10,43 +15,50 @@ export async function POST(req: Request) {
     console.error('Paystack secret key is not set.');
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
-
-  const hash = crypto.createHmac('sha512', secret).update(await req.text()).digest('hex');
+  
+  // Need to read the raw text for signature verification
+  const text = await req.text();
+  const hash = crypto.createHmac('sha512', secret).update(text).digest('hex');
   const paystackSignature = req.headers.get('x-paystack-signature');
-
-  // We are re-parsing the body here because the text was already consumed.
-  // This is a necessary step to use the raw body for signature verification.
-  const body = await req.json();
+  
+  // Now parse the JSON body
+  const event = JSON.parse(text);
 
   if (hash !== paystackSignature) {
     console.error('Invalid Paystack signature.');
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
 
-  const event = body;
 
   if (event.event === 'charge.success') {
-    const customerEmail = event.data.customer.email;
-    const { template } = event.data.metadata;
+    const { metadata } = event.data;
+    const { userId, plan, template } = metadata;
 
-    if (!customerEmail) {
-        console.error('Webhook Error: Customer email not found in payload.');
-        return NextResponse.json({ error: 'Customer email not found' }, { status: 400 });
+    if (!userId) {
+        console.error('Webhook Error: userId not found in payment metadata.');
+        return NextResponse.json({ error: 'User ID not found in metadata' }, { status: 400 });
     }
     
-    // In a real app, you might look up the user by email to get their ID
-    // For now, we'll use the email as the basis for the user/store ID
-    const userId = customerEmail;
-
     try {
       console.log(`Payment success for ${userId}. Triggering store creation...`);
+
+      // Check if user has already been granted access to prevent re-provisioning
+      const userRef = doc(firestore, "users", userId);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists() && userSnap.data().hasAccess) {
+        console.log(`User ${userId} already has access. Skipping store creation.`);
+        return NextResponse.json({ status: 'success', message: 'User already has access.' });
+      }
+
       await createClientStore({
         userId,
-        template: template || 'gold-standard', // Fallback to a default
+        plan: plan || 'monthly',
+        template: template || 'gold-standard',
       });
       console.log(`Store created successfully for ${userId}.`);
     } catch (error) {
-      console.error('Failed to trigger createClientStore flow:', error);
+      console.error(`Failed to trigger createClientStore flow for ${userId}:`, error);
       // Even if store creation fails, we acknowledge the webhook
       // In a production app, you'd add this to a retry queue.
     }

@@ -35,6 +35,9 @@ export function useSignUp() {
     setError(null);
 
     try {
+      // Check if user already exists
+      // Note: This is a client-side check. A more secure way is with a server-side check.
+      // But createUserWithEmailAndPassword handles this by throwing auth/email-already-in-use
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         credentials.email,
@@ -44,12 +47,14 @@ export function useSignUp() {
       const user = userCredential.user;
       
       const userDocRef = doc(firestore, 'users', user.uid);
+      // Create user profile but hold off on access until payment
       await setDoc(userDocRef, {
         email: user.email,
-        hasAccess: false,
+        hasAccess: false, 
       });
 
       options?.onSuccess?.(userCredential);
+      return userCredential;
     } catch (err: any) {
       setError(err);
       options?.onError?.(err);

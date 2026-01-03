@@ -9,7 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { getFirestore, doc, setDoc, collection, writeBatch } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, collection, writeBatch, updateDoc } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import { randomUUID } from 'crypto';
 import { masterCatalog } from '@/lib/data'; // Assuming master catalog is here
@@ -19,6 +19,7 @@ const { firestore } = initializeFirebase();
 
 const CreateClientStoreInputSchema = z.object({
   userId: z.string().describe('The ID of the user for whom the store is being created.'),
+  plan: z.string().describe('The subscription plan (e.g., "monthly", "lifetime").'),
   template: z.string().describe('The selected template for the store.'),
   logoUrl: z.string().optional().describe("URL of the store's logo."),
   faviconUrl: z.string().optional().describe("URL of the store's favicon."),
@@ -50,12 +51,20 @@ const createClientStoreFlow = ai.defineFlow(
     inputSchema: CreateClientStoreInputSchema,
     outputSchema: CreateClientStoreOutputSchema,
   },
-  async ({ userId, template, logoUrl, faviconUrl }) => {
+  async ({ userId, plan, template, logoUrl, faviconUrl }) => {
     const instanceId = randomUUID();
     const storeRef = doc(firestore, 'stores', userId);
+    const userRef = doc(firestore, 'users', userId);
     const productsRef = collection(storeRef, 'products');
 
-    // 1. Create the main store document
+    // 1. Update user document to grant access
+    await updateDoc(userRef, {
+        hasAccess: true,
+        plan: plan,
+        paidAt: new Date().toISOString()
+    });
+
+    // 2. Create the main store document
     const defaultStoreConfig = {
       userId: userId,
       instanceId: instanceId,
@@ -72,7 +81,7 @@ const createClientStoreFlow = ai.defineFlow(
 
     await setDoc(storeRef, defaultStoreConfig);
 
-    // 2. Deep Clone: Copy top 10 products from master catalog
+    // 3. Deep Clone: Copy top 10 products from master catalog
     const batch = writeBatch(firestore);
     const top10Products = masterCatalog.slice(0, 10);
 
@@ -90,15 +99,15 @@ const createClientStoreFlow = ai.defineFlow(
     await batch.commit();
 
 
-    // 3. Placeholder for sending a welcome email
+    // 4. Placeholder for sending a welcome email
     console.log(`
       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       EMAIL SIMULATION
-      To: ${userId}
+      To: user with ID ${userId}
       From: support@soma.com
       Subject: Welcome to SOMA! Your Store is LIVE!
 
-      Your store is ready!
+      Your payment was successful and your store is now ready!
       Please point your domain's A record to the IP address: 123.456.78.9
       You can now manage your store at: /dashboard/my-store
       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
