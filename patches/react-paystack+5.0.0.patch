@@ -1,0 +1,14 @@
+diff --git a/node_modules/react-paystack/package.json b/node_modules/react-paystack/package.json
+index 5155b92..271183f 100644
+--- a/node_modules/react-paystack/package.json
++++ b/node_modules/react-paystack/package.json
+@@ -52,6 +52,6 @@
+     "rollup-plugin-typescript2": "^0.34.1",
+     "typescript": "^4.9.4"
+   },
+-  "peerDependencies": {
+-    "react": "^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0"
++  "peerDependencies": {    
++    "react": "^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
+   }
+ }

@@ -52,8 +52,11 @@ export default function MasterAdminPage() {
 
             <Card className="border-primary/50">
                 <CardHeader>
-                    <CardTitle>Global Inventory</CardTitle>
-                    <CardDescription>Add/edit products pushed to all client stores.</CardDescription>
+                    <CardTitle>Master Product Catalog</CardTitle>
+                    <CardDescription>
+                        This catalog is automatically cloned to new client stores.
+                        Products are managed via the 'Product Catalog' page.
+                    </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -63,24 +66,19 @@ export default function MasterAdminPage() {
                                 <TableHead>Master Cost</TableHead>
                                 <TableHead>Retail Price</TableHead>
                                 <TableHead>Stock Level</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {masterCatalog.slice(0, 4).map((product) => (
+                            {masterCatalog.slice(0, 5).map((product) => (
                                 <TableRow key={product.id}>
-                                    <TableCell><Input defaultValue={product.name} className="bg-background"/></TableCell>
-                                    <TableCell><Input type="number" defaultValue={product.masterCost} className="bg-background"/></TableCell>
-                                    <TableCell><Input type="number" defaultValue={product.retailPrice} className="bg-background"/></TableCell>
-                                    <TableCell><Input type="number" defaultValue={product.stockLevel} className="bg-background"/></TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>
-                                    </TableCell>
+                                    <TableCell>{product.name}</TableCell>
+                                    <TableCell>${product.masterCost.toFixed(2)}</TableCell>
+                                    <TableCell>${product.retailPrice.toFixed(2)}</TableCell>
+                                    <TableCell>{product.stockLevel}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
                     </Table>
-                     <Button className="mt-4">Add Product</Button>
                 </CardContent>
             </Card>
 

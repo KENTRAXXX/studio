@@ -6,6 +6,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
+import { usePaystackPayment } from 'react-paystack';
+
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,9 +23,11 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { CreditCard, Lock } from 'lucide-react';
+import { CreditCard, Loader2, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SomaLogo from '@/components/logo';
+import { initializePaystackTransaction } from '@/ai/flows/initialize-paystack-transaction';
+import { useToast } from '@/hooks/use-toast';
 
 const steps = [
   { id: 'information', name: 'Information' },
@@ -41,20 +45,24 @@ const addressSchema = z.object({
   country: z.string().min(2, { message: 'Country is required.' }),
 });
 
-const paymentSchema = z.object({
-  // We remove card details as Paystack handles the form
-});
 
 type AddressFormValues = z.infer<typeof addressSchema>;
+type PaystackConfig = {
+    reference: string;
+    email: string;
+    amount: number;
+    publicKey: string;
+};
 
-const InformationStep = ({ onNext }: { onNext: () => void }) => {
+
+const InformationStep = ({ onNext, setCheckoutData }: { onNext: () => void, setCheckoutData: (data: Partial<AddressFormValues>) => void }) => {
   const form = useForm<AddressFormValues>({
     resolver: zodResolver(addressSchema),
     mode: 'onBlur',
   });
 
   const onSubmit = (data: AddressFormValues) => {
-    console.log(data);
+    setCheckoutData(data);
     onNext();
   };
 
@@ -139,22 +147,70 @@ const ShippingStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => vo
 };
 
 
-const PaymentStep = ({ onBack, storeId }: { onBack: () => void; storeId: string }) => {
+const PaymentStep = ({ onBack, storeId, checkoutData }: { onBack: () => void; storeId: string, checkoutData: Partial<AddressFormValues> }) => {
   const router = useRouter();
-  const { getCartTotal } = useCart();
+  const { cart, getCartTotal } = useCart();
+  const { toast } = useToast();
+  const [isInitializing, setIsInitializing] = useState(false);
+  const [paystackConfig, setPaystackConfig] = useState<PaystackConfig | null>(null);
+
   const shippingPrice = 4.99;
   const subtotal = getCartTotal();
   const total = subtotal + shippingPrice;
 
-  const handlePaystackPayment = () => {
-    // In a real app, you would initialize Paystack here and redirect
-    // to their checkout page.
-    console.log("Initiating Paystack payment...");
-    
-    // For now, we'll just simulate a successful payment and redirect.
-    const orderId = `SOMA-${Math.floor(Math.random() * 9000) + 1000}`;
+  const initializePayment = async () => {
+    if (!checkoutData.email) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Email is required to proceed.' });
+      return;
+    }
+    setIsInitializing(true);
+    try {
+      const amountInKobo = Math.round(total * 100);
+      const result = await initializePaystackTransaction({ email: checkoutData.email, amount: amountInKobo });
+      
+      const config: PaystackConfig = {
+        reference: result.reference,
+        email: checkoutData.email,
+        amount: amountInKobo,
+        publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
+      };
+      setPaystackConfig(config);
+
+    } catch (error: any) {
+      console.error("Paystack initialization failed", error);
+      toast({ variant: 'destructive', title: 'Payment Error', description: error.message || 'Could not initialize payment. Please try again.' });
+      setIsInitializing(false);
+    }
+  };
+
+   const onSuccess = (reference: any) => {
+    console.log('Payment successful', reference);
+    const orderId = `SOMA-${reference.trxref.slice(-6).toUpperCase()}`;
     router.push(`/store/${storeId}/checkout/order-confirmation?orderId=${orderId}`);
   };
+
+  const onClose = () => {
+    console.log('Payment popup closed.');
+    setIsInitializing(false);
+    setPaystackConfig(null);
+  };
+
+  const PaystackButton = () => {
+      const initializePaystack = usePaystackPayment(paystackConfig as PaystackConfig);
+      
+      React.useEffect(() => {
+        if(paystackConfig) {
+            initializePaystack(onSuccess, onClose);
+        }
+      }, [paystackConfig]);
+
+      return (
+         <Button onClick={initializePayment} disabled={isInitializing} size="lg" className="h-12 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+            {isInitializing ? <Loader2 className="animate-spin" /> : 'Pay Now'}
+        </Button>
+      )
+  }
+
 
   return (
     <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }}>
@@ -165,7 +221,7 @@ const PaymentStep = ({ onBack, storeId }: { onBack: () => void; storeId: string 
           </CardHeader>
           
           <div className="border border-primary/50 rounded-lg p-6 bg-card text-center">
-            <p className="text-muted-foreground mb-4">You will be redirected to Paystack to complete your payment securely.</p>
+            <p className="text-muted-foreground mb-4">Click "Pay Now" to complete your payment securely with Paystack.</p>
             <div className="text-3xl font-bold text-primary mb-6">
               Total: ${total.toFixed(2)}
             </div>
@@ -173,9 +229,7 @@ const PaymentStep = ({ onBack, storeId }: { onBack: () => void; storeId: string 
 
           <div className="flex justify-between items-center pt-8">
             <Button variant="link" onClick={onBack}>&larr; Back to Shipping</Button>
-            <Button onClick={handlePaystackPayment} size="lg" className="h-12 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
-              Pay with Paystack
-            </Button>
+            <PaystackButton />
           </div>
         </div>
     </motion.div>
@@ -185,6 +239,7 @@ const PaymentStep = ({ onBack, storeId }: { onBack: () => void; storeId: string 
 
 export default function CheckoutPage({ params }: { params: { storeId: string }}) {
   const [currentStep, setCurrentStep] = useState(0);
+  const [checkoutData, setCheckoutData] = useState<Partial<AddressFormValues>>({});
   const { cart, getCartTotal } = useCart();
   const shippingPrice = 4.99;
   const subtotal = getCartTotal();
@@ -192,6 +247,10 @@ export default function CheckoutPage({ params }: { params: { storeId: string }})
 
   const handleNext = () => setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
   const handleBack = () => setCurrentStep((prev) => Math.max(prev - 1, 0));
+
+  const updateCheckoutData = (data: Partial<AddressFormValues>) => {
+    setCheckoutData(prev => ({...prev, ...data}));
+  }
 
   return (
     <>
@@ -226,9 +285,9 @@ export default function CheckoutPage({ params }: { params: { storeId: string }})
 
           <div className="mt-12">
             <AnimatePresence mode="wait">
-                {currentStep === 0 && <InformationStep onNext={handleNext} />}
+                {currentStep === 0 && <InformationStep onNext={handleNext} setCheckoutData={updateCheckoutData} />}
                 {currentStep === 1 && <ShippingStep onNext={handleNext} onBack={handleBack} />}
-                {currentStep === 2 && <PaymentStep onBack={handleBack} storeId={params.storeId} />}
+                {currentStep === 2 && <PaymentStep onBack={handleBack} storeId={params.storeId} checkoutData={checkoutData} />}
             </AnimatePresence>
           </div>
         </main>
