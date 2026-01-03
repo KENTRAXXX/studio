@@ -68,3 +68,17 @@ export const walletTransactions: Transaction[] = [
     { date: '2023-10-20', description: 'Withdrawal to Bank Account', amount: -1500, type: 'Withdrawal' },
     { date: '2023-10-19', description: 'Sale Earnings from #SOMA-8420', amount: 450, type: 'Sale' },
 ];
+
+export type StorefrontProduct = {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  imageId: string;
+}
+export const storefrontData: StorefrontProduct[] = [
+    { id: 'sf-001', name: 'Aethelred Watch', price: 650.00, description: 'An exquisite timepiece blending classic design with modern mechanics.', imageId: 'product-1'},
+    { id: 'sf-002', name: 'Veridian Handbag', price: 499.00, description: 'A statement piece, crafted from the finest vegan leather.', imageId: 'product-2'},
+    { id: 'sf-003', name: 'Apex Sneakers', price: 350.00, description: 'Ultimate comfort meets high-fashion. Perfect for the urban explorer.', imageId: 'product-3'},
+    { id: 'sf-004', name: 'Noir Elixir', price: 220.00, description: 'A captivating fragrance with notes of sandalwood and dark chocolate.', imageId: 'product-4'},
+];

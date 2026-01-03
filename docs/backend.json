@@ -53,9 +53,53 @@
                     "type": "string",
                     "format": "date-time",
                     "description": "The timestamp when the store was created."
+                },
+                "storeName": {
+                    "type": "string",
+                    "description": "The name of the client's store."
+                },
+                "logoUrl": {
+                    "type": "string",
+                    "description": "URL of the store's logo."
+                },
+                "heroImageUrl": {
+                    "type": "string",
+                    "description": "URL for the hero image on the storefront."
+                },
+                "heroTitle": {
+                    "type": "string",
+                    "description": "The main headline for the hero section."
+                },
+                "heroSubtitle": {
+                    "type": "string",
+                    "description": "The sub-headline for the hero section."
                 }
             },
-            "required": ["userId", "instanceId", "theme", "currency", "createdAt"]
+            "required": ["userId", "instanceId", "theme", "currency", "createdAt", "storeName"]
+        },
+        "storefrontProduct": {
+            "title": "Storefront Product",
+            "description": "A product available in a client's storefront.",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the product."
+                },
+                "price": {
+                    "type": "number",
+                    "description": "The retail price of the product."
+                },
+                "description": {
+                    "type": "string",
+                    "description": "A detailed description of the product."
+                },
+                "imageUrl": {
+                    "type": "string",
+                    "description": "URL of the main product image."
+                }
+            },
+            "required": ["name", "price", "imageUrl"]
         }
     },
     "auth": {
@@ -67,6 +111,12 @@
                 "$ref": "#/entities/clientStore"
             },
             "description": "Stores all the provisioned client storefronts."
+        },
+        "/stores/{storeId}/products/{productId}": {
+            "schema": {
+                "$ref": "#/entities/storefrontProduct"
+            },
+            "description": "Products for a specific client store."
         }
     }
 }
