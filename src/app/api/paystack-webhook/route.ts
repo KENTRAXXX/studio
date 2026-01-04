@@ -138,26 +138,38 @@ async function executePaymentSplit(eventData: any) {
 
 export async function POST(req: Request) {
   const secret = process.env.PAYSTACK_SECRET_KEY;
-
   if (!secret) {
     console.error('Paystack secret key is not set.');
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error: Paystack secret not configured.' }, { status: 500 });
   }
   
-  const text = await req.text();
-  const hash = crypto.createHmac('sha512', secret).update(text).digest('hex');
+  // 1. Get the raw request body
+  const rawBody = await req.text();
+  
+  // 2. Get the signature from the header
   const paystackSignature = req.headers.get('x-paystack-signature');
   
-  const event = JSON.parse(text);
-
+  // 3. Create the HMAC hash
+  const hash = crypto.createHmac('sha512', secret).update(rawBody).digest('hex');
+  
+  // 4. Compare the hash with the signature
   if (hash !== paystackSignature) {
     console.error('Invalid Paystack signature.');
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
 
+  // 5. If the signature is valid, parse the body and proceed
+  const event = JSON.parse(rawBody);
 
   if (event.event === 'charge.success') {
     const { metadata } = event.data;
+
+    // Check if metadata exists before destructuring
+    if (!metadata) {
+        console.warn('Webhook received for charge.success but has no metadata.', event.data);
+        return NextResponse.json({ status: 'success', message: 'Event acknowledged, no metadata.' });
+    }
+
     const { userId, plan, template, cart, storeId } = metadata;
 
     if (cart && storeId) {
@@ -175,15 +187,25 @@ export async function POST(req: Request) {
             if (userSnap.exists() && userSnap.data().hasAccess) {
                 console.log(`User ${userId} already has access. Skipping store creation.`);
             } else {
-                await createClientStore({
+                 const createClientStoreInput = {
                     userId,
                     plan: plan || 'monthly',
+                    planTier: metadata.planTier || 'MOGUL',
                     template: template || 'gold-standard',
-                });
+                };
+                await createClientStore(createClientStoreInput);
                 console.log(`Store created successfully for ${userId}.`);
             }
         } catch (error) {
             console.error(`Failed to trigger createClientStore flow for ${userId}:`, error);
+             // Log the error to admin_alerts
+            const alertsRef = collection(firestore, 'admin_alerts');
+            await addDoc(alertsRef, {
+                flowName: 'paystackWebhook_createClientStore',
+                userId: userId,
+                error: (error instanceof Error ? error.message : 'An unknown error occurred during store creation post-payment.'),
+                timestamp: new Date().toISOString()
+            });
         }
     } else {
         console.warn('Webhook received without actionable metadata.', metadata);
@@ -192,5 +214,3 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ status: 'success' });
 }
-
-    
