@@ -38,18 +38,18 @@ const SupplierUploadView = () => (
 );
 
 // Moguls and Scalers see the dropshipping catalog
-const DropshipCatalogView = () => (
-    <GlobalProductCatalogPage />
+const DropshipCatalogView = ({ isDemo = false }: { isDemo?: boolean }) => (
+    <GlobalProductCatalogPage isDemo={isDemo} />
 );
 
 
-export default function DashboardController({ planTier }: { planTier?: string }) {
+export default function DashboardController({ planTier, isDemo = false }: { planTier?: string, isDemo?: boolean }) {
     switch (planTier) {
         case 'MERCHANT':
             return <PrivateInventoryView />;
         case 'MOGUL':
         case 'SCALER':
-            return <DropshipCatalogView />;
+            return <DropshipCatalogView isDemo={isDemo} />;
         case 'SELLER':
             return <SupplierUploadView />;
         default:

@@ -11,7 +11,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Gem, PlusCircle, Loader2, Check } from 'lucide-react';
 import {
   Table,
@@ -24,6 +23,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useUser, useCollection, useFirestore } from '@/firebase';
 import { collection, doc, setDoc, getDocs } from 'firebase/firestore';
+import { demoProducts, type DemoProduct } from '@/lib/demo-data';
 
 type Product = {
   id: string;
@@ -32,11 +32,21 @@ type Product = {
   retailPrice: number;
   stockLevel: number;
   imageId: string;
+  imageSrc?: string; // For demo data
   productType: 'INTERNAL' | 'EXTERNAL';
   vendorId: string;
 };
 
-export default function GlobalProductCatalogPage() {
+// A unified function to get an image URL
+const getProductImage = (product: Product) => {
+    if (product.imageSrc) {
+        return product.imageSrc;
+    }
+    // In a real app, you'd have a more robust lookup for imageId
+    return `https://picsum.photos/seed/${product.imageId || product.id}/100/100`;
+}
+
+export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: boolean }) {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
@@ -44,13 +54,18 @@ export default function GlobalProductCatalogPage() {
   const [syncedProducts, setSyncedProducts] = useState<Set<string>>(new Set());
   const [syncingProducts, setSyncingProducts] = useState<Set<string>>(new Set());
 
-  const masterCatalogRef = firestore ? collection(firestore, 'Master_Catalog') : null;
-  const { data: masterCatalog, loading: catalogLoading } = useCollection<Product>(masterCatalogRef);
+  // Firestore logic
+  const masterCatalogRef = firestore && !isDemo ? collection(firestore, 'Master_Catalog') : null;
+  const { data: liveCatalog, loading: catalogLoading } = useCollection<Product>(masterCatalogRef);
   
   const userProductsRef = useMemo(() => {
-    if (!firestore || !user) return null;
+    if (!firestore || !user || isDemo) return null;
     return collection(firestore, 'stores', user.uid, 'products');
-  }, [firestore, user]);
+  }, [firestore, user, isDemo]);
+
+  // Determine which data to use
+  const masterCatalog = isDemo ? demoProducts.map(p => ({...p, masterCost: p.wholesalePrice, imageId: p.id, productType: 'INTERNAL', vendorId: 'soma-admin', stockLevel: 100})) as unknown as Product[] : liveCatalog;
+  const isLoading = isDemo ? false : catalogLoading;
 
   useEffect(() => {
     if (userProductsRef) {
@@ -62,6 +77,11 @@ export default function GlobalProductCatalogPage() {
   }, [userProductsRef]);
 
   const handleSync = async (product: Product) => {
+    if (isDemo) {
+        toast({ title: 'Demo Action', description: 'This is a demo. Syncing is disabled.'});
+        return;
+    }
+
     if (!firestore || !user) {
       toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
       return;
@@ -112,12 +132,6 @@ export default function GlobalProductCatalogPage() {
     }
   };
 
-  const getPlaceholderImage = (id: string) => {
-    return (
-      PlaceHolderImages.find((img) => img.id === id)?.imageUrl ||
-      'https://picsum.photos/seed/placeholder/100/100'
-    );
-  };
 
   return (
     <div className="space-y-8">
@@ -142,7 +156,7 @@ export default function GlobalProductCatalogPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-            {catalogLoading ? (
+            {isLoading ? (
                  <div className="flex h-64 w-full items-center justify-center">
                     <Loader2 className="h-12 w-12 animate-spin text-primary" />
                 </div>
@@ -168,7 +182,7 @@ export default function GlobalProductCatalogPage() {
                         <TableCell>
                             <div className="relative w-16 h-16 rounded-md overflow-hidden border border-border">
                             <Image
-                                src={getPlaceholderImage(product.imageId)}
+                                src={getProductImage(product)}
                                 alt={product.name}
                                 fill
                                 className="object-cover"
@@ -181,7 +195,7 @@ export default function GlobalProductCatalogPage() {
                         </TableCell>
                         <TableCell className="font-medium">{product.name}</TableCell>
                         <TableCell className="text-right font-mono">
-                            ${product.masterCost.toFixed(2)}
+                            ${(product.masterCost || 0).toFixed(2)}
                         </TableCell>
                         <TableCell className="text-right font-mono">
                             ${product.retailPrice.toFixed(2)}

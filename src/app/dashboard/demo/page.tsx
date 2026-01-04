@@ -49,7 +49,7 @@ export default function DashboardDemoPage() {
                             <CardContent className="p-0">
                                 {/* The DashboardController will render the specific view based on the activeTab */}
                                 <div className="p-6 bg-background rounded-b-lg">
-                                     <DashboardController planTier={activeTab} />
+                                     <DashboardController planTier={activeTab} isDemo={true} />
                                 </div>
                             </CardContent>
                         </Card>
