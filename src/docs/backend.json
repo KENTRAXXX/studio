@@ -1,3 +1,4 @@
+
 {
     "entities": {
         "store": {
@@ -132,6 +133,10 @@
                     "type": "boolean",
                     "description": "Indicates if the user has admin privileges."
                 },
+                "isDisabled": {
+                    "type": "boolean",
+                    "description": "A flag to disable a user's account."
+                },
                 "plan": {
                     "type": "string",
                     "description": "The user's subscription plan.",
@@ -188,6 +193,78 @@
                 }
             },
             "required": ["flowName", "error", "timestamp"]
+        },
+        "payoutRecord": {
+            "title": "Payout Record",
+            "description": "A record of a pending payout for a Mogul or Seller.",
+            "type": "object",
+            "properties": {
+                "userId": { "type": "string" },
+                "amount": { "type": "number" },
+                "currency": { "type": "string" },
+                "status": { "type": "string", "enum": ["pending", "paid"] },
+                "orderId": { "type": "string" },
+                "paymentReference": { "type": "string" },
+                "createdAt": { "type": "string", "format": "date-time" }
+            },
+            "required": ["userId", "amount", "currency", "status", "orderId", "paymentReference", "createdAt"]
+        },
+        "revenueRecord": {
+            "title": "Revenue Record",
+            "description": "A log of platform revenue from a transaction.",
+            "type": "object",
+            "properties": {
+                "amount": { "type": "number" },
+                "currency": { "type": "string" },
+                "orderId": { "type": "string" },
+                "paymentReference": { "type": "string" },
+                "createdAt": { "type": "string", "format": "date-time" }
+            },
+            "required": ["amount", "currency", "orderId", "paymentReference", "createdAt"]
+        },
+        "withdrawalRequest": {
+            "title": "Withdrawal Request",
+            "description": "A user's request to withdraw funds.",
+            "type": "object",
+            "properties": {
+                "userId": {
+                    "type": "string",
+                    "description": "The ID of the user making the request."
+                },
+                "amount": {
+                    "type": "number",
+                    "description": "The amount requested for withdrawal."
+                },
+                "bankDetails": {
+                    "type": "object",
+                    "properties": {
+                        "accountName": { "type": "string" },
+                        "accountNumber": { "type": "string" },
+                        "bankName": { "type": "string" }
+                    },
+                    "required": ["accountName", "accountNumber", "bankName"]
+                },
+                "status": {
+                    "type": "string",
+                    "description": "The status of the withdrawal request.",
+                    "enum": ["pending", "processing", "completed", "rejected"]
+                },
+                "reason": {
+                    "type": "string",
+                    "description": "Reason for declining the request."
+                },
+                "createdAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "The timestamp when the request was made."
+                },
+                "paidAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "The timestamp when the request was paid."
+                }
+            },
+            "required": ["userId", "amount", "bankDetails", "status", "createdAt"]
         }
     },
     "auth": {
@@ -195,28 +272,36 @@
     },
     "firestore": {
         "/stores/{storeId}": {
-            "schema": {
-                "$ref": "#/entities/clientStore"
-            },
+            "schema": { "$ref": "#/entities/clientStore" },
             "description": "Stores all the provisioned client storefronts."
         },
         "/stores/{storeId}/products/{productId}": {
-            "schema": {
-                "$ref": "#/entities/storefrontProduct"
-            },
+            "schema": { "$ref": "#/entities/storefrontProduct" },
             "description": "Products for a specific client store."
         },
         "/users/{userId}": {
-            "schema": {
-                "$ref": "#/entities/userProfile"
-            },
+            "schema": { "$ref": "#/entities/userProfile" },
             "description": "Stores user profile information."
         },
         "/admin_alerts/{alertId}": {
-            "schema": {
-                "$ref": "#/entities/adminAlert"
-            },
+            "schema": { "$ref": "#/entities/adminAlert" },
             "description": "Logs critical system errors for admin review."
+        },
+        "/payouts_pending/{payoutId}": {
+            "schema": { "$ref": "#/entities/payoutRecord" },
+            "description": "Tracks pending payouts for Sellers and Moguls."
+        },
+        "/payouts_completed/{payoutId}": {
+            "schema": { "$ref": "#/entities/payoutRecord" },
+            "description": "Tracks completed payouts for Sellers and Moguls."
+        },
+        "/revenue_logs/{revenueId}": {
+            "schema": { "$ref": "#/entities/revenueRecord" },
+            "description": "A log of all platform revenue."
+        },
+        "/withdrawal_requests/{withdrawalId}": {
+            "schema": { "$ref": "#/entities/withdrawalRequest" },
+            "description": "Stores user withdrawal requests."
         }
     }
 }
