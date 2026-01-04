@@ -51,14 +51,7 @@ type Order = {
   customer: { email: string };
   total: number;
   status: 'Pending' | 'Shipped' | 'Delivered';
-  shippingAddress: {
-      name: string;
-      street: string;
-      city: string;
-      state: string;
-      zip: string;
-      country: string;
-  }
+  cart: Array<{id: string, name: string, quantity: number, price: number}>;
 };
 
 export default function MyOrdersPage() {
@@ -160,12 +153,15 @@ export default function MyOrdersPage() {
                                 <DialogTitle className="text-primary font-headline">Order Details for {order.orderId}</DialogTitle>
                                 </DialogHeader>
                                 <div className="py-4 space-y-4">
-                                <h3 className="font-semibold">Shipping Address</h3>
+                                <h3 className="font-semibold">Items Purchased</h3>
                                 <Separator className="bg-border/20"/>
-                                <p className="text-sm">{order.shippingAddress?.name || 'N/A'}</p>
-                                <p className="text-sm text-muted-foreground">{order.shippingAddress?.street || 'N/A'}</p>
-                                <p className="text-sm text-muted-foreground">{order.shippingAddress ? `${order.shippingAddress.city}, ${order.shippingAddress.state} ${order.shippingAddress.zip}` : 'N/A'}</p>
-                                <p className="text-sm text-muted-foreground">{order.shippingAddress?.country || 'N/A'}</p>
+                                <ul className="space-y-2 text-sm">
+                                  {order.cart.map(item => (
+                                    <li key={item.id} className="flex justify-between">
+                                      <span>{item.name} x {item.quantity}</span>
+                                    </li>
+                                  ))}
+                                </ul>
                                 </div>
                             </DialogContent>
                             </Dialog>
@@ -173,8 +169,8 @@ export default function MyOrdersPage() {
                         </TableRow>
                     )) : (
                          <TableRow>
-                            <TableCell colSpan={6} className="h-24 text-center">
-                                No orders found yet.
+                            <TableCell colSpan={6} className="h-24 text-center text-gold-500 font-medium">
+                                Your first luxury sale is just a click away.
                             </TableCell>
                         </TableRow>
                     )}

@@ -25,21 +25,6 @@ export const storefrontProducts = [
   { id: 'sf-004', name: 'The Cartographer', price: 210.00, imageId: 'storefront-product-4' },
 ];
 
-export type Order = {
-    date: string;
-    orderId: string;
-    customerEmail: string;
-    totalAmount: number;
-    fulfillmentStatus: 'Processing' | 'Shipped' | 'Delivered';
-};
-
-export const myOrders: Order[] = [
-    { date: '2023-10-26', orderId: '#SOMA-8432', customerEmail: 'jane.doe@example.com', totalAmount: 400, fulfillmentStatus: 'Processing'},
-    { date: '2023-10-25', orderId: '#SOMA-8431', customerEmail: 'john.smith@example.com', totalAmount: 1200, fulfillmentStatus: 'Shipped'},
-    { date: '2023-10-23', orderId: '#SOMA-8429', customerEmail: 'emily.white@example.com', totalAmount: 650, fulfillmentStatus: 'Delivered'},
-    { date: '2023-10-22', orderId: '#SOMA-8428', customerEmail: 'michael.brown@example.com', totalAmount: 220, fulfillmentStatus: 'Delivered'},
-];
-
 export type StoreOwner = {
     id: string;
     name: string;
