@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -12,17 +11,22 @@ import { useCollection, useFirestore } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { useParams } from 'next/navigation';
+import { storefrontData as demoStorefrontData } from '@/lib/data';
 
 export default function StorefrontPage() {
   const params = useParams();
   const storeId = params.storeId as string;
+  const isDemoMode = storeId === 'demo';
+  
   const heroImage = PlaceHolderImages.find(img => img.id === 'storefront-hero');
   const { toast } = useToast();
   const { addToCart } = useCart();
   const firestore = useFirestore();
 
-  const productsRef = firestore ? collection(firestore, 'stores', storeId, 'products') : null;
-  const { data: storefrontData, loading: productsLoading } = useCollection(productsRef);
+  const productsRef = !isDemoMode && firestore ? collection(firestore, 'stores', storeId, 'products') : null;
+  const { data: liveStorefrontData, loading: productsLoading } = useCollection(productsRef);
+
+  const storefrontData = isDemoMode ? demoStorefrontData : liveStorefrontData;
 
   const handleAddToCart = (product: any) => {
     addToCart(product);
@@ -33,6 +37,12 @@ export default function StorefrontPage() {
   };
   
   const getPlaceholderImage = (id: string) => {
+    // For demo mode, we use the hardcoded mapping from data.ts
+    if (isDemoMode) {
+        return PlaceHolderImages.find(img => img.id === id)?.imageUrl || 'https://picsum.photos/seed/placeholder/600/400';
+    }
+    // For live stores, we assume the imageUrl is a full URL or an ID from the placeholder list
+    if (id?.startsWith('https')) return id;
     return PlaceHolderImages.find(img => img.id === id)?.imageUrl || 'https://picsum.photos/seed/placeholder/600/400';
   }
 
@@ -52,10 +62,10 @@ export default function StorefrontPage() {
         <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-10">
           <h1 className="text-5xl md:text-7xl font-extrabold font-headline text-primary animate-gold-pulse">
-            Elegance Redefined
+            {isDemoMode ? 'The SOMA Experience' : 'Elegance Redefined'}
           </h1>
           <p className="mt-4 text-lg md:text-xl max-w-2xl mx-auto">
-            Discover curated collections of timeless luxury.
+            {isDemoMode ? 'This is a preview of a live SOMA storefront.' : 'Discover curated collections of timeless luxury.'}
           </p>
           <Button size="lg" className="mt-8 h-12 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
             Shop Now
@@ -66,7 +76,7 @@ export default function StorefrontPage() {
       {/* Product Grid */}
       <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <h2 className="text-3xl font-bold text-center font-headline mb-10">Featured Products</h2>
-        {productsLoading ? (
+        {productsLoading && !isDemoMode ? (
             <div className="flex justify-center items-center h-64">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
             </div>
@@ -74,10 +84,10 @@ export default function StorefrontPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {storefrontData?.map((product: any) => (
                 <Card key={product.id} className="group overflow-hidden rounded-lg border-primary/20 bg-card hover:border-primary/50 transition-all duration-300 transform hover:-translate-y-2">
-                <Link href={`/store/${storeId}/product/${product.id}`} className="block">
+                <Link href={isDemoMode ? '#' : `/store/${storeId}/product/${product.id}`} className="block">
                     <div className="relative w-full aspect-square">
                     <Image
-                        src={getPlaceholderImage(product.imageUrl)}
+                        src={getPlaceholderImage(product.imageUrl || product.imageId)}
                         alt={product.name}
                         fill
                         className="object-cover transition-transform duration-500 group-hover:scale-110"
@@ -86,10 +96,10 @@ export default function StorefrontPage() {
                     </div>
                 </Link>
                 <CardContent className="p-4 text-center">
-                    <Link href={`/store/${storeId}/product/${product.id}`} className="block">
+                    <Link href={isDemoMode ? '#' : `/store/${storeId}/product/${product.id}`} className="block">
                     <h3 className="text-lg font-semibold truncate group-hover:text-primary">{product.name}</h3>
                     </Link>
-                    <p className="text-muted-foreground font-bold text-lg">${product.suggestedRetailPrice.toFixed(2)}</p>
+                    <p className="text-muted-foreground font-bold text-lg">${(product.suggestedRetailPrice || product.price).toFixed(2)}</p>
                     <Button 
                     className="mt-4 w-full btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground"
                     onClick={() => handleAddToCart(product)}
