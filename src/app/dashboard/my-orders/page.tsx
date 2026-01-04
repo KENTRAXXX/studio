@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Card,
   CardContent,
@@ -22,27 +24,74 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { myOrders } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
+import { useUser, useFirestore, useCollection } from "@/firebase";
+import { collection, query, orderBy } from "firebase/firestore";
+import { Loader2 } from "lucide-react";
+import { useMemo } from "react";
 
 const getStatusClasses = (status: string) => {
   switch (status) {
-    case "Processing":
+    case "Pending":
       return "bg-primary/20 text-primary border-primary/50 animate-gold-pulse";
     case "Shipped":
       return "bg-gray-200/80 text-black border-gray-300";
     case "Delivered":
       return "bg-primary text-primary-foreground border-primary";
     default:
-      return "";
+      return "bg-muted text-muted-foreground border-border";
+  }
+};
+
+type Order = {
+  id: string;
+  orderId: string;
+  createdAt: string;
+  customer: { email: string };
+  total: number;
+  status: 'Pending' | 'Shipped' | 'Delivered';
+  shippingAddress: {
+      name: string;
+      street: string;
+      city: string;
+      state: string;
+      zip: string;
+      country: string;
   }
 };
 
 export default function MyOrdersPage() {
-  const grossRevenue = 2470;
-  const wholesaleCost = 900;
-  const netProfit = grossRevenue - wholesaleCost;
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const ordersRef = useMemo(() => {
+    if (!firestore || !user) return null;
+    return query(
+        collection(firestore, `stores/${user.uid}/orders`), 
+        orderBy('createdAt', 'desc')
+    );
+  }, [firestore, user]);
+
+  const { data: orders, loading: ordersLoading } = useCollection<Order>(ordersRef);
+
+  const { grossRevenue, wholesaleCost, netProfit } = useMemo(() => {
+    if (!orders) return { grossRevenue: 0, wholesaleCost: 0, netProfit: 0 };
+    
+    // Note: wholesaleCost and netProfit are simplified here.
+    // A real calculation would require fetching each product in each order.
+    // For now, we'll base it on total revenue.
+    const revenue = orders.reduce((acc, order) => acc + order.total, 0);
+    const cost = revenue * 0.4; // Simplified assumption
+    
+    return {
+      grossRevenue: revenue,
+      wholesaleCost: cost,
+      netProfit: revenue - cost,
+    };
+
+  }, [orders]);
+
 
   return (
     <div className="space-y-8">
@@ -57,11 +106,11 @@ export default function MyOrdersPage() {
                 <p className="text-2xl font-bold text-foreground">${grossRevenue.toFixed(2)}</p>
             </div>
             <div className="text-center">
-                <p className="text-sm text-muted-foreground">SOMA Wholesale Cost</p>
+                <p className="text-sm text-muted-foreground">SOMA Wholesale Cost (Est.)</p>
                 <p className="text-2xl font-bold text-foreground">- ${wholesaleCost.toFixed(2)}</p>
             </div>
             <div className="text-center">
-                <p className="text-sm text-muted-foreground">Net Profit</p>
+                <p className="text-sm text-muted-foreground">Net Profit (Est.)</p>
                 <p className="text-2xl font-bold text-primary">${netProfit.toFixed(2)}</p>
             </div>
         </CardContent>
@@ -73,53 +122,65 @@ export default function MyOrdersPage() {
           <CardDescription>A list of all sales made on your custom domain.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Order ID</TableHead>
-                <TableHead>Customer Email</TableHead>
-                <TableHead className="text-right">Total Amount</TableHead>
-                <TableHead className="text-center">Fulfillment Status</TableHead>
-                <TableHead className="text-right">Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {myOrders.map((order) => (
-                <TableRow key={order.orderId}>
-                  <TableCell>{order.date}</TableCell>
-                  <TableCell className="font-medium">{order.orderId}</TableCell>
-                  <TableCell>{order.customerEmail}</TableCell>
-                  <TableCell className="text-right">${order.totalAmount.toFixed(2)}</TableCell>
-                  <TableCell className="text-center">
-                    <Badge className={cn("text-xs", getStatusClasses(order.fulfillmentStatus))}>
-                      {order.fulfillmentStatus}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm">View Details</Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-[425px] bg-card border-primary">
-                        <DialogHeader>
-                          <DialogTitle className="text-primary font-headline">Order Details for {order.orderId}</DialogTitle>
-                        </DialogHeader>
-                        <div className="py-4 space-y-4">
-                           <h3 className="font-semibold">Shipping Address</h3>
-                           <Separator className="bg-border/20"/>
-                           <p className="text-sm">Jane Doe</p>
-                           <p className="text-sm text-muted-foreground">123 Luxury Lane</p>
-                           <p className="text-sm text-muted-foreground">Beverly Hills, CA 90210</p>
-                           <p className="text-sm text-muted-foreground">United States</p>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+            {ordersLoading ? (
+                 <div className="flex h-64 w-full items-center justify-center">
+                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                </div>
+            ) : (
+                <Table>
+                    <TableHeader>
+                    <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Order ID</TableHead>
+                        <TableHead>Customer Email</TableHead>
+                        <TableHead className="text-right">Total Amount</TableHead>
+                        <TableHead className="text-center">Fulfillment Status</TableHead>
+                        <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                    {orders && orders.length > 0 ? orders.map((order) => (
+                        <TableRow key={order.orderId}>
+                        <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell className="font-medium">{order.orderId}</TableCell>
+                        <TableCell>{order.customer.email}</TableCell>
+                        <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
+                        <TableCell className="text-center">
+                            <Badge className={cn("text-xs", getStatusClasses(order.status))}>
+                            {order.status}
+                            </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                            <Dialog>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" size="sm">View Details</Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[425px] bg-card border-primary">
+                                <DialogHeader>
+                                <DialogTitle className="text-primary font-headline">Order Details for {order.orderId}</DialogTitle>
+                                </DialogHeader>
+                                <div className="py-4 space-y-4">
+                                <h3 className="font-semibold">Shipping Address</h3>
+                                <Separator className="bg-border/20"/>
+                                <p className="text-sm">{order.shippingAddress?.name || 'N/A'}</p>
+                                <p className="text-sm text-muted-foreground">{order.shippingAddress?.street || 'N/A'}</p>
+                                <p className="text-sm text-muted-foreground">{order.shippingAddress ? `${order.shippingAddress.city}, ${order.shippingAddress.state} ${order.shippingAddress.zip}` : 'N/A'}</p>
+                                <p className="text-sm text-muted-foreground">{order.shippingAddress?.country || 'N/A'}</p>
+                                </div>
+                            </DialogContent>
+                            </Dialog>
+                        </TableCell>
+                        </TableRow>
+                    )) : (
+                         <TableRow>
+                            <TableCell colSpan={6} className="h-24 text-center">
+                                No orders found yet.
+                            </TableCell>
+                        </TableRow>
+                    )}
+                    </TableBody>
+                </Table>
+            )}
         </CardContent>
       </Card>
     </div>
