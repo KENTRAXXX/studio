@@ -24,6 +24,7 @@ import {
   GraduationCap,
   Package,
   Landmark,
+  PiggyBank,
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 
@@ -38,12 +39,17 @@ const navItems = [
   { href: '/dashboard/analytics', icon: BarChart2, label: 'Analytics' },
   { href: '/dashboard/wallet', icon: Wallet, label: 'SOMA Wallet' },
   { href: '/dashboard/accessibility-checker', icon: Accessibility, label: 'A11y Checker' },
-  { href: '/dashboard/master-admin', icon: ShieldCheck, label: 'Master Admin' },
 ];
 
 const backstageNavItems = [
     { href: '/backstage/add-product', icon: Package, label: 'Add Product' },
     { href: '/backstage/finances', icon: Landmark, label: 'Finances' },
+]
+
+const adminNavItems = [
+    { href: '/admin/approval-queue', icon: ShieldCheck, label: 'Approval Queue' },
+    { href: '/admin/treasury', icon: PiggyBank, label: 'Treasury' },
+    { href: '/dashboard/master-admin', icon: ShieldCheck, label: 'Master Admin' },
 ]
 
 export default function DashboardLayout({
@@ -76,6 +82,19 @@ export default function DashboardLayout({
                 <div className="p-2 text-xs font-medium text-muted-foreground">Backstage</div>
             </SidebarMenuItem>
             {backstageNavItems.map((item) => (
+              <SidebarMenuItem key={item.href}>
+                <Link href={item.href}>
+                  <SidebarMenuButton tooltip={item.label}>
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+            ))}
+            <SidebarMenuItem>
+                <div className="p-2 text-xs font-medium text-muted-foreground">Admin</div>
+            </SidebarMenuItem>
+            {adminNavItems.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <Link href={item.href}>
                   <SidebarMenuButton tooltip={item.label}>

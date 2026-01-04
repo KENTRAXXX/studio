@@ -245,10 +245,19 @@
                     "description": "The status of the withdrawal request.",
                     "enum": ["pending", "processing", "completed", "rejected"]
                 },
+                "reason": {
+                    "type": "string",
+                    "description": "Reason for declining the request."
+                },
                 "createdAt": {
                     "type": "string",
                     "format": "date-time",
                     "description": "The timestamp when the request was made."
+                },
+                "paidAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "The timestamp when the request was paid."
                 }
             },
             "required": ["userId", "amount", "bankDetails", "status", "createdAt"]
@@ -277,6 +286,10 @@
         "/payouts_pending/{payoutId}": {
             "schema": { "$ref": "#/entities/payoutRecord" },
             "description": "Tracks pending payouts for Sellers and Moguls."
+        },
+        "/payouts_completed/{payoutId}": {
+            "schema": { "$ref": "#/entities/payoutRecord" },
+            "description": "Tracks completed payouts for Sellers and Moguls."
         },
         "/revenue_logs/{revenueId}": {
             "schema": { "$ref": "#/entities/revenueRecord" },
