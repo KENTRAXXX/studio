@@ -61,6 +61,60 @@
       "imageHint": "fountain pen"
     },
     {
+      "id": "demo-gadget-1",
+      "description": "Smart audio glasses",
+      "imageUrl": "https://images.unsplash.com/photo-1639722462825-17799e46a360?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxzbWFydCUyMGdsYXNzZXN8ZW58MHx8fHwxNzg4NTQ1MTM0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "smart glasses"
+    },
+    {
+      "id": "demo-gadget-2",
+      "description": "Portable holographic projector",
+      "imageUrl": "https://images.unsplash.com/photo-1707016194721-50e5b5655e3a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxwb3J0YWJsZSUyMHByb2plY3RvcnxlbnwwfHx8fDE3ODg1NDUxMzR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "portable projector"
+    },
+    {
+      "id": "demo-gadget-3",
+      "description": "Minimalist smart mug",
+      "imageUrl": "https://images.unsplash.com/photo-1563830722213-7a292d3a3e64?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxzbWFydCUyMG11Z3xlbnwwfHx8fDE3ODg1NDUxMzR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "smart mug"
+    },
+    {
+      "id": "demo-fashion-1",
+      "description": "Leather weekender bag",
+      "imageUrl": "https://images.unsplash.com/photo-1584917865442-de89df76afd3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxsZWF0aGVyJTIwd2Vla2VuZGVyJTIwYmFnfGVufDB8fHx8MTc4ODU0NTEzNHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "leather weekender"
+    },
+    {
+      "id": "demo-fashion-2",
+      "description": "Soft cashmere scarf",
+      "imageUrl": "https://images.unsplash.com/photo-1533658232478-f8d9551a3516?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxjYXNobWVyZSUyMHNjYXJmfGVufDB8fHx8MTc4ODU0NTEzNHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "cashmere scarf"
+    },
+    {
+      "id": "demo-fashion-3",
+      "description": "Modern tech jacket",
+      "imageUrl": "https://images.unsplash.com/photo-1592878912957-606275d59158?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHx0ZWNoJTIwamFja2V0fGVufDB8fHx8MTc4ODU0NTEzNHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "tech jacket"
+    },
+    {
+      "id": "demo-jewelry-1",
+      "description": "Braided steel bracelet",
+      "imageUrl": "https://images.unsplash.com/photo-1619543789536-15b22572a2b9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxicmFpZGVkJTIwc3RlZWwlMjBicmFjZWxldHxlbnwwfHx8fDE3ODg1NDUxMzR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "steel bracelet"
+    },
+    {
+      "id": "demo-jewelry-2",
+      "description": "Gold vermeil rings",
+      "imageUrl": "https://images.unsplash.com/photo-1601121141499-17ae80afc03a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxnb2xkJTIwdmVybWVpbCUyMHJpbmdzfGVufDB8fHx8MTc4ODU0NTEzNHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "gold rings"
+    },
+    {
+      "id": "demo-jewelry-3",
+      "description": "Skeleton automatic watch",
+      "imageUrl": "https://images.unsplash.com/photo-1614798679339-de256d116934?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBza2VsZXRvbiUyMHdhdGNofGVufDB8fHx8MTc4ODU0NTEzNHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "skeleton watch"
+    },
+    {
       "id": "storefront-hero",
       "description": "Abstract luxury background with golden geometric shapes",
       "imageUrl": "https://images.unsplash.com/photo-1764263996484-73fed2cf6b98?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxsdXh1cnklMjBhYnN0cmFjdHxlbnwwfHx8fDE3Njc0NzA4MzV8MA&ixlib=rb-4.1.0&q=80&w=1080",

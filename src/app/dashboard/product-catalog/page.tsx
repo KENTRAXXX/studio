@@ -24,6 +24,7 @@ import { Badge } from '@/components/ui/badge';
 import { useUser, useCollection, useFirestore } from '@/firebase';
 import { collection, doc, setDoc, getDocs } from 'firebase/firestore';
 import { demoProducts, type DemoProduct } from '@/lib/demo-data';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 type Product = {
   id: string;
@@ -39,11 +40,17 @@ type Product = {
 
 // A unified function to get an image URL
 const getProductImage = (product: Product) => {
-    if (product.imageSrc) {
-        return product.imageSrc;
+    // For demo products, imageId is the key to find the URL in PlaceHolderImages
+    const placeholder = PlaceHolderImages.find(p => p.id === product.imageId);
+    if (placeholder) {
+        return placeholder.imageUrl;
     }
-    // In a real app, you'd have a more robust lookup for imageId
-    return `https://picsum.photos/seed/${product.imageId || product.id}/100/100`;
+    // Fallback for live products that might have full URLs (though less common now)
+    if (product.imageId?.startsWith('https')) {
+        return product.imageId;
+    }
+    // Final fallback
+    return `https://picsum.photos/seed/${product.id}/100/100`;
 }
 
 export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: boolean }) {
@@ -64,7 +71,7 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
   }, [firestore, user, isDemo]);
 
   // Determine which data to use
-  const masterCatalog = isDemo ? demoProducts.map(p => ({...p, masterCost: p.wholesalePrice, imageId: p.id, productType: 'INTERNAL', vendorId: 'soma-admin', stockLevel: 100})) as unknown as Product[] : liveCatalog;
+  const masterCatalog = isDemo ? demoProducts.map(p => ({...p, masterCost: p.wholesalePrice, productType: 'INTERNAL', vendorId: 'soma-admin', stockLevel: 100})) as unknown as Product[] : liveCatalog;
   const isLoading = isDemo ? false : catalogLoading;
 
   useEffect(() => {
