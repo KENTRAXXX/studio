@@ -20,9 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { masterCatalog, storeOwners } from "@/lib/data";
-import { DollarSign, MoreHorizontal, Ban, Loader2, Bank, CheckCircle, Clock } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { DollarSign, Loader2, Bank, CheckCircle, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { collection, query } from 'firebase/firestore';
 
@@ -149,47 +147,6 @@ export default function MasterAdminPage() {
                                     <TableCell colSpan={6} className="text-center h-24">No pending withdrawals.</TableCell>
                                 </TableRow>
                             )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-
-            <Card className="border-primary/50">
-                <CardHeader>
-                    <CardTitle>User Management</CardTitle>
-                    <CardDescription>Showing {storeOwners.length} of 1,000+ store owners.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Owner Name</TableHead>
-                                <TableHead>Email</TableHead>
-                                <TableHead>Store URL</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {storeOwners.map((owner) => (
-                                <TableRow key={owner.id}>
-                                    <TableCell>{owner.name}</TableCell>
-                                    <TableCell>{owner.email}</TableCell>
-                                    <TableCell>{owner.storeUrl}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={owner.status === 'Active' ? 'default' : 'destructive'} className={owner.status === 'Active' ? 'bg-green-600/20 text-green-400 border-green-600/50' : ''}>
-                                            {owner.status}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        {owner.status === 'Active' && 
-                                            <Button variant="destructive" size="sm">
-                                                <Ban className="mr-2 h-4 w-4"/> Disable Store
-                                            </Button>
-                                        }
-                                    </TableCell>
-                                </TableRow>
-                            ))}
                         </TableBody>
                     </Table>
                 </CardContent>

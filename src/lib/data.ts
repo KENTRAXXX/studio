@@ -18,28 +18,6 @@ export const masterCatalog: Product[] = [
   { id: 'prod-008', name: 'Scribe Fountain Pen', masterCost: 150, retailPrice: 400, stockLevel: 40, imageId: 'product-8' },
 ];
 
-export const storefrontProducts = [
-  { id: 'sf-001', name: 'Elysian Chair', price: 1250.00, imageId: 'storefront-product-1' },
-  { id: 'sf-002', name: 'Terran Vase Set', price: 380.00, imageId: 'storefront-product-2' },
-  { id: 'sf-003', name: 'Chronos Minimalist', price: 890.00, imageId: 'storefront-product-3' },
-  { id: 'sf-004', name: 'The Cartographer', price: 210.00, imageId: 'storefront-product-4' },
-];
-
-export type StoreOwner = {
-    id: string;
-    name: string;
-    email: string;
-    storeUrl: string;
-    status: 'Active' | 'Inactive';
-};
-
-export const storeOwners: StoreOwner[] = [
-    { id: 'user_1', name: 'Alice Johnson', email: 'alice.j@e-com.co', storeUrl: 'alicej.soma.com', status: 'Active' },
-    { id: 'user_2', name: 'Bob Williams', email: 'bob.w@e-com.co', storeUrl: 'bobw.soma.com', status: 'Active' },
-    { id: 'user_3', name: 'Charlie Davis', email: 'charlie.d@e-com.co', storeUrl: 'charlied.soma.com', status: 'Inactive' },
-    { id: 'user_4', name: 'Diana Miller', email: 'diana.m@e-com.co', storeUrl: 'dianam.soma.com', status: 'Active' },
-];
-
 export type StorefrontProduct = {
   id: string;
   name: string;
