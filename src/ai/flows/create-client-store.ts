@@ -21,6 +21,7 @@ const { firestore } = initializeFirebase();
 const CreateClientStoreInputSchema = z.object({
   userId: z.string().describe('The ID of the user for whom the store is being created.'),
   plan: z.string().describe('The subscription plan (e.g., "monthly", "lifetime").'),
+  planTier: z.enum(['MERCHANT', 'MOGUL', 'SCALER', 'SELLER', 'ENTERPRISE']),
   template: z.string().describe('The selected template for the store.'),
   logoUrl: z.string().optional().describe("URL of the store's logo."),
   faviconUrl: z.string().optional().describe("URL of the store's favicon."),
@@ -36,10 +37,10 @@ export type CreateClientStoreOutput = z.infer<typeof CreateClientStoreOutputSche
 
 
 /**
- * Creates a new client store in Firestore, including cloning master products.
+ * Creates a new client store in Firestore, including cloning master products for dropship tiers.
  * This is triggered after a user's payment is successfully processed.
  *
- * @param input - The user ID and branding details for the new store.
+ * @param input - The user ID, plan, tier, and branding details for the new store.
  * @returns The ID of the newly created store and a success message.
  */
 export async function createClientStore(input: CreateClientStoreInput): Promise<CreateClientStoreOutput> {
@@ -52,78 +53,79 @@ const createClientStoreFlow = ai.defineFlow(
     inputSchema: CreateClientStoreInputSchema,
     outputSchema: CreateClientStoreOutputSchema,
   },
-  async ({ userId, plan, template, logoUrl, faviconUrl }) => {
+  async ({ userId, plan, planTier, template, logoUrl, faviconUrl }) => {
     try {
         const instanceId = randomUUID();
         const storeRef = doc(firestore, 'stores', userId);
         const userRef = doc(firestore, 'users', userId);
-        const productsRef = collection(storeRef, 'products');
 
         // 1. Update user document to grant access and log payment
         await updateDoc(userRef, {
             hasAccess: true,
             plan: plan,
             paidAt: new Date().toISOString(), // Timestamp of payment confirmation
-            userRole: 'MOGUL', // Assign the MOGUL role
+            userRole: 'MOGUL', // This might need to be more dynamic based on planTier
+            planTier: planTier,
         });
 
         // 2. Create the main store document
         const defaultStoreConfig = {
-        userId: userId,
-        instanceId: instanceId,
-        theme: template === 'gold-standard' ? 'Gold Standard' : template === 'midnight-pro' ? 'Midnight Pro' : 'The Minimalist',
-        currency: 'USD',
-        createdAt: new Date().toISOString(), // Timestamp of store creation
-        storeName: "My SOMA Store", // Default name, user can change later
-        logoUrl: logoUrl || '',
-        faviconUrl: faviconUrl || '',
-        heroImageUrl: '',
-        heroTitle: 'Welcome to Your Store',
-        heroSubtitle: 'Discover curated collections of timeless luxury.',
-        status: 'Live', // Set status to Live
+            userId: userId,
+            instanceId: instanceId,
+            theme: template === 'gold-standard' ? 'Gold Standard' : template === 'midnight-pro' ? 'Midnight Pro' : 'The Minimalist',
+            currency: 'USD',
+            createdAt: new Date().toISOString(), // Timestamp of store creation
+            storeName: "My SOMA Store", // Default name, user can change later
+            logoUrl: logoUrl || '',
+            faviconUrl: faviconUrl || '',
+            heroImageUrl: '',
+            heroTitle: 'Welcome to Your Store',
+            heroSubtitle: 'Discover curated collections of timeless luxury.',
+            status: 'Live', // Set status to Live
         };
 
         await setDoc(storeRef, defaultStoreConfig);
 
-        // 3. Deep Clone: Copy top 10 products from master catalog
-        const batch = writeBatch(firestore);
-        const top10Products = masterCatalog.slice(0, 10);
+        // 3. Conditionally clone products for Dropship tiers (Mogul, Scaler)
+        if (planTier === 'MOGUL' || planTier === 'SCALER' || planTier === 'ENTERPRISE') {
+            const productsRef = collection(storeRef, 'products');
+            const batch = writeBatch(firestore);
+            const top10Products = masterCatalog.slice(0, 10);
 
-        top10Products.forEach(product => {
-            const newProductRef = doc(productsRef, product.id);
-            const newProductData = {
-                name: product.name,
-                suggestedRetailPrice: product.retailPrice,
-                wholesalePrice: product.masterCost,
-                description: `A high-quality ${product.name.toLowerCase()} from our master collection.`, // Placeholder description
-                imageUrl: product.imageId, // We'll use the imageId to resolve the URL on the frontend
-                productType: 'INTERNAL',
-                vendorId: 'admin', // Internal products are owned by the platform
-            };
-            batch.set(newProductRef, newProductData);
-        });
+            top10Products.forEach(product => {
+                const newProductRef = doc(productsRef, product.id);
+                const newProductData = {
+                    name: product.name,
+                    suggestedRetailPrice: product.retailPrice,
+                    wholesalePrice: product.masterCost,
+                    description: `A high-quality ${product.name.toLowerCase()} from our master collection.`,
+                    imageUrl: product.imageId,
+                    productType: 'INTERNAL',
+                    vendorId: 'admin',
+                    isManagedBySoma: true,
+                };
+                batch.set(newProductRef, newProductData);
+            });
 
-        await batch.commit();
-
+            await batch.commit();
+        }
 
         // 4. Placeholder for sending a welcome email
         console.log(`
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         EMAIL SIMULATION
         To: user with ID ${userId}
-        From: support@soma.com
         Subject: Welcome to SOMA! Your Store is LIVE!
 
         Your payment was successful and your store is now ready!
-        Please point your domain's A record to the IP address: 123.456.78.9
-        You can now manage your store at: /dashboard/my-store
+        You can now manage your store at: /dashboard
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         `);
         
         return {
         storeId: userId,
         instanceId,
-        message: 'Client store created and products cloned successfully.',
+        message: 'Client store created successfully.',
         };
     } catch (error: any) {
         console.error('Error in createClientStoreFlow:', error);
@@ -142,5 +144,3 @@ const createClientStoreFlow = ai.defineFlow(
     }
   }
 );
-
-    

@@ -1,14 +1,16 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Rocket, UploadCloud, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Rocket, UploadCloud, ChevronRight, ChevronLeft, ShoppingBag, Boxes } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { createClientStore } from '@/ai/flows/create-client-store';
@@ -16,6 +18,9 @@ import { Progress } from '@/components/ui/progress';
 import { AnimatePresence, motion } from 'framer-motion';
 import { masterCatalog } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useUser, useFirestore } from '@/firebase';
+import { collection, addDoc } from 'firebase/firestore';
+
 
 const progressSteps = [
     { progress: 25, message: 'Securing your custom domain...' },
@@ -23,6 +28,36 @@ const progressSteps = [
     { progress: 75, message: 'Optimizing luxury theme assets...' },
     { progress: 100, message: 'Store Live!' },
 ];
+
+const ChoosePathStep = ({ onSelectPath }: { onSelectPath: (path: 'MERCHANT' | 'DROPSHIP') => void }) => {
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="text-center"
+        >
+            <h2 className="text-2xl font-bold font-headline text-primary mb-2">Choose Your Path</h2>
+            <p className="text-muted-foreground mb-8">How do you want to build your empire?</p>
+            <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                <Card onClick={() => onSelectPath('MERCHANT')} className="cursor-pointer hover:border-primary/80 hover:shadow-lg transition-all duration-200">
+                    <CardHeader className="items-center">
+                        <ShoppingBag className="h-12 w-12 text-primary mb-4" />
+                        <CardTitle>I have my own products.</CardTitle>
+                        <CardDescription>Sell your own unique goods. You manage inventory and fulfillment.</CardDescription>
+                    </CardHeader>
+                </Card>
+                <Card onClick={() => onSelectPath('DROPSHIP')} className="cursor-pointer hover:border-primary/80 hover:shadow-lg transition-all duration-200">
+                     <CardHeader className="items-center">
+                        <Boxes className="h-12 w-12 text-primary mb-4" />
+                        <CardTitle>I want to dropship.</CardTitle>
+                        <CardDescription>Sell products from the SOMA Luxury Catalog without holding inventory.</CardDescription>
+                    </CardHeader>
+                </Card>
+            </div>
+        </motion.div>
+    )
+}
 
 const NameStep = ({ storeName, setStoreName, onNext }: { storeName: string, setStoreName: (name: string) => void, onNext: () => void }) => {
     return (
@@ -121,7 +156,7 @@ const BrandingStep = ({ onNext, onBack, logoFile, setLogoFile, faviconFile, setF
                     <ChevronLeft className="mr-2 h-5 w-5" /> Back
                 </Button>
                 <Button size="lg" className="h-12" onClick={onNext}>
-                    Next: Curate Collection <ChevronRight className="ml-2 h-5 w-5" />
+                    Next <ChevronRight className="ml-2 h-5 w-5" />
                 </Button>
             </div>
         </motion.div>
@@ -199,10 +234,87 @@ const CollectionStep = ({ onBack, onLaunch, selectedProducts, setSelectedProduct
     );
 }
 
+const ProductUploadStep = ({ onBack, onLaunch }: { onBack: () => void, onLaunch: (firstProduct: any) => void }) => {
+    const [productName, setProductName] = useState('');
+    const [price, setPrice] = useState('');
+    const [stock, setStock] = useState('');
+    const [description, setDescription] = useState('');
+    const [imageUrl, setImageUrl] = useState('');
+
+    const canLaunch = productName && price && stock && description && imageUrl;
+
+    const handleLaunch = () => {
+        const firstProduct = {
+            name: productName,
+            suggestedRetailPrice: parseFloat(price),
+            stock: parseInt(stock, 10),
+            description,
+            imageUrl,
+            isManagedBySoma: false,
+            productType: 'INTERNAL', // Or whatever is appropriate
+        };
+        onLaunch(firstProduct);
+    };
+
+    return (
+         <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -50 }}
+            className="space-y-8"
+        >
+             <div>
+                <h2 className="text-2xl font-bold font-headline text-primary">Upload Your First Product</h2>
+                <p className="text-muted-foreground">Add a signature item to get your store started.</p>
+            </div>
+             <div className="space-y-4">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div className="space-y-2">
+                        <Label htmlFor="product-name">Product Name</Label>
+                        <Input id="product-name" value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="e.g., 'The Olympian Chronograph'"/>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="image-url">Product Image URL</Label>
+                        <Input id="image-url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://your-cdn.com/image.jpg"/>
+                    </div>
+                 </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe your product..."/>
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div className="space-y-2">
+                        <Label htmlFor="price">Price ($)</Label>
+                        <Input id="price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="650.00"/>
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="stock">Stock Quantity</Label>
+                        <Input id="stock" type="number" value={stock} onChange={(e) => setStock(e.target.value)} placeholder="100"/>
+                    </div>
+                 </div>
+             </div>
+             <div className="flex justify-between items-center">
+                 <Button variant="ghost" onClick={onBack}>
+                    <ChevronLeft className="mr-2 h-5 w-5" /> Back
+                </Button>
+                <Button 
+                    size="lg" 
+                    className="w-full md:w-auto h-16 text-xl btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground"
+                    onClick={handleLaunch}
+                    disabled={!canLaunch}
+                >
+                    <Rocket className="mr-2 h-5 w-5"/> 
+                    LAUNCH MY EMPIRE
+                </Button>
+            </div>
+         </motion.div>
+    )
+}
+
 const DeploymentOverlay = ({ messages, onComplete }: { messages: string[], onComplete: () => void }) => {
     const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 
-    React.useEffect(() => {
+    useState(() => {
         if (currentMessageIndex < messages.length - 1) {
             const timer = setTimeout(() => {
                 setCurrentMessageIndex(prev => prev + 1);
@@ -212,7 +324,7 @@ const DeploymentOverlay = ({ messages, onComplete }: { messages: string[], onCom
             const finalTimer = setTimeout(onComplete, 1500);
             return () => clearTimeout(finalTimer);
         }
-    }, [currentMessageIndex, messages, onComplete]);
+    });
 
     return (
         <motion.div
@@ -252,7 +364,8 @@ const DeploymentOverlay = ({ messages, onComplete }: { messages: string[], onCom
 
 
 export default function MyStorePage() {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0); // Start at step 0 for path selection
+  const [storeType, setStoreType] = useState<'MERCHANT' | 'DROPSHIP' | null>(null);
   const [storeName, setStoreName] = useState('');
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -261,37 +374,44 @@ export default function MyStorePage() {
 
   const { toast } = useToast();
   const router = useRouter();
+  const { user } = useUser();
+  const firestore = useFirestore();
 
-  const handleLaunch = async () => {
+  const handleLaunch = async (firstProduct?: any) => {
+    if (!user || !firestore || !storeType) return;
     setIsLaunching(true);
 
-    // No need to show progress here as the overlay will handle it.
-    // The backend call will happen in the background.
     try {
-        const userId = "my-test-store"; 
+        const userId = user.uid; 
         
         const logoUrl = logoFile ? `/uploads/${logoFile.name}` : '';
         const faviconUrl = faviconFile ? `/uploads/${faviconFile.name}` : '';
+        
+        const planTier = storeType === 'MERCHANT' ? 'MERCHANT' : 'MOGUL';
 
-        // The 'template' parameter is no longer needed in this flow,
-        // but the backend function might still expect it. We send a default.
         await createClientStore({
             userId,
-            plan: 'lifetime',
-            template: 'gold-standard', // Default template
+            plan: 'lifetime', // This should be dynamic based on actual payment
+            planTier,
+            template: 'gold-standard',
             logoUrl,
             faviconUrl,
         });
 
+        if (storeType === 'MERCHANT' && firstProduct) {
+            const productsRef = collection(firestore, 'stores', userId, 'products');
+            await addDoc(productsRef, {
+                ...firstProduct,
+                vendorId: userId, // Merchant is their own vendor
+            });
+        }
+
     } catch (error: any) {
-        // If the background call fails, we still proceed with the UI,
-        // but show an error toast.
         toast({
             variant: "destructive",
             title: 'Launch Failed',
             description: error.message || 'An unexpected error occurred in the background.',
         });
-        // We don't block the UI flow, so we don't set isLaunching to false here.
     }
   };
 
@@ -302,9 +422,38 @@ export default function MyStorePage() {
       });
       router.push('/dashboard');
   }
+  
+  const handlePathSelection = (path: 'MERCHANT' | 'DROPSHIP') => {
+      setStoreType(path);
+      setStep(1);
+  }
 
   const nextStep = () => setStep(s => s + 1);
   const prevStep = () => setStep(s => s - 1);
+
+  const wizardSteps = useMemo(() => {
+    const commonSteps = [
+        <NameStep key="step1" storeName={storeName} setStoreName={setStoreName} onNext={nextStep} />,
+        <BrandingStep key="step2" onNext={nextStep} onBack={prevStep} logoFile={logoFile} setLogoFile={setLogoFile} faviconFile={faviconFile} setFaviconFile={setFaviconFile} />
+    ];
+    if (storeType === 'MERCHANT') {
+        return [
+            ...commonSteps,
+            <ProductUploadStep key="step3-merchant" onBack={prevStep} onLaunch={handleLaunch} />
+        ];
+    }
+    if (storeType === 'DROPSHIP') {
+        return [
+            ...commonSteps,
+            <CollectionStep key="step3-dropship" onBack={prevStep} onLaunch={() => handleLaunch()} selectedProducts={selectedProducts} setSelectedProducts={setSelectedProducts} />
+        ];
+    }
+    return [];
+  }, [storeType, storeName, logoFile, faviconFile, selectedProducts]);
+
+  const currentStepComponent = step === 0 
+    ? <ChoosePathStep onSelectPath={handlePathSelection} />
+    : wizardSteps[step - 1];
 
   return (
     <div className="space-y-8">
@@ -320,45 +469,16 @@ export default function MyStorePage() {
       <div className="mb-12">
         <h1 className="text-3xl font-bold font-headline text-primary">SOMA Launch Wizard</h1>
         <p className="text-muted-foreground">Follow the steps to configure and launch your new luxury storefront.</p>
-        <Progress value={(step / 3) * 100} className="w-full h-2 mt-4 bg-muted border border-primary/20" />
+        <Progress value={storeType ? (step / wizardSteps.length) * 100 : 0} className="w-full h-2 mt-4 bg-muted border border-primary/20" />
       </div>
       
       <Card className="border-primary/50">
         <CardContent className="p-6 md:p-10">
             <AnimatePresence mode="wait">
-                {step === 1 && (
-                    <NameStep 
-                        key="step1"
-                        storeName={storeName} 
-                        setStoreName={setStoreName}
-                        onNext={nextStep} 
-                    />
-                )}
-                {step === 2 && (
-                    <BrandingStep 
-                        key="step2"
-                        onNext={nextStep} 
-                        onBack={prevStep}
-                        logoFile={logoFile}
-                        setLogoFile={setLogoFile}
-                        faviconFile={faviconFile}
-                        setFaviconFile={setFaviconFile}
-                    />
-                )}
-                 {step === 3 && (
-                    <CollectionStep
-                        key="step3" 
-                        onBack={prevStep}
-                        onLaunch={handleLaunch}
-                        selectedProducts={selectedProducts}
-                        setSelectedProducts={setSelectedProducts}
-                    />
-                )}
+                {currentStepComponent}
             </AnimatePresence>
         </CardContent>
       </Card>
     </div>
   );
 }
-
-    
