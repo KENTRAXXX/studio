@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useUser, useFirestore, useCollection, useDoc } from '@/firebase';
+import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { useUserProfile } from '@/firebase/user-profile-provider';
 
@@ -33,9 +33,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
-import { GraduationCap, PlayCircle, Lock, Crown, Loader2, Check, ExternalLink } from 'lucide-react';
+import { GraduationCap, PlayCircle, Crown, Loader2, Check, ExternalLink } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
 type TrainingModule = {
