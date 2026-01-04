@@ -133,6 +133,10 @@
                     "type": "boolean",
                     "description": "Indicates if the user has paid for access to the platform."
                 },
+                "hasAcceptedTerms": {
+                    "type": "boolean",
+                    "description": "Indicates if the user has accepted the terms of service."
+                },
                 "isAdmin": {
                     "type": "boolean",
                     "description": "Indicates if the user has admin privileges."
@@ -174,7 +178,7 @@
                     }
                 }
             },
-            "required": ["email", "hasAccess", "userRole"]
+            "required": ["email", "hasAccess", "userRole", "hasAcceptedTerms"]
         },
         "adminAlert": {
             "title": "Admin Alert",

@@ -52,6 +52,7 @@ export function useSignUp() {
       await setDoc(userDocRef, {
         email: user.email,
         hasAccess: false,
+        hasAcceptedTerms: false, // Default to false on signup
         userRole: userRole,
         planTier: credentials.planTier,
         plan: credentials.plan,
