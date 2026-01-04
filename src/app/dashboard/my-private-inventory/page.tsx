@@ -1,13 +1,12 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import Image from 'next/image';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Package, PlusCircle, Upload, Loader2 } from "lucide-react";
+import { Package, PlusCircle, Upload, Loader2, Warehouse } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -22,6 +21,7 @@ import { useUserProfile } from '@/firebase/user-profile-provider';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { AddPrivateProductModal } from '@/components/AddPrivateProductModal';
 
 type PrivateProduct = {
   id: string;
@@ -36,6 +36,7 @@ export default function MyPrivateInventoryPage() {
   const { userProfile, loading: profileLoading } = useUserProfile();
   const firestore = useFirestore();
   const router = useRouter();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const isLoading = userLoading || profileLoading;
 
@@ -74,6 +75,8 @@ export default function MyPrivateInventoryPage() {
   }
 
   return (
+    <>
+    <AddPrivateProductModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} />
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -85,11 +88,9 @@ export default function MyPrivateInventoryPage() {
                 <Upload className="mr-2 h-5 w-5"/>
                 Import from CSV
             </Button>
-            <Button asChild className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
-                <Link href="/backstage/add-product">
-                    <PlusCircle className="mr-2 h-5 w-5"/>
-                    Add New Product
-                </Link>
+            <Button onClick={() => setIsModalOpen(true)} className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+                <PlusCircle className="mr-2 h-5 w-5"/>
+                Add New Product
             </Button>
         </div>
       </div>
@@ -104,6 +105,16 @@ export default function MyPrivateInventoryPage() {
                  <div className="flex h-64 w-full items-center justify-center">
                     <Loader2 className="h-12 w-12 animate-spin text-primary" />
                 </div>
+               ) : !privateProducts || privateProducts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center text-center h-64 border-2 border-dashed border-primary/20 rounded-lg">
+                    <Warehouse className="h-16 w-16 text-muted-foreground mb-4" />
+                    <h3 className="text-xl font-bold font-headline text-primary">Your Warehouse is Empty</h3>
+                    <p className="text-muted-foreground mt-2 mb-6">Add your first product to start selling.</p>
+                    <Button onClick={() => setIsModalOpen(true)} className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+                        <PlusCircle className="mr-2 h-5 w-5"/>
+                        Upload Your First Luxury Item
+                    </Button>
+                </div>
                ) : (
                 <Table>
                     <TableHeader>
@@ -116,42 +127,35 @@ export default function MyPrivateInventoryPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {privateProducts && privateProducts.length > 0 ? (
-                            privateProducts.map((product) => (
-                                <TableRow key={product.id}>
-                                    <TableCell>
-                                        <div className="relative w-16 h-16 rounded-md overflow-hidden border border-border">
-                                            <Image
-                                                src={getPlaceholderImage(product.imageUrl)}
-                                                alt={product.name}
-                                                fill
-                                                className="object-cover"
-                                                data-ai-hint="product photo"
-                                            />
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="font-medium">{product.name}</TableCell>
-                                    <TableCell className="text-right font-mono">${product.suggestedRetailPrice.toFixed(2)}</TableCell>
-                                    <TableCell className="text-center">
-                                        <Badge>{product.stock || 0}</Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="outline" size="sm">Edit</Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center">
-                                    You haven't added any private products yet.
+                        {privateProducts.map((product) => (
+                            <TableRow key={product.id}>
+                                <TableCell>
+                                    <div className="relative w-16 h-16 rounded-md overflow-hidden border border-border">
+                                        <Image
+                                            src={getPlaceholderImage(product.imageUrl)}
+                                            alt={product.name}
+                                            fill
+                                            className="object-cover"
+                                            data-ai-hint="product photo"
+                                        />
+                                    </div>
+                                </TableCell>
+                                <TableCell className="font-medium">{product.name}</TableCell>
+                                <TableCell className="text-right font-mono">${product.suggestedRetailPrice.toFixed(2)}</TableCell>
+                                <TableCell className="text-center">
+                                    <Badge>{product.stock || 0}</Badge>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    <Button variant="outline" size="sm">Edit</Button>
                                 </TableCell>
                             </TableRow>
-                        )}
+                        ))}
                     </TableBody>
                 </Table>
                )}
           </CardContent>
       </Card>
     </div>
+    </>
   );
 }

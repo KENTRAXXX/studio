@@ -111,6 +111,10 @@
                 "vendorId": {
                     "type": "string",
                     "description": "The ID of the user who owns/supplies the product."
+                },
+                "isManagedBySoma": {
+                    "type": "boolean",
+                    "description": "Flag to distinguish SOMA-managed products from user-managed ones."
                 }
             },
             "required": ["name", "suggestedRetailPrice", "imageUrl", "productType", "vendorId"]
