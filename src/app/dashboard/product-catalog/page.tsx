@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
-export default function ProductCatalogPage() {
+export default function GlobalProductCatalogPage() {
   const { toast } = useToast();
 
   const handleSync = (productName: string) => {
@@ -36,11 +36,11 @@ export default function ProductCatalogPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
             <Gem className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold font-headline">Master Product Catalog</h1>
+            <h1 className="text-3xl font-bold font-headline">Global Product Catalog</h1>
         </div>
         <Button className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
             <PlusCircle className="mr-2 h-5 w-5"/>
-            Add New Product
+            Add to Global Catalog
         </Button>
       </div>
 

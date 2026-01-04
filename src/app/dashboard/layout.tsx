@@ -22,13 +22,15 @@ import {
   ShoppingBag,
   ShieldCheck,
   GraduationCap,
+  Package,
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
   { href: '/dashboard/my-store', icon: Store, label: 'My Store' },
-  { href: '/dashboard/product-catalog', icon: Boxes, label: 'Product Catalog' },
+  { href: '/dashboard/global-product-catalog', icon: Boxes, label: 'Global Product Catalog' },
+  { href: '/dashboard/my-private-inventory', icon: Package, label: 'My Private Inventory' },
   { href: '/dashboard/my-orders', icon: ShoppingBag, label: 'My Orders' },
   { href: '/dashboard/training-center', icon: GraduationCap, label: 'Training Center' },
   { href: '/dashboard/domain-settings', icon: Globe, label: 'Domain Settings' },
