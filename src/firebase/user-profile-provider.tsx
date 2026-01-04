@@ -16,6 +16,7 @@ type UserProfile = {
   paidAt?: string;
   planTier?: 'MERCHANT' | 'MOGUL' | 'SCALER' | 'SELLER' | 'ENTERPRISE';
   completedLessons?: string[];
+  isDisabled?: boolean;
 };
 
 interface UserProfileContextValue {
@@ -42,15 +43,28 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
   const { data: userProfile, loading: profileLoading } = useDoc<UserProfile>(userDocRef);
 
   useEffect(() => {
-    const isLoginPage = pathname.startsWith('/signup') || pathname.startsWith('/plan-selection') || pathname === '/';
+    if (profileLoading) return;
+
+    // Public/Auth routes that don't require checks
+    const isPublicRoute = pathname.startsWith('/signup') || pathname.startsWith('/plan-selection') || pathname === '/' || pathname.startsWith('/store');
     const isLegalPage = pathname.startsWith('/legal');
-    
-    // If we have a user profile and they haven't accepted the terms,
-    // and they are not already on the legal page or a public/login page, redirect them.
-    if (userProfile && userProfile.hasAcceptedTerms === false && !isLegalPage && !isLoginPage) {
-      router.push('/legal/terms');
+    const isAccessDeniedPage = pathname === '/access-denied';
+
+    if (userProfile) {
+       // 1. Check if account is disabled
+       if (userProfile.isDisabled && !isAccessDeniedPage) {
+         router.push('/access-denied');
+         return;
+       }
+      
+       // 2. Check if terms have been accepted
+       if (userProfile.hasAcceptedTerms === false && !isLegalPage && !isPublicRoute) {
+         router.push('/legal/terms');
+         return;
+       }
     }
-  }, [userProfile, pathname, router]);
+
+  }, [userProfile, profileLoading, pathname, router]);
 
   const value = useMemo(() => ({
     userProfile: userProfile ? { ...userProfile, id: user?.uid } : null,

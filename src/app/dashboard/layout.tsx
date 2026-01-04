@@ -51,7 +51,6 @@ const adminNavItems = [
     { href: '/admin/approval-queue', icon: ShieldCheck, label: 'Approval Queue' },
     { href: '/admin/treasury', icon: PiggyBank, label: 'Treasury' },
     { href: '/admin/users', icon: Users, label: 'User Management' },
-    { href: '/dashboard/master-admin', icon: ShieldCheck, label: 'Master Admin' },
 ]
 
 export default function DashboardLayout({
