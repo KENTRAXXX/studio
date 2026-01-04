@@ -27,6 +27,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Bank, Loader2, Send } from 'lucide-react';
+import { Separator } from './ui/separator';
 
 const formSchema = z.object({
   amount: z.coerce.number().positive({ message: 'Amount must be greater than zero.' }),
@@ -61,7 +62,9 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance }: With
   });
 
   const requestedAmount = form.watch('amount');
-  const isAmountInvalid = requestedAmount > availableBalance;
+  const withdrawalFee = requestedAmount * 0.03;
+  const totalDeduction = requestedAmount + withdrawalFee;
+  const isAmountInvalid = totalDeduction > availableBalance;
 
   const handleSubmit = async (data: FormValues) => {
     if (!user || !firestore) {
@@ -70,7 +73,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance }: With
     }
 
     if (isAmountInvalid) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Requested amount exceeds available balance.' });
+        toast({ variant: 'destructive', title: 'Error', description: 'Requested amount plus fee exceeds available balance.' });
         return;
     }
     
@@ -79,7 +82,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance }: With
       const withdrawalRef = collection(firestore, 'withdrawal_requests');
       await addDoc(withdrawalRef, {
         userId: user.uid,
-        amount: data.amount,
+        amount: data.amount, // This is the net amount for the user
         bankDetails: {
           accountName: data.accountName,
           accountNumber: data.accountNumber,
@@ -116,7 +119,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance }: With
             Request a Withdrawal
           </DialogTitle>
           <DialogDescription>
-            Enter the amount and your bank details. Requests are processed within 24-48 hours.
+            Enter the amount and your bank details. Requests are processed within 24-48 hours. A 3% fee applies to all withdrawals.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -135,10 +138,25 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance }: With
                     <Input type="number" step="0.01" {...field} />
                   </FormControl>
                   <FormMessage />
-                  {isAmountInvalid && <p className="text-sm font-medium text-destructive">Insufficient funds.</p>}
                 </FormItem>
               )}
             />
+
+            <div className="space-y-2 rounded-lg border border-border/50 p-4">
+                 <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Withdrawal Fee (3%)</span>
+                    <span>${withdrawalFee.toFixed(2)}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between font-semibold">
+                    <span>Total Deduction</span>
+                    <span>${totalDeduction.toFixed(2)}</span>
+                </div>
+                 {isAmountInvalid && <p className="text-sm font-medium text-destructive pt-2">Insufficient funds for this withdrawal amount.</p>}
+            </div>
+            
+            <Separator className="pt-4"/>
+
             <FormField
               control={form.control}
               name="accountName"
@@ -175,11 +193,11 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance }: With
                     <Input placeholder="Global Bank Inc." {...field} />
                   </FormControl>
                   <FormMessage />
-                </FormItem>
+                </Item>
               )}
             />
             <DialogFooter className="pt-4">
-              <Button type="submit" disabled={isSubmitting || isAmountInvalid} className="w-full btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Button type="submit" disabled={isSubmitting || isAmountInvalid || requestedAmount <= 0} className="w-full btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
                 {isSubmitting ? (
                   <Loader2 className="animate-spin" />
                 ) : (
