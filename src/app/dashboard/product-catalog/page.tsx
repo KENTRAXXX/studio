@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -11,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Gem, PlusCircle, Loader2 } from 'lucide-react';
+import { Gem, PlusCircle, Loader2, Check } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -21,21 +22,94 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { useCollection, useFirestore } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useUser, useCollection, useFirestore } from '@/firebase';
+import { collection, doc, setDoc, getDocs } from 'firebase/firestore';
+
+type Product = {
+  id: string;
+  name: string;
+  masterCost: number;
+  retailPrice: number;
+  stockLevel: number;
+  imageId: string;
+  productType: 'INTERNAL' | 'EXTERNAL';
+  vendorId: string;
+};
 
 export default function GlobalProductCatalogPage() {
   const { toast } = useToast();
+  const { user } = useUser();
   const firestore = useFirestore();
-  
-  const masterCatalogRef = firestore ? collection(firestore, 'Master_Catalog') : null;
-  const { data: masterCatalog, loading: catalogLoading } = useCollection(masterCatalogRef);
 
-  const handleSync = (productName: string) => {
-    toast({
-      title: 'Syncing Product...',
-      description: `${productName} is being synced across all stores.`,
-    });
+  const [syncedProducts, setSyncedProducts] = useState<Set<string>>(new Set());
+  const [syncingProducts, setSyncingProducts] = useState<Set<string>>(new Set());
+
+  const masterCatalogRef = firestore ? collection(firestore, 'Master_Catalog') : null;
+  const { data: masterCatalog, loading: catalogLoading } = useCollection<Product>(masterCatalogRef);
+  
+  const userProductsRef = useMemo(() => {
+    if (!firestore || !user) return null;
+    return collection(firestore, 'stores', user.uid, 'products');
+  }, [firestore, user]);
+
+  useEffect(() => {
+    if (userProductsRef) {
+      getDocs(userProductsRef).then(snapshot => {
+        const productIds = new Set(snapshot.docs.map(d => d.id));
+        setSyncedProducts(productIds);
+      });
+    }
+  }, [userProductsRef]);
+
+  const handleSync = async (product: Product) => {
+    if (!firestore || !user) {
+      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
+      return;
+    }
+
+    if (syncedProducts.has(product.id)) {
+      toast({ title: 'Already Synced', description: `${product.name} is already in your boutique.`});
+      return;
+    }
+
+    setSyncingProducts(prev => new Set(prev).add(product.id));
+
+    try {
+      const newProductRef = doc(firestore, 'stores', user.uid, 'products', product.id);
+      
+      const productDataToSync = {
+        name: product.name,
+        suggestedRetailPrice: product.retailPrice,
+        wholesalePrice: product.masterCost,
+        description: `A high-quality ${product.name.toLowerCase()} from our master collection.`,
+        imageUrl: product.imageId,
+        productType: product.productType,
+        vendorId: product.vendorId,
+        isManagedBySoma: true,
+      };
+
+      await setDoc(newProductRef, productDataToSync);
+
+      setSyncedProducts(prev => new Set(prev).add(product.id));
+      
+      toast({
+        title: 'Product Synced!',
+        description: `${product.name} has been added to your boutique.`,
+      });
+
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Sync Failed',
+        description: error.message || 'Could not add product to your store.',
+      });
+    } finally {
+        setSyncingProducts(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(product.id);
+            return newSet;
+        });
+    }
   };
 
   const getPlaceholderImage = (id: string) => {
@@ -86,7 +160,10 @@ export default function GlobalProductCatalogPage() {
                     </TableRow>
                     </TableHeader>
                     <TableBody>
-                    {masterCatalog && masterCatalog.map((product: any) => (
+                    {masterCatalog && masterCatalog.map((product) => {
+                      const isSynced = syncedProducts.has(product.id);
+                      const isSyncing = syncingProducts.has(product.id);
+                      return (
                         <TableRow key={product.id}>
                         <TableCell>
                             <div className="relative w-16 h-16 rounded-md overflow-hidden border border-border">
@@ -124,16 +201,24 @@ export default function GlobalProductCatalogPage() {
                             </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                            <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleSync(product.name)}
-                            >
-                            Sync
-                            </Button>
+                           {isSynced ? (
+                             <Button variant="ghost" size="sm" disabled className="text-green-500">
+                                <Check className="mr-2 h-4 w-4" /> Synced
+                             </Button>
+                           ) : (
+                             <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleSync(product)}
+                                disabled={isSyncing}
+                              >
+                                {isSyncing ? <Loader2 className="animate-spin" /> : 'Sync'}
+                              </Button>
+                           )}
                         </TableCell>
                         </TableRow>
-                    ))}
+                      )
+                    })}
                     </TableBody>
                 </Table>
             )}
