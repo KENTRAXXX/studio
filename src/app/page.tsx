@@ -241,7 +241,7 @@ export default function Home() {
             <Link href="/plan-selection">Get Started Now</Link>
           </Button>
           <Button asChild size="lg" variant="outline" className="h-12 text-lg w-full sm:w-auto border-primary/50 text-primary hover:bg-primary/10 hover:text-primary">
-            <Link href="#">View Demo</Link>
+            <Link href="/store/demo">View Demo</Link>
           </Button>
         </div>
       </main>
