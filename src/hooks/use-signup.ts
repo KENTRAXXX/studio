@@ -7,6 +7,7 @@ import { useAuth, useFirestore } from '@/firebase';
 type SignUpCredentials = {
   email: string;
   password: string;
+  planTier: string;
 };
 
 type UseSignUpOptions = {
@@ -35,9 +36,6 @@ export function useSignUp() {
     setError(null);
 
     try {
-      // Check if user already exists
-      // Note: This is a client-side check. A more secure way is with a server-side check.
-      // But createUserWithEmailAndPassword handles this by throwing auth/email-already-in-use
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         credentials.email,
@@ -47,11 +45,13 @@ export function useSignUp() {
       const user = userCredential.user;
       
       const userDocRef = doc(firestore, 'users', user.uid);
-      // Create user profile but hold off on access until payment
+      
+      // Create user profile with the correct planTier
       await setDoc(userDocRef, {
         email: user.email,
-        hasAccess: false,
-        userRole: 'MOGUL', // Default role for new sign-ups
+        hasAccess: false, // Access is granted after payment
+        userRole: credentials.planTier === 'ADMIN' ? 'ADMIN' : 'MOGUL', // Default logic, can be refined
+        planTier: credentials.planTier,
       });
 
       options?.onSuccess?.(userCredential);

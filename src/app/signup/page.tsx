@@ -34,8 +34,11 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const plans: { [key: string]: { id: string; name: string; amount: number } } = {
-    monthly: { id: 'monthly', name: 'The Scaler', amount: 2900 },
-    lifetime: { id: 'lifetime', name: 'The Mogul', amount: 50000 },
+    MERCHANT: { id: 'MERCHANT', name: 'The Merchant', amount: 4900 },
+    SELLER: { id: 'SELLER', name: 'The Seller', amount: 7900 },
+    MOGUL: { id: 'MOGUL', name: 'The Mogul', amount: 12900 },
+    SCALER: { id: 'SCALER', name: 'The Scaler', amount: 24900 },
+    ENTERPRISE: { id: 'ENTERPRISE', name: 'The Enterprise', amount: 0 },
 };
 
 function LegalCompliance() {
@@ -56,7 +59,7 @@ function LegalCompliance() {
         <div className="space-y-4">
             <h3 className="text-lg font-semibold text-foreground">No-Refund Policy</h3>
             <div className="rounded-lg border-2 border-primary bg-primary/10 p-4">
-                <p className="font-semibold text-foreground">Due to the digital nature of the SOMA platform and the immediate delivery of the Master Catalog assets, all setup fees (including the $500 Lifetime Access) are strictly non-refundable once the Store Cloning process has been initiated.</p>
+                <p className="font-semibold text-foreground">Due to the digital nature of the SOMA platform and the immediate delivery of the Master Catalog assets, all setup fees (including monthly and lifetime plans) are strictly non-refundable once the Store Cloning process has been initiated.</p>
             </div>
         </div>
 
@@ -78,8 +81,8 @@ function SignUpForm() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isTransitioning, startTransition] = useTransition();
 
-  const planId = searchParams.get('plan') || 'lifetime';
-  const selectedPlan = plans[planId] || plans.lifetime;
+  const planTier = searchParams.get('planTier') || 'MOGUL';
+  const selectedPlan = plans[planTier] || plans.MOGUL;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -87,48 +90,58 @@ function SignUpForm() {
   });
 
   const onSubmit = (data: FormValues) => {
-    signUp(data, {
+    signUp({ ...data, planTier: selectedPlan.id }, {
       onSuccess: async (user) => {
         toast({
           title: 'Account Created',
           description: "Welcome! Let's get you set up.",
         });
 
-        const template = 'gold-standard';
+        // If the plan has a payment amount, proceed to Paystack
+        if (selectedPlan.amount > 0) {
+            const onPaystackSuccess = () => {
+              console.log('Paystack success callback triggered.');
+              toast({
+                title: 'Payment Successful!',
+                description: 'Your store is being provisioned. This may take a moment.',
+              });
+              // Redirect to the appropriate dashboard based on plan
+              const redirectPath = planTier === 'SELLER' ? '/backstage' : '/dashboard/my-store';
+              router.push(redirectPath);
+            };
 
-        const onPaystackSuccess = () => {
-          console.log('Paystack success callback triggered.');
-          toast({
-            title: 'Payment Successful!',
-            description: 'Your store is being provisioned. This may take a moment.',
-          });
-          router.push('/dashboard/my-store');
-        };
+            const onPaystackClose = () => {
+              console.log('Paystack popup closed.');
+              toast({
+                variant: 'default',
+                title: 'Payment Incomplete',
+                description: 'Your store will not be created until payment is complete. You can restart from your dashboard.',
+              });
+              const redirectPath = planTier === 'SELLER' ? '/backstage' : '/dashboard';
+              router.push(redirectPath);
+            };
 
-        const onPaystackClose = () => {
-          console.log('Paystack popup closed.');
-          toast({
-            variant: 'default',
-            title: 'Payment Incomplete',
-            description: 'Your store will not be created until payment is complete. You can restart from your dashboard.',
-          });
-          router.push('/dashboard/my-store');
-        };
-
-        await initializePayment({
-            email: data.email,
-            amount: selectedPlan.amount,
-            metadata: {
-              userId: user.user.uid,
-              plan: selectedPlan.id,
-              template: template,
-            },
-          },
-          onPaystackSuccess,
-          onPaystackClose
-        );
-        
-        setIsSuccess(true);
+            await initializePayment({
+                email: data.email,
+                amount: selectedPlan.amount,
+                metadata: {
+                  userId: user.user.uid,
+                  planTier: selectedPlan.id,
+                  template: 'gold-standard', // Default template
+                },
+              },
+              onPaystackSuccess,
+              onPaystackClose
+            );
+            setIsSuccess(true);
+        } else {
+            // For free plans or "Contact Us" plans
+            toast({
+                title: 'Account Created!',
+                description: "We will be in touch shortly to finalize your Enterprise setup."
+            });
+            router.push('/dashboard');
+        }
       },
       onError: (err) => {
         toast({
