@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, createContext, useContext } from 'react';
+import { useState, createContext, useContext, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Search, ShoppingCart, X } from 'lucide-react';
+import { Search, ShoppingCart, X, Loader2 } from 'lucide-react';
+import { useFirestore, useDoc } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import SomaLogo from '@/components/logo';
@@ -19,7 +21,7 @@ type CartItem = {
 
 type CartContextType = {
   cart: CartItem[];
-  addToCart: (product: StorefrontProduct) => void;
+  addToCart: (product: Storefront-Product) => void;
   removeFromCart: (productId: string) => void;
   getCartTotal: () => number;
 };
@@ -140,8 +142,12 @@ export default function StoreLayout({
   children: React.ReactNode;
   params: { storeId: string };
 }) {
-  const storeName = "SOMA Store"; // Replace with dynamic data from Firestore
-  const logoUrl = getPlaceholderImage('store-logo')?.imageUrl; // Replace with dynamic data
+  const firestore = useFirestore();
+  const storeRef = firestore ? doc(firestore, 'stores', params.storeId) : null;
+  const { data: storeData, loading: storeLoading } = useDoc(storeRef);
+  
+  const storeName = storeData?.storeName || "SOMA Store";
+  const logoUrl = storeData?.logoUrl || getPlaceholderImage('store-logo')?.imageUrl;
 
   return (
     <CartProvider>
@@ -149,12 +155,14 @@ export default function StoreLayout({
           <header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-sm border-b border-primary/20">
             <div className="container mx-auto flex h-20 items-center justify-between px-4 sm:px-6 lg:px-8">
               <Link href={`/store/${params.storeId}`} className="flex items-center gap-2">
-                {logoUrl ? (
+                {storeLoading ? (
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                ) : logoUrl ? (
                     <Image src={logoUrl} alt={storeName} width={40} height={40} className="rounded-full" data-ai-hint="logo" />
                 ) : (
                     <SomaLogo className="h-8 w-8" />
                 )}
-                <span className="font-headline text-2xl font-bold text-primary">{storeName}</span>
+                <span className="font-headline text-2xl font-bold text-primary">{storeLoading ? 'Loading...' : storeName}</span>
               </Link>
               <div className="flex items-center gap-4">
                 <div className="relative hidden md:block">
