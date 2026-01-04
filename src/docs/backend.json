@@ -1,0 +1,222 @@
+{
+    "entities": {
+        "store": {
+            "title": "Store",
+            "description": "Represents a user's storefront configuration.",
+            "type": "object",
+            "properties": {
+                "template": {
+                    "type": "string",
+                    "description": "The selected template for the store.",
+                    "enum": ["minimalist", "gold-standard", "midnight-pro"]
+                },
+                "logoUrl": {
+                    "type": "string",
+                    "description": "URL of the store's logo."
+                },
+                "faviconUrl": {
+                    "type": "string",
+                    "description": "URL of the store's favicon."
+                },
+                "status": {
+                    "type": "string",
+                    "description": "The current status of the store.",
+                    "enum": ["Draft", "Live"]
+                }
+            },
+            "required": ["template", "status"]
+        },
+        "clientStore": {
+            "title": "Client Store",
+            "description": "Represents a provisioned client store with its unique configuration.",
+            "type": "object",
+            "properties": {
+                "userId": {
+                    "type": "string",
+                    "description": "The ID of the user who owns the store."
+                },
+                "instanceId": {
+                    "type": "string",
+                    "description": "A unique identifier for the client store instance."
+                },
+                "theme": {
+                    "type": "string",
+                    "description": "The visual theme of the store.",
+                    "enum": ["Gold Standard", "Midnight Pro", "The Minimalist"]
+                },
+                "currency": {
+                    "type": "string",
+                    "description": "The default currency for the store.",
+                    "enum": ["USD", "EUR", "GBP"]
+                },
+                "createdAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "The timestamp when the store was created."
+                },
+                "storeName": {
+                    "type": "string",
+                    "description": "The name of the client's store."
+                },
+                "logoUrl": {
+                    "type": "string",
+                    "description": "URL of the store's logo."
+                },
+                "heroImageUrl": {
+                    "type": "string",
+                    "description": "URL for the hero image on the storefront."
+                },
+                "heroTitle": {
+                    "type": "string",
+                    "description": "The main headline for the hero section."
+                },
+                "heroSubtitle": {
+                    "type": "string",
+                    "description": "The sub-headline for the hero section."
+                }
+            },
+            "required": ["userId", "instanceId", "theme", "currency", "createdAt", "storeName"]
+        },
+        "storefrontProduct": {
+            "title": "Storefront Product",
+            "description": "A product available in a client's storefront.",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the product."
+                },
+                "suggestedRetailPrice": {
+                    "type": "number",
+                    "description": "The suggested retail price of the product."
+                },
+                "wholesalePrice": {
+                    "type": "number",
+                    "description": "The wholesale cost of the product, relevant for dropshipped items."
+                },
+                "description": {
+                    "type": "string",
+                    "description": "A detailed description of the product."
+                },
+                "imageUrl": {
+                    "type": "string",
+                    "description": "URL of the main product image."
+                },
+                "productType": {
+                    "type": "string",
+                    "description": "The type of the product.",
+                    "enum": ["INTERNAL", "EXTERNAL"]
+                },
+                "vendorId": {
+                    "type": "string",
+                    "description": "The ID of the user who owns/supplies the product."
+                }
+            },
+            "required": ["name", "suggestedRetailPrice", "imageUrl", "productType", "vendorId"]
+        },
+        "userProfile": {
+            "title": "User Profile",
+            "description": "Represents a user's profile information in Firestore.",
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "The user's email address."
+                },
+                "hasAccess": {
+                    "type": "boolean",
+                    "description": "Indicates if the user has paid for access to the platform."
+                },
+                "isAdmin": {
+                    "type": "boolean",
+                    "description": "Indicates if the user has admin privileges."
+                },
+                "plan": {
+                    "type": "string",
+                    "description": "The user's subscription plan.",
+                    "enum": ["monthly", "lifetime"]
+                },
+                "paidAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "The timestamp when the user's payment was successfully processed."
+                },
+                 "userRole": {
+                    "type": "string",
+                    "description": "The role of the user within the platform.",
+                    "enum": ["ADMIN", "MOGUL", "SELLER"]
+                },
+                "planTier": {
+                    "type": "string",
+                    "description": "The specific plan tier for the user, determining access level.",
+                    "enum": ["MERCHANT", "MOGUL", "SCALER", "SELLER", "ENTERPRISE"]
+                },
+                "isVerifiedSeller": {
+                    "type": "boolean",
+                    "description": "Indicates if a user with the SELLER role has completed verification."
+                },
+                "status": {
+                    "type": "string",
+                    "description": "The current status of a user, often used for seller onboarding.",
+                    "enum": ["pending_review", "approved", "rejected"]
+                }
+            },
+            "required": ["email", "hasAccess", "userRole"]
+        },
+        "adminAlert": {
+            "title": "Admin Alert",
+            "description": "An alert for administrators regarding a system event.",
+            "type": "object",
+            "properties": {
+                "flowName": {
+                    "type": "string",
+                    "description": "The name of the flow where the error occurred."
+                },
+                "userId": {
+                    "type": "string",
+                    "description": "The ID of the user related to the event."
+                },
+                "error": {
+                    "type": "string",
+                    "description": "The error message or details."
+                },
+                "timestamp": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "When the alert was generated."
+                }
+            },
+            "required": ["flowName", "error", "timestamp"]
+        }
+    },
+    "auth": {
+        "providers": ["email-password"]
+    },
+    "firestore": {
+        "/stores/{storeId}": {
+            "schema": {
+                "$ref": "#/entities/clientStore"
+            },
+            "description": "Stores all the provisioned client storefronts."
+        },
+        "/stores/{storeId}/products/{productId}": {
+            "schema": {
+                "$ref": "#/entities/storefrontProduct"
+            },
+            "description": "Products for a specific client store."
+        },
+        "/users/{userId}": {
+            "schema": {
+                "$ref": "#/entities/userProfile"
+            },
+            "description": "Stores user profile information."
+        },
+        "/admin_alerts/{alertId}": {
+            "schema": {
+                "$ref": "#/entities/adminAlert"
+            },
+            "description": "Logs critical system errors for admin review."
+        }
+    }
+}
