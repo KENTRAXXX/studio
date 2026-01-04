@@ -57,6 +57,22 @@ function LegalCompliance() {
         </div>
 
         <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-foreground">The SOMA Platform Governance Framework ⚖️</h3>
+            <div className="space-y-2">
+                <h4 className="font-semibold text-foreground/80">1. The "Authenticity or Death" Policy (For Sellers)</h4>
+                <p><strong>The Rule:</strong> All items uploaded to the Master Catalog must be 100% authentic. <strong>The Penalty:</strong> If a Seller is found to be providing "replicas" or "super-clones," their pending balance is forfeited to refund the victim, and their account is permanently banned. <strong>Indemnification:</strong> Sellers agree that SOMA is a facilitator and the Seller remains legally liable for trademark infringement.</p>
+            </div>
+             <div className="space-y-2">
+                <h4 className="font-semibold text-foreground/80">2. The "3% SOMA Tax" & Payout Terms</h4>
+                <p><strong>Platform Fee:</strong> SOMA deducts a non-negotiable 3% fee from the wholesale price of every dropshipped transaction. <strong>Hold Period:</strong> To prevent "churn and burn" fraud, payouts are held for 7–14 days (or until the customer confirms receipt) before moving from pending to available. <strong>Withdrawals:</strong> Manual processing by SOMA Admin takes 24–48 business hours.</p>
+            </div>
+             <div className="space-y-2">
+                <h4 className="font-semibold text-foreground/80">3. Subscription & Store Ownership (For Moguls/Merchants)</h4>
+                <p><strong>No Guarantees:</strong> SOMA provides the infrastructure and training, but does not guarantee sales. <strong>Tier Restrictions:</strong> Merchants ($19.99) are strictly prohibited from using SOMA Master Catalog assets. Moguls ($500) own their customer data but must adhere to SOMA's brand guidelines for "Luxury Presentation." <strong>Cancellation:</strong> Subscriptions are month-to-month. If a subscription lapses, the storefront is "Suspended" (visible to the owner but closed to the public) until payment is restored.</p>
+            </div>
+        </div>
+
+        <div className="space-y-4">
             <h3 className="text-lg font-semibold text-foreground">No-Refund Policy</h3>
             <div className="rounded-lg border-2 border-primary bg-primary/10 p-4">
                 <p className="font-semibold text-foreground">Due to the digital nature of the SOMA platform and the immediate delivery of the Master Catalog assets, all setup fees (including monthly and lifetime plans) are strictly non-refundable once the Store Cloning process has been initiated.</p>
