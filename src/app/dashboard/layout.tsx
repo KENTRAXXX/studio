@@ -23,6 +23,7 @@ import {
   ShieldCheck,
   GraduationCap,
   Package,
+  Landmark,
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 
@@ -39,6 +40,11 @@ const navItems = [
   { href: '/dashboard/accessibility-checker', icon: Accessibility, label: 'A11y Checker' },
   { href: '/dashboard/master-admin', icon: ShieldCheck, label: 'Master Admin' },
 ];
+
+const backstageNavItems = [
+    { href: '/backstage/add-product', icon: Package, label: 'Add Product' },
+    { href: '/backstage/finances', icon: Landmark, label: 'Finances' },
+]
 
 export default function DashboardLayout({
   children,
@@ -57,6 +63,19 @@ export default function DashboardLayout({
         <SidebarContent>
           <SidebarMenu>
             {navItems.map((item) => (
+              <SidebarMenuItem key={item.href}>
+                <Link href={item.href}>
+                  <SidebarMenuButton tooltip={item.label}>
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+            ))}
+             <SidebarMenuItem>
+                <div className="p-2 text-xs font-medium text-muted-foreground">Backstage</div>
+            </SidebarMenuItem>
+            {backstageNavItems.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <Link href={item.href}>
                   <SidebarMenuButton tooltip={item.label}>
