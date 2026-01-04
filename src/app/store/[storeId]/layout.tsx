@@ -3,6 +3,7 @@
 import { useState, createContext, useContext, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { Search, ShoppingCart, X, Loader2 } from 'lucide-react';
 import { useFirestore, useDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
@@ -142,13 +143,13 @@ function CartSheet({storeId}: {storeId: string}) {
 
 export default function StoreLayout({
   children,
-  params,
 }: {
   children: React.ReactNode;
-  params: { storeId: string };
 }) {
+  const params = useParams();
+  const storeId = params.storeId as string;
   const firestore = useFirestore();
-  const storeRef = firestore ? doc(firestore, 'stores', params.storeId) : null;
+  const storeRef = firestore ? doc(firestore, 'stores', storeId) : null;
   const { data: storeData, loading: storeLoading } = useDoc(storeRef);
   
   const storeName = storeData?.storeName || "SOMA Store";
@@ -159,7 +160,7 @@ export default function StoreLayout({
         <div className="min-h-screen bg-background text-foreground font-body">
           <header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-sm border-b border-primary/20">
             <div className="container mx-auto flex h-20 items-center justify-between px-4 sm:px-6 lg:px-8">
-              <Link href={`/store/${params.storeId}`} className="flex items-center gap-2">
+              <Link href={`/store/${storeId}`} className="flex items-center gap-2">
                 {storeLoading ? (
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 ) : logoUrl ? (
@@ -177,7 +178,7 @@ export default function StoreLayout({
                     className="h-10 w-full rounded-md border border-primary/30 bg-transparent pl-10 pr-4 text-sm placeholder:text-muted-foreground focus:ring-primary"
                   />
                 </div>
-                <CartSheet storeId={params.storeId} />
+                <CartSheet storeId={storeId} />
               </div>
             </div>
           </header>
