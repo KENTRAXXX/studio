@@ -69,10 +69,13 @@ const getStatusBadgeVariant = (status: UserProfile['status'] | 'disabled') => {
 const getPlanTierBadgeVariant = (planTier: UserProfile['planTier']) => {
     switch (planTier) {
         case 'MOGUL':
+        case 'SCALER':
         case 'ENTERPRISE':
-            return 'bg-primary/20 text-primary border-primary/50';
+            return 'bg-primary/20 text-primary border-primary/50'; // Gold
+        case 'MERCHANT':
+            return 'bg-slate-400/20 text-slate-300 border-slate-400/50'; // Silver
         case 'SELLER':
-            return 'bg-slate-500/20 text-slate-400 border-slate-500/50';
+            return 'bg-orange-400/20 text-orange-300 border-orange-400/50'; // Bronze
         default:
             return 'bg-secondary text-secondary-foreground';
     }
