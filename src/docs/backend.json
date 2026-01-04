@@ -137,10 +137,6 @@
                     "type": "boolean",
                     "description": "Indicates if the user has admin privileges."
                 },
-                "isDisabled": {
-                    "type": "boolean",
-                    "description": "A flag to disable a user's account."
-                },
                 "plan": {
                     "type": "string",
                     "description": "The user's subscription plan.",

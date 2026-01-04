@@ -53,6 +53,13 @@ export function AddPrivateProductModal({ isOpen, onOpenChange }: AddPrivateProdu
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     mode: 'onChange',
+    defaultValues: {
+      name: '',
+      description: '',
+      price: 0,
+      stock: 0,
+      imageUrl: '',
+    },
   });
 
   const handleSubmit = async (data: FormValues) => {
@@ -116,7 +123,7 @@ export function AddPrivateProductModal({ isOpen, onOpenChange }: AddPrivateProdu
             )} />
              <div className="grid grid-cols-2 gap-4">
                  <FormField control={form.control} name="price" render={({ field }) => (
-                    <FormItem><FormLabel>Price ($)</FormLabel><FormControl><Input type="number" step="0.01" placeholder="650.00" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Retail Price ($)</FormLabel><FormControl><Input type="number" step="0.01" placeholder="650.00" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                  <FormField control={form.control} name="stock" render={({ field }) => (
                     <FormItem><FormLabel>Stock Quantity</FormLabel><FormControl><Input type="number" placeholder="100" {...field} /></FormControl><FormMessage /></FormItem>

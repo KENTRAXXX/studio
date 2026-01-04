@@ -59,6 +59,9 @@ export default function MyPrivateInventoryPage() {
   const { data: privateProducts, loading: productsLoading } = useCollection<PrivateProduct>(privateProductsRef);
   
   const getPlaceholderImage = (id: string) => {
+    // This is a mock lookup. In a real app, you'd have a more robust way to handle images.
+    // We'll use the product image URL directly if it's a full URL.
+    if (id?.startsWith('https')) return id;
     return PlaceHolderImages.find(img => img.id === id)?.imageUrl || 'https://picsum.photos/seed/placeholder/100/100';
   }
 
