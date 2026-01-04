@@ -97,9 +97,18 @@
                 "imageUrl": {
                     "type": "string",
                     "description": "URL of the main product image."
+                },
+                "productType": {
+                    "type": "string",
+                    "description": "The type of the product.",
+                    "enum": ["INTERNAL", "EXTERNAL"]
+                },
+                "vendorId": {
+                    "type": "string",
+                    "description": "The ID of the user who owns/supplies the product."
                 }
             },
-            "required": ["name", "price", "imageUrl"]
+            "required": ["name", "price", "imageUrl", "productType", "vendorId"]
         },
         "userProfile": {
             "title": "User Profile",
@@ -128,9 +137,14 @@
                     "type": "string",
                     "format": "date-time",
                     "description": "The timestamp when the user's payment was successfully processed."
+                },
+                 "userRole": {
+                    "type": "string",
+                    "description": "The role of the user within the platform.",
+                    "enum": ["ADMIN", "MOGUL", "SELLER"]
                 }
             },
-            "required": ["email", "hasAccess"]
+            "required": ["email", "hasAccess", "userRole"]
         },
         "adminAlert": {
             "title": "Admin Alert",

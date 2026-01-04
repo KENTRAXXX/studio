@@ -50,7 +50,8 @@ export function useSignUp() {
       // Create user profile but hold off on access until payment
       await setDoc(userDocRef, {
         email: user.email,
-        hasAccess: false, 
+        hasAccess: false,
+        userRole: 'MOGUL', // Default role for new sign-ups
       });
 
       options?.onSuccess?.(userCredential);

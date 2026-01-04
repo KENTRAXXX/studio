@@ -62,7 +62,8 @@ const createClientStoreFlow = ai.defineFlow(
         await updateDoc(userRef, {
             hasAccess: true,
             plan: plan,
-            paidAt: new Date().toISOString() // Timestamp of payment confirmation
+            paidAt: new Date().toISOString(), // Timestamp of payment confirmation
+            userRole: 'MOGUL', // Assign the MOGUL role
         });
 
         // 2. Create the main store document
@@ -88,14 +89,16 @@ const createClientStoreFlow = ai.defineFlow(
         const top10Products = masterCatalog.slice(0, 10);
 
         top10Products.forEach(product => {
-        const newProductRef = doc(productsRef, product.id);
-        const newProductData = {
-            name: product.name,
-            price: product.retailPrice,
-            description: `A high-quality ${product.name.toLowerCase()} from our master collection.`, // Placeholder description
-            imageUrl: product.imageId, // We'll use the imageId to resolve the URL on the frontend
-        };
-        batch.set(newProductRef, newProductData);
+            const newProductRef = doc(productsRef, product.id);
+            const newProductData = {
+                name: product.name,
+                price: product.retailPrice,
+                description: `A high-quality ${product.name.toLowerCase()} from our master collection.`, // Placeholder description
+                imageUrl: product.imageId, // We'll use the imageId to resolve the URL on the frontend
+                productType: 'INTERNAL',
+                vendorId: 'admin', // Internal products are owned by the platform
+            };
+            batch.set(newProductRef, newProductData);
         });
 
         await batch.commit();
