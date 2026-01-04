@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -10,14 +11,17 @@ import { useCart } from './layout';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
+import { useParams } from 'next/navigation';
 
-export default function StorefrontPage({ params }: { params: { storeId: string } }) {
+export default function StorefrontPage() {
+  const params = useParams();
+  const storeId = params.storeId as string;
   const heroImage = PlaceHolderImages.find(img => img.id === 'storefront-hero');
   const { toast } = useToast();
   const { addToCart } = useCart();
   const firestore = useFirestore();
 
-  const productsRef = firestore ? collection(firestore, 'stores', params.storeId, 'products') : null;
+  const productsRef = firestore ? collection(firestore, 'stores', storeId, 'products') : null;
   const { data: storefrontData, loading: productsLoading } = useCollection(productsRef);
 
   const handleAddToCart = (product: any) => {
@@ -70,7 +74,7 @@ export default function StorefrontPage({ params }: { params: { storeId: string }
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {storefrontData?.map((product: any) => (
                 <Card key={product.id} className="group overflow-hidden rounded-lg border-primary/20 bg-card hover:border-primary/50 transition-all duration-300 transform hover:-translate-y-2">
-                <Link href={`/store/${params.storeId}/product/${product.id}`} className="block">
+                <Link href={`/store/${storeId}/product/${product.id}`} className="block">
                     <div className="relative w-full aspect-square">
                     <Image
                         src={getPlaceholderImage(product.imageUrl)}
@@ -82,7 +86,7 @@ export default function StorefrontPage({ params }: { params: { storeId: string }
                     </div>
                 </Link>
                 <CardContent className="p-4 text-center">
-                    <Link href={`/store/${params.storeId}/product/${product.id}`} className="block">
+                    <Link href={`/store/${storeId}/product/${product.id}`} className="block">
                     <h3 className="text-lg font-semibold truncate group-hover:text-primary">{product.name}</h3>
                     </Link>
                     <p className="text-muted-foreground font-bold text-lg">${product.suggestedRetailPrice.toFixed(2)}</p>
