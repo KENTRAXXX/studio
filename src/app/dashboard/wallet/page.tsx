@@ -1,11 +1,16 @@
+'use client';
+
+import { useMemo } from 'react';
+import { useUser, useFirestore, useCollection } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { walletTransactions } from "@/lib/data";
 import { cn } from "@/lib/utils";
-import { Banknote, Landmark, Wallet as WalletIcon } from 'lucide-react';
+import { Banknote, Landmark, Wallet as WalletIcon, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const getTransactionTypeClass = (type: string) => {
     switch (type) {
@@ -21,7 +26,26 @@ const getTransactionSign = (type: string) => {
 };
 
 export default function SomaWalletPage() {
-    const availableBalance = 1258.50;
+    const { user, loading: userLoading } = useUser();
+    const firestore = useFirestore();
+    const { toast } = useToast();
+
+    const payoutsRef = firestore && user ? query(collection(firestore, 'payouts_pending'), where('userId', '==', user.uid)) : null;
+    const { data: payoutDocs, loading: payoutsLoading } = useCollection(payoutsRef);
+
+    const availableBalance = useMemo(() => {
+        if (!payoutDocs) return 0;
+        return payoutDocs.reduce((acc, doc) => acc + (doc.amount || 0), 0);
+    }, [payoutDocs]);
+    
+    const handleWithdrawalRequest = () => {
+        toast({
+            title: "Coming Soon!",
+            description: "Automated withdrawals are being finalized.",
+        });
+    }
+    
+    const isLoading = userLoading || payoutsLoading;
 
     return (
         <div className="space-y-8">
@@ -62,29 +86,43 @@ export default function SomaWalletPage() {
 
                     <Card className="border-primary/50">
                         <CardHeader>
-                            <CardTitle>Transaction History</CardTitle>
+                            <CardTitle>Pending Payout History</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead>Description</TableHead>
-                                        <TableHead className="text-right">Amount</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {walletTransactions.map((tx, i) => (
-                                        <TableRow key={i}>
-                                            <TableCell className="text-muted-foreground">{tx.date}</TableCell>
-                                            <TableCell>{tx.description}</TableCell>
-                                            <TableCell className={cn("text-right font-mono", getTransactionTypeClass(tx.type))}>
-                                                {getTransactionSign(tx.type)} ${tx.amount.toFixed(2).replace('-', '')}
-                                            </TableCell>
+                            {isLoading ? (
+                                <div className="flex justify-center items-center h-40">
+                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                </div>
+                            ) : (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Date</TableHead>
+                                            <TableHead>Order ID</TableHead>
+                                            <TableHead className="text-right">Amount</TableHead>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {payoutDocs && payoutDocs.length > 0 ? (
+                                            payoutDocs.map((payout: any) => (
+                                                <TableRow key={payout.id}>
+                                                    <TableCell className="text-muted-foreground">{new Date(payout.createdAt).toLocaleDateString()}</TableCell>
+                                                    <TableCell>{payout.orderId}</TableCell>
+                                                    <TableCell className="text-right font-mono text-green-400">
+                                                        + ${payout.amount.toFixed(2)}
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        ) : (
+                                            <TableRow>
+                                                <TableCell colSpan={3} className="text-center h-24 text-muted-foreground">
+                                                    No pending payouts found.
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            )}
                         </CardContent>
                     </Card>
                 </div>
@@ -96,11 +134,15 @@ export default function SomaWalletPage() {
                             <CardTitle className="text-muted-foreground text-lg font-medium">Available for Withdrawal</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-5xl font-bold text-primary">${availableBalance.toFixed(2)}</p>
+                            {isLoading ? (
+                                <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+                            ) : (
+                                <p className="text-5xl font-bold text-primary">${availableBalance.toFixed(2)}</p>
+                            )}
                         </CardContent>
                     </Card>
 
-                    <Button size="lg" className="w-full h-14 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+                    <Button size="lg" className="w-full h-14 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleWithdrawalRequest}>
                         <Banknote className="mr-2 h-6 w-6"/> Request Payout
                     </Button>
                 </div>

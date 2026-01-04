@@ -55,20 +55,6 @@ export const storeOwners: StoreOwner[] = [
     { id: 'user_4', name: 'Diana Miller', email: 'diana.m@e-com.co', storeUrl: 'dianam.soma.com', status: 'Active' },
 ];
 
-export type Transaction = {
-    date: string;
-    description: string;
-    amount: number;
-    type: 'Sale' | 'Fee' | 'Withdrawal';
-};
-
-export const walletTransactions: Transaction[] = [
-    { date: '2023-10-26', description: 'Sale Earnings from #SOMA-8432', amount: 150, type: 'Sale' },
-    { date: '2023-10-25', description: 'Platform Fee (October)', amount: -29, type: 'Fee' },
-    { date: '2023-10-20', description: 'Withdrawal to Bank Account', amount: -1500, type: 'Withdrawal' },
-    { date: '2023-10-19', description: 'Sale Earnings from #SOMA-8420', amount: 450, type: 'Sale' },
-];
-
 export type StorefrontProduct = {
   id: string;
   name: string;
