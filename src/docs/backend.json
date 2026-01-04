@@ -1,6 +1,20 @@
 
 {
     "entities": {
+        "trainingModule": {
+            "title": "Training Module",
+            "description": "A single educational video or lesson in the SOMA Training Center.",
+            "type": "object",
+            "properties": {
+                "title": { "type": "string" },
+                "duration": { "type": "number" },
+                "category": { "type": "string" },
+                "difficulty": { "type": "string", "enum": ["Beginner", "Intermediate", "Advanced", "Masterclass"] },
+                "thumbnailUrl": { "type": "string", "format": "uri" },
+                "videoUrl": { "type": "string", "format": "uri", "description": "URL for the training video (e.g., YouTube or Vimeo embed link)." }
+            },
+            "required": ["title", "duration", "category", "difficulty", "thumbnailUrl", "videoUrl"]
+        },
         "store": {
             "title": "Store",
             "description": "Represents a user's storefront configuration.",
@@ -165,6 +179,11 @@
                     "type": "string",
                     "description": "The current status of a user, often used for seller onboarding.",
                     "enum": ["pending_review", "approved", "rejected"]
+                },
+                "completedLessons": {
+                    "type": "array",
+                    "description": "A list of IDs of completed training lessons.",
+                    "items": { "type": "string" }
                 }
             },
             "required": ["email", "hasAccess", "userRole"]
@@ -302,6 +321,10 @@
         "/withdrawal_requests/{withdrawalId}": {
             "schema": { "$ref": "#/entities/withdrawalRequest" },
             "description": "Stores user withdrawal requests."
+        },
+        "/Training_Modules/{moduleId}": {
+            "schema": { "$ref": "#/entities/trainingModule" },
+            "description": "Contains all the educational videos and content for the SOMA Training Center."
         }
     }
 }

@@ -31,22 +31,3 @@ export const storefrontData: StorefrontProduct[] = [
     { id: 'sf-003', name: 'Apex Sneakers', price: 350.00, description: 'Ultimate comfort meets high-fashion. Perfect for the urban explorer.', imageId: 'product-3'},
     { id: 'sf-004', name: 'Noir Elixir', price: 220.00, description: 'A captivating fragrance with notes of sandalwood and dark chocolate.', imageId: 'product-4'},
 ];
-
-export type TrainingVideo = {
-  id: string;
-  title: string;
-  duration: number;
-  category: 'The Foundation: Setting up your Brand' | 'Traffic Secrets: Mastering TikTok & IG Ads' | 'Conversion: Turning Visitors into Buyers';
-  thumbnailId: string;
-};
-
-export const trainingVideos: TrainingVideo[] = [
-  { id: 'vid-001', title: 'Crafting Your Brand Identity', duration: 12, category: 'The Foundation: Setting up your Brand', thumbnailId: 'training-thumb-1' },
-  { id: 'vid-002', title: 'Launch Wizard Deep Dive', duration: 8, category: 'The Foundation: Setting up your Brand', thumbnailId: 'training-thumb-2' },
-  { id: 'vid-003', title: 'Connecting a Custom Domain', duration: 5, category: 'The Foundation: Setting up your Brand', thumbnailId: 'training-thumb-3' },
-  { id: 'vid-004', title: 'Your First TikTok Ad Campaign', duration: 18, category: 'Traffic Secrets: Mastering TikTok & IG Ads', thumbnailId: 'training-thumb-4' },
-  { id: 'vid-005', title: 'Secrets of the Instagram Algorithm', duration: 22, category: 'Traffic Secrets: Mastering TikTok & IG Ads', thumbnailId: 'training-thumb-5' },
-  { id: 'vid-006', title: 'Analyzing Your Ad Performance', duration: 10, category: 'Traffic Secrets: Mastering TikTok & IG Ads', thumbnailId: 'training-thumb-6' },
-  { id: 'vid-007', title: 'Optimizing Product Pages for Sales', duration: 15, category: 'Conversion: Turning Visitors into Buyers', thumbnailId: 'training-thumb-7' },
-  { id: 'vid-008', title: 'The Psychology of Luxury Pricing', duration: 13, category: 'Conversion: Turning Visitors into Buyers', thumbnailId: 'training-thumb-8' },
-];

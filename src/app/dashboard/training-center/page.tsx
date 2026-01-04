@@ -1,15 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { useUser, useFirestore, useCollection, useDoc } from '@/firebase';
+import { collection, doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { useUserProfile } from '@/firebase/user-profile-provider';
+
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { trainingVideos, type TrainingVideo } from '@/lib/data';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { GraduationCap, PlayCircle, Lock, Crown, Loader2 } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Accordion,
   AccordionContent,
@@ -26,12 +32,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Button } from '@/components/ui/button';
-import { useUserProfile } from '@/firebase/user-profile-provider';
 
-const VideoCard = ({ video, onPlay, isWatched, isLocked }: { video: TrainingVideo, onPlay: () => void, isWatched: boolean, isLocked: boolean }) => {
-    const thumbnail = PlaceHolderImages.find(img => img.id === video.thumbnailId);
+import { GraduationCap, PlayCircle, Lock, Crown, Loader2, Check, ExternalLink } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
+type TrainingModule = {
+  id: string;
+  title: string;
+  duration: number;
+  category: string;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced' | 'Masterclass';
+  thumbnailUrl: string;
+  videoUrl: string;
+};
+
+const VideoCard = ({ video, onPlay, isWatched }: { video: TrainingModule, onPlay: () => void, isWatched: boolean }) => {
     return (
         <motion.div
             layout
@@ -39,90 +56,87 @@ const VideoCard = ({ video, onPlay, isWatched, isLocked }: { video: TrainingVide
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             whileHover={{ y: -5 }}
-            className={cn("group relative rounded-lg overflow-hidden border-2 transition-all duration-300", isLocked ? "border-dashed border-border/50" : "border-transparent hover:border-primary")}
+            className="group relative rounded-lg overflow-hidden border-2 border-transparent hover:border-primary transition-all duration-300 cursor-pointer"
             onClick={onPlay}
         >
-            <Card className={cn("bg-card", isLocked ? "cursor-not-allowed" : "cursor-pointer")}>
+            <Card className="bg-card">
                  <div className="relative w-full aspect-video">
-                    {thumbnail && <Image src={thumbnail.imageUrl} alt={video.title} fill className={cn("object-cover", isLocked && "grayscale")}/>}
-                    <div className={cn("absolute inset-0 flex items-center justify-center transition-all duration-300", isLocked ? "bg-black/70" : "bg-black/40 group-hover:bg-black/20")}>
-                        {isLocked ? (
-                            <Lock className="h-12 w-12 text-white/50" />
-                        ) : (
-                            <PlayCircle className="h-16 w-16 text-white/70 group-hover:text-white group-hover:scale-110 transition-all duration-300" />
-                        )}
+                    {video.thumbnailUrl && <Image src={video.thumbnailUrl} alt={video.title} fill className="object-cover"/>}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/20 transition-all duration-300">
+                        <PlayCircle className="h-16 w-16 text-white/70 group-hover:text-white group-hover:scale-110 transition-all duration-300" />
                     </div>
-                    {isWatched && !isLocked && (
+                    {isWatched && (
                          <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full h-6 w-6 flex items-center justify-center">
                             <Check className="h-4 w-4"/>
                         </div>
                     )}
                 </div>
                 <CardContent className="p-4">
-                    <h3 className={cn("font-bold text-lg truncate", !isLocked && "group-hover:text-primary")}>{video.title}</h3>
-                    <p className={cn("text-sm font-semibold", isLocked ? "text-muted-foreground" : "text-primary")}>{video.duration} min</p>
+                    <h3 className="font-bold text-lg truncate group-hover:text-primary">{video.title}</h3>
+                    <p className="text-sm font-semibold text-primary">{video.duration} min</p>
                 </CardContent>
             </Card>
         </motion.div>
     )
 }
 
-const LockedCertificateCard = ({ isUnlocked }: { isUnlocked: boolean }) => (
-     <motion.div
-        layout
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        className={cn("relative rounded-lg overflow-hidden border-2 border-dashed", isUnlocked ? "border-primary cursor-pointer hover:shadow-2xl hover:shadow-primary/20" : "border-border/50")}
-    >
-        <Card className="bg-card text-center h-full flex flex-col items-center justify-center">
-            <CardContent className="p-6">
-                {isUnlocked ? (
-                    <GraduationCap className="h-16 w-16 text-primary mx-auto mb-4 animate-bounce" />
-                ) : (
-                    <Lock className="h-12 w-12 text-muted-foreground mx-auto mb-4"/>
-                )}
-                <h3 className={cn("font-bold text-xl", isUnlocked && "text-primary")}>VIP Mogul Certificate</h3>
-                <p className="text-sm text-muted-foreground mt-2">
-                    {isUnlocked ? "Congratulations! Download Your Certificate." : "Complete all lessons to unlock."}
-                </p>
-            </CardContent>
-        </Card>
-    </motion.div>
-);
-
-
 export default function TrainingCenterPage() {
-    const [watchedVideos, setWatchedVideos] = useState<string[]>([]);
-    const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
+    const { user } = useUser();
+    const firestore = useFirestore();
+    const { userProfile, loading: profileLoading } = useUserProfile();
+    const { toast } = useToast();
     const router = useRouter();
-    const { userProfile, loading: userProfileLoading } = useUserProfile();
 
-    const userPlan = userProfile?.plan || 'monthly'; // Default to monthly for safety
-    const isLifetime = userPlan === 'lifetime';
+    const trainingModulesRef = firestore ? collection(firestore, 'Training_Modules') : null;
+    const { data: trainingModules, loading: modulesLoading } = useCollection<TrainingModule>(trainingModulesRef);
+    
+    const [selectedVideo, setSelectedVideo] = useState<TrainingModule | null>(null);
+    const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
+    
+    const isLoading = profileLoading || modulesLoading;
+    const canAccess = userProfile?.planTier === 'MOGUL' || userProfile?.planTier === 'SCALER' || userProfile?.planTier === 'ENTERPRISE';
+    const completedLessons = userProfile?.completedLessons || [];
 
-    const handlePlayVideo = (video: TrainingVideo, isLocked: boolean) => {
-        if (isLocked) {
+    const progress = useMemo(() => {
+        if (!trainingModules || trainingModules.length === 0) return 0;
+        return (completedLessons.length / trainingModules.length) * 100;
+    }, [completedLessons, trainingModules]);
+
+    const categories = useMemo(() => {
+        if (!trainingModules) return [];
+        return Array.from(new Set(trainingModules.map(v => v.category)));
+    }, [trainingModules]);
+
+    const handlePlayVideo = (video: TrainingModule) => {
+        if (!canAccess) {
             setShowUpgradeDialog(true);
             return;
         }
-        if (!watchedVideos.includes(video.id)) {
-            setWatchedVideos(prev => [...prev, video.id]);
+        setSelectedVideo(video);
+    };
+
+    const handleMarkAsComplete = async (videoId: string) => {
+        if (!user || !firestore || completedLessons.includes(videoId)) return;
+
+        try {
+            const userRef = doc(firestore, 'users', user.uid);
+            await updateDoc(userRef, {
+                completedLessons: arrayUnion(videoId)
+            });
+            toast({
+                title: 'Lesson Completed!',
+                description: 'Your progress has been saved.',
+            });
+        } catch (error: any) {
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Could not save your progress. Please try again.',
+            });
         }
-    };
-    
-    const totalVideos = trainingVideos.length;
-    const progress = (watchedVideos.length / totalVideos) * 100;
-    const allLessonsCompleted = watchedVideos.length === totalVideos;
+    }
 
-    const categories = Array.from(new Set(trainingVideos.map(v => v.category)));
-
-    const isCategoryLocked = (category: string) => {
-        if (isLifetime) return false;
-        return category === 'Conversion: Turning Visitors into Buyers';
-    };
-
-    if (userProfileLoading) {
+    if (isLoading) {
         return (
             <div className="flex justify-center items-center h-96">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -130,89 +144,112 @@ export default function TrainingCenterPage() {
         )
     }
 
-    return (
-        <div className="space-y-8">
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                     <GraduationCap className="h-8 w-8 text-primary" />
-                     <h1 className="text-3xl font-bold font-headline">Mogul Training Center</h1>
-                </div>
-                {isLifetime && (
-                    <Button className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
-                        <Crown className="mr-2 h-5 w-5"/>
-                        1-on-1 Support
+    if (!canAccess) {
+        return (
+            <div className="flex items-center justify-center h-96">
+                <Card className="max-w-lg text-center p-8 border-primary bg-primary/10">
+                    <Crown className="h-16 w-16 text-primary mx-auto mb-4" />
+                    <h2 className="text-2xl font-bold font-headline text-primary">Unlock the Mogul Academy</h2>
+                    <p className="text-muted-foreground mt-2 mb-6">Gain exclusive access to masterclass tutorials, traffic secrets, and conversion strategies by upgrading your plan.</p>
+                    <Button onClick={() => router.push('/plan-selection')} className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+                        Upgrade to Mogul
                     </Button>
-                )}
+                </Card>
             </div>
+        )
+    }
 
-            <Card className="border-primary/50">
-                <CardContent className="p-6">
-                    <p className="text-muted-foreground mb-2">Course Progress</p>
-                    <Progress value={progress} className="h-3 bg-muted border border-primary/20" />
-                    <p className="text-sm text-right text-muted-foreground mt-2">{watchedVideos.length} of {totalVideos} lessons completed</p>
-                </CardContent>
-            </Card>
+    return (
+        <>
+            <Dialog open={!!selectedVideo} onOpenChange={(open) => !open && setSelectedVideo(null)}>
+                <DialogContent className="max-w-4xl bg-card border-primary p-0">
+                   {selectedVideo && (
+                       <>
+                         <div className="aspect-video w-full">
+                            <iframe 
+                                src={selectedVideo.videoUrl} 
+                                title={selectedVideo.title}
+                                frameBorder="0" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                allowFullScreen
+                                className="w-full h-full"
+                            ></iframe>
+                        </div>
+                         <div className="p-6 space-y-4">
+                             <DialogTitle className="text-2xl font-headline text-primary">{selectedVideo.title}</DialogTitle>
+                            <div className="flex items-center justify-between">
+                                <p className="text-sm text-muted-foreground">
+                                    <span className="font-semibold">{selectedVideo.category}</span> - {selectedVideo.difficulty}
+                                </p>
+                                {!completedLessons.includes(selectedVideo.id) && (
+                                     <Button onClick={() => handleMarkAsComplete(selectedVideo.id)}>
+                                        <Check className="mr-2 h-4 w-4" /> Mark as Completed
+                                    </Button>
+                                )}
+                            </div>
+                         </div>
+                       </>
+                   )}
+                </DialogContent>
+            </Dialog>
 
-            <Accordion type="multiple" defaultValue={categories.map(c => c.toLowerCase().replace(/ /g, '-'))} className="w-full space-y-4">
-                 {categories.map(category => {
-                    const isLocked = isCategoryLocked(category);
-                    return (
+            <div className="space-y-8">
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <GraduationCap className="h-8 w-8 text-primary" />
+                        <h1 className="text-3xl font-bold font-headline">Mogul Training Center</h1>
+                    </div>
+                </div>
+
+                <Card className="border-primary/50">
+                    <CardContent className="p-6">
+                        <p className="text-muted-foreground mb-2">Course Progress</p>
+                        <Progress value={progress} className="h-3 bg-muted border border-primary/20" />
+                        <p className="text-sm text-right text-muted-foreground mt-2">{completedLessons.length} of {trainingModules?.length || 0} lessons completed</p>
+                    </CardContent>
+                </Card>
+
+                <Accordion type="multiple" defaultValue={categories.map(c => c.toLowerCase().replace(/ /g, '-'))} className="w-full space-y-4">
+                    {categories.map(category => (
                         <AccordionItem key={category} value={category.toLowerCase().replace(/ /g, '-')} className="border-b-0">
                             <Card className="border-primary/50 overflow-hidden">
-                               <AccordionTrigger className="px-6 py-4 bg-card hover:no-underline hover:bg-muted/50">
-                                    <div className="flex items-center gap-4">
-                                        {isLocked && <Lock className="h-5 w-5 text-primary" />}
-                                        <h2 className="text-2xl font-bold font-headline">{category}</h2>
-                                    </div>
-                                </AccordionTrigger>
-                                <AccordionContent className="p-6">
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        <AnimatePresence>
-                                            {trainingVideos.filter(v => v.category === category).map(video => (
-                                                <VideoCard 
-                                                    key={video.id} 
-                                                    video={video}
-                                                    onPlay={() => handlePlayVideo(video, isLocked)}
-                                                    isWatched={watchedVideos.includes(video.id)}
-                                                    isLocked={isLocked}
-                                                />
-                                            ))}
-                                        </AnimatePresence>
-                                    </div>
-                                </AccordionContent>
-                            </Card>
-                        </AccordionItem>
-                    )
-                })}
-                
-                <AccordionItem value="certificate" className="border-b-0">
-                     <Card className="border-primary/50 overflow-hidden">
-                           <AccordionTrigger className="px-6 py-4 bg-card hover:no-underline hover:bg-muted/50">
-                                <h2 className="text-2xl font-bold font-headline">Course Completion</h2>
+                            <AccordionTrigger className="px-6 py-4 bg-card hover:no-underline hover:bg-muted/50">
+                                <h2 className="text-2xl font-bold font-headline">{category}</h2>
                             </AccordionTrigger>
                             <AccordionContent className="p-6">
-                               <LockedCertificateCard isUnlocked={allLessonsCompleted && isLifetime} />
-                           </AccordionContent>
-                     </Card>
-                </AccordionItem>
-            </Accordion>
-            
-            <AlertDialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
-                <AlertDialogContent className="bg-card border-primary">
-                    <AlertDialogHeader>
-                    <AlertDialogTitle className="text-primary font-headline text-2xl">Upgrade to Unlock</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        Upgrade to a Lifetime Mogul account to unlock this advanced lesson and all future content. Master the art of conversion and scale your empire.
-                    </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                    <AlertDialogCancel>Maybe Later</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => router.push('/plan-selection?from=training')}>
-                        Upgrade Now
-                    </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-        </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {trainingModules?.filter(v => v.category === category).map(video => (
+                                        <VideoCard 
+                                            key={video.id} 
+                                            video={video}
+                                            onPlay={() => handlePlayVideo(video)}
+                                            isWatched={completedLessons.includes(video.id)}
+                                        />
+                                    ))}
+                                </div>
+                            </AccordionContent>
+                            </Card>
+                        </AccordionItem>
+                    ))}
+                </Accordion>
+                
+                 <AlertDialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
+                    <AlertDialogContent className="bg-card border-primary">
+                        <AlertDialogHeader>
+                        <AlertDialogTitle className="text-primary font-headline text-2xl">Upgrade to Unlock</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Upgrade to a Mogul account to unlock this advanced lesson and all future content. Master the art of conversion and scale your empire.
+                        </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                        <AlertDialogCancel>Maybe Later</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => router.push('/plan-selection')}>
+                            Upgrade Now <ExternalLink className="ml-2 h-4 w-4"/>
+                        </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </div>
+        </>
     );
 }
