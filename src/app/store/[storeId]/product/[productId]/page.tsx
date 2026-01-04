@@ -4,22 +4,36 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { storefrontData } from '@/lib/data';
-import { notFound } from 'next/navigation';
-import { ShoppingBag, Check } from 'lucide-react';
+import { notFound, useParams } from 'next/navigation';
+import { ShoppingBag, Check, Loader2 } from 'lucide-react';
 import { useCart } from '../../layout';
+import { useDoc, useFirestore } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
-export default function ProductDetailPage({ params }: { params: { productId: string } }) {
+export default function ProductDetailPage() {
+  const params = useParams();
+  const { storeId, productId } = params;
   const { toast } = useToast();
   const { addToCart } = useCart();
-  
-  const product = storefrontData.find(p => p.id === params.productId);
+  const firestore = useFirestore();
+
+  const productRef = firestore ? doc(firestore, `stores/${storeId}/products/${productId}`) : null;
+  const { data: product, loading: productLoading } = useDoc(productRef);
+
+
+  if (productLoading) {
+      return (
+        <div className="flex justify-center items-center h-[60vh]">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      )
+  }
 
   if (!product) {
     notFound();
   }
 
-  const productImage = PlaceHolderImages.find(img => img.id === product.imageId);
+  const productImage = PlaceHolderImages.find(img => img.id === product.imageUrl);
 
   const handleAddToCart = () => {
     addToCart(product);
@@ -59,7 +73,7 @@ export default function ProductDetailPage({ params }: { params: { productId: str
         {/* Product Info */}
         <div className="space-y-6">
           <h1 className="text-4xl font-bold font-headline text-primary">{product.name}</h1>
-          <p className="text-3xl font-bold">${product.price.toFixed(2)}</p>
+          <p className="text-3xl font-bold">${product.suggestedRetailPrice.toFixed(2)}</p>
           <p className="text-muted-foreground text-lg">{product.description}</p>
           
           <div className="flex flex-col sm:flex-row gap-4">

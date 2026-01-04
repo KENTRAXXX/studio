@@ -15,13 +15,13 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Separator } from '@/components/ui/separator';
 
 type CartItem = {
-  product: StorefrontProduct;
+  product: any; // Using 'any' as product structure might vary
   quantity: number;
 };
 
 type CartContextType = {
   cart: CartItem[];
-  addToCart: (product: Storefront-Product) => void;
+  addToCart: (product: any) => void;
   removeFromCart: (productId: string) => void;
   getCartTotal: () => number;
 };
@@ -39,7 +39,7 @@ export function useCart() {
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
 
-  const addToCart = (product: StorefrontProduct) => {
+  const addToCart = (product: any) => {
     setCart((prevCart) => {
       const existingItem = prevCart.find((item) => item.product.id === product.id);
       if (existingItem) {
@@ -56,7 +56,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const getCartTotal = () => {
-    return cart.reduce((total, item) => total + item.product.price * item.quantity, 0);
+    return cart.reduce((total, item) => {
+        const price = item.product.suggestedRetailPrice || item.product.price;
+        return total + price * item.quantity;
+    }, 0);
   };
   
   const value = { cart, addToCart, removeFromCart, getCartTotal };
@@ -93,21 +96,23 @@ function CartSheet({storeId}: {storeId: string}) {
                         <>
                             <div className="flex-1 overflow-y-auto pr-4">
                                 <ul className="space-y-4">
-                                    {cart.map(item => (
+                                    {cart.map(item => {
+                                        const price = item.product.suggestedRetailPrice || item.product.price;
+                                        return (
                                         <li key={item.product.id} className="flex items-center gap-4">
                                             <div className="relative h-16 w-16 rounded-md overflow-hidden border border-primary/20">
                                                 <Image src={getPlaceholderImage(item.product.imageId)?.imageUrl || ''} alt={item.product.name} fill className="object-cover" />
                                             </div>
                                             <div className="flex-1">
                                                 <h3 className="font-semibold">{item.product.name}</h3>
-                                                <p className="text-sm text-muted-foreground">${item.product.price.toFixed(2)} x {item.quantity}</p>
+                                                <p className="text-sm text-muted-foreground">${price.toFixed(2)} x {item.quantity}</p>
                                             </div>
-                                            <p className="font-semibold">${(item.product.price * item.quantity).toFixed(2)}</p>
+                                            <p className="font-semibold">${(price * item.quantity).toFixed(2)}</p>
                                             <Button variant="ghost" size="icon" onClick={() => removeFromCart(item.product.id)}>
                                                 <X className="h-4 w-4" />
                                             </Button>
                                         </li>
-                                    ))}
+                                    )})}
                                 </ul>
                             </div>
                             <Separator className="my-4 bg-primary/20" />
@@ -147,7 +152,7 @@ export default function StoreLayout({
   const { data: storeData, loading: storeLoading } = useDoc(storeRef);
   
   const storeName = storeData?.storeName || "SOMA Store";
-  const logoUrl = storeData?.logoUrl || getPlaceholderImage('store-logo')?.imageUrl;
+  const logoUrl = storeData?.logoUrl;
 
   return (
     <CartProvider>

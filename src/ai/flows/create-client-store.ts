@@ -92,7 +92,8 @@ const createClientStoreFlow = ai.defineFlow(
             const newProductRef = doc(productsRef, product.id);
             const newProductData = {
                 name: product.name,
-                price: product.retailPrice,
+                suggestedRetailPrice: product.retailPrice,
+                wholesalePrice: product.masterCost,
                 description: `A high-quality ${product.name.toLowerCase()} from our master collection.`, // Placeholder description
                 imageUrl: product.imageId, // We'll use the imageId to resolve the URL on the frontend
                 productType: 'INTERNAL',
