@@ -10,52 +10,57 @@ import SomaLogo from "@/components/logo";
 const plans = [
     {
         id: 'MERCHANT',
-        title: 'The Merchant',
-        price: '$49',
-        priceSubtitle: '/ mo',
-        amount: 4900,
+        title: 'Merchant',
+        price: '$19.99',
+        priceSubtitle: '/mo',
+        amount: 1999,
         icon: ShoppingBag,
-        features: ['Sell Your Own Products', 'Private Inventory Management', 'Standard Support'],
-        bestValue: false
-    },
-    {
-        id: 'SELLER',
-        title: 'The Seller',
-        price: '$79',
-        priceSubtitle: '/ mo',
-        amount: 7900,
-        icon: Gem,
-        features: ['Sell on SOMA Marketplace', 'Wholesale Inventory Upload', '3% Transaction Fee'],
-        bestValue: false
-    },
-    {
-        id: 'MOGUL',
-        title: 'The Mogul',
-        price: '$129',
-        priceSubtitle: '/ mo',
-        amount: 12900,
-        icon: Star,
-        features: ['Full Dropshipping Access', 'Sync from Master Catalog', 'Priority Support'],
-        bestValue: true
+        description: 'Store Only. Perfect for selling your own creations.',
+        features: ['"Add My Own Product" tools', 'Private Inventory Management', 'Standard Support'],
+        bestValue: false,
     },
     {
         id: 'SCALER',
-        title: 'The Scaler',
-        price: '$249',
-        priceSubtitle: '/ mo',
-        amount: 24900,
+        title: 'Scaler',
+        price: '$29',
+        priceSubtitle: '/mo',
+        amount: 2900,
         icon: Rocket,
-        features: ['All Mogul Features', 'Advanced Analytics', 'Lower Transaction Fees'],
+        description: 'Dropship Flex. Start dropshipping with standard fulfillment.',
+        features: ['One-Click Cloning', 'Sync from Master Catalog', 'Standard Fulfillment'],
+        bestValue: false,
+    },
+    {
+        id: 'MOGUL',
+        title: 'Mogul',
+        price: '$500',
+        priceSubtitle: 'one-time',
+        amount: 50000,
+        icon: Star,
+        description: 'Dropship VIP. A lifetime deal for serious entrepreneurs.',
+        features: ['All Scaler Features', 'Priority Shipping Speed', 'VIP Support'],
+        bestValue: true
+    },
+    {
+        id: 'SELLER',
+        title: 'Seller',
+        price: 'Free',
+        priceSubtitle: '+ 3% fee',
+        amount: 0,
+        icon: Gem,
+        description: 'Wholesaler Hub. Supply your products to the SOMA network.',
+        features: ['"Supplier Dashboard" access', 'Upload items to Master Catalog', 'Sell to all SOMA stores'],
         bestValue: false
     },
     {
         id: 'ENTERPRISE',
-        title: 'The Enterprise',
-        price: 'Contact Us',
-        priceSubtitle: '',
-        amount: 0,
+        title: 'Enterprise',
+        price: '$33.33',
+        priceSubtitle: '/mo',
+        amount: 3333,
         icon: Building,
-        features: ['Custom Solutions', 'Dedicated Account Manager', 'API Access & Integrations'],
+        description: 'The Hybrid. The ultimate flexibility for established businesses.',
+        features: ['Everything Unlocked', 'Mix private & SOMA stock', 'Dedicated Account Manager'],
         bestValue: false
     }
 ];
@@ -65,12 +70,7 @@ export default function PlanSelectionPage() {
     const router = useRouter();
 
     const handleConfirm = () => {
-        if (selectedPlan === 'ENTERPRISE') {
-            // Handle contact flow, maybe a mailto link or a contact form page
-            router.push('mailto:sales@soma.com?subject=Enterprise Plan Inquiry');
-        } else {
-            router.push(`/signup?planTier=${selectedPlan}`);
-        }
+        router.push(`/signup?planTier=${selectedPlan}`);
     }
 
     return (
@@ -105,6 +105,7 @@ export default function PlanSelectionPage() {
                                 <Icon className="h-10 w-10 text-primary"/>
                             </div>
                             <CardTitle className="font-headline text-2xl text-foreground">{plan.title}</CardTitle>
+                            <CardDescription>{plan.description}</CardDescription>
                              <div className="flex items-baseline gap-2">
                                <span className="text-4xl font-extrabold text-primary">{plan.price}</span> 
                                <span className="text-muted-foreground">{plan.priceSubtitle}</span>

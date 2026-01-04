@@ -33,12 +33,12 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const plans: { [key: string]: { id: string; name: string; amount: number } } = {
-    MERCHANT: { id: 'MERCHANT', name: 'The Merchant', amount: 4900 },
-    SELLER: { id: 'SELLER', name: 'The Seller', amount: 7900 },
-    MOGUL: { id: 'MOGUL', name: 'The Mogul', amount: 12900 },
-    SCALER: { id: 'SCALER', name: 'The Scaler', amount: 24900 },
-    ENTERPRISE: { id: 'ENTERPRISE', name: 'The Enterprise', amount: 0 },
+const plans: { [key: string]: { id: string; name: string; amount: number; planType: 'monthly' | 'lifetime' | 'free' } } = {
+    MERCHANT: { id: 'MERCHANT', name: 'Merchant', amount: 1999, planType: 'monthly' },
+    MOGUL: { id: 'MOGUL', name: 'Mogul', amount: 50000, planType: 'lifetime' },
+    SCALER: { id: 'SCALER', name: 'Scaler', amount: 2900, planType: 'monthly' },
+    SELLER: { id: 'SELLER', name: 'Seller', amount: 0, planType: 'free' },
+    ENTERPRISE: { id: 'ENTERPRISE', name: 'Enterprise', amount: 3333, planType: 'monthly' },
 };
 
 function LegalCompliance() {
@@ -90,7 +90,7 @@ function SignUpForm() {
   });
 
   const onSubmit = (data: FormValues) => {
-    signUp({ ...data, planTier: selectedPlan.id }, {
+    signUp({ ...data, planTier: selectedPlan.id, plan: selectedPlan.planType }, {
       onSuccess: async (user) => {
         toast({
           title: 'Account Created',
@@ -126,6 +126,7 @@ function SignUpForm() {
                 amount: selectedPlan.amount,
                 metadata: {
                   userId: user.user.uid,
+                  plan: selectedPlan.planType,
                   planTier: selectedPlan.id,
                   template: 'gold-standard', // Default template
                 },
@@ -135,12 +136,13 @@ function SignUpForm() {
             );
             setIsSuccess(true);
         } else {
-            // For free plans or "Contact Us" plans
+            // For free plans (e.g., Seller)
             toast({
                 title: 'Account Created!',
-                description: "We will be in touch shortly to finalize your Enterprise setup."
+                description: "You're all set. Let's get you onboarded."
             });
-            router.push('/dashboard');
+            const redirectPath = planTier === 'SELLER' ? '/backstage' : '/dashboard';
+            router.push(redirectPath);
         }
       },
       onError: (err) => {
@@ -154,6 +156,7 @@ function SignUpForm() {
   };
 
   const isPending = isSigningUp || isInitializing;
+  const buttonText = selectedPlan.amount > 0 ? 'Create Account & Pay' : 'Create Free Account';
 
   return (
       <div className="w-full max-w-lg">
@@ -221,7 +224,7 @@ function SignUpForm() {
                                     </div>
                                     
                                     <Button type="submit" disabled={isPending || !agreedToTerms} className="w-full h-12 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed">
-                                        {isPending ? <Loader2 className="animate-spin" /> : 'Create Account & Pay'}
+                                        {isPending ? <Loader2 className="animate-spin" /> : buttonText}
                                     </Button>
                                 </form>
                             </Form>

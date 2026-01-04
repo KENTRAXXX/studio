@@ -8,6 +8,7 @@ type SignUpCredentials = {
   email: string;
   password: string;
   planTier: string;
+  plan: 'monthly' | 'lifetime' | 'free';
 };
 
 type UseSignUpOptions = {
@@ -46,12 +47,14 @@ export function useSignUp() {
       
       const userDocRef = doc(firestore, 'users', user.uid);
       
-      // Create user profile with the correct planTier
+      const userRole = credentials.planTier === 'SELLER' ? 'SELLER' : 'MOGUL';
+
       await setDoc(userDocRef, {
         email: user.email,
-        hasAccess: false, // Access is granted after payment
-        userRole: credentials.planTier === 'ADMIN' ? 'ADMIN' : 'MOGUL', // Default logic, can be refined
+        hasAccess: false,
+        userRole: userRole,
         planTier: credentials.planTier,
+        plan: credentials.plan,
       });
 
       options?.onSuccess?.(userCredential);
