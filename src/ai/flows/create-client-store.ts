@@ -9,7 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { getFirestore, doc, setDoc, collection, writeBatch, updateDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, collection, writeBatch, updateDoc, addDoc } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import { randomUUID } from 'crypto';
 import { masterCatalog } from '@/lib/data'; // Assuming master catalog is here
@@ -52,72 +52,88 @@ const createClientStoreFlow = ai.defineFlow(
     outputSchema: CreateClientStoreOutputSchema,
   },
   async ({ userId, plan, template, logoUrl, faviconUrl }) => {
-    const instanceId = randomUUID();
-    const storeRef = doc(firestore, 'stores', userId);
-    const userRef = doc(firestore, 'users', userId);
-    const productsRef = collection(storeRef, 'products');
+    try {
+        const instanceId = randomUUID();
+        const storeRef = doc(firestore, 'stores', userId);
+        const userRef = doc(firestore, 'users', userId);
+        const productsRef = collection(storeRef, 'products');
 
-    // 1. Update user document to grant access and log payment
-    await updateDoc(userRef, {
-        hasAccess: true,
-        plan: plan,
-        paidAt: new Date().toISOString() // Timestamp of payment confirmation
-    });
+        // 1. Update user document to grant access and log payment
+        await updateDoc(userRef, {
+            hasAccess: true,
+            plan: plan,
+            paidAt: new Date().toISOString() // Timestamp of payment confirmation
+        });
 
-    // 2. Create the main store document
-    const defaultStoreConfig = {
-      userId: userId,
-      instanceId: instanceId,
-      theme: template === 'gold-standard' ? 'Gold Standard' : template === 'midnight-pro' ? 'Midnight Pro' : 'The Minimalist',
-      currency: 'USD',
-      createdAt: new Date().toISOString(), // Timestamp of store creation
-      storeName: "My SOMA Store", // Default name, user can change later
-      logoUrl: logoUrl || '',
-      faviconUrl: faviconUrl || '',
-      heroImageUrl: '',
-      heroTitle: 'Welcome to Your Store',
-      heroSubtitle: 'Discover curated collections of timeless luxury.',
-      status: 'Live', // Set status to Live
-    };
+        // 2. Create the main store document
+        const defaultStoreConfig = {
+        userId: userId,
+        instanceId: instanceId,
+        theme: template === 'gold-standard' ? 'Gold Standard' : template === 'midnight-pro' ? 'Midnight Pro' : 'The Minimalist',
+        currency: 'USD',
+        createdAt: new Date().toISOString(), // Timestamp of store creation
+        storeName: "My SOMA Store", // Default name, user can change later
+        logoUrl: logoUrl || '',
+        faviconUrl: faviconUrl || '',
+        heroImageUrl: '',
+        heroTitle: 'Welcome to Your Store',
+        heroSubtitle: 'Discover curated collections of timeless luxury.',
+        status: 'Live', // Set status to Live
+        };
 
-    await setDoc(storeRef, defaultStoreConfig);
+        await setDoc(storeRef, defaultStoreConfig);
 
-    // 3. Deep Clone: Copy top 10 products from master catalog
-    const batch = writeBatch(firestore);
-    const top10Products = masterCatalog.slice(0, 10);
+        // 3. Deep Clone: Copy top 10 products from master catalog
+        const batch = writeBatch(firestore);
+        const top10Products = masterCatalog.slice(0, 10);
 
-    top10Products.forEach(product => {
-      const newProductRef = doc(productsRef, product.id);
-      const newProductData = {
-          name: product.name,
-          price: product.retailPrice,
-          description: `A high-quality ${product.name.toLowerCase()} from our master collection.`, // Placeholder description
-          imageUrl: product.imageId, // We'll use the imageId to resolve the URL on the frontend
-      };
-      batch.set(newProductRef, newProductData);
-    });
+        top10Products.forEach(product => {
+        const newProductRef = doc(productsRef, product.id);
+        const newProductData = {
+            name: product.name,
+            price: product.retailPrice,
+            description: `A high-quality ${product.name.toLowerCase()} from our master collection.`, // Placeholder description
+            imageUrl: product.imageId, // We'll use the imageId to resolve the URL on the frontend
+        };
+        batch.set(newProductRef, newProductData);
+        });
 
-    await batch.commit();
+        await batch.commit();
 
 
-    // 4. Placeholder for sending a welcome email
-    console.log(`
-      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      EMAIL SIMULATION
-      To: user with ID ${userId}
-      From: support@soma.com
-      Subject: Welcome to SOMA! Your Store is LIVE!
+        // 4. Placeholder for sending a welcome email
+        console.log(`
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        EMAIL SIMULATION
+        To: user with ID ${userId}
+        From: support@soma.com
+        Subject: Welcome to SOMA! Your Store is LIVE!
 
-      Your payment was successful and your store is now ready!
-      Please point your domain's A record to the IP address: 123.456.78.9
-      You can now manage your store at: /dashboard/my-store
-      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    `);
-    
-    return {
-      storeId: userId,
-      instanceId,
-      message: 'Client store created and products cloned successfully.',
-    };
+        Your payment was successful and your store is now ready!
+        Please point your domain's A record to the IP address: 123.456.78.9
+        You can now manage your store at: /dashboard/my-store
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        `);
+        
+        return {
+        storeId: userId,
+        instanceId,
+        message: 'Client store created and products cloned successfully.',
+        };
+    } catch (error: any) {
+        console.error('Error in createClientStoreFlow:', error);
+        
+        // Log the error to a dedicated admin alerts collection
+        const alertsRef = collection(firestore, 'admin_alerts');
+        await addDoc(alertsRef, {
+            flowName: 'createClientStoreFlow',
+            userId: userId,
+            error: error.message || 'An unknown error occurred',
+            timestamp: new Date().toISOString()
+        });
+
+        // Re-throw the error to ensure the calling function is aware of the failure
+        throw new Error(`Failed to create store for user ${userId}: ${error.message}`);
+    }
   }
 );

@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { trainingVideos, type TrainingVideo } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { GraduationCap, PlayCircle, Lock, Crown } from 'lucide-react';
+import { GraduationCap, PlayCircle, Lock, Crown, Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import {
@@ -26,9 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from '@/components/ui/button';
-import { useUser, useDoc, useFirestore } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import { useRouter } from 'next/navigation';
+import { useUserProfile } from '@/firebase/user-profile-provider';
 
 const VideoCard = ({ video, onPlay, isWatched, isLocked }: { video: TrainingVideo, onPlay: () => void, isWatched: boolean, isLocked: boolean }) => {
     const thumbnail = PlaceHolderImages.find(img => img.id === video.thumbnailId);
@@ -97,11 +96,7 @@ export default function TrainingCenterPage() {
     const [watchedVideos, setWatchedVideos] = useState<string[]>([]);
     const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
     const router = useRouter();
-    const { user } = useUser();
-    const firestore = useFirestore();
-
-    const userDocRef = user && firestore ? doc(firestore, 'users', user.uid) : null;
-    const { data: userProfile } = useDoc(userDocRef);
+    const { userProfile, loading: userProfileLoading } = useUserProfile();
 
     const userPlan = userProfile?.plan || 'monthly'; // Default to monthly for safety
     const isLifetime = userPlan === 'lifetime';
@@ -126,6 +121,14 @@ export default function TrainingCenterPage() {
         if (isLifetime) return false;
         return category === 'Conversion: Turning Visitors into Buyers';
     };
+
+    if (userProfileLoading) {
+        return (
+            <div className="flex justify-center items-center h-96">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        )
+    }
 
     return (
         <div className="space-y-8">

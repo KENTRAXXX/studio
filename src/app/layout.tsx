@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import Script from 'next/script';
+import { UserProfileProvider } from '@/firebase/user-profile-provider';
 
 export const metadata: Metadata = {
   title: 'SomaDS',
@@ -24,7 +25,9 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>
+          <UserProfileProvider>
             {children}
+          </UserProfileProvider>
         </FirebaseClientProvider>
         <Toaster />
       </body>

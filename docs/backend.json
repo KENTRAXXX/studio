@@ -131,6 +131,31 @@
                 }
             },
             "required": ["email", "hasAccess"]
+        },
+        "adminAlert": {
+            "title": "Admin Alert",
+            "description": "An alert for administrators regarding a system event.",
+            "type": "object",
+            "properties": {
+                "flowName": {
+                    "type": "string",
+                    "description": "The name of the flow where the error occurred."
+                },
+                "userId": {
+                    "type": "string",
+                    "description": "The ID of the user related to the event."
+                },
+                "error": {
+                    "type": "string",
+                    "description": "The error message or details."
+                },
+                "timestamp": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "When the alert was generated."
+                }
+            },
+            "required": ["flowName", "error", "timestamp"]
         }
     },
     "auth": {
@@ -154,6 +179,12 @@
                 "$ref": "#/entities/userProfile"
             },
             "description": "Stores user profile information."
+        },
+        "/admin_alerts/{alertId}": {
+            "schema": {
+                "$ref": "#/entities/adminAlert"
+            },
+            "description": "Logs critical system errors for admin review."
         }
     }
 }
