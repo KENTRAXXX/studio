@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@/firebase';
+import { useUser, useCollection, useFirestore } from '@/firebase';
 
 import {
   Card,
@@ -21,15 +21,20 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { masterCatalog, storeOwners } from "@/lib/data";
-import { DollarSign, MoreHorizontal, Ban, Loader2 } from "lucide-react";
+import { DollarSign, MoreHorizontal, Ban, Loader2, Bank, CheckCircle, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { collection, query } from 'firebase/firestore';
 
 export default function MasterAdminPage() {
     const { user, loading: userLoading } = useUser();
     const router = useRouter();
     const [isAdmin, setIsAdmin] = useState(false);
     const [loading, setLoading] = useState(true);
+    const firestore = useFirestore();
+
+    const withdrawalRequestsRef = firestore ? query(collection(firestore, 'withdrawal_requests')) : null;
+    const { data: withdrawalRequests, loading: withdrawalsLoading } = useCollection(withdrawalRequestsRef);
 
     useEffect(() => {
         if (!userLoading) {
@@ -53,7 +58,9 @@ export default function MasterAdminPage() {
     const totalPlatformSales = 1250340.50;
     const myCommission = totalPlatformSales * 0.05;
 
-    if (loading || userLoading) {
+    const isLoading = loading || userLoading || withdrawalsLoading;
+
+    if (isLoading) {
         return (
             <div className="flex justify-center items-center h-96">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -92,33 +99,56 @@ export default function MasterAdminPage() {
                 </Card>
             </div>
 
-            <Card className="border-primary/50">
+            <Card className="border-destructive/50">
                 <CardHeader>
-                    <CardTitle>Master Product Catalog</CardTitle>
+                    <CardTitle className="text-destructive flex items-center gap-2">
+                        <Bank className="h-6 w-6" />
+                        Pending Withdrawal Requests
+                    </CardTitle>
                     <CardDescription>
-                        This catalog is automatically cloned to new client stores.
-                        Products are managed via the 'Product Catalog' page.
+                        Review and process these manual payout requests.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Table>
-                        <TableHeader>
+                         <TableHeader>
                             <TableRow>
-                                <TableHead>Product Name</TableHead>
-                                <TableHead>Master Cost</TableHead>
-                                <TableHead>Retail Price</TableHead>
-                                <TableHead>Stock Level</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>User ID</TableHead>
+                                <TableHead>Bank Details</TableHead>
+                                <TableHead className="text-right">Amount</TableHead>
+                                <TableHead className="text-center">Status</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {masterCatalog.slice(0, 5).map((product) => (
-                                <TableRow key={product.id}>
-                                    <TableCell>{product.name}</TableCell>
-                                    <TableCell>${product.masterCost.toFixed(2)}</TableCell>
-                                    <TableCell>${product.retailPrice.toFixed(2)}</TableCell>
-                                    <TableCell>{product.stockLevel}</TableCell>
+                            {withdrawalRequests && withdrawalRequests.length > 0 ? (
+                                withdrawalRequests.map((req: any) => (
+                                    <TableRow key={req.id}>
+                                        <TableCell>{new Date(req.createdAt).toLocaleDateString()}</TableCell>
+                                        <TableCell className="font-mono text-xs">{req.userId}</TableCell>
+                                        <TableCell className="text-sm">
+                                            {req.bankDetails.accountName} - {req.bankDetails.bankName}
+                                            <br/>
+                                            <span className="font-mono text-xs text-muted-foreground">{req.bankDetails.accountNumber}</span>
+                                        </TableCell>
+                                        <TableCell className="text-right font-mono">${req.amount.toFixed(2)}</TableCell>
+                                        <TableCell className="text-center">
+                                             <Badge variant={req.status === 'pending' ? 'destructive' : 'default'} className="flex items-center gap-1">
+                                                {req.status === 'pending' ? <Clock className="h-3 w-3" /> : <CheckCircle className="h-3 w-3" />}
+                                                {req.status}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <Button size="sm" disabled={req.status !== 'pending'}>Mark as Paid</Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={6} className="text-center h-24">No pending withdrawals.</TableCell>
                                 </TableRow>
-                            ))}
+                            )}
                         </TableBody>
                     </Table>
                 </CardContent>

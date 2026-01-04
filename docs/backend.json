@@ -217,6 +217,41 @@
                 "createdAt": { "type": "string", "format": "date-time" }
             },
             "required": ["amount", "currency", "orderId", "paymentReference", "createdAt"]
+        },
+        "withdrawalRequest": {
+            "title": "Withdrawal Request",
+            "description": "A user's request to withdraw funds.",
+            "type": "object",
+            "properties": {
+                "userId": {
+                    "type": "string",
+                    "description": "The ID of the user making the request."
+                },
+                "amount": {
+                    "type": "number",
+                    "description": "The amount requested for withdrawal."
+                },
+                "bankDetails": {
+                    "type": "object",
+                    "properties": {
+                        "accountName": { "type": "string" },
+                        "accountNumber": { "type": "string" },
+                        "bankName": { "type": "string" }
+                    },
+                    "required": ["accountName", "accountNumber", "bankName"]
+                },
+                "status": {
+                    "type": "string",
+                    "description": "The status of the withdrawal request.",
+                    "enum": ["pending", "processing", "completed", "rejected"]
+                },
+                "createdAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "The timestamp when the request was made."
+                }
+            },
+            "required": ["userId", "amount", "bankDetails", "status", "createdAt"]
         }
     },
     "auth": {
@@ -246,6 +281,10 @@
         "/revenue_logs/{revenueId}": {
             "schema": { "$ref": "#/entities/revenueRecord" },
             "description": "A log of all platform revenue."
+        },
+        "/withdrawal_requests/{withdrawalId}": {
+            "schema": { "$ref": "#/entities/withdrawalRequest" },
+            "description": "Stores user withdrawal requests."
         }
     }
 }
