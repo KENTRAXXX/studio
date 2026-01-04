@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,7 @@ export default function StorefrontPage() {
   const { data: liveStorefrontData, loading: productsLoading } = useCollection(productsRef);
 
   const storefrontData = isDemoMode ? demoStorefrontData : liveStorefrontData;
+  const productsSectionRef = useRef<HTMLDivElement>(null);
 
   const handleAddToCart = (product: any) => {
     addToCart(product);
@@ -45,6 +47,10 @@ export default function StorefrontPage() {
     if (id?.startsWith('https')) return id;
     return PlaceHolderImages.find(img => img.id === id)?.imageUrl || 'https://picsum.photos/seed/placeholder/600/400';
   }
+  
+  const handleShopNowClick = () => {
+    productsSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   return (
     <div>
@@ -67,14 +73,14 @@ export default function StorefrontPage() {
           <p className="mt-4 text-lg md:text-xl max-w-2xl mx-auto">
             {isDemoMode ? 'This is a preview of a live SOMA storefront.' : 'Discover curated collections of timeless luxury.'}
           </p>
-          <Button size="lg" className="mt-8 h-12 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+          <Button size="lg" className="mt-8 h-12 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleShopNowClick}>
             Shop Now
           </Button>
         </div>
       </section>
 
       {/* Product Grid */}
-      <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <section ref={productsSectionRef} className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <h2 className="text-3xl font-bold text-center font-headline mb-10">Featured Products</h2>
         {productsLoading && !isDemoMode ? (
             <div className="flex justify-center items-center h-64">
