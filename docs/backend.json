@@ -155,6 +155,11 @@
                 "isVerifiedSeller": {
                     "type": "boolean",
                     "description": "Indicates if a user with the SELLER role has completed verification."
+                },
+                "status": {
+                    "type": "string",
+                    "description": "The current status of a user, often used for seller onboarding.",
+                    "enum": ["pending_review", "approved", "rejected"]
                 }
             },
             "required": ["email", "hasAccess", "userRole"]
