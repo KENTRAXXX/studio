@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import {
   SidebarProvider,
@@ -9,7 +11,6 @@ import {
   SidebarMenuButton,
   SidebarTrigger,
   SidebarInset,
-  SidebarTitle,
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard,
@@ -28,6 +29,7 @@ import {
   Users,
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
+import { useUserProfile } from '@/firebase/user-profile-provider';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
@@ -58,6 +60,11 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const { userProfile } = useUserProfile();
+
+  const isSeller = userProfile?.planTier === 'SELLER';
+  const isAdmin = userProfile?.isAdmin === true;
+
   return (
     <SidebarProvider>
       <Sidebar>
@@ -79,32 +86,42 @@ export default function DashboardLayout({
                 </Link>
               </SidebarMenuItem>
             ))}
-             <SidebarMenuItem>
-                <div className="p-2 text-xs font-medium text-muted-foreground">Backstage</div>
-            </SidebarMenuItem>
-            {backstageNavItems.map((item) => (
-              <SidebarMenuItem key={item.href}>
-                <Link href={item.href}>
-                  <SidebarMenuButton tooltip={item.label}>
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
-            ))}
-            <SidebarMenuItem>
-                <div className="p-2 text-xs font-medium text-muted-foreground">Admin</div>
-            </SidebarMenuItem>
-            {adminNavItems.map((item) => (
-              <SidebarMenuItem key={item.href}>
-                <Link href={item.href}>
-                  <SidebarMenuButton tooltip={item.label}>
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
-            ))}
+
+            {isSeller && (
+              <>
+                <SidebarMenuItem>
+                    <div className="p-2 text-xs font-medium text-muted-foreground">Backstage</div>
+                </SidebarMenuItem>
+                {backstageNavItems.map((item) => (
+                  <SidebarMenuItem key={item.href}>
+                    <Link href={item.href}>
+                      <SidebarMenuButton tooltip={item.label}>
+                        <item.icon />
+                        <span>{item.label}</span>
+                      </SidebarMenuButton>
+                    </Link>
+                  </SidebarMenuItem>
+                ))}
+              </>
+            )}
+
+            {isAdmin && (
+              <>
+                <SidebarMenuItem>
+                    <div className="p-2 text-xs font-medium text-muted-foreground">Admin</div>
+                </SidebarMenuItem>
+                {adminNavItems.map((item) => (
+                  <SidebarMenuItem key={item.href}>
+                    <Link href={item.href}>
+                      <SidebarMenuButton tooltip={item.label}>
+                        <item.icon />
+                        <span>{item.label}</span>
+                      </SidebarMenuButton>
+                    </Link>
+                  </SidebarMenuItem>
+                ))}
+              </>
+            )}
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
