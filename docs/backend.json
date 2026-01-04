@@ -86,9 +86,13 @@
                     "type": "string",
                     "description": "The name of the product."
                 },
-                "price": {
+                "suggestedRetailPrice": {
                     "type": "number",
-                    "description": "The retail price of the product."
+                    "description": "The suggested retail price of the product."
+                },
+                "wholesalePrice": {
+                    "type": "number",
+                    "description": "The wholesale cost of the product, relevant for dropshipped items."
                 },
                 "description": {
                     "type": "string",
@@ -108,7 +112,7 @@
                     "description": "The ID of the user who owns/supplies the product."
                 }
             },
-            "required": ["name", "price", "imageUrl", "productType", "vendorId"]
+            "required": ["name", "suggestedRetailPrice", "imageUrl", "productType", "vendorId"]
         },
         "userProfile": {
             "title": "User Profile",
@@ -142,6 +146,15 @@
                     "type": "string",
                     "description": "The role of the user within the platform.",
                     "enum": ["ADMIN", "MOGUL", "SELLER"]
+                },
+                "planTier": {
+                    "type": "string",
+                    "description": "The specific plan tier for the user, determining access level.",
+                    "enum": ["MERCHANT", "MOGUL", "SCALER", "SELLER", "ENTERPRISE"]
+                },
+                "isVerifiedSeller": {
+                    "type": "boolean",
+                    "description": "Indicates if a user with the SELLER role has completed verification."
                 }
             },
             "required": ["email", "hasAccess", "userRole"]
