@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, UploadCloud } from "lucide-react";
-import GlobalProductCatalogPage from "./global-product-catalog/page";
+import GlobalProductCatalogPage from "../dashboard/product-catalog/page";
 
 const PrivateInventoryView = () => (
     <Card className="border-primary/50 text-center flex flex-col items-center justify-center h-96">
