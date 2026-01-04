@@ -111,6 +111,10 @@
                 "vendorId": {
                     "type": "string",
                     "description": "The ID of the user who owns/supplies the product."
+                },
+                 "isManagedBySoma": {
+                    "type": "boolean",
+                    "description": "True if the product is a dropshipped item from the SOMA catalog."
                 }
             },
             "required": ["name", "suggestedRetailPrice", "imageUrl", "productType", "vendorId"]
@@ -161,6 +165,13 @@
                     "type": "string",
                     "description": "The current status of a user, often used for seller onboarding.",
                     "enum": ["pending_review", "approved", "rejected"]
+                },
+                "completedLessons": {
+                    "type": "array",
+                    "description": "An array of Training_Module IDs that the user has completed.",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             },
             "required": ["email", "hasAccess", "userRole"]
@@ -261,6 +272,20 @@
                 }
             },
             "required": ["userId", "amount", "bankDetails", "status", "createdAt"]
+        },
+        "trainingModule": {
+            "title": "Training Module",
+            "description": "A single video lesson in the Mogul Training Center.",
+            "type": "object",
+            "properties": {
+                "title": { "type": "string" },
+                "duration": { "type": "number", "description": "Duration in minutes." },
+                "category": { "type": "string" },
+                "difficulty": { "type": "string", "enum": ["Beginner", "Intermediate", "Advanced", "Masterclass"] },
+                "thumbnailUrl": { "type": "string", "format": "uri" },
+                "videoUrl": { "type": "string", "format": "uri", "description": "URL for embedding (e.g., YouTube, Vimeo)." }
+            },
+            "required": ["title", "duration", "category", "difficulty", "thumbnailUrl", "videoUrl"]
         }
     },
     "auth": {
@@ -298,6 +323,10 @@
         "/withdrawal_requests/{withdrawalId}": {
             "schema": { "$ref": "#/entities/withdrawalRequest" },
             "description": "Stores user withdrawal requests."
+        },
+        "/Training_Modules/{moduleId}": {
+            "schema": { "$ref": "#/entities/trainingModule" },
+            "description": "Contains all available training videos for the Mogul Academy."
         }
     }
 }

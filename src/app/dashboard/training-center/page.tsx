@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -60,7 +61,7 @@ const VideoCard = ({ video, onPlay, isWatched }: { video: TrainingModule, onPlay
         >
             <Card className="bg-card">
                  <div className="relative w-full aspect-video">
-                    {video.thumbnailUrl && <Image src={video.thumbnailUrl} alt={video.title} fill className="object-cover"/>}
+                    {video.thumbnailUrl && <Image src={video.thumbnailUrl} alt={video.title} fill className="object-cover" data-ai-hint="video thumbnail"/>}
                     <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/20 transition-all duration-300">
                         <PlayCircle className="h-16 w-16 text-white/70 group-hover:text-white group-hover:scale-110 transition-all duration-300" />
                     </div>
@@ -107,6 +108,7 @@ export default function TrainingCenterPage() {
     }, [trainingModules]);
 
     const handlePlayVideo = (video: TrainingModule) => {
+        // This check is a bit redundant since we gate the whole page, but good for defense-in-depth
         if (!canAccess) {
             setShowUpgradeDialog(true);
             return;
@@ -192,6 +194,23 @@ export default function TrainingCenterPage() {
                 </DialogContent>
             </Dialog>
 
+             <AlertDialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
+                <AlertDialogContent className="bg-card border-primary">
+                    <AlertDialogHeader>
+                    <AlertDialogTitle className="text-primary font-headline text-2xl">Upgrade to Unlock</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Upgrade to a Mogul account to unlock this advanced lesson and all future content. Master the art of conversion and scale your empire.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel>Maybe Later</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => router.push('/plan-selection')}>
+                        Upgrade Now <ExternalLink className="ml-2 h-4 w-4"/>
+                    </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
             <div className="space-y-8">
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
@@ -216,38 +235,25 @@ export default function TrainingCenterPage() {
                                 <h2 className="text-2xl font-bold font-headline">{category}</h2>
                             </AccordionTrigger>
                             <AccordionContent className="p-6">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {trainingModules?.filter(v => v.category === category).map(video => (
-                                        <VideoCard 
-                                            key={video.id} 
-                                            video={video}
-                                            onPlay={() => handlePlayVideo(video)}
-                                            isWatched={completedLessons.includes(video.id)}
-                                        />
-                                    ))}
-                                </div>
+                                {isLoading ? (
+                                    <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+                                ) : (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {trainingModules?.filter(v => v.category === category).map(video => (
+                                            <VideoCard 
+                                                key={video.id} 
+                                                video={video}
+                                                onPlay={() => handlePlayVideo(video)}
+                                                isWatched={completedLessons.includes(video.id)}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
                             </AccordionContent>
                             </Card>
                         </AccordionItem>
                     ))}
                 </Accordion>
-                
-                 <AlertDialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
-                    <AlertDialogContent className="bg-card border-primary">
-                        <AlertDialogHeader>
-                        <AlertDialogTitle className="text-primary font-headline text-2xl">Upgrade to Unlock</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Upgrade to a Mogul account to unlock this advanced lesson and all future content. Master the art of conversion and scale your empire.
-                        </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                        <AlertDialogCancel>Maybe Later</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => router.push('/plan-selection')}>
-                            Upgrade Now <ExternalLink className="ml-2 h-4 w-4"/>
-                        </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
             </div>
         </>
     );
