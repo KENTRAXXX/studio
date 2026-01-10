@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart2, DollarSign, Loader2, Package } from 'lucide-react';
+import { BarChart2, DollarSign, Loader2, Package, TrendingUp } from 'lucide-react';
 import {
   ResponsiveContainer,
   LineChart,
@@ -16,10 +16,19 @@ import {
 } from 'recharts';
 import { format } from 'date-fns';
 
+type OrderProduct = {
+  id: string;
+  name: string;
+  quantity: number;
+  price: number; // Retail price at time of sale
+  wholesalePrice?: number; // Wholesale price at time of sale
+};
+
 type Order = {
   id: string;
   total: number;
   createdAt: string;
+  cart: OrderProduct[];
 };
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -50,14 +59,24 @@ export default function AnalyticsPage() {
 
   const { data: orders, loading: ordersLoading } = useCollection<Order>(ordersRef);
 
-  const { totalRevenue, totalOrders, avgOrderValue, salesByDay } = useMemo(() => {
+  const { totalRevenue, totalOrders, totalWholesaleCost, netProfit, salesByDay } = useMemo(() => {
     if (!orders) {
-      return { totalRevenue: 0, totalOrders: 0, avgOrderValue: 0, salesByDay: [] };
+      return { totalRevenue: 0, totalOrders: 0, totalWholesaleCost: 0, netProfit: 0, salesByDay: [] };
     }
 
     const revenue = orders.reduce((acc, order) => acc + order.total, 0);
     const orderCount = orders.length;
-    const avgValue = orderCount > 0 ? revenue / orderCount : 0;
+    
+    const wholesaleCost = orders.reduce((acc, order) => {
+        const orderCost = order.cart.reduce((itemAcc, item) => {
+            // Use saved wholesale price, or fallback to 30% margin estimation if missing
+            const cost = item.wholesalePrice ?? item.price * 0.7;
+            return itemAcc + (cost * item.quantity);
+        }, 0);
+        return acc + orderCost;
+    }, 0);
+
+    const profit = revenue - wholesaleCost;
 
     const dailySales = orders.reduce((acc, order) => {
         const date = format(new Date(order.createdAt), 'yyyy-MM-dd');
@@ -76,7 +95,8 @@ export default function AnalyticsPage() {
     return {
       totalRevenue: revenue,
       totalOrders: orderCount,
-      avgOrderValue: avgValue,
+      totalWholesaleCost: wholesaleCost,
+      netProfit: profit,
       salesByDay: chartData
     };
   }, [orders]);
@@ -106,24 +126,27 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-primary">${totalRevenue.toFixed(2)}</div>
+             <p className="text-xs text-muted-foreground">{totalOrders} total orders</p>
           </CardContent>
         </Card>
          <Card className="border-primary/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+            <CardTitle className="text-sm font-medium">Cost of Goods Sold</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-primary">{totalOrders}</div>
+            <div className="text-3xl font-bold text-primary">${totalWholesaleCost.toFixed(2)}</div>
+             <p className="text-xs text-muted-foreground">Total wholesale cost</p>
           </CardContent>
         </Card>
-         <Card className="border-primary/50">
+         <Card className="border-green-500/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Average Order Value</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-primary">${avgOrderValue.toFixed(2)}</div>
+            <div className="text-3xl font-bold text-green-400">${netProfit.toFixed(2)}</div>
+             <p className="text-xs text-muted-foreground">After all costs</p>
           </CardContent>
         </Card>
       </div>

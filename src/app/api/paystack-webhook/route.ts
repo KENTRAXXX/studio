@@ -33,45 +33,57 @@ async function executePaymentSplit(eventData: any) {
             let totalWholesaleCost = 0;
             const payoutDocs: any[] = [];
             const revenueDocs: any[] = [];
+            const processedCart: any[] = [];
 
             // --- Calculate splits for each item ---
             for (const item of cart) {
-                const productRef = doc(firestore, `Master_Catalog/${item.id}`);
+                const productRef = doc(firestore, `stores/${storeId}/products/${item.id}`);
                 const productSnap = await transaction.get(productRef);
 
                 if (!productSnap.exists()) {
-                    throw new Error(`Product with ID ${item.id} not found in Master_Catalog.`);
+                    throw new Error(`Product with ID ${item.id} not found in store ${storeId}.`);
                 }
                 const productData = productSnap.data();
                 
-                const wholesalePrice = productData.masterCost || 0; // Renamed from wholesalePrice
-                const retailPrice = productData.retailPrice || 0; // This is the price the Mogul set
+                const wholesalePrice = productData.wholesalePrice || 0;
+                const retailPrice = productData.suggestedRetailPrice || 0;
                 const vendorId = productData.vendorId;
 
                 totalWholesaleCost += wholesalePrice * item.quantity;
                 
-                if (vendorId !== 'admin') { // Only split for external seller products
+                // Add product pricing data to the cart for historical record
+                processedCart.push({
+                    ...item,
+                    price: retailPrice,
+                    wholesalePrice: wholesalePrice
+                });
+                
+                if (vendorId !== 'admin' && productData.isManagedBySoma) { 
                   const platformFee = wholesalePrice * 0.03;
                   const sellerPayout = wholesalePrice - platformFee;
 
                   // Payout for the Seller
-                  payoutDocs.push({
-                      userId: vendorId,
-                      amount: sellerPayout * item.quantity,
-                      currency: 'NGN',
-                      status: 'pending',
-                      orderId,
-                      paymentReference: reference,
-                      createdAt: new Date().toISOString()
-                  });
+                  if (sellerPayout > 0) {
+                      payoutDocs.push({
+                          userId: vendorId,
+                          amount: sellerPayout * item.quantity,
+                          currency: 'NGN',
+                          status: 'pending',
+                          orderId,
+                          paymentReference: reference,
+                          createdAt: new Date().toISOString()
+                      });
+                  }
                    // Log SOMA's revenue
-                  revenueDocs.push({
-                      amount: platformFee * item.quantity,
-                      currency: 'NGN',
-                      orderId,
-                      paymentReference: reference,
-                      createdAt: new Date().toISOString()
-                  });
+                  if(platformFee > 0) {
+                      revenueDocs.push({
+                          amount: platformFee * item.quantity,
+                          currency: 'NGN',
+                          orderId,
+                          paymentReference: reference,
+                          createdAt: new Date().toISOString()
+                      });
+                  }
                 }
             }
 
@@ -79,16 +91,18 @@ async function executePaymentSplit(eventData: any) {
             const totalPaid = amount / 100;
             const mogulProfit = totalPaid - totalWholesaleCost;
             
-            // Payout for the Mogul (store owner)
-            payoutDocs.push({
-                userId: storeId, // Mogul's ID is the storeId
-                amount: mogulProfit,
-                currency: 'NGN',
-                status: 'pending',
-                orderId,
-                paymentReference: reference,
-                createdAt: new Date().toISOString()
-            });
+            if (mogulProfit > 0) {
+                // Payout for the Mogul (store owner)
+                payoutDocs.push({
+                    userId: storeId, // Mogul's ID is the storeId
+                    amount: mogulProfit,
+                    currency: 'NGN',
+                    status: 'pending',
+                    orderId,
+                    paymentReference: reference,
+                    createdAt: new Date().toISOString()
+                });
+            }
 
             // --- Commit all writes to Firestore ---
             // 1. Create the main order document
@@ -96,7 +110,7 @@ async function executePaymentSplit(eventData: any) {
             transaction.set(newOrderRef, {
                 orderId,
                 status: "Pending",
-                cart: cart,
+                cart: processedCart, // Use the cart with historical pricing
                 createdAt: new Date().toISOString(),
                 total: totalPaid,
                 customer: customer,
