@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -10,6 +11,7 @@ import {
   getDocs,
   writeBatch,
   updateDoc,
+  getDoc,
 } from 'firebase/firestore';
 import {
   Card,
@@ -199,6 +201,21 @@ export default function TreasuryPage() {
     setProcessingId(request.id);
 
     try {
+        const requestRef = doc(firestore, 'withdrawal_requests', request.id);
+        
+        // --- Safety Check ---
+        // First, read the document to ensure it's still 'pending'.
+        const requestSnap = await getDoc(requestRef);
+        if (requestSnap.data()?.status !== 'pending') {
+            toast({
+                variant: 'destructive',
+                title: 'Action Failed',
+                description: `This request is no longer in pending state. It may have already been processed.`
+            });
+            setProcessingId(null);
+            return;
+        }
+
         const batch = writeBatch(firestore);
 
         // 1. Move all of the user's pending payouts to completed
@@ -212,7 +229,6 @@ export default function TreasuryPage() {
         });
 
         // 2. Update the withdrawal request itself
-        const requestRef = doc(firestore, 'withdrawal_requests', request.id);
         batch.update(requestRef, {
             status: 'completed',
             paidAt: new Date().toISOString(),
@@ -325,10 +341,10 @@ export default function TreasuryPage() {
                         <div className="text-xs text-muted-foreground font-mono">{req.bankDetails.bankName} - {req.bankDetails.accountNumber}</div>
                     </TableCell>
                     <TableCell className="text-right space-x-2">
-                        {processingId === req.id ? <Loader2 className="animate-spin" /> : (
+                        {processingId === req.id ? <Loader2 className="animate-spin ml-auto" /> : (
                             <>
                                 <DeclineModal request={req} onDecline={(reason) => handleDecline(req, reason)} />
-                                <Button size="sm" onClick={() => handleMarkAsPaid(req)}>
+                                <Button size="sm" onClick={() => handleMarkAsPaid(req)} disabled={processingId !== null}>
                                     <CheckCircle className="mr-2 h-4 w-4"/> Mark as Paid
                                 </Button>
                             </>
