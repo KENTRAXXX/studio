@@ -4,14 +4,13 @@ import { useState, createContext, useContext, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { Search, ShoppingCart, X, Loader2 } from 'lucide-react';
-import { useFirestore, useDoc } from '@/firebase';
+import { Search, ShoppingCart, X, Loader2, Mail } from 'lucide-react';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import SomaLogo from '@/components/logo';
 import { PlaceHolderImages, type ImagePlaceholder } from '@/lib/placeholder-images';
-import { storefrontData, type StorefrontProduct } from '@/lib/data';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 
@@ -140,6 +139,36 @@ function CartSheet({storeId}: {storeId: string}) {
     );
 }
 
+function ContactSheet({ ownerEmail }: { ownerEmail?: string }) {
+    return (
+        <Sheet>
+            <SheetTrigger asChild>
+                <Button variant="link" className="text-sm text-muted-foreground hover:text-primary p-0 h-auto">Contact Us</Button>
+            </SheetTrigger>
+            <SheetContent className="bg-background border-primary/20">
+                <SheetHeader>
+                    <SheetTitle className="text-primary font-headline text-2xl">Contact Us</SheetTitle>
+                </SheetHeader>
+                <div className="py-8 text-center space-y-6">
+                     <Mail className="h-12 w-12 text-primary mx-auto"/>
+                     <div>
+                        <h3 className="font-semibold">Have a question?</h3>
+                        <p className="text-muted-foreground">Reach out to the store owner directly at:</p>
+                        {ownerEmail ?
+                            <a href={`mailto:${ownerEmail}`} className="font-bold text-primary text-lg">{ownerEmail}</a>
+                            : <Loader2 className="h-6 w-6 animate-spin mx-auto mt-2" />
+                        }
+                     </div>
+                     <Separator className="my-4 bg-primary/20"/>
+                     <div className="text-xs text-muted-foreground">
+                        <p>Support Powered by <span className="font-bold text-primary">SOMA</span></p>
+                     </div>
+                </div>
+            </SheetContent>
+        </Sheet>
+    )
+}
+
 
 export default function StoreLayout({
   children,
@@ -149,8 +178,18 @@ export default function StoreLayout({
   const params = useParams();
   const storeId = params.storeId as string;
   const firestore = useFirestore();
-  const storeRef = firestore ? doc(firestore, 'stores', storeId) : null;
+
+  const storeRef = useMemoFirebase(() => {
+    return firestore ? doc(firestore, 'stores', storeId) : null;
+  }, [firestore, storeId]);
   const { data: storeData, loading: storeLoading } = useDoc(storeRef);
+  
+  const ownerRef = useMemoFirebase(() => {
+    if (!firestore || !storeData?.userId) return null;
+    return doc(firestore, 'users', storeData.userId);
+  }, [firestore, storeData?.userId]);
+  const { data: ownerData } = useDoc(ownerRef);
+
   
   const storeName = storeData?.storeName || "SOMA Store";
   const logoUrl = storeData?.logoUrl;
@@ -187,8 +226,8 @@ export default function StoreLayout({
             <div className="container mx-auto flex flex-col items-center justify-between gap-4 py-8 px-4 sm:flex-row sm:px-6 lg:px-8">
               <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} {storeName}. All Rights Reserved.</p>
               <div className="flex gap-6">
-                <Link href="#" className="text-sm text-muted-foreground hover:text-primary">Privacy Policy</Link>
-                <Link href="#" className="text-sm text-muted-foreground hover:text-primary">Contact Us</Link>
+                <Link href="/legal/terms" className="text-sm text-muted-foreground hover:text-primary">Privacy Policy</Link>
+                <ContactSheet ownerEmail={ownerData?.email}/>
               </div>
             </div>
           </footer>
