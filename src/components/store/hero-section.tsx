@@ -1,0 +1,46 @@
+'use client';
+
+import { useRef } from 'react';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+
+interface HeroSectionProps {
+  imageUrl?: string;
+  title: string;
+  subtitle: string;
+}
+
+export function HeroSection({ imageUrl, title, subtitle }: HeroSectionProps) {
+
+  const handleShopNowClick = () => {
+    const productsSection = document.getElementById('products');
+    productsSection?.scrollIntoView({ behavior: 'smooth' });
+  };
+  
+  return (
+    <section className="relative h-[60vh] w-full flex items-center justify-center text-center text-white">
+      {imageUrl && (
+        <Image
+          src={imageUrl}
+          alt="Luxury storefront hero image"
+          fill
+          priority
+          className="object-cover"
+          data-ai-hint="luxury abstract"
+        />
+      )}
+      <div className="absolute inset-0 bg-black/50" />
+      <div className="relative z-10 p-4">
+        <h1 className="text-5xl md:text-7xl font-extrabold font-headline text-primary animate-gold-pulse">
+          {title}
+        </h1>
+        <p className="mt-4 text-lg md:text-xl max-w-2xl mx-auto">
+          {subtitle}
+        </p>
+        <Button size="lg" className="mt-8 h-12 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleShopNowClick}>
+          Shop Now
+        </Button>
+      </div>
+    </section>
+  );
+}
