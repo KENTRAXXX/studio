@@ -2,30 +2,73 @@
 
 import { useMemo } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import { DollarSign, Percent, Banknote, Loader2 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
+import { addDays, format, parseISO } from 'date-fns';
+
+type Payout = {
+    id: string;
+    amount: number;
+    createdAt: string;
+    orderId: string;
+    status: 'pending';
+}
+
+type Withdrawal = {
+    id: string;
+    status: 'pending' | 'processing' | 'completed' | 'rejected';
+    paidAt?: string;
+}
 
 export default function BackstageFinancesPage() {
     const { user, loading: userLoading } = useUser();
     const firestore = useFirestore();
 
-    const payoutsRef = firestore && user ? query(collection(firestore, 'payouts_pending'), where('userId', '==', user.uid)) : null;
-    const { data: payoutDocs, loading: payoutsLoading } = useCollection(payoutsRef);
+    const pendingPayoutsRef = firestore && user ? query(collection(firestore, 'payouts_pending'), where('userId', '==', user.uid)) : null;
+    const { data: pendingPayouts, loading: payoutsLoading } = useCollection<Payout>(pendingPayoutsRef);
+    
+    const completedWithdrawalsRef = firestore && user ? query(collection(firestore, 'withdrawal_requests'), where('userId', '==', user.uid), where('status', '==', 'completed'), orderBy('paidAt', 'desc')) : null;
+    const { data: completedWithdrawals, loading: withdrawalsLoading } = useCollection<Withdrawal>(completedWithdrawalsRef);
 
     const { totalEarned, platformFees } = useMemo(() => {
-        if (!payoutDocs) return { totalEarned: 0, platformFees: 0 };
+        if (!pendingPayouts) return { totalEarned: 0, platformFees: 0 };
         
-        const total = payoutDocs.reduce((acc, doc) => acc + (doc.amount || 0), 0);
-        const fees = (total / 0.97) * 0.03;
+        const total = pendingPayouts.reduce((acc, doc) => acc + (doc.amount || 0), 0);
+        // Assuming the seller payout is 97% of the wholesale price.
+        const fees = total > 0 ? (total / 0.97) * 0.03 : 0;
 
         return { totalEarned: total, platformFees: fees };
-    }, [payoutDocs]);
+    }, [pendingPayouts]);
+
+    const nextPayoutDate = useMemo(() => {
+        if (withdrawalsLoading || userLoading) return 'Calculating...';
+
+        const getNextPayoutDate = () => {
+            // Find the latest request with status 'completed'
+            if (completedWithdrawals && completedWithdrawals.length > 0 && completedWithdrawals[0].paidAt) {
+                const lastPaidDate = parseISO(completedWithdrawals[0].paidAt);
+                const nextDate = addDays(lastPaidDate, 7);
+                return format(nextDate, 'MMM d, yyyy');
+            }
+            
+            // If none are completed, use user's creation date
+            if (user?.metadata.creationTime) {
+                const creationDate = new Date(user.metadata.creationTime);
+                const nextDate = addDays(creationDate, 7);
+                return format(nextDate, 'MMM d, yyyy');
+            }
+
+            return 'TBD';
+        };
+
+        return getNextPayoutDate();
+    }, [completedWithdrawals, user, withdrawalsLoading, userLoading]);
     
-    const isLoading = userLoading || payoutsLoading;
+    const isLoading = userLoading || payoutsLoading || withdrawalsLoading;
 
     return (
         <div className="flex flex-col items-center min-h-screen bg-background p-4 sm:p-6 text-foreground">
@@ -39,7 +82,7 @@ export default function BackstageFinancesPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                      <Card className="border-slate-700 bg-slate-900/50">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-slate-400">Total Earned (Net)</CardTitle>
+                            <CardTitle className="text-sm font-medium text-slate-400">Pending Payout (Net)</CardTitle>
                             <DollarSign className="h-4 w-4 text-slate-400" />
                         </CardHeader>
                         <CardContent>
@@ -48,7 +91,7 @@ export default function BackstageFinancesPage() {
                     </Card>
                      <Card className="border-slate-700 bg-slate-900/50">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-slate-400">Platform Fees Paid</CardTitle>
+                            <CardTitle className="text-sm font-medium text-slate-400">Platform Fees Paid (Est.)</CardTitle>
                             <Percent className="h-4 w-4 text-slate-400" />
                         </CardHeader>
                         <CardContent>
@@ -61,7 +104,7 @@ export default function BackstageFinancesPage() {
                             <Banknote className="h-4 w-4 text-slate-400" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-3xl font-bold text-slate-200">Oct 31, 2024</div>
+                           {isLoading ? <Loader2 className="h-8 w-8 animate-spin text-slate-400" /> : <div className="text-3xl font-bold text-slate-200">{nextPayoutDate}</div>}
                         </CardContent>
                     </Card>
                 </div>
@@ -87,8 +130,8 @@ export default function BackstageFinancesPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {payoutDocs && payoutDocs.length > 0 ? (
-                                        payoutDocs.map((payout: any) => (
+                                    {pendingPayouts && pendingPayouts.length > 0 ? (
+                                        pendingPayouts.map((payout) => (
                                             <TableRow key={payout.id} className="border-slate-800 hover:bg-slate-800/50">
                                                 <TableCell className="text-slate-400">{new Date(payout.createdAt).toLocaleDateString()}</TableCell>
                                                 <TableCell className="font-mono text-xs text-slate-300">{payout.orderId}</TableCell>
