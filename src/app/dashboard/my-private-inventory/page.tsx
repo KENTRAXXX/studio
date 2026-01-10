@@ -23,11 +23,13 @@ import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { AddPrivateProductModal } from '@/components/AddPrivateProductModal';
+import { EditPrivateProductModal } from '@/components/EditPrivateProductModal';
 import { useToast } from '@/hooks/use-toast';
 
 type PrivateProduct = {
   id: string;
   name: string;
+  description: string;
   suggestedRetailPrice: number;
   stock: number;
   imageUrl: string;
@@ -40,7 +42,10 @@ export default function MyPrivateInventoryPage() {
   const router = useRouter();
   const { toast } = useToast();
   
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<PrivateProduct | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState(false);
 
@@ -63,6 +68,11 @@ export default function MyPrivateInventoryPage() {
   }, [firestore, user]);
 
   const { data: privateProducts, loading: productsLoading } = useCollection<PrivateProduct>(privateProductsRef);
+
+  const handleEditClick = (product: PrivateProduct) => {
+    setSelectedProduct(product);
+    setIsEditModalOpen(true);
+  };
 
   const handleImportClick = () => {
     fileInputRef.current?.click();
@@ -145,7 +155,14 @@ export default function MyPrivateInventoryPage() {
 
   return (
     <>
-    <AddPrivateProductModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} />
+    <AddPrivateProductModal isOpen={isAddModalOpen} onOpenChange={setIsAddModalOpen} />
+    {selectedProduct && (
+      <EditPrivateProductModal
+        isOpen={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        product={selectedProduct}
+      />
+    )}
     <input
         type="file"
         ref={fileInputRef}
@@ -164,7 +181,7 @@ export default function MyPrivateInventoryPage() {
                 {isImporting ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <Upload className="mr-2 h-5 w-5"/>}
                 Import from CSV
             </Button>
-            <Button onClick={() => setIsModalOpen(true)} className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Button onClick={() => setIsAddModalOpen(true)} className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
                 <PlusCircle className="mr-2 h-5 w-5"/>
                 Add New Product
             </Button>
@@ -186,7 +203,7 @@ export default function MyPrivateInventoryPage() {
                     <Warehouse className="h-16 w-16 text-muted-foreground mb-4" />
                     <h3 className="text-xl font-bold font-headline text-primary">Your Warehouse is Empty</h3>
                     <p className="text-muted-foreground mt-2 mb-6">Add your first product to start selling.</p>
-                    <Button onClick={() => setIsModalOpen(true)} className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+                    <Button onClick={() => setIsAddModalOpen(true)} className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
                         <PlusCircle className="mr-2 h-5 w-5"/>
                         Upload Your First Luxury Item
                     </Button>
@@ -222,7 +239,7 @@ export default function MyPrivateInventoryPage() {
                                     <Badge>{product.stock || 0}</Badge>
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    <Button variant="outline" size="sm">Edit</Button>
+                                    <Button variant="outline" size="sm" onClick={() => handleEditClick(product)}>Edit</Button>
                                 </TableCell>
                             </TableRow>
                         ))}
