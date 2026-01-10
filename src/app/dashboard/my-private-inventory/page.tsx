@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { writeBatch } from 'firebase/firestore';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,9 +20,10 @@ import { Badge } from "@/components/ui/badge";
 
 import { useUserProfile } from '@/firebase/user-profile-provider';
 import { useUser, useFirestore, useCollection } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, doc } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { AddPrivateProductModal } from '@/components/AddPrivateProductModal';
+import { useToast } from '@/hooks/use-toast';
 
 type PrivateProduct = {
   id: string;
@@ -36,7 +38,11 @@ export default function MyPrivateInventoryPage() {
   const { userProfile, loading: profileLoading } = useUserProfile();
   const firestore = useFirestore();
   const router = useRouter();
+  const { toast } = useToast();
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   const isLoading = userLoading || profileLoading;
 
@@ -57,10 +63,70 @@ export default function MyPrivateInventoryPage() {
   }, [firestore, user]);
 
   const { data: privateProducts, loading: productsLoading } = useCollection<PrivateProduct>(privateProductsRef);
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const text = e.target?.result;
+        if (typeof text !== 'string' || !firestore || !user) return;
+
+        setIsImporting(true);
+        const { id: toastId } = toast({ title: 'Processing CSV...', description: 'Please wait while we import your products.' });
+
+        try {
+            const rows = text.split('\n').slice(1); // Skip header row
+            const batch = writeBatch(firestore);
+            const productsCollectionRef = collection(firestore, 'stores', user.uid, 'products');
+            let importedCount = 0;
+
+            rows.forEach(row => {
+                const [name, description, price, stock, imageUrl] = row.split(',').map(s => s.trim());
+                if (name && price && stock) {
+                    const newProductRef = doc(productsCollectionRef);
+                    batch.set(newProductRef, {
+                        name,
+                        description: description || '',
+                        suggestedRetailPrice: parseFloat(price),
+                        stock: parseInt(stock, 10),
+                        imageUrl: imageUrl || '',
+                        isManagedBySoma: false,
+                        wholesalePrice: 0,
+                        vendorId: user.uid,
+                        productType: 'INTERNAL',
+                    });
+                    importedCount++;
+                }
+            });
+
+            await batch.commit();
+
+            toast({
+                title: 'Import Complete',
+                description: `${importedCount} products have been successfully added to your inventory.`,
+            });
+        } catch (error: any) {
+             toast({
+                variant: 'destructive',
+                title: 'Import Failed',
+                description: error.message || 'An unexpected error occurred during import.',
+            });
+        } finally {
+            setIsImporting(false);
+            // Reset file input value to allow re-uploading the same file
+            if(fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+    reader.readAsText(file);
+  };
   
   const getPlaceholderImage = (id: string) => {
-    // This is a mock lookup. In a real app, you'd have a more robust way to handle images.
-    // We'll use the product image URL directly if it's a full URL.
     if (id?.startsWith('https')) return id;
     return PlaceHolderImages.find(img => img.id === id)?.imageUrl || 'https://picsum.photos/seed/placeholder/100/100';
   }
@@ -80,6 +146,13 @@ export default function MyPrivateInventoryPage() {
   return (
     <>
     <AddPrivateProductModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} />
+    <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+        accept=".csv"
+    />
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -87,8 +160,8 @@ export default function MyPrivateInventoryPage() {
             <h1 className="text-3xl font-bold font-headline">My Private Inventory</h1>
         </div>
         <div className="flex gap-2">
-            <Button variant="outline">
-                <Upload className="mr-2 h-5 w-5"/>
+            <Button variant="outline" onClick={handleImportClick} disabled={isImporting}>
+                {isImporting ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <Upload className="mr-2 h-5 w-5"/>}
                 Import from CSV
             </Button>
             <Button onClick={() => setIsModalOpen(true)} className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
