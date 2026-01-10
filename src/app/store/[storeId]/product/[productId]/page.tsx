@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { notFound, useParams } from 'next/navigation';
+import { notFound, useParams, useRouter } from 'next/navigation';
 import { ShoppingBag, Check, Loader2, DollarSign, TrendingUp, Percent } from 'lucide-react';
 import { useCart } from '../../layout';
 import { useDoc, useFirestore } from '@/firebase';
@@ -17,6 +17,7 @@ import { useUserProfile } from '@/firebase/user-profile-provider';
 
 export default function ProductDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const { storeId, productId } = params;
   const { toast } = useToast();
   const { addToCart } = useCart();
@@ -28,6 +29,8 @@ export default function ProductDetailPage() {
   
   const [currentPrice, setCurrentPrice] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
+  const [isBuyingNow, setIsBuyingNow] = useState(false);
+
 
   useEffect(() => {
     if (product) {
@@ -64,6 +67,15 @@ export default function ProductDetailPage() {
       description: `${product.name} has been added to your cart.`,
       action: <Check className="h-5 w-5 text-green-500" />,
     });
+  };
+
+  const handleBuyNow = async () => {
+    setIsBuyingNow(true);
+    const productWithCurrentPrice = { ...product, suggestedRetailPrice: currentPrice };
+    addToCart(productWithCurrentPrice);
+    // No toast needed for instant redirect
+    router.push(`/store/${storeId}/checkout`);
+    // No need to setIsBuyingNow(false) as the user is navigated away
   };
   
   const handlePriceSave = async () => {
@@ -167,8 +179,8 @@ export default function ProductDetailPage() {
               <ShoppingBag className="mr-2 h-5 w-5" />
               Add to Cart
             </Button>
-            <Button size="lg" className="h-12 text-lg flex-1 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleAddToCart}>
-              Buy Now
+            <Button size="lg" className="h-12 text-lg flex-1 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleBuyNow} disabled={isBuyingNow}>
+              {isBuyingNow ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Securing Item...</> : "Buy Now"}
             </Button>
           </div>
         </div>
