@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -22,6 +23,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useUser, useCollection, useFirestore } from '@/firebase';
+import { useUserProfile } from '@/firebase/user-profile-provider';
 import { collection, doc, setDoc, getDocs } from 'firebase/firestore';
 import { demoProducts, type DemoProduct } from '@/lib/demo-data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -57,6 +59,8 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
+  const router = useRouter();
+  const { userProfile } = useUserProfile();
 
   const [syncedProducts, setSyncedProducts] = useState<Set<string>>(new Set());
   const [syncingProducts, setSyncingProducts] = useState<Set<string>>(new Set());
@@ -82,6 +86,18 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
       });
     }
   }, [userProductsRef]);
+
+  const handleAddToCatalog = () => {
+    if (userProfile?.planTier === 'SELLER') {
+      router.push('/backstage/add-product');
+    } else {
+      toast({
+        title: 'Redirecting to Seller Onboarding...',
+        description: 'You need to be a verified seller to add products.',
+      });
+      router.push('/backstage');
+    }
+  };
 
   const handleSync = async (product: Product) => {
     if (isDemo) {
@@ -149,7 +165,7 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
             Global Product Catalog
           </h1>
         </div>
-        <Button className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+        <Button onClick={handleAddToCatalog} className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
           <PlusCircle className="mr-2 h-5 w-5" />
           Add to Global Catalog
         </Button>
