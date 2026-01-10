@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { notFound, useParams } from 'next/navigation';
-import { ShoppingBag, Check, Loader2, DollarSign, TrendingUp } from 'lucide-react';
+import { ShoppingBag, Check, Loader2, DollarSign, TrendingUp, Percent } from 'lucide-react';
 import { useCart } from '../../layout';
 import { useDoc, useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -13,6 +13,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useUserProfile } from '@/firebase/user-profile-provider';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -20,6 +21,7 @@ export default function ProductDetailPage() {
   const { toast } = useToast();
   const { addToCart } = useCart();
   const firestore = useFirestore();
+  const { userProfile, loading: profileLoading } = useUserProfile();
 
   const productRef = firestore ? doc(firestore, `stores/${storeId}/products/${productId}`) : null;
   const { data: product, loading: productLoading } = useDoc(productRef);
@@ -33,7 +35,9 @@ export default function ProductDetailPage() {
     }
   }, [product]);
 
-  if (productLoading) {
+  const isLoading = productLoading || profileLoading;
+
+  if (isLoading) {
       return (
         <div className="flex justify-center items-center h-[60vh]">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -47,12 +51,12 @@ export default function ProductDetailPage() {
   
   const wholesalePrice = product.wholesalePrice || 0;
   const profit = currentPrice - wholesalePrice;
+  const somaFee = wholesalePrice * 0.03;
   const isPriceInvalid = currentPrice < wholesalePrice;
 
   const productImage = PlaceHolderImages.find(img => img.id === product.imageUrl);
 
   const handleAddToCart = () => {
-    // We add to cart with the current (potentially edited) price
     const productWithCurrentPrice = { ...product, suggestedRetailPrice: currentPrice };
     addToCart(productWithCurrentPrice);
     toast({
@@ -101,44 +105,54 @@ export default function ProductDetailPage() {
                 />
             )}
             </div>
-             {/* Mogul Pricing Box */}
-            <Card className="border-primary/50 bg-card">
-                <CardHeader>
-                    <CardTitle className="font-headline text-primary">Mogul Pricing</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="flex justify-between items-center p-3 rounded-md bg-muted/50">
-                        <div className="flex items-center gap-2">
-                             <DollarSign className="h-5 w-5 text-muted-foreground"/>
-                             <span className="font-medium text-muted-foreground">Wholesale Cost</span>
-                        </div>
-                        <span className="font-bold font-mono text-lg">${wholesalePrice.toFixed(2)}</span>
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="current-price">Your Retail Price</Label>
-                        <Input 
-                            id="current-price"
-                            type="number"
-                            value={currentPrice}
-                            onChange={(e) => setCurrentPrice(parseFloat(e.target.value) || 0)}
-                            className="text-lg font-bold h-12"
-                        />
-                        {isPriceInvalid && (
-                            <p className="text-sm text-destructive font-medium">Price cannot be lower than wholesale cost.</p>
-                        )}
-                    </div>
-                     <div className="flex justify-between items-center p-3 rounded-md bg-green-600/10 border border-green-600/30">
-                        <div className="flex items-center gap-2">
-                             <TrendingUp className="h-5 w-5 text-green-400"/>
-                             <span className="font-medium text-green-400">Projected Profit</span>
-                        </div>
-                        <span className="font-bold font-mono text-lg text-green-400">${profit.toFixed(2)}</span>
-                    </div>
-                     <Button onClick={handlePriceSave} disabled={isPriceInvalid || isSaving} className="w-full">
-                        {isSaving ? <Loader2 className="animate-spin" /> : 'Save Price'}
-                    </Button>
-                </CardContent>
-            </Card>
+            
+            {/* Mogul Pricing Box */}
+            {(userProfile?.planTier === 'MOGUL' || userProfile?.planTier === 'SCALER' || userProfile?.planTier === 'ENTERPRISE') && (
+              <Card className="border-primary/50 bg-card">
+                  <CardHeader>
+                      <CardTitle className="font-headline text-primary">Mogul Pricing</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                      <div className="flex justify-between items-center p-3 rounded-md bg-muted/50">
+                          <div className="flex items-center gap-2">
+                              <DollarSign className="h-5 w-5 text-muted-foreground"/>
+                              <span className="font-medium text-muted-foreground">Wholesale Cost</span>
+                          </div>
+                          <span className="font-bold font-mono text-lg">${wholesalePrice.toFixed(2)}</span>
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="current-price">Your Retail Price</Label>
+                          <Input 
+                              id="current-price"
+                              type="number"
+                              value={currentPrice}
+                              onChange={(e) => setCurrentPrice(parseFloat(e.target.value) || 0)}
+                              className="text-lg font-bold h-12"
+                          />
+                          {isPriceInvalid && (
+                              <p className="text-sm text-destructive font-medium">Price cannot be lower than wholesale cost.</p>
+                          )}
+                      </div>
+                       <div className="flex justify-between items-center p-3 rounded-md bg-green-600/10 border border-green-600/30">
+                          <div className="flex items-center gap-2">
+                              <TrendingUp className="h-5 w-5 text-green-400"/>
+                              <span className="font-medium text-green-400">Projected Profit</span>
+                          </div>
+                          <span className="font-bold font-mono text-lg text-green-400">${profit.toFixed(2)}</span>
+                      </div>
+                       <div className="flex justify-between items-center p-3 rounded-md bg-red-600/10 border border-red-600/30">
+                          <div className="flex items-center gap-2">
+                              <Percent className="h-5 w-5 text-red-400"/>
+                              <span className="font-medium text-red-400">SOMA Fee (3%)</span>
+                          </div>
+                          <span className="font-bold font-mono text-lg text-red-400">-${somaFee.toFixed(2)}</span>
+                      </div>
+                      <Button onClick={handlePriceSave} disabled={isPriceInvalid || isSaving} className="w-full">
+                          {isSaving ? <Loader2 className="animate-spin" /> : 'Save Price'}
+                      </Button>
+                  </CardContent>
+              </Card>
+            )}
         </div>
 
 
