@@ -176,6 +176,22 @@
                     "items": {
                         "type": "string"
                     }
+                },
+                "legalBusinessName": {
+                    "type": "string",
+                    "description": "The legal name of the seller's business."
+                },
+                "warehouseAddress": {
+                    "type": "string",
+                    "description": "The primary shipping address for the seller."
+                },
+                "taxId": {
+                    "type": "string",
+                    "description": "The seller's business tax identification number."
+                },
+                "contactPhone": {
+                    "type": "string",
+                    "description": "The contact phone number for the seller's business."
                 }
             },
             "required": ["email", "hasAccess", "userRole", "hasAcceptedTerms"]
