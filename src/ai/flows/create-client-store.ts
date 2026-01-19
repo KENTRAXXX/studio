@@ -10,10 +10,11 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getFirestore, doc, setDoc, collection, writeBatch, updateDoc, addDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, collection, writeBatch, updateDoc, addDoc, getDoc } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import { randomUUID } from 'crypto';
 import { masterCatalog } from '@/lib/data'; // Assuming master catalog is here
+import { sendWelcomeEmail } from './send-welcome-email';
 
 // Initialize Firebase
 const { firestore } = initializeFirebase();
@@ -110,17 +111,17 @@ const createClientStoreFlow = ai.defineFlow(
             await batch.commit();
         }
 
-        // 4. Placeholder for sending a welcome email
-        console.log(`
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        EMAIL SIMULATION
-        To: user with ID ${userId}
-        Subject: Welcome to SOMA! Your Store is LIVE!
-
-        Your payment was successful and your store is now ready!
-        You can now manage your store at: /dashboard
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        `);
+        // 4. Send a welcome email
+        const userSnap = await getDoc(userRef);
+        const userData = userSnap.data();
+        if (userData?.email) {
+            await sendWelcomeEmail({
+                to: userData.email,
+                storeName: defaultStoreConfig.storeName,
+            });
+        } else {
+            console.error(`Could not send welcome email to user ${userId}, email not found.`);
+        }
         
         return {
         storeId: userId,

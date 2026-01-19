@@ -5,6 +5,8 @@ import crypto from 'crypto';
 import { createClientStore } from '@/ai/flows/create-client-store';
 import { doc, getDoc, getFirestore, updateDoc, collection, addDoc, runTransaction, query, where, getDocs } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
+import { sendOrderEmail } from '@/ai/flows/send-order-email';
+import { getAppCheck } from 'firebase-admin/app-check';
 
 
 const { firestore } = initializeFirebase();
@@ -18,9 +20,9 @@ async function executePaymentSplit(eventData: any) {
     }
 
     try {
-        await runTransaction(firestore, async (transaction) => {
-            const orderId = `SOMA-${reference.slice(-6).toUpperCase()}`;
+        const orderId = `SOMA-${reference.slice(-6).toUpperCase()}`;
 
+        await runTransaction(firestore, async (transaction) => {
             // --- Idempotency Check ---
             const ordersRef = collection(firestore, `stores/${storeId}/orders`);
             const existingOrderQuery = query(ordersRef, where("paymentReference", "==", reference));
@@ -136,6 +138,18 @@ async function executePaymentSplit(eventData: any) {
         
         console.log(`Successfully processed payment split for reference: ${reference}`);
 
+        // --- Send Order Confirmation Email ---
+        const storeRef = doc(firestore, 'stores', storeId);
+        const storeSnap = await getDoc(storeRef);
+        const storeName = storeSnap.data()?.storeName || 'SOMA Store';
+
+        await sendOrderEmail({
+            to: customer.email,
+            orderId: orderId,
+            status: 'Pending',
+            storeName: storeName
+        });
+
     } catch (error: any) {
         console.error(`Failed to execute payment split for reference ${reference}:`, error);
         // Optional: Log this failure to a dedicated error collection in Firestore for admin review
@@ -151,6 +165,18 @@ async function executePaymentSplit(eventData: any) {
 
 
 export async function POST(req: Request) {
+  // --- App Check Verification ---
+  const appCheckToken = req.headers.get('X-Firebase-AppCheck');
+  if (!appCheckToken) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  try {
+    await getAppCheck().verifyToken(appCheckToken);
+  } catch (err) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  // --- End App Check ---
+
   const secret = process.env.PAYSTACK_SECRET_KEY;
   if (!secret) {
     console.error('Paystack secret key is not set.');

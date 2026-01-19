@@ -3,6 +3,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import React from 'react';
+import { OrderConfirmationEmail, ShippedEmail, CancelledEmail } from '@/lib/emails/order-confirmation';
 
 const SendOrderEmailInputSchema = z.object({
   to: z.string().email().describe("The recipient's email address."),
@@ -19,23 +20,6 @@ const SendOrderEmailOutputSchema = z.object({
 });
 export type SendOrderEmailOutput = z.infer<typeof SendOrderEmailOutputSchema>;
 
-// Simple React components for email templates
-const OrderConfirmationEmail = ({ orderId, storeName }: { orderId: string, storeName: string }) => (
-  <div>
-    <h1>Order Confirmed: #{orderId}</h1>
-    <p>Thank you for your purchase from {storeName}!</p>
-    <p>We've received your order and are getting it ready for shipment. We'll notify you again once it's on its way.</p>
-  </div>
-);
-
-const PayoutSuccessEmail = ({ amount, date }: { amount: number, date: string }) => (
-  <div>
-    <h1>Payout Processed!</h1>
-    <p>A payout of ${amount.toFixed(2)} has been successfully sent to your connected bank account on {date}.</p>
-    <p>Thank you for selling with SOMA.</p>
-  </div>
-);
-
 
 const getEmailContent = (status: 'Pending' | 'Shipped' | 'Cancelled', orderId: string, storeName: string) => {
     switch (status) {
@@ -44,15 +28,15 @@ const getEmailContent = (status: 'Pending' | 'Shipped' | 'Cancelled', orderId: s
                 subject: `Your order #${orderId} from ${storeName} is confirmed!`,
                 template: <OrderConfirmationEmail orderId={orderId} storeName={storeName} />
             };
-        case 'Shipped': // You can create a component for this too
+        case 'Shipped':
             return {
                 subject: `Your order #${orderId} from ${storeName} has shipped!`,
-                template: <div>Your order is on its way!</div>
+                template: <ShippedEmail orderId={orderId} storeName={storeName} />
             };
-        case 'Cancelled': // And this
+        case 'Cancelled':
              return {
                 subject: `Your order #${orderId} from ${storeName} has been cancelled.`,
-                template: <div>Your order has been cancelled.</div>
+                template: <CancelledEmail orderId={orderId} storeName={storeName} />
             };
     }
 }
