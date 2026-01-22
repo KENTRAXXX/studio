@@ -1,64 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// The function that will be executed for every request to the app.
-export function middleware(request: NextRequest) {
-  // Get the URL from the request.
-  const url = request.nextUrl;
+export const runtime = 'edge';
 
-  // Extract the hostname from the URL.
+export function middleware(request: NextRequest) {
+  const url = request.nextUrl;
   const hostname = request.headers.get('host');
 
-  // Define the root domain of the application. In a real environment,
-  // this would come from an environment variable (e.g., process.env.NEXT_PUBLIC_ROOT_DOMAIN).
-  // For this development environment, we'll use the localhost address.
-  const ROOT_DOMAIN = 'localhost:9002';
+  // For production, this should be your main application's domain.
+  const ROOT_DOMAIN = process.env.NODE_ENV === 'production' ? 'soma.app' : 'localhost:9002';
 
-  // If the hostname is missing, we can't do anything, so we'll let it pass.
   if (!hostname) {
     return NextResponse.next();
   }
 
-  // --- Step 1: Check for Root Domain ---
-  // If the request is for the main landing page or dashboard (e.g., 'localhost:9002'),
-  // we don't need to do any rewriting.
+  // If the request is for the root domain, do nothing.
   if (hostname === ROOT_DOMAIN) {
     return NextResponse.next();
   }
 
-  // --- Step 2: Custom Domain Mapping ---
-  // This is a simulated lookup. In a production environment, you would query a
-  // fast database (like Redis, Upstash, or a cached Firestore query) to map the
-  // custom hostname to a storeId.
+  // --- Dynamic Hostname to Store ID Mapping ---
+  // In a production environment on Cloudflare, you would fetch this mapping
+  // from a KV store or a cached edge function for optimal performance.
+  // Direct Firestore queries from middleware are generally not recommended due to latency.
+  // For this example, we simulate a lookup.
   const domainToStoreIdMap: { [key: string]: string } = {
     'demo.soma.store': 'demo',
-    // Add other custom domains here as they are configured
-    // 'my-luxury-brand.com': 'user123-store-id',
+    // 'my-luxury-brand.com': 'user123-store-id' -> This would be fetched dynamically.
   };
 
-  // Get the pure hostname without the port.
-  const currentHost = hostname.split(':')[0];
+  const currentHost = hostname.split(':')[0]; // Remove port
   const storeId = domainToStoreIdMap[currentHost];
 
-  // --- Step 3: Rewrite the URL ---
-  // If we found a storeId for the custom domain, we rewrite the URL
-  // to point to the correct internal store path.
+  // If we find a mapping, rewrite the URL to the /store/[storeId] path.
   if (storeId) {
-    // Reconstruct the URL, prepending the path with `/store/[storeId]`.
-    // Example: mybrand.com/product/123 -> /store/user123/product/123
     const newUrl = new URL(`/store/${storeId}${url.pathname}`, request.url);
-    
-    // Use NextResponse.rewrite to internally forward the request.
-    // The browser URL remains clean (e.g., mybrand.com/product/123).
     return NextResponse.rewrite(newUrl);
   }
 
-  // If no mapping is found, proceed without rewriting.
-  // You might want to redirect to a "Not Found" or "Invalid Domain" page here.
+  // If no mapping is found, you might redirect to a "Not Found" or "Invalid Domain" page.
   return NextResponse.next();
 }
 
-// The matcher defines which paths the middleware will run on.
-// We want it to run on all paths except for Next.js internal paths and static assets.
 export const config = {
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };

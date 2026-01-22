@@ -1,13 +1,12 @@
 
-// src/app/api/paystack-webhook/route.ts
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClientStore } from '@/ai/flows/create-client-store';
 import { doc, getDoc, getFirestore, updateDoc, collection, addDoc, runTransaction, query, where, getDocs } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import { sendOrderEmail } from '@/ai/flows/send-order-email';
-import { getAppCheck } from 'firebase-admin/app-check';
 
+export const runtime = 'edge';
 
 const { firestore } = initializeFirebase();
 
@@ -165,17 +164,10 @@ async function executePaymentSplit(eventData: any) {
 
 
 export async function POST(req: Request) {
-  // --- App Check Verification ---
-  const appCheckToken = req.headers.get('X-Firebase-AppCheck');
-  if (!appCheckToken) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-  try {
-    await getAppCheck().verifyToken(appCheckToken);
-  } catch (err) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-  // --- End App Check ---
+  // NOTE: Firebase Admin SDK (for App Check) is not compatible with the Edge runtime.
+  // For production, protect this endpoint by:
+  // 1. Using a secret key in the header that you verify here.
+  // 2. Using a Cloudflare Worker to validate a JWT or other token.
 
   const secret = process.env.PAYSTACK_SECRET_KEY;
   if (!secret) {
@@ -183,28 +175,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Internal Server Error: Paystack secret not configured.' }, { status: 500 });
   }
   
-  // 1. Get the raw request body
   const rawBody = await req.text();
-  
-  // 2. Get the signature from the header
   const paystackSignature = req.headers.get('x-paystack-signature');
   
-  // 3. Create the HMAC hash
   const hash = crypto.createHmac('sha512', secret).update(rawBody).digest('hex');
   
-  // 4. Compare the hash with the signature
   if (hash !== paystackSignature) {
     console.error('Invalid Paystack signature.');
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
 
-  // 5. If the signature is valid, parse the body and proceed
   const event = JSON.parse(rawBody);
 
   if (event.event === 'charge.success') {
     const { metadata } = event.data;
 
-    // Check if metadata exists before destructuring
     if (!metadata) {
         console.warn('Webhook received for charge.success but has no metadata.', event.data);
         return NextResponse.json({ status: 'success', message: 'Event acknowledged, no metadata.' });
@@ -213,12 +198,10 @@ export async function POST(req: Request) {
     const { userId, plan, template, cart, storeId } = metadata;
 
     if (cart && storeId) {
-        // This is a product sale, trigger payment split logic
         console.log(`Processing product sale for store ${storeId}. Ref: ${event.data.reference}`);
         await executePaymentSplit(event.data);
 
     } else if (userId) {
-        // This is a new user subscription, trigger store creation
         console.log(`Payment success for ${userId}. Triggering store creation...`);
         try {
             const userRef = doc(firestore, "users", userId);
@@ -238,7 +221,6 @@ export async function POST(req: Request) {
             }
         } catch (error) {
             console.error(`Failed to trigger createClientStore flow for ${userId}:`, error);
-             // Log the error to admin_alerts
             const alertsRef = collection(firestore, 'admin_alerts');
             await addDoc(alertsRef, {
                 flowName: 'paystackWebhook_createClientStore',

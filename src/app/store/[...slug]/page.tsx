@@ -11,6 +11,8 @@ import { demoProducts } from '@/lib/demo-data';
 import { HeroSection } from '@/components/store/hero-section';
 import { ProductGrid } from '@/components/store/product-grid';
 
+export const runtime = 'edge';
+
 // Initialize Firebase for server-side usage
 const { firestore } = initializeFirebase();
 
