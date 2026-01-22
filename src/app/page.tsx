@@ -7,7 +7,7 @@ import { useEffect, useState, useRef } from 'react';
 import { AnimatePresence, motion, useInView } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Globe, DollarSign, Boxes, Check, Rocket, Gem } from 'lucide-react';
+import { Globe, DollarSign, Boxes, Check, Rocket, Gem, Users, ShieldCheck } from 'lucide-react';
 import AnimatedCounter from '@/components/ui/animated-counter';
 import Image from 'next/image';
 import { useToastWithRandomCity } from '@/hooks/use-toast-with-random-city';
@@ -70,24 +70,23 @@ function PlatformPulse() {
         const launchDate = new Date('2024-07-01T00:00:00Z');
         const now = new Date();
         const daysSinceLaunch = Math.max(0, Math.floor((now.getTime() - launchDate.getTime()) / (1000 * 60 * 60 * 24)));
-        const monthsSinceLaunch = Math.floor(daysSinceLaunch / 30);
 
         // Sales
         const initialSales = 4455321.98;
         const salesPerDay = 2500;
         const currentSales = initialSales + (daysSinceLaunch * salesPerDay);
 
-        // Countries
-        const initialCountries = 45;
-        const countriesPerMonth = 1;
-        const currentCountries = initialCountries + monthsSinceLaunch * countriesPerMonth;
+        // Sellers
+        const initialSellers = 127;
+        const sellersPerDay = 1;
+        const currentSellers = initialSellers + (daysSinceLaunch * sellersPerDay);
 
-        // Inventory
-        const initialInventory = 1200;
-        const inventoryPerDay = 5;
-        const currentInventory = initialInventory + daysSinceLaunch * inventoryPerDay;
+        // Brands
+        const initialBrands = 89;
+        const brandsGrowthFactor = 0.5; // Slower growth for brands
+        const currentBrands = initialBrands + Math.floor(daysSinceLaunch * brandsGrowthFactor);
         
-        return { currentSales, currentCountries, currentInventory };
+        return { currentSales, currentSellers, currentBrands };
     };
 
     const [initialValues] = useState(getInitialValues);
@@ -120,14 +119,14 @@ function PlatformPulse() {
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.5, delay: 0.1 }}>
                     <Card className="h-full bg-card/50 border-primary/20 text-center">
                         <CardHeader>
-                            <Globe className="h-10 w-10 mx-auto text-primary"/>
-                            <CardTitle className="font-headline text-2xl text-primary">Global Reach</CardTitle>
+                            <Users className="h-10 w-10 mx-auto text-primary"/>
+                            <CardTitle className="font-headline text-2xl text-primary">Verified Sellers</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <p className="text-4xl font-bold">
-                                <AnimatedCounter from={0} to={initialValues.currentCountries} isInView={isInView} />+
+                                <AnimatedCounter from={0} to={initialValues.currentSellers} isInView={isInView} />+
                             </p>
-                            <p className="text-muted-foreground mt-2">Countries with SOMA stores</p>
+                            <p className="text-muted-foreground mt-2">Supplying the Master Catalog</p>
                         </CardContent>
                     </Card>
                 </motion.div>
@@ -153,14 +152,14 @@ function PlatformPulse() {
                  <motion.div initial={{ opacity: 0, y: 20 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.5, delay: 0.3 }}>
                     <Card className="h-full bg-card/50 border-primary/20 text-center">
                         <CardHeader>
-                            <Boxes className="h-10 w-10 mx-auto text-primary"/>
-                            <CardTitle className="font-headline text-2xl text-primary">Inventory Power</CardTitle>
+                            <ShieldCheck className="h-10 w-10 mx-auto text-primary"/>
+                            <CardTitle className="font-headline text-2xl text-primary">Partner Brands</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <p className="text-4xl font-bold">
-                               <AnimatedCounter from={0} to={initialValues.currentInventory} isInView={isInView} />+
+                               <AnimatedCounter from={0} to={initialValues.currentBrands} isInView={isInView} />+
                             </p>
-                            <p className="text-muted-foreground mt-2">Premium products ready to clone</p>
+                            <p className="text-muted-foreground mt-2">Premium brand partnerships</p>
                         </CardContent>
                     </Card>
                 </motion.div>
