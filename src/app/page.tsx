@@ -73,7 +73,7 @@ function PlatformPulse() {
         const monthsSinceLaunch = Math.floor(daysSinceLaunch / 30);
 
         // Sales
-        const initialSales = 142450.85;
+        const initialSales = 4455321.98;
         const salesPerDay = 2500;
         const currentSales = initialSales + (daysSinceLaunch * salesPerDay);
 
