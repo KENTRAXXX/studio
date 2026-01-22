@@ -29,6 +29,7 @@ export default function ProductDetailPage() {
   const { data: product, loading: productLoading } = useDoc(productRef);
   
   const [currentPrice, setCurrentPrice] = useState(0);
+  const [compareAtPrice, setCompareAtPrice] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [isBuyingNow, setIsBuyingNow] = useState(false);
 
@@ -36,6 +37,7 @@ export default function ProductDetailPage() {
   useEffect(() => {
     if (product) {
       setCurrentPrice(product.suggestedRetailPrice);
+      setCompareAtPrice(product.compareAtPrice || 0);
     }
   }, [product]);
 
@@ -54,9 +56,10 @@ export default function ProductDetailPage() {
   }
   
   const wholesalePrice = product.wholesalePrice || 0;
-  const profit = currentPrice - wholesalePrice;
   const somaFee = wholesalePrice * 0.03;
-  const isPriceInvalid = currentPrice < wholesalePrice;
+  const floorPrice = wholesalePrice + somaFee;
+  const profit = currentPrice - wholesalePrice;
+  const isPriceInvalid = currentPrice < floorPrice;
 
   const productImage = PlaceHolderImages.find(img => img.id === product.imageUrl);
 
@@ -84,7 +87,8 @@ export default function ProductDetailPage() {
       setIsSaving(true);
       try {
           await updateDoc(productRef, {
-              suggestedRetailPrice: currentPrice
+              suggestedRetailPrice: currentPrice,
+              compareAtPrice: compareAtPrice
           });
           toast({
               title: 'Price Updated',
@@ -133,19 +137,32 @@ export default function ProductDetailPage() {
                           </div>
                           <span className="font-bold font-mono text-lg">${wholesalePrice.toFixed(2)}</span>
                       </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="current-price">Your Retail Price</Label>
-                          <Input 
-                              id="current-price"
-                              type="number"
-                              value={currentPrice}
-                              onChange={(e) => setCurrentPrice(parseFloat(e.target.value) || 0)}
-                              className="text-lg font-bold h-12"
-                          />
-                          {isPriceInvalid && (
-                              <p className="text-sm text-destructive font-medium">Price cannot be lower than wholesale cost.</p>
-                          )}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="current-price">Your Retail Price</Label>
+                            <Input 
+                                id="current-price"
+                                type="number"
+                                value={currentPrice}
+                                onChange={(e) => setCurrentPrice(parseFloat(e.target.value) || 0)}
+                                className="text-lg font-bold h-12"
+                            />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="compare-at-price">Compare at Price</Label>
+                            <Input 
+                                id="compare-at-price"
+                                type="number"
+                                value={compareAtPrice}
+                                onChange={(e) => setCompareAtPrice(parseFloat(e.target.value) || 0)}
+                                className="text-lg h-12"
+                                placeholder="e.g., 900.00"
+                            />
+                        </div>
                       </div>
+                       {isPriceInvalid && (
+                            <p className="text-sm text-destructive font-medium">Retail price cannot be lower than floor price of ${floorPrice.toFixed(2)} (Wholesale + 3% Fee).</p>
+                        )}
                        <div className="flex justify-between items-center p-3 rounded-md bg-green-600/10 border border-green-600/30">
                           <div className="flex items-center gap-2">
                               <TrendingUp className="h-5 w-5 text-green-400"/>
@@ -172,7 +189,14 @@ export default function ProductDetailPage() {
         {/* Product Info */}
         <div className="space-y-6">
           <h1 className="text-4xl font-bold font-headline text-primary">{product.name}</h1>
-          <p className="text-3xl font-bold">${currentPrice.toFixed(2)}</p>
+          <div className="flex items-baseline gap-4">
+            <p className="text-3xl font-bold">${currentPrice.toFixed(2)}</p>
+            {compareAtPrice > currentPrice && (
+                <p className="text-2xl font-bold text-muted-foreground line-through">
+                    ${compareAtPrice.toFixed(2)}
+                </p>
+            )}
+          </div>
           <p className="text-muted-foreground text-lg">{product.description}</p>
           
           <div className="flex flex-col sm:flex-row gap-4">

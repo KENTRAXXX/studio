@@ -15,6 +15,7 @@ type StorefrontProduct = {
     description: string;
     suggestedRetailPrice: number;
     imageUrl: string;
+    compareAtPrice?: number;
 };
 
 interface ProductGridProps {
@@ -76,7 +77,14 @@ export function ProductGrid({ products, storeId }: ProductGridProps) {
             <Link href={`/store/${storeId}/product/${product.id}`} className="block">
               <h3 className="text-lg font-semibold truncate group-hover:text-primary">{product.name}</h3>
             </Link>
-            <p className="text-muted-foreground font-bold text-lg">${(product.suggestedRetailPrice).toFixed(2)}</p>
+             <div className="flex justify-center items-baseline gap-2 mt-1">
+                <p className="font-bold text-lg text-foreground">${(product.suggestedRetailPrice).toFixed(2)}</p>
+                {product.compareAtPrice && product.compareAtPrice > product.suggestedRetailPrice && (
+                    <p className="text-md text-muted-foreground line-through">
+                        ${(product.compareAtPrice).toFixed(2)}
+                    </p>
+                )}
+            </div>
             <Button 
               className="mt-4 w-full btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground"
               onClick={() => handleAddToCart(product)}

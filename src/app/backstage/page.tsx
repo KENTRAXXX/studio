@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Loader2, Send, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import SomaLogo from '@/components/logo';
@@ -24,6 +24,7 @@ const onboardingSchema = z.object({
   warehouseAddress: z.string().min(10, 'A full warehouse address is required.'),
   taxId: z.string().min(5, 'A valid Tax ID or Business Number is required.'),
   contactPhone: z.string().min(10, 'A valid contact phone number is required.'),
+  governmentIdUrl: z.string().url({ message: 'A valid ID document URL is required.' }).min(1, 'Please provide a URL to your government ID.'),
 });
 
 type OnboardingFormValues = z.infer<typeof onboardingSchema>;
@@ -85,7 +86,13 @@ export default function BackstagePage() {
     try {
         const userRef = doc(firestore, 'users', user.uid);
         await updateDoc(userRef, {
-            ...data,
+            verificationData: {
+                legalBusinessName: data.legalBusinessName,
+                warehouseAddress: data.warehouseAddress,
+                taxId: data.taxId,
+                contactPhone: data.contactPhone,
+                governmentIdUrl: data.governmentIdUrl,
+            },
             status: 'pending_review'
         });
         toast({ title: 'Application Submitted!', description: 'We will review your information and get back to you shortly.'});
@@ -155,6 +162,14 @@ export default function BackstagePage() {
                                         <FormItem><FormLabel>Contact Phone</FormLabel><FormControl><Input placeholder="+1 (555) 123-4567" {...field} /></FormControl><FormMessage /></FormItem>
                                     )} />
                                 </div>
+                                <FormField control={form.control} name="governmentIdUrl" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Government ID URL</FormLabel>
+                                        <FormControl><Input placeholder="e.g., https://secure.link/to/my-id.pdf" {...field} /></FormControl>
+                                        <FormDescription>A secure link to a PDF or image of your government-issued ID.</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
                                 <div className="flex justify-end pt-4">
                                     <Button type="submit" disabled={isSubmitting} size="lg" className="h-12 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
                                         {isSubmitting ? <Loader2 className="animate-spin" /> : <><Send className="mr-2 h-5 w-5"/>Submit for Review</>}
