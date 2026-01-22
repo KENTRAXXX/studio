@@ -78,8 +78,8 @@ const plans = [
         features: ['3% commission on sales', 'Unlimited product uploads', 'Priority support & review'],
         bestValue: false,
         pricing: {
-            monthly: { price: 49.99, planCode: process.env.NEXT_PUBLIC_BRAND_MONTHLY_PLAN_CODE },
-            yearly: { price: 499, planCode: process.env.NEXT_PUBLIC_BRAND_YEARLY_PLAN_CODE },
+            monthly: { price: 21, planCode: process.env.NEXT_PUBLIC_BRAND_MONTHLY_PLAN_CODE },
+            yearly: { price: 210, planCode: process.env.NEXT_PUBLIC_BRAND_YEARLY_PLAN_CODE },
         }
     }
 ];

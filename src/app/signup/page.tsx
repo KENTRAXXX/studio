@@ -56,8 +56,8 @@ const plans: { [key: string]: { id: string; name: string; pricing: any } } = {
         yearly: { amount: 33300, planCode: process.env.NEXT_PUBLIC_ENTERPRISE_YEARLY_PLAN_CODE },
     }},
     BRAND: { id: 'BRAND', name: 'Brand', pricing: {
-        monthly: { amount: 4999, planCode: process.env.NEXT_PUBLIC_BRAND_MONTHLY_PLAN_CODE },
-        yearly: { amount: 49900, planCode: process.env.NEXT_PUBLIC_BRAND_YEARLY_PLAN_CODE },
+        monthly: { amount: 2100, planCode: process.env.NEXT_PUBLIC_BRAND_MONTHLY_PLAN_CODE },
+        yearly: { amount: 21000, planCode: process.env.NEXT_PUBLIC_BRAND_YEARLY_PLAN_CODE },
     }},
 };
 
