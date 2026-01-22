@@ -6,7 +6,7 @@ This document explains how the SOMA platform handles multiple tenant storefronts
 
 Think of the platform using a **Landlord and Tenant** analogy:
 
-1.  **The Root Domain (The Mall)**: This is the main application domain where the SOMA platform itself operates (e.g., `soma.app` in production or `localhost:9002` in development).
+1.  **The Root Domain (The Mall)**: This is the main application domain where the SOMA platform itself operates (e.g., `somatoday.com` in production or `localhost:9002` in development).
     *   It hosts the administrative dashboards for tenants (`/dashboard`).
     *   It hosts the platform's main landing page.
     *   It is the central "headquarters" for all tenants.

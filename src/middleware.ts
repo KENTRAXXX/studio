@@ -7,7 +7,7 @@ export function middleware(request: NextRequest) {
   const hostname = request.headers.get('host');
 
   // For production, this should be your main application's domain.
-  const ROOT_DOMAIN = process.env.NODE_ENV === 'production' ? 'soma.app' : 'localhost:9002';
+  const ROOT_DOMAIN = process.env.NODE_ENV === 'production' ? 'somatoday.com' : 'localhost:9002';
 
   if (!hostname) {
     return NextResponse.next();
