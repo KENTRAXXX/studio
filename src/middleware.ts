@@ -6,15 +6,17 @@ export function middleware(request: NextRequest) {
   const url = request.nextUrl;
   const hostname = request.headers.get('host');
 
-  // For production, this should be your main application's domain.
-  const ROOT_DOMAIN = process.env.NODE_ENV === 'production' ? 'somatoday.com' : 'localhost:9002';
+  // Use an environment variable for the root domain for flexibility.
+  const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'localhost:9002';
 
   if (!hostname) {
-    return NextResponse.next();
+    return new Response('Hostname not found', { status: 400 });
   }
+  
+  const currentHost = hostname.split(':')[0]; // Remove port if present
 
   // If the request is for the root domain, do nothing.
-  if (hostname === ROOT_DOMAIN) {
+  if (currentHost === ROOT_DOMAIN.split(':')[0]) {
     return NextResponse.next();
   }
 
@@ -28,12 +30,14 @@ export function middleware(request: NextRequest) {
     // 'my-luxury-brand.com': 'user123-store-id' -> This would be fetched dynamically.
   };
 
-  const currentHost = hostname.split(':')[0]; // Remove port
   const storeId = domainToStoreIdMap[currentHost];
 
-  // If we find a mapping, rewrite the URL to the /store/[storeId] path.
+  // If we find a mapping, rewrite the URL to the /store/[...slug] path.
+  // The first part of the slug will be the storeId.
   if (storeId) {
-    const newUrl = new URL(`/store/${storeId}${url.pathname}`, request.url);
+    const newUrlPath = `/store/${storeId}${url.pathname}`;
+    const newUrl = new URL(newUrlPath, request.url);
+    console.log(`Rewriting ${hostname}${url.pathname} to ${newUrl.toString()}`);
     return NextResponse.rewrite(newUrl);
   }
 
@@ -42,5 +46,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|assets/).*)'],
 };
