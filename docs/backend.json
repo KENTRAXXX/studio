@@ -137,9 +137,10 @@
                     "type": "boolean",
                     "description": "Indicates if the user has accepted the terms of service."
                 },
-                "isAdmin": {
-                    "type": "boolean",
-                    "description": "Indicates if the user has admin privileges."
+                "userRole": {
+                    "type": "string",
+                    "description": "The role of the user within the platform.",
+                    "enum": ["ADMIN", "MOGUL", "SELLER"]
                 },
                 "plan": {
                     "type": "string",
@@ -150,11 +151,6 @@
                     "type": "string",
                     "format": "date-time",
                     "description": "The timestamp when the user's payment was successfully processed."
-                },
-                 "userRole": {
-                    "type": "string",
-                    "description": "The role of the user within the platform.",
-                    "enum": ["ADMIN", "MOGUL", "SELLER"]
                 },
                 "planTier": {
                     "type": "string",

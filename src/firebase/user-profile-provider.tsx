@@ -11,7 +11,7 @@ type UserProfile = {
   email: string;
   hasAccess: boolean;
   hasAcceptedTerms?: boolean;
-  isAdmin?: boolean;
+  userRole?: 'ADMIN' | 'MOGUL' | 'SELLER';
   plan?: 'monthly' | 'yearly' | 'lifetime' | 'free';
   paidAt?: string;
   planTier?: 'MERCHANT' | 'MOGUL' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND';
@@ -59,8 +59,8 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
          return;
        }
       
-       // 2. Check if terms have been accepted
-       if (userProfile.hasAcceptedTerms === false && !isLegalPage && !isPublicRoute) {
+       // 2. Check if terms have been accepted (bypass for Admins)
+       if (userProfile.userRole !== 'ADMIN' && userProfile.hasAcceptedTerms === false && !isLegalPage && !isPublicRoute) {
          router.push('/legal/terms');
          return;
        }

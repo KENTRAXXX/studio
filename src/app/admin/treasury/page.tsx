@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
-import { useUser, useFirestore, useCollection } from '@/firebase';
+import { useEffect, useState } from 'react';
+import { useFirestore, useCollection, useUserProfile } from '@/firebase';
 import {
   collection,
   query,
@@ -34,7 +34,6 @@ import {
   DollarSign,
   Loader2,
   CheckCircle,
-  XCircle,
   ShieldCheck,
   Landmark,
 } from 'lucide-react';
@@ -70,6 +69,7 @@ type UserProfile = {
   id: string;
   planTier: string;
   email: string;
+  userRole: 'ADMIN' | 'MOGUL' | 'SELLER';
 };
 
 type RevenueLog = {
@@ -79,34 +79,28 @@ type RevenueLog = {
 
 type CombinedRequest = WithdrawalRequest & { user?: UserProfile };
 
-// Custom hook to fetch and combine all treasury-related data
 const useTreasuryData = () => {
     const firestore = useFirestore();
+    const { userProfile, loading: profileLoading } = useUserProfile();
     const router = useRouter();
 
     const [combinedData, setCombinedData] = useState<CombinedRequest[]>([]);
     const [summaryStats, setSummaryStats] = useState({ totalPending: 0, totalRevenue: 0 });
     const [loading, setLoading] = useState(true);
 
-    const { user, loading: userLoading } = useUser();
-    
     useEffect(() => {
-        if (userLoading) return;
-        if (!user) {
+        if (profileLoading) return;
+        if (!userProfile) {
             router.push('/dashboard');
             return;
         }
-
-        user.getIdTokenResult().then((idTokenResult) => {
-            if (!idTokenResult.claims.isAdmin) {
-                router.push('/dashboard');
-            }
-        });
-
-    }, [user, userLoading, router]);
+        if (userProfile.userRole !== 'ADMIN') {
+            router.push('/access-denied');
+        }
+    }, [userProfile, profileLoading, router]);
 
     useEffect(() => {
-        if (!firestore) return;
+        if (!firestore || userProfile?.userRole !== 'ADMIN') return;
 
         const fetchData = async () => {
             setLoading(true);
@@ -145,9 +139,9 @@ const useTreasuryData = () => {
         };
 
         fetchData();
-    }, [firestore]);
+    }, [firestore, userProfile]);
     
-    return { combinedData, summaryStats, loading: loading || userLoading, firestore };
+    return { combinedData, summaryStats, loading: loading || profileLoading, firestore };
 };
 
 
@@ -204,13 +198,12 @@ export default function TreasuryPage() {
         const requestRef = doc(firestore, 'withdrawal_requests', request.id);
         
         // --- Safety Check ---
-        // First, read the document to ensure it's still 'pending'.
         const requestSnap = await getDoc(requestRef);
         if (requestSnap.data()?.status !== 'pending') {
             toast({
                 variant: 'destructive',
                 title: 'Action Failed',
-                description: `This request is no longer in pending state. It may have already been processed.`
+                description: `This request is no longer in pending state.`
             });
             setProcessingId(null);
             return;
@@ -218,7 +211,6 @@ export default function TreasuryPage() {
 
         const batch = writeBatch(firestore);
 
-        // 1. Move all of the user's pending payouts to completed
         const pendingPayoutsQuery = query(collection(firestore, 'payouts_pending'), where('userId', '==', request.userId));
         const pendingPayoutsSnap = await getDocs(pendingPayoutsQuery);
         
@@ -228,7 +220,6 @@ export default function TreasuryPage() {
             batch.delete(payoutDoc.ref);
         });
 
-        // 2. Update the withdrawal request itself
         batch.update(requestRef, {
             status: 'completed',
             paidAt: new Date().toISOString(),
@@ -237,7 +228,6 @@ export default function TreasuryPage() {
         await batch.commit();
 
         toast({ title: 'Success', description: `Request for $${request.amount.toFixed(2)} marked as paid.` });
-        // The data will refetch automatically from the custom hook, but we could also filter the state manually for faster UI update.
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Error', description: error.message });
     } finally {

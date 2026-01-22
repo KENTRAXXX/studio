@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -8,7 +9,7 @@ import {
   doc,
   addDoc,
 } from 'firebase/firestore';
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useUserProfile } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -18,14 +19,26 @@ import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import type { PendingProduct } from '@/lib/types';
 import SomaLogo from '@/components/logo';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function ApprovalQueuePage() {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { userProfile, loading: profileLoading } = useUserProfile();
+  const router = useRouter();
   
   const pendingProductsRef = firestore ? collection(firestore, 'Pending_Master_Catalog') : null;
   const q = pendingProductsRef ? query(pendingProductsRef, where('isApproved', '==', false)) : null;
   const { data: pendingProducts, loading: productsLoading } = useCollection<PendingProduct>(q);
+
+  useEffect(() => {
+    if (!profileLoading) {
+      if (!userProfile || userProfile.userRole !== 'ADMIN') {
+        router.push('/access-denied');
+      }
+    }
+  }, [userProfile, profileLoading, router]);
 
   const handleDecision = async (product: PendingProduct, decision: 'approve' | 'reject') => {
     if (!firestore) return;
@@ -75,6 +88,16 @@ export default function ApprovalQueuePage() {
       });
     }
   };
+  
+  const isLoading = productsLoading || profileLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 sm:p-6">

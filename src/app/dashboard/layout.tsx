@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -64,8 +65,8 @@ export default function DashboardLayout({
 }) {
   const { userProfile } = useUserProfile();
 
-  const isSeller = userProfile?.planTier === 'SELLER';
-  const isAdmin = userProfile?.isAdmin === true;
+  const isSeller = userProfile?.userRole === 'SELLER';
+  const isAdmin = userProfile?.userRole === 'ADMIN';
 
   return (
     <SidebarProvider>

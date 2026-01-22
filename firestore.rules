@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -8,11 +9,6 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userRole == role;
     }
 
-    // Helper function to check if the user is an admin
-    function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-
     // == USERS ==
     // Any authenticated user can read user profiles (for referral program).
     // Users can update their own profile, but cannot change their role, plan, access status, or referral info once set.
@@ -21,11 +17,10 @@ service cloud.firestore {
       allow update: if request.auth.uid == userId
         && !(request.resource.data.userRole is string && request.resource.data.userRole != resource.data.userRole)
         && !(request.resource.data.planTier is string && request.resource.data.planTier != resource.data.planTier)
-        && !(request.resource.data.isAdmin is bool && request.resource.data.isAdmin != resource.data.isAdmin)
         && (resource.data.referredBy == null || request.resource.data.referredBy == resource.data.referredBy);
       
       // Admins can read and write any user profile.
-      allow write: if isAdmin();
+      allow write: if isRole('ADMIN');
     }
 
     // == STORES ==
@@ -56,9 +51,9 @@ service cloud.firestore {
     // Only verified SELLERS can add new products for approval.
     // Admins can read all pending products.
     match /Pending_Master_Catalog/{productId} {
-        allow read: if isAdmin();
+        allow read: if isRole('ADMIN');
         allow create: if isRole('SELLER');
-        allow update: if isAdmin(); // Admins can approve/reject
+        allow update: if isRole('ADMIN'); // Admins can approve/reject
     }
     
     // == MASTER CATALOG ==
@@ -66,7 +61,7 @@ service cloud.firestore {
     // Only Admins can write to the master catalog.
     match /Master_Catalog/{productId} {
         allow read: if request.auth != null;
-        allow write: if isAdmin();
+        allow write: if isRole('ADMIN');
     }
     
     // == TRAINING MODULES ==
@@ -74,25 +69,25 @@ service cloud.firestore {
     // Only Admins can create or update them.
      match /Training_Modules/{moduleId} {
         allow read: if request.auth != null;
-        allow write: if isAdmin();
+        allow write: if isRole('ADMIN');
     }
 
     // == PAYOUTS & REVENUE ==
     // Payout and revenue records are write-only from the server-side webhook.
     // Reading is restricted.
     match /payouts_pending/{payoutId} {
-      allow read: if request.auth.uid == resource.data.userId || isAdmin();
+      allow read: if request.auth.uid == resource.data.userId || isRole('ADMIN');
       allow create: if false; // Server-side only
-      allow update: if isAdmin(); // Only admins can change status
+      allow update: if isRole('ADMIN'); // Only admins can change status
     }
     
      match /payouts_completed/{payoutId} {
-      allow read: if request.auth.uid == resource.data.userId || isAdmin();
+      allow read: if request.auth.uid == resource.data.userId || isRole('ADMIN');
       allow create: if false; // Server-side only
     }
     
     match /revenue_logs/{revenueId} {
-        allow read: if isAdmin();
+        allow read: if isRole('ADMIN');
         allow create: if false; // Server-side only
     }
     
@@ -102,14 +97,14 @@ service cloud.firestore {
     // Admins can read all requests and update their status.
     match /withdrawal_requests/{reqId} {
         allow create: if request.auth.uid == request.resource.data.userId;
-        allow read: if request.auth.uid == resource.data.userId || isAdmin();
-        allow update: if isAdmin();
+        allow read: if request.auth.uid == resource.data.userId || isRole('ADMIN');
+        allow update: if isRole('ADMIN');
     }
     
     // == ADMIN ALERTS ==
     // Write-only from the server-side. Read-only for admins.
     match /admin_alerts/{alertId} {
-        allow read: if isAdmin();
+        allow read: if isRole('ADMIN');
         allow write: if false; // Server-side only
     }
   }

@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { useUser, useCollection, useFirestore } from '@/firebase';
+import { useUser, useCollection, useFirestore, useUserProfile } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, query, doc, updateDoc } from 'firebase/firestore';
 import {
@@ -82,7 +82,7 @@ const getPlanTierBadgeVariant = (planTier: UserProfile['planTier']) => {
 }
 
 export default function UserManagementPage() {
-  const { user: adminUser, loading: adminLoading } = useUser();
+  const { userProfile, loading: profileLoading } = useUserProfile();
   const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
@@ -95,10 +95,12 @@ export default function UserManagementPage() {
   const { data: users, loading: usersLoading } = useCollection<UserProfile>(usersRef);
 
   useEffect(() => {
-    if (!adminLoading && !adminUser) {
-      router.push('/dashboard');
+    if (!profileLoading) {
+      if (!userProfile || userProfile.userRole !== 'ADMIN') {
+        router.push('/access-denied');
+      }
     }
-  }, [adminUser, adminLoading, router]);
+  }, [userProfile, profileLoading, router]);
 
   const filteredUsers = useMemo(() => {
     if (!users) return [];
@@ -125,7 +127,7 @@ export default function UserManagementPage() {
   }
 
 
-  if (adminLoading || usersLoading) {
+  if (profileLoading || usersLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
