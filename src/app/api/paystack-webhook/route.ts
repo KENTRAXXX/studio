@@ -60,31 +60,41 @@ async function executePaymentSplit(eventData: any) {
                 });
                 
                 if (vendorId !== 'admin' && productData.isManagedBySoma) { 
-                  const platformFee = wholesalePrice * 0.03;
-                  const sellerPayout = wholesalePrice - platformFee;
+                    const vendorRef = doc(firestore, "users", vendorId);
+                    const vendorSnap = await transaction.get(vendorRef);
+                    if (!vendorSnap.exists()) {
+                        throw new Error(`Vendor profile for ${vendorId} not found.`);
+                    }
+                    const vendorData = vendorSnap.data();
 
-                  // Payout for the Seller
-                  if (sellerPayout > 0) {
-                      payoutDocs.push({
-                          userId: vendorId,
-                          amount: sellerPayout * item.quantity,
-                          currency: 'NGN',
-                          status: 'pending',
-                          orderId,
-                          paymentReference: reference,
-                          createdAt: new Date().toISOString()
-                      });
-                  }
-                   // Log SOMA's revenue
-                  if(platformFee > 0) {
-                      revenueDocs.push({
-                          amount: platformFee * item.quantity,
-                          currency: 'NGN',
-                          orderId,
-                          paymentReference: reference,
-                          createdAt: new Date().toISOString()
-                      });
-                  }
+                    // Determine commission rate based on seller tier
+                    const commissionRate = vendorData.planTier === 'BRAND' ? 0.03 : 0.09;
+
+                    const platformFee = wholesalePrice * commissionRate;
+                    const sellerPayout = wholesalePrice - platformFee;
+
+                    // Payout for the Seller
+                    if (sellerPayout > 0) {
+                        payoutDocs.push({
+                            userId: vendorId,
+                            amount: sellerPayout * item.quantity,
+                            currency: 'NGN',
+                            status: 'pending',
+                            orderId,
+                            paymentReference: reference,
+                            createdAt: new Date().toISOString()
+                        });
+                    }
+                    // Log SOMA's revenue
+                    if(platformFee > 0) {
+                        revenueDocs.push({
+                            amount: platformFee * item.quantity,
+                            currency: 'NGN',
+                            orderId,
+                            paymentReference: reference,
+                            createdAt: new Date().toISOString()
+                        });
+                    }
                 }
             }
 
@@ -214,7 +224,7 @@ export async function POST(req: Request) {
                     userId,
                     plan: plan || 'monthly',
                     planTier: metadata.planTier || 'MOGUL',
-                    template: template || 'gold-standard',
+                    template: 'gold-standard',
                 };
                 await createClientStore(createClientStoreInput);
                 console.log(`Store created successfully for ${userId}.`);

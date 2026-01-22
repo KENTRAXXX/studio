@@ -159,7 +159,7 @@
                 "planTier": {
                     "type": "string",
                     "description": "The specific plan tier for the user, determining access level.",
-                    "enum": ["MERCHANT", "MOGUL", "SCALER", "SELLER", "ENTERPRISE"]
+                    "enum": ["MERCHANT", "MOGUL", "SCALER", "SELLER", "ENTERPRISE", "BRAND"]
                 },
                 "isVerifiedSeller": {
                     "type": "boolean",

@@ -55,6 +55,10 @@ const plans: { [key: string]: { id: string; name: string; pricing: any } } = {
         monthly: { amount: 3333, planCode: process.env.NEXT_PUBLIC_ENTERPRISE_MONTHLY_PLAN_CODE },
         yearly: { amount: 33300, planCode: process.env.NEXT_PUBLIC_ENTERPRISE_YEARLY_PLAN_CODE },
     }},
+    BRAND: { id: 'BRAND', name: 'Brand', pricing: {
+        monthly: { amount: 4999, planCode: process.env.NEXT_PUBLIC_BRAND_MONTHLY_PLAN_CODE },
+        yearly: { amount: 49900, planCode: process.env.NEXT_PUBLIC_BRAND_YEARLY_PLAN_CODE },
+    }},
 };
 
 
@@ -93,7 +97,7 @@ function SignUpForm() {
                 title: 'Payment Successful!',
                 description: 'Your store is being provisioned. This may take a moment.',
               });
-              const redirectPath = planTier === 'SELLER' ? '/backstage' : '/dashboard/my-store';
+              const redirectPath = (planTier === 'SELLER' || planTier === 'BRAND') ? '/backstage' : '/dashboard/my-store';
               router.push(redirectPath);
             };
 
@@ -104,7 +108,7 @@ function SignUpForm() {
                 title: 'Payment Incomplete',
                 description: 'Your store will not be created until payment is complete. You can restart from your dashboard.',
               });
-              const redirectPath = planTier === 'SELLER' ? '/backstage' : '/dashboard';
+              const redirectPath = (planTier === 'SELLER' || planTier === 'BRAND') ? '/backstage' : '/dashboard';
               router.push(redirectPath);
             };
 
@@ -128,7 +132,7 @@ function SignUpForm() {
                 title: 'Account Created!',
                 description: "You're all set. Let's get you onboarded."
             });
-            const redirectPath = planTier === 'SELLER' ? '/backstage' : '/dashboard';
+            const redirectPath = (planTier === 'SELLER' || planTier === 'BRAND') ? '/backstage' : '/dashboard';
             router.push(redirectPath);
         }
       },

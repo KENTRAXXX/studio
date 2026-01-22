@@ -7,7 +7,7 @@ import { useAuth, useFirestore } from '@/firebase';
 type SignUpCredentials = {
   email: string;
   password: string;
-  planTier: string;
+  planTier: 'MERCHANT' | 'MOGUL' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND';
   plan: 'monthly' | 'yearly' | 'lifetime' | 'free';
   referralCode?: string;
 };
@@ -67,7 +67,7 @@ export function useSignUp() {
       
       const userDocRef = doc(firestore, 'users', user.uid);
       
-      const userRole = credentials.planTier === 'SELLER' ? 'SELLER' : 'MOGUL';
+      const userRole = (credentials.planTier === 'SELLER' || credentials.planTier === 'BRAND') ? 'SELLER' : 'MOGUL';
       
       const newUserProfile: any = {
         email: user.email,

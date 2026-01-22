@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useUser, useFirestore, useCollection } from '@/firebase';
+import { useUser, useFirestore, useCollection, useUserProfile } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -26,6 +26,7 @@ type Withdrawal = {
 
 export default function BackstageFinancesPage() {
     const { user, loading: userLoading } = useUser();
+    const { userProfile, loading: profileLoading } = useUserProfile();
     const firestore = useFirestore();
 
     const pendingPayoutsRef = firestore && user ? query(collection(firestore, 'payouts_pending'), where('userId', '==', user.uid)) : null;
@@ -38,11 +39,14 @@ export default function BackstageFinancesPage() {
         if (!pendingPayouts) return { totalEarned: 0, platformFees: 0 };
         
         const total = pendingPayouts.reduce((acc, doc) => acc + (doc.amount || 0), 0);
-        // Assuming the seller payout is 97% of the wholesale price.
-        const fees = total > 0 ? (total / 0.97) * 0.03 : 0;
+
+        // Determine commission rate based on seller tier
+        const commissionRate = userProfile?.planTier === 'BRAND' ? 0.03 : 0.09;
+        const payoutPercentage = 1 - commissionRate;
+        const fees = total > 0 ? (total / payoutPercentage) * commissionRate : 0;
 
         return { totalEarned: total, platformFees: fees };
-    }, [pendingPayouts]);
+    }, [pendingPayouts, userProfile]);
 
     const nextPayoutDate = useMemo(() => {
         if (withdrawalsLoading || userLoading) return 'Calculating...';
@@ -68,7 +72,7 @@ export default function BackstageFinancesPage() {
         return getNextPayoutDate();
     }, [completedWithdrawals, user, withdrawalsLoading, userLoading]);
     
-    const isLoading = userLoading || payoutsLoading || withdrawalsLoading;
+    const isLoading = userLoading || payoutsLoading || withdrawalsLoading || profileLoading;
 
     return (
         <div className="flex flex-col items-center min-h-screen bg-background p-4 sm:p-6 text-foreground">

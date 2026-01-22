@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, Star, Building, Gem, Rocket, ShoppingBag } from "lucide-react";
+import { Check, Star, Building, Gem, Rocket, ShoppingBag, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SomaLogo from "@/components/logo";
 import { Badge } from "@/components/ui/badge";
@@ -13,15 +13,14 @@ type Interval = 'monthly' | 'yearly';
 
 const plans = [
     {
-        id: 'MERCHANT',
-        title: 'Merchant',
-        icon: ShoppingBag,
-        description: 'Store Only. Perfect for selling your own creations.',
-        features: ['"Add My Own Product" tools', 'Private Inventory Management', 'Standard Support'],
-        bestValue: false,
+        id: 'MOGUL',
+        title: 'Mogul',
+        icon: Star,
+        description: 'Dropship VIP. A lifetime deal for serious entrepreneurs.',
+        features: ['One-Click Cloning', 'Priority Shipping Speed', 'VIP Support'],
+        bestValue: true,
         pricing: {
-            monthly: { price: 19.99, planCode: process.env.NEXT_PUBLIC_MERCHANT_MONTHLY_PLAN_CODE },
-            yearly: { price: 199, planCode: process.env.NEXT_PUBLIC_MERCHANT_YEARLY_PLAN_CODE },
+            lifetime: { price: 500, planCode: null }
         }
     },
     {
@@ -37,25 +36,15 @@ const plans = [
         }
     },
     {
-        id: 'MOGUL',
-        title: 'Mogul',
-        icon: Star,
-        description: 'Dropship VIP. A lifetime deal for serious entrepreneurs.',
-        features: ['All Scaler Features', 'Priority Shipping Speed', 'VIP Support'],
-        bestValue: true,
-        pricing: {
-            lifetime: { price: 500, planCode: null }
-        }
-    },
-    {
-        id: 'SELLER',
-        title: 'Seller',
-        icon: Gem,
-        description: 'Wholesaler Hub. Supply your products to the SOMA network.',
-        features: ['"Supplier Dashboard" access', 'Upload items to Master Catalog', 'Sell to all SOMA stores'],
+        id: 'MERCHANT',
+        title: 'Merchant',
+        icon: ShoppingBag,
+        description: 'Store Only. Perfect for selling your own creations.',
+        features: ['"Add My Own Product" tools', 'Private Inventory Management', 'Standard Support'],
         bestValue: false,
         pricing: {
-            free: { price: 0, planCode: null }
+            monthly: { price: 19.99, planCode: process.env.NEXT_PUBLIC_MERCHANT_MONTHLY_PLAN_CODE },
+            yearly: { price: 199, planCode: process.env.NEXT_PUBLIC_MERCHANT_YEARLY_PLAN_CODE },
         }
     },
     {
@@ -68,6 +57,29 @@ const plans = [
         pricing: {
             monthly: { price: 33.33, planCode: process.env.NEXT_PUBLIC_ENTERPRISE_MONTHLY_PLAN_CODE },
             yearly: { price: 333, planCode: process.env.NEXT_PUBLIC_ENTERPRISE_YEARLY_PLAN_CODE },
+        }
+    },
+    {
+        id: 'SELLER',
+        title: 'Seller',
+        icon: Gem,
+        description: 'Supply products with zero upfront cost.',
+        features: ['9% commission on sales', 'Upload items to Master Catalog', 'Sell to all SOMA stores'],
+        bestValue: false,
+        pricing: {
+            free: { price: 0, planCode: null }
+        }
+    },
+     {
+        id: 'BRAND',
+        title: 'Brand',
+        icon: ShieldCheck,
+        description: 'For established brands. Lower fees & priority.',
+        features: ['3% commission on sales', 'Unlimited product uploads', 'Priority support & review'],
+        bestValue: false,
+        pricing: {
+            monthly: { price: 49.99, planCode: process.env.NEXT_PUBLIC_BRAND_MONTHLY_PLAN_CODE },
+            yearly: { price: 499, planCode: process.env.NEXT_PUBLIC_BRAND_YEARLY_PLAN_CODE },
         }
     }
 ];
@@ -135,9 +147,9 @@ export default function PlanSelectionPage() {
                             <CardTitle className="font-headline text-2xl text-foreground">{plan.title}</CardTitle>
                             <CardDescription>{plan.description}</CardDescription>
                              <div className="flex items-baseline gap-2">
-                               <span className="text-4xl font-extrabold text-primary">${priceInfo.price.toLocaleString('en-US', { minimumFractionDigits: plan.id === 'SCALER' ? 0 : 2, maximumFractionDigits: 2})}</span> 
+                               <span className="text-4xl font-extrabold text-primary">${priceInfo.price.toLocaleString('en-US', { minimumFractionDigits: ['SCALER', 'MOGUL'].includes(plan.id) ? 0 : 2, maximumFractionDigits: 2})}</span> 
                                <span className="text-muted-foreground">
-                                    {plan.pricing.lifetime ? 'one-time' : plan.pricing.free ? '+ 3% fee' : `/${interval === 'monthly' ? 'mo' : 'yr'}`}
+                                    {plan.pricing.lifetime ? 'one-time' : plan.pricing.free ? '' : `/${interval === 'monthly' ? 'mo' : 'yr'}`}
                                </span>
                             </div>
                         </CardHeader>

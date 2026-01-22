@@ -14,7 +14,7 @@ type UserProfile = {
   isAdmin?: boolean;
   plan?: 'monthly' | 'yearly' | 'lifetime' | 'free';
   paidAt?: string;
-  planTier?: 'MERCHANT' | 'MOGUL' | 'SCALER' | 'SELLER' | 'ENTERPRISE';
+  planTier?: 'MERCHANT' | 'MOGUL' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND';
   completedLessons?: string[];
   isDisabled?: boolean;
   referralCode?: string;
