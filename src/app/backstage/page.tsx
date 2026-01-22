@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserProfile } from '@/firebase/user-profile-provider';
 import { useFirestore, useUser } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -13,8 +13,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Loader2, Send, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import SomaLogo from '@/components/logo';
@@ -28,6 +29,31 @@ const onboardingSchema = z.object({
 });
 
 type OnboardingFormValues = z.infer<typeof onboardingSchema>;
+
+const SomaShieldTerms = () => (
+    <div className="space-y-3 text-sm text-muted-foreground">
+        <div className="space-y-1">
+            <h4 className="font-semibold text-foreground">1. Authenticity Guarantee</h4>
+            <p>All products submitted must be 100% authentic. Any seller found providing counterfeit items will face immediate account termination and forfeiture of any pending balance.</p>
+        </div>
+         <div className="space-y-1">
+            <h4 className="font-semibold text-foreground">2. 48-Hour Fulfillment Pledge</h4>
+            <p>Sellers must fulfill (ship) all orders within 48 business hours of receipt. Failure to meet this standard may result in account suspension.</p>
+        </div>
+         <div className="space-y-1">
+            <h4 className="font-semibold text-foreground">3. No-Circumvention Clause</h4>
+            <p>All communications and transactions with buyers discovered through the SOMA platform must remain on the platform. Attempting to move sales off-site is strictly prohibited.</p>
+        </div>
+         <div className="space-y-1">
+            <h4 className="font-semibold text-foreground">4. Payout & Fee Agreement</h4>
+            <p>The seller acknowledges and agrees to SOMA's standard 3% transaction fee on the wholesale price of each item sold, and the 7-day rolling hold on payouts for fraud prevention.</p>
+        </div>
+         <div className="space-y-1">
+            <h4 className="font-semibold text-foreground">5. 14-Day Return Policy</h4>
+            <p>The seller agrees to honor a 14-day return policy for any items that are defective, damaged, or not as described.</p>
+        </div>
+    </div>
+);
 
 
 const OnboardingSuccess = ({ onAcknowledge }: { onAcknowledge: () => void }) => {
@@ -57,6 +83,7 @@ export default function BackstagePage() {
   const { toast } = useToast();
   
   const [isSuccess, setIsSuccess] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const form = useForm<OnboardingFormValues>({
     resolver: zodResolver(onboardingSchema),
@@ -93,7 +120,8 @@ export default function BackstagePage() {
                 contactPhone: data.contactPhone,
                 governmentIdUrl: data.governmentIdUrl,
             },
-            status: 'pending_review'
+            status: 'pending_review',
+            termsAcceptedAt: serverTimestamp(),
         });
         toast({ title: 'Application Submitted!', description: 'We will review your information and get back to you shortly.'});
         setIsSuccess(true);
@@ -170,8 +198,32 @@ export default function BackstagePage() {
                                         <FormMessage />
                                     </FormItem>
                                 )} />
+
+                                <div className="space-y-4 pt-4">
+                                    <h3 className="font-semibold text-primary">SOMA Shield: Seller Terms of Service</h3>
+                                    <ScrollArea className="h-48 w-full rounded-md border border-border p-4">
+                                        <SomaShieldTerms />
+                                    </ScrollArea>
+                                    <div className="flex items-start space-x-3 pt-2">
+                                        <Checkbox 
+                                            id="terms"
+                                            checked={agreedToTerms}
+                                            onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+                                        />
+                                        <div className="grid gap-1.5 leading-none">
+                                            <label
+                                                htmlFor="terms"
+                                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                            >
+                                               I have read and agree to the SOMA Seller Terms of Service.
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+
                                 <div className="flex justify-end pt-4">
-                                    <Button type="submit" disabled={isSubmitting} size="lg" className="h-12 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+                                    <Button type="submit" disabled={isSubmitting || !agreedToTerms} size="lg" className="h-12 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50">
                                         {isSubmitting ? <Loader2 className="animate-spin" /> : <><Send className="mr-2 h-5 w-5"/>Submit for Review</>}
                                     </Button>
                                 </div>
