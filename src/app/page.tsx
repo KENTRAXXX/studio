@@ -15,7 +15,16 @@ import { LiveFeedTicker } from '@/components/ui/live-feed-ticker';
 
 
 function LiveCounter() {
-  const [count, setCount] = useState(184);
+  const getInitialStoreCount = () => {
+    const launchDate = new Date('2024-07-01T00:00:00Z');
+    const now = new Date();
+    const daysSinceLaunch = Math.max(0, Math.floor((now.getTime() - launchDate.getTime()) / (1000 * 60 * 60 * 24)));
+    const initialStores = 184;
+    const storesPerDay = 3;
+    return initialStores + (daysSinceLaunch * storesPerDay);
+  };
+  const [count, setCount] = useState(getInitialStoreCount);
+
 
   useEffect(() => {
     const updateCount = () => {
@@ -56,7 +65,33 @@ function LiveCounter() {
 function PlatformPulse() {
     const ref = useRef(null);
     const isInView = useInView(ref, { once: true, amount: 0.5 });
-    const [globalSalesSum, setGlobalSalesSum] = useState(142450.85);
+    
+    const getInitialValues = () => {
+        const launchDate = new Date('2024-07-01T00:00:00Z');
+        const now = new Date();
+        const daysSinceLaunch = Math.max(0, Math.floor((now.getTime() - launchDate.getTime()) / (1000 * 60 * 60 * 24)));
+        const monthsSinceLaunch = Math.floor(daysSinceLaunch / 30);
+
+        // Sales
+        const initialSales = 142450.85;
+        const salesPerDay = 2500;
+        const currentSales = initialSales + (daysSinceLaunch * salesPerDay);
+
+        // Countries
+        const initialCountries = 45;
+        const countriesPerMonth = 1;
+        const currentCountries = initialCountries + monthsSinceLaunch * countriesPerMonth;
+
+        // Inventory
+        const initialInventory = 1200;
+        const inventoryPerDay = 5;
+        const currentInventory = initialInventory + daysSinceLaunch * inventoryPerDay;
+        
+        return { currentSales, currentCountries, currentInventory };
+    };
+
+    const [initialValues] = useState(getInitialValues);
+    const [globalSalesSum, setGlobalSalesSum] = useState(initialValues.currentSales);
     const [isGlowing, setIsGlowing] = useState(false);
     const { showRandomCityToast } = useToastWithRandomCity();
 
@@ -90,7 +125,7 @@ function PlatformPulse() {
                         </CardHeader>
                         <CardContent>
                             <p className="text-4xl font-bold">
-                                <AnimatedCounter from={0} to={45} isInView={isInView} />+
+                                <AnimatedCounter from={0} to={initialValues.currentCountries} isInView={isInView} />+
                             </p>
                             <p className="text-muted-foreground mt-2">Countries with SOMA stores</p>
                         </CardContent>
@@ -105,7 +140,7 @@ function PlatformPulse() {
                         <CardContent>
                              <p className="text-4xl font-bold">
                                 $<AnimatedCounter 
-                                    from={0} 
+                                    from={initialValues.currentSales} 
                                     to={globalSalesSum} 
                                     isInView={isInView}
                                     formatOptions={{ minimumFractionDigits: 2, maximumFractionDigits: 2 }} 
@@ -123,7 +158,7 @@ function PlatformPulse() {
                         </CardHeader>
                         <CardContent>
                             <p className="text-4xl font-bold">
-                               <AnimatedCounter from={0} to={1200} isInView={isInView} />+
+                               <AnimatedCounter from={0} to={initialValues.currentInventory} isInView={isInView} />+
                             </p>
                             <p className="text-muted-foreground mt-2">Premium products ready to clone</p>
                         </CardContent>
