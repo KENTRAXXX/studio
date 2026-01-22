@@ -45,8 +45,8 @@ const SomaShieldTerms = () => (
             <p>Sellers must not attempt to contact Moguls or Customers to complete transactions outside of the SOMA platform. Any attempt to bypass the SOMA/Paystack fee structure will result in immediate termination of the partnership.</p>
         </div>
          <div className="space-y-1">
-            <h4 className="font-semibold text-foreground">4. Payout Structure</h4>
-            <p>Payouts are triggered only after the customer’s "Return Window" (e.g., 7 days) has closed to ensure the item is accepted. SOMA and Paystack transaction fees are non-refundable and will be deducted automatically from the gross sale.</p>
+            <h4 className="font-semibold text-foreground">4. Financial Processing & Payouts</h4>
+            <p><strong>Centralized Financial Processing</strong>: SOMA serves as the Merchant of Record for all transactions. Customer payments are processed centrally through our secure system. Your earnings (Wholesale Price minus the applicable SOMA commission) are logged to your `payouts_pending` ledger immediately after a sale. <strong>Payout Availability</strong>: To protect against fraud and accommodate customer returns, these pending funds become available for withdrawal only after the order's return window has closed (typically 7 days). <strong>Commission Structure</strong>: SOMA's commission (9% for the free tier, 3% for the Brand tier) is automatically deducted from the wholesale price of each item you sell.</p>
         </div>
          <div className="space-y-1">
             <h4 className="font-semibold text-foreground">5. Return Policy</h4>
