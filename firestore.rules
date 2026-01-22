@@ -14,16 +14,18 @@ service cloud.firestore {
     }
 
     // == USERS ==
-    // Users can read their own profile.
-    // Users can update their own profile, but cannot change their role, plan, or access status.
+    // Any authenticated user can read user profiles (for referral program).
+    // Users can update their own profile, but cannot change their role, plan, access status, or referral info once set.
     match /users/{userId} {
-      allow read, update: if request.auth.uid == userId
+      allow read: if request.auth != null;
+      allow update: if request.auth.uid == userId
         && !(request.resource.data.userRole is string && request.resource.data.userRole != resource.data.userRole)
         && !(request.resource.data.planTier is string && request.resource.data.planTier != resource.data.planTier)
-        && !(request.resource.data.isAdmin is bool && request.resource.data.isAdmin != resource.data.isAdmin);
+        && !(request.resource.data.isAdmin is bool && request.resource.data.isAdmin != resource.data.isAdmin)
+        && (resource.data.referredBy == null || request.resource.data.referredBy == resource.data.referredBy);
       
       // Admins can read and write any user profile.
-      allow read, write: if isAdmin();
+      allow write: if isAdmin();
     }
 
     // == STORES ==

@@ -27,6 +27,7 @@ import {
   Landmark,
   PiggyBank,
   Users,
+  Gift,
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
@@ -41,6 +42,7 @@ const navItems = [
   { href: '/dashboard/domain-settings', icon: Globe, label: 'Domain Settings' },
   { href: '/dashboard/analytics', icon: BarChart2, label: 'Analytics' },
   { href: '/dashboard/wallet', icon: Wallet, label: 'SOMA Wallet' },
+  { href: '/dashboard/referrals', icon: Gift, label: 'Referrals' },
   { href: '/dashboard/accessibility-checker', icon: Accessibility, label: 'A11y Checker' },
 ];
 

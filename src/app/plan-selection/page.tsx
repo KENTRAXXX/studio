@@ -3,74 +3,89 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Check, Star, Building, Gem, Rocket, ShoppingBag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SomaLogo from "@/components/logo";
+import { Badge } from "@/components/ui/badge";
+
+type Interval = 'monthly' | 'yearly';
 
 const plans = [
     {
         id: 'MERCHANT',
         title: 'Merchant',
-        price: '$19.99',
-        priceSubtitle: '/mo',
-        amount: 1999,
         icon: ShoppingBag,
         description: 'Store Only. Perfect for selling your own creations.',
         features: ['"Add My Own Product" tools', 'Private Inventory Management', 'Standard Support'],
         bestValue: false,
+        pricing: {
+            monthly: { price: 19.99, planCode: process.env.NEXT_PUBLIC_MERCHANT_MONTHLY_PLAN_CODE },
+            yearly: { price: 199, planCode: process.env.NEXT_PUBLIC_MERCHANT_YEARLY_PLAN_CODE },
+        }
     },
     {
         id: 'SCALER',
         title: 'Scaler',
-        price: '$29',
-        priceSubtitle: '/mo',
-        amount: 2900,
         icon: Rocket,
         description: 'Dropship Flex. Start dropshipping with standard fulfillment.',
         features: ['One-Click Cloning', 'Sync from Master Catalog', 'Standard Fulfillment'],
         bestValue: false,
+        pricing: {
+            monthly: { price: 29, planCode: process.env.NEXT_PUBLIC_SCALER_MONTHLY_PLAN_CODE },
+            yearly: { price: 290, planCode: process.env.NEXT_PUBLIC_SCALER_YEARLY_PLAN_CODE },
+        }
     },
     {
         id: 'MOGUL',
         title: 'Mogul',
-        price: '$500',
-        priceSubtitle: 'one-time',
-        amount: 50000,
         icon: Star,
         description: 'Dropship VIP. A lifetime deal for serious entrepreneurs.',
         features: ['All Scaler Features', 'Priority Shipping Speed', 'VIP Support'],
-        bestValue: true
+        bestValue: true,
+        pricing: {
+            lifetime: { price: 500, planCode: null }
+        }
     },
     {
         id: 'SELLER',
         title: 'Seller',
-        price: 'Free',
-        priceSubtitle: '+ 3% fee',
-        amount: 0,
         icon: Gem,
         description: 'Wholesaler Hub. Supply your products to the SOMA network.',
         features: ['"Supplier Dashboard" access', 'Upload items to Master Catalog', 'Sell to all SOMA stores'],
-        bestValue: false
+        bestValue: false,
+        pricing: {
+            free: { price: 0, planCode: null }
+        }
     },
     {
         id: 'ENTERPRISE',
         title: 'Enterprise',
-        price: '$33.33',
-        priceSubtitle: '/mo',
-        amount: 3333,
         icon: Building,
         description: 'The Hybrid. The ultimate flexibility for established businesses.',
         features: ['Everything Unlocked', 'Mix private & SOMA stock', 'Dedicated Account Manager'],
-        bestValue: false
+        bestValue: false,
+        pricing: {
+            monthly: { price: 33.33, planCode: process.env.NEXT_PUBLIC_ENTERPRISE_MONTHLY_PLAN_CODE },
+            yearly: { price: 333, planCode: process.env.NEXT_PUBLIC_ENTERPRISE_YEARLY_PLAN_CODE },
+        }
     }
 ];
 
 export default function PlanSelectionPage() {
     const [selectedPlan, setSelectedPlan] = useState('MOGUL');
+    const [interval, setInterval] = useState<Interval>('monthly');
     const router = useRouter();
 
     const handleConfirm = () => {
-        router.push(`/signup?planTier=${selectedPlan}`);
+        const plan = plans.find(p => p.id === selectedPlan);
+        if (!plan) return;
+        
+        let planInterval: string = interval;
+        if (plan.pricing.lifetime) planInterval = 'lifetime';
+        if (plan.pricing.free) planInterval = 'free';
+
+        router.push(`/signup?planTier=${selectedPlan}&interval=${planInterval}`);
     }
 
     return (
@@ -81,9 +96,19 @@ export default function PlanSelectionPage() {
                 <p className="mt-2 text-lg text-muted-foreground">Select a plan that scales with your ambition.</p>
             </div>
 
+            <Tabs value={interval} onValueChange={(value) => setInterval(value as Interval)} className="w-full max-w-sm mb-8">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                    <TabsTrigger value="yearly">Yearly</TabsTrigger>
+                </TabsList>
+            </Tabs>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl w-full">
                 {plans.map(plan => {
                     const Icon = plan.icon;
+                    const priceInfo = plan.pricing.lifetime || plan.pricing.free || plan.pricing[interval];
+                    const isYearly = !plan.pricing.lifetime && !plan.pricing.free && interval === 'yearly';
+
                     return (
                     <Card 
                         key={plan.id}
@@ -100,6 +125,9 @@ export default function PlanSelectionPage() {
                                 </div>
                             </div>
                         )}
+                         {isYearly && (
+                             <Badge className="absolute top-3 left-3 bg-green-500/20 text-green-400 border-green-500/50">Save 15%</Badge>
+                        )}
                         <CardHeader className="text-center items-center">
                             <div className="bg-primary/10 rounded-full p-4 mb-4 border border-primary/20">
                                 <Icon className="h-10 w-10 text-primary"/>
@@ -107,8 +135,10 @@ export default function PlanSelectionPage() {
                             <CardTitle className="font-headline text-2xl text-foreground">{plan.title}</CardTitle>
                             <CardDescription>{plan.description}</CardDescription>
                              <div className="flex items-baseline gap-2">
-                               <span className="text-4xl font-extrabold text-primary">{plan.price}</span> 
-                               <span className="text-muted-foreground">{plan.priceSubtitle}</span>
+                               <span className="text-4xl font-extrabold text-primary">${priceInfo.price.toLocaleString('en-US', { minimumFractionDigits: plan.id === 'SCALER' ? 0 : 2, maximumFractionDigits: 2})}</span> 
+                               <span className="text-muted-foreground">
+                                    {plan.pricing.lifetime ? 'one-time' : plan.pricing.free ? '+ 3% fee' : `/${interval === 'monthly' ? 'mo' : 'yr'}`}
+                               </span>
                             </div>
                         </CardHeader>
                         <CardContent className="flex-grow">

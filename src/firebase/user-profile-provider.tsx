@@ -12,11 +12,13 @@ type UserProfile = {
   hasAccess: boolean;
   hasAcceptedTerms?: boolean;
   isAdmin?: boolean;
-  plan?: 'monthly' | 'lifetime';
+  plan?: 'monthly' | 'yearly' | 'lifetime' | 'free';
   paidAt?: string;
   planTier?: 'MERCHANT' | 'MOGUL' | 'SCALER' | 'SELLER' | 'ENTERPRISE';
   completedLessons?: string[];
   isDisabled?: boolean;
+  referralCode?: string;
+  referredBy?: string;
 };
 
 interface UserProfileContextValue {
