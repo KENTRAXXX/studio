@@ -34,23 +34,23 @@ const SomaShieldTerms = () => (
     <div className="space-y-3 text-sm text-muted-foreground">
         <div className="space-y-1">
             <h4 className="font-semibold text-foreground">1. Authenticity Guarantee</h4>
-            <p>All products submitted must be 100% authentic. Any seller found providing counterfeit items will face immediate account termination and forfeiture of any pending balance.</p>
+            <p>The Seller warrants that all items listed are 100% authentic and legally obtained. SOMA maintains a Zero-Tolerance Policy for counterfeits. If a fake is detected, the Seller's account will be banned, and all pending payouts will be frozen for legal review.</p>
         </div>
          <div className="space-y-1">
-            <h4 className="font-semibold text-foreground">2. 48-Hour Fulfillment Pledge</h4>
-            <p>Sellers must fulfill (ship) all orders within 48 business hours of receipt. Failure to meet this standard may result in account suspension.</p>
+            <h4 className="font-semibold text-foreground">2. Fulfillment & Shipping</h4>
+            <p>Sellers agree to ship orders within 3–5 business days of receiving notification. The Seller is responsible for providing valid tracking information. Failure to ship on time may result in order cancellation and a penalty fee.</p>
         </div>
          <div className="space-y-1">
-            <h4 className="font-semibold text-foreground">3. No-Circumvention Clause</h4>
-            <p>All communications and transactions with buyers discovered through the SOMA platform must remain on the platform. Attempting to move sales off-site is strictly prohibited.</p>
+            <h4 className="font-semibold text-foreground">3. The "No-Circumvention" Rule</h4>
+            <p>Sellers must not attempt to contact Moguls or Customers to complete transactions outside of the SOMA platform. Any attempt to bypass the SOMA/Paystack fee structure will result in immediate termination of the partnership.</p>
         </div>
          <div className="space-y-1">
-            <h4 className="font-semibold text-foreground">4. Payout & Fee Agreement</h4>
-            <p>The seller acknowledges and agrees to SOMA's standard 3% transaction fee on the wholesale price of each item sold, and the 7-day rolling hold on payouts for fraud prevention.</p>
+            <h4 className="font-semibold text-foreground">4. Payout Structure</h4>
+            <p>Payouts are triggered only after the customer’s "Return Window" (e.g., 7 days) has closed to ensure the item is accepted. SOMA and Paystack transaction fees are non-refundable and will be deducted automatically from the gross sale.</p>
         </div>
          <div className="space-y-1">
-            <h4 className="font-semibold text-foreground">5. 14-Day Return Policy</h4>
-            <p>The seller agrees to honor a 14-day return policy for any items that are defective, damaged, or not as described.</p>
+            <h4 className="font-semibold text-foreground">5. Return Policy</h4>
+            <p>Sellers must define their return policy (e.g., "Returns accepted for 14 days" or "Final Sale"). However, SOMA reserves the right to force a refund if the item is "Not as Described."</p>
         </div>
     </div>
 );
