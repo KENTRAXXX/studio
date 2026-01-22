@@ -7,7 +7,7 @@ import { useEffect, useState, useRef } from 'react';
 import { AnimatePresence, motion, useInView } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Globe, DollarSign, Boxes, Check } from 'lucide-react';
+import { Globe, DollarSign, Boxes, Check, Rocket, Gem } from 'lucide-react';
 import AnimatedCounter from '@/components/ui/animated-counter';
 import Image from 'next/image';
 import { useToastWithRandomCity } from '@/hooks/use-toast-with-random-city';
@@ -134,6 +134,69 @@ function PlatformPulse() {
     )
 }
 
+const HowItWorks = () => {
+    const ref = useRef(null);
+    const isInView = useInView(ref, { once: true, amount: 0.5 });
+    const steps = [
+        {
+            icon: <Gem className="h-10 w-10 text-primary"/>,
+            title: "1. Select Your Plan",
+            description: "Choose a tier that fits your ambition, from a starting Merchant to a global Mogul."
+        },
+        {
+            icon: <Rocket className="h-10 w-10 text-primary"/>,
+            title: "2. Launch Your Store",
+            description: "Use our intuitive wizard to name your brand, upload your logo, and sync your first luxury products in minutes."
+        },
+        {
+            icon: <Globe className="h-10 w-10 text-primary"/>,
+            title: "3. Go Live Worldwide",
+            description: "Connect your custom domain and start selling to a global audience. SOMA handles the payments and logistics."
+        }
+    ];
+
+    return (
+        <section ref={ref} className="container z-10 py-20">
+            <div className="text-center max-w-2xl mx-auto">
+                 <motion.h2 
+                    className="text-4xl sm:text-5xl font-bold font-headline text-transparent bg-clip-text bg-gradient-to-br from-white via-neutral-200 to-primary"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={isInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 0.5 }}
+                >
+                    Three Steps to Your Empire
+                </motion.h2>
+                <motion.p 
+                    className="mt-4 text-lg text-muted-foreground"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={isInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 0.5, delay: 0.2 }}
+                >
+                    From concept to launch in under 5 minutes.
+                </motion.p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
+                {steps.map((step, i) => (
+                    <motion.div 
+                        key={i}
+                        initial={{ opacity: 0, y: 20 }} 
+                        animate={isInView ? { opacity: 1, y: 0 } : {}} 
+                        transition={{ duration: 0.5, delay: 0.4 + (i * 0.1) }}
+                    >
+                        <Card className="h-full bg-card/50 border-primary/20 text-center p-8">
+                            <div className="mx-auto w-fit bg-primary/10 rounded-full p-4 mb-6 border border-primary/20">
+                                {step.icon}
+                            </div>
+                            <h3 className="font-headline text-2xl text-primary mb-2">{step.title}</h3>
+                            <p className="text-muted-foreground">{step.description}</p>
+                        </Card>
+                    </motion.div>
+                ))}
+            </div>
+        </section>
+    )
+}
+
 function SneakPeek() {
     const ref = useRef(null);
     const isInView = useInView(ref, { once: true, amount: 0.3 });
@@ -229,11 +292,11 @@ export default function Home() {
         <LiveCounter />
 
         <h1 className="mt-6 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold font-headline max-w-4xl text-transparent bg-clip-text bg-gradient-to-br from-white via-neutral-200 to-primary">
-          Your <span className="text-primary">Luxury Empire</span>, Built in Seconds.
+          Launch Your Luxury E-Commerce Empire, Instantly.
         </h1>
 
         <p className="mt-6 max-w-2xl text-base md:text-lg text-muted-foreground">
-          The only all-in-one dropshipping engine that launches your store, sources your products, and manages your logistics on your own custom domain.
+          SOMA provides the tools, the technology, and the top-tier products to launch a sophisticated online brand. No code, no inventory, no limits.
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row items-center gap-4">
@@ -250,6 +313,7 @@ export default function Home() {
       </main>
 
       <PlatformPulse />
+      <HowItWorks />
       <SneakPeek />
       <LiveFeedTicker />
     </div>
