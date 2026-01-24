@@ -119,7 +119,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance }: With
             Request a Withdrawal
           </DialogTitle>
           <DialogDescription>
-            Enter the amount and your bank details. Requests are processed within 24-48 hours. A 3% fee applies to all withdrawals.
+            Enter your bank details to request a payout. Currently, we only support direct bank transfers. A 3% fee applies to all withdrawals.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
