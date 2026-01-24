@@ -198,6 +198,7 @@ export default function TreasuryPage() {
 
     try {
         const requestRef = doc(firestore, 'withdrawal_requests', request.id);
+        const userRef = doc(firestore, 'users', request.userId);
         
         // --- Safety Check ---
         const requestSnap = await getDoc(requestRef);
@@ -210,6 +211,7 @@ export default function TreasuryPage() {
             setProcessingId(null);
             return;
         }
+        const userSnap = await getDoc(userRef);
 
         const batch = writeBatch(firestore);
 
@@ -221,6 +223,13 @@ export default function TreasuryPage() {
             batch.set(completedPayoutRef, { ...payoutDoc.data(), paidAt: new Date().toISOString() });
             batch.delete(payoutDoc.ref);
         });
+
+        // Lock bank details on first successful payout
+        if (userSnap.exists() && !userSnap.data()?.bankDetails) {
+            batch.update(userRef, {
+                bankDetails: request.bankDetails
+            });
+        }
 
         batch.update(requestRef, {
             status: 'completed',

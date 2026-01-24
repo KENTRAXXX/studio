@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -81,6 +82,7 @@ export default function BackstageFinancesPage() {
             isOpen={isModalOpen}
             onOpenChange={setIsModalOpen}
             availableBalance={totalEarned}
+            userProfile={userProfile}
         />
         <div className="flex flex-col min-h-screen bg-background p-4 sm:p-6 text-foreground">
             <div className="text-center mb-10">

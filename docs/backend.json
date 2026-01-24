@@ -188,6 +188,32 @@
                 "contactPhone": {
                     "type": "string",
                     "description": "The contact phone number for the seller's business."
+                },
+                "bankDetails": {
+                    "type": "object",
+                    "description": "The user's verified bank details for payouts. This should only be set after a first successful payout.",
+                    "properties": {
+                        "accountName": {
+                            "type": "string"
+                        },
+                        "accountNumber": {
+                            "type": "string"
+                        },
+                        "bankName": {
+                            "type": "string"
+                        },
+                        "iban": {
+                            "type": "string"
+                        },
+                        "swiftBic": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "accountName",
+                        "accountNumber",
+                        "bankName"
+                    ]
                 }
             },
             "required": ["email", "hasAccess", "userRole", "hasAcceptedTerms"]

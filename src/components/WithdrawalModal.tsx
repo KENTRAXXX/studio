@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -27,7 +28,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Bank, Loader2, Send } from 'lucide-react';
+import { Bank, Loader2, Send, Lock } from 'lucide-react';
 import { Separator } from './ui/separator';
 
 const formSchema = z.object({
@@ -41,30 +42,53 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+// Define a simple UserProfile type for the prop
+type UserProfile = {
+  bankDetails?: {
+    accountName: string;
+    accountNumber: string;
+    bankName: string;
+    iban?: string;
+    swiftBic?: string;
+  }
+} | null;
+
+
 interface WithdrawalModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   availableBalance: number;
+  userProfile: UserProfile;
 }
 
-export function WithdrawalModal({ isOpen, onOpenChange, availableBalance }: WithdrawalModalProps) {
+export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userProfile }: WithdrawalModalProps) {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const hasExistingDetails = !!userProfile?.bankDetails?.accountNumber;
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     mode: 'onChange',
-    defaultValues: {
-      amount: 0,
-      accountName: '',
-      accountNumber: '',
-      bankName: '',
-      iban: '',
-      swiftBic: '',
-    },
   });
+
+  useEffect(() => {
+    if (isOpen && hasExistingDetails && userProfile?.bankDetails) {
+        form.reset({
+            amount: 0,
+            accountName: userProfile.bankDetails.accountName,
+            accountNumber: userProfile.bankDetails.accountNumber,
+            bankName: userProfile.bankDetails.bankName,
+            iban: userProfile.bankDetails.iban || '',
+            swiftBic: userProfile.bankDetails.swiftBic || '',
+        });
+    } else if (isOpen) {
+        form.reset({ amount: 0, accountName: '', accountNumber: '', bankName: '', iban: '', swiftBic: '' });
+    }
+  }, [isOpen, hasExistingDetails, userProfile, form]);
+
 
   const requestedAmount = form.watch('amount');
   const withdrawalFee = requestedAmount * 0.03;
@@ -126,7 +150,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance }: With
             Request a Withdrawal
           </DialogTitle>
           <DialogDescription>
-            Enter your bank details to request a payout. For international transfers (e.g., outside Africa), please provide an IBAN and SWIFT/BIC code.
+             Enter your withdrawal amount and bank details. Payouts are made via direct bank transfer.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -165,73 +189,92 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance }: With
             <Separator className="pt-4"/>
             <h3 className="font-semibold text-primary">Receiving Account Details</h3>
             
-            <FormField
-              control={form.control}
-              name="accountName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Account Holder Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John Doe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="bankName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Bank Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Global Bank Inc." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </Item>
-              )}
-            />
-             <FormField
-              control={form.control}
-              name="accountNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Account Number</FormLabel>
-                  <FormControl>
-                    <Input placeholder="1234567890" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
-              control={form.control}
-              name="iban"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>IBAN</FormLabel>
-                  <FormControl>
-                    <Input placeholder="International Bank Account Number" {...field} />
-                  </FormControl>
-                   <FormDescription>Required for Europe, UAE, and some other regions.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
-              control={form.control}
-              name="swiftBic"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>SWIFT / BIC Code</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Bank's SWIFT/BIC code" {...field} />
-                  </FormControl>
-                  <FormDescription>Required for most international transfers.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {hasExistingDetails && userProfile?.bankDetails ? (
+                <div className="space-y-3 rounded-lg border border-border/50 p-4 bg-muted/50">
+                    <div className="flex justify-between items-start">
+                        <h4 className="font-semibold text-foreground">Verified Payout Account</h4>
+                        <Lock className="h-4 w-4 text-primary"/>
+                    </div>
+                    <div className="text-sm">
+                        <p><span className="font-medium text-muted-foreground">Bank:</span> {userProfile.bankDetails.bankName}</p>
+                        <p><span className="font-medium text-muted-foreground">Account:</span> ****{userProfile.bankDetails.accountNumber.slice(-4)}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                        To protect your security, payout details are locked after the first withdrawal. Please contact support to change your bank account.
+                    </p>
+                </div>
+            ) : (
+                <>
+                    <FormField
+                    control={form.control}
+                    name="accountName"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Account Holder Name</FormLabel>
+                        <FormControl>
+                            <Input placeholder="John Doe" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="bankName"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Bank Name</FormLabel>
+                        <FormControl>
+                            <Input placeholder="Global Bank Inc." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </Item>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="accountNumber"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Account Number</FormLabel>
+                        <FormControl>
+                            <Input placeholder="1234567890" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="iban"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>IBAN</FormLabel>
+                        <FormControl>
+                            <Input placeholder="International Bank Account Number" {...field} />
+                        </FormControl>
+                        <FormDescription>Required for Europe, UAE, and some other regions.</FormDescription>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="swiftBic"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>SWIFT / BIC Code</FormLabel>
+                        <FormControl>
+                            <Input placeholder="Bank's SWIFT/BIC code" {...field} />
+                        </FormControl>
+                        <FormDescription>Required for most international transfers.</FormDescription>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </>
+            )}
+
             <DialogFooter className="pt-4">
               <Button type="submit" disabled={isSubmitting || isAmountInvalid || requestedAmount <= 0} className="w-full btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
                 {isSubmitting ? (

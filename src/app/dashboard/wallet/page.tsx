@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useUser, useFirestore, useCollection } from '@/firebase';
+import { useUser, useFirestore, useCollection, useUserProfile } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { WithdrawalModal } from '@/components/WithdrawalModal';
 
 export default function SomaWalletPage() {
     const { user, loading: userLoading } = useUser();
+    const { userProfile, loading: profileLoading } = useUserProfile();
     const firestore = useFirestore();
     const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -22,7 +24,7 @@ export default function SomaWalletPage() {
         return payoutDocs.reduce((acc, doc) => acc + (doc.amount || 0), 0);
     }, [payoutDocs]);
     
-    const isLoading = userLoading || payoutsLoading;
+    const isLoading = userLoading || payoutsLoading || profileLoading;
 
     return (
         <>
@@ -30,6 +32,7 @@ export default function SomaWalletPage() {
             isOpen={isModalOpen}
             onOpenChange={setIsModalOpen}
             availableBalance={availableBalance}
+            userProfile={userProfile}
         />
         <div className="space-y-8 max-w-md mx-auto">
             <h1 className="text-3xl font-bold font-headline text-center">SOMA Wallet</h1>
