@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { useCart } from '@/app/store/[...slug]/layout';
+import { useCart } from '@/app/store/[storeId]/layout';
 import { Loader2, Warehouse } from 'lucide-react';
 
 type StorefrontProduct = {
