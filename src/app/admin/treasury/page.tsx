@@ -62,7 +62,7 @@ type WithdrawalRequest = {
     iban?: string;
     swiftBic?: string;
   };
-  status: 'pending' | 'completed' | 'declined';
+  status: 'pending' | 'completed' | 'declined' | 'awaiting-confirmation';
   createdAt: any;
   reason?: string;
 };

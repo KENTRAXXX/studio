@@ -7,6 +7,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useUser, useFirestore } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { sendPayoutConfirmationEmail } from '@/ai/flows/send-payout-confirmation-email';
+
 
 import {
   Dialog,
@@ -96,7 +98,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
   const isAmountInvalid = totalDeduction > availableBalance;
 
   const handleSubmit = async (data: FormValues) => {
-    if (!user || !firestore) {
+    if (!user || !firestore || !user.email) {
       toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to make a request.' });
       return;
     }
@@ -108,10 +110,19 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
     
     setIsSubmitting(true);
     try {
+      const isFirstTime = !hasExistingDetails;
+      let status: 'pending' | 'awaiting-confirmation' = 'pending';
+      let confirmationToken: string | null = null;
+      
+      if (isFirstTime) {
+          status = 'awaiting-confirmation';
+          confirmationToken = crypto.randomUUID();
+      }
+
       const withdrawalRef = collection(firestore, 'withdrawal_requests');
-      await addDoc(withdrawalRef, {
+      const newDocRef = await addDoc(withdrawalRef, {
         userId: user.uid,
-        amount: data.amount, // This is the net amount for the user
+        amount: data.amount,
         bankDetails: {
           accountName: data.accountName,
           accountNumber: data.accountNumber,
@@ -119,14 +130,31 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
           iban: data.iban,
           swiftBic: data.swiftBic,
         },
-        status: 'pending',
+        status: status,
+        confirmationToken: confirmationToken, // Will be null for subsequent requests
         createdAt: serverTimestamp(),
       });
 
-      toast({
-        title: 'Request Submitted',
-        description: `Your request to withdraw $${data.amount.toFixed(2)} is pending review.`,
-      });
+      if (isFirstTime && confirmationToken) {
+          await sendPayoutConfirmationEmail({
+              to: user.email,
+              name: data.accountName,
+              amount: data.amount,
+              withdrawalId: newDocRef.id,
+              token: confirmationToken
+          });
+          toast({
+              title: 'Confirmation Required',
+              description: `We've sent a confirmation link to your email. Please click it to approve this payout request.`,
+              duration: 10000,
+          });
+      } else {
+         toast({
+            title: 'Request Submitted',
+            description: `Your request to withdraw $${data.amount.toFixed(2)} is pending review.`,
+          });
+      }
+
       onOpenChange(false);
       form.reset();
 
@@ -150,7 +178,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
             Request a Withdrawal
           </DialogTitle>
           <DialogDescription>
-             Enter your withdrawal amount and bank details. Payouts are made via direct bank transfer.
+             Payouts are made via direct bank transfer only.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>

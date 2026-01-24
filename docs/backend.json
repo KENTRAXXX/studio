@@ -298,7 +298,11 @@
                 "status": {
                     "type": "string",
                     "description": "The status of the withdrawal request.",
-                    "enum": ["pending", "processing", "completed", "rejected"]
+                    "enum": ["awaiting-confirmation", "pending", "processing", "completed", "rejected"]
+                },
+                "confirmationToken": {
+                    "type": "string",
+                    "description": "A one-time token to confirm the withdrawal request."
                 },
                 "reason": {
                     "type": "string",
