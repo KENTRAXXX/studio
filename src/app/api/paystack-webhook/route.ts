@@ -6,8 +6,6 @@ import { doc, getDoc, getFirestore, updateDoc, collection, addDoc, runTransactio
 import { initializeFirebase } from '@/firebase';
 import { sendOrderEmail } from '@/ai/flows/send-order-email';
 
-export const runtime = 'edge';
-
 const { firestore } = initializeFirebase();
 
 async function executePaymentSplit(eventData: any) {

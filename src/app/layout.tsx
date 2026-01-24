@@ -5,8 +5,6 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 import Script from 'next/script';
 import { UserProfileProvider } from '@/firebase/user-profile-provider';
 
-export const runtime = 'edge';
-
 export const metadata: Metadata = {
   title: 'SomaDS',
   description: 'The Ultimate Design System for E-commerce.',

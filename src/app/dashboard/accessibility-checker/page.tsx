@@ -2,8 +2,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Accessibility } from "lucide-react";
 import CheckerForm from "./checker-form";
 
-export const runtime = 'edge';
-
 export default function AccessibilityCheckerPage() {
     return (
         <div className="space-y-8">

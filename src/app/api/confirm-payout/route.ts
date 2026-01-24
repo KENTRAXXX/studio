@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { doc, getDoc, updateDoc, getFirestore } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 
-export const runtime = 'edge';
-
 const { firestore } = initializeFirebase();
 
 export async function GET(request: NextRequest) {
