@@ -1,19 +1,24 @@
 
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { doc, getDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import type { Metadata, ResolvingMetadata } from 'next';
 
-import { initializeFirebase } from '@/firebase';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { firebaseConfig } from '@/firebase/config';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { demoProducts } from '@/lib/demo-data';
 import { HeroSection } from '@/components/store/hero-section';
 import { ProductGrid } from '@/components/store/product-grid';
 
-export const runtime = 'edge';
-
 // Initialize Firebase for server-side usage
-const { firestore } = initializeFirebase();
+// This function ensures we initialize Firebase only once.
+const getFirestoreInstance = () => {
+    const apps = getApps();
+    const app = apps.length > 0 ? apps[0] : initializeApp(firebaseConfig);
+    return getFirestore(app);
+};
+const firestore = getFirestoreInstance();
 
 type StorefrontProduct = {
     id: string;
