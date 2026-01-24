@@ -59,6 +59,8 @@ type WithdrawalRequest = {
     accountName: string;
     accountNumber: string;
     bankName: string;
+    iban?: string;
+    swiftBic?: string;
   };
   status: 'pending' | 'completed' | 'declined';
   createdAt: any;
@@ -329,6 +331,8 @@ export default function TreasuryPage() {
                     <TableCell>
                         <div className="text-sm font-medium">{req.bankDetails.accountName}</div>
                         <div className="text-xs text-muted-foreground font-mono">{req.bankDetails.bankName} - {req.bankDetails.accountNumber}</div>
+                        {req.bankDetails.iban && <div className="text-xs text-muted-foreground font-mono">IBAN: {req.bankDetails.iban}</div>}
+                        {req.bankDetails.swiftBic && <div className="text-xs text-muted-foreground font-mono">SWIFT: {req.bankDetails.swiftBic}</div>}
                     </TableCell>
                     <TableCell className="text-right space-x-2">
                         {processingId === req.id ? <Loader2 className="animate-spin ml-auto" /> : (

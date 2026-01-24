@@ -263,7 +263,9 @@
                     "properties": {
                         "accountName": { "type": "string" },
                         "accountNumber": { "type": "string" },
-                        "bankName": { "type": "string" }
+                        "bankName": { "type": "string" },
+                        "iban": { "type": "string", "description": "International Bank Account Number, if applicable." },
+                        "swiftBic": { "type": "string", "description": "SWIFT or BIC code for international transfers." }
                     },
                     "required": ["accountName", "accountNumber", "bankName"]
                 },

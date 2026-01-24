@@ -18,6 +18,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -34,6 +35,8 @@ const formSchema = z.object({
   accountName: z.string().min(2, { message: 'Account name is required.' }),
   accountNumber: z.string().min(5, { message: 'A valid account number is required.' }),
   bankName: z.string().min(3, { message: 'Bank name is required.' }),
+  iban: z.string().optional(),
+  swiftBic: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -58,6 +61,8 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance }: With
       accountName: '',
       accountNumber: '',
       bankName: '',
+      iban: '',
+      swiftBic: '',
     },
   });
 
@@ -87,6 +92,8 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance }: With
           accountName: data.accountName,
           accountNumber: data.accountNumber,
           bankName: data.bankName,
+          iban: data.iban,
+          swiftBic: data.swiftBic,
         },
         status: 'pending',
         createdAt: serverTimestamp(),
@@ -112,14 +119,14 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance }: With
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-card border-primary">
+      <DialogContent className="bg-card border-primary sm:max-w-[425px] md:sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-primary font-headline">
             <Bank className="h-6 w-6" />
             Request a Withdrawal
           </DialogTitle>
           <DialogDescription>
-            Enter your bank details to request a payout. Currently, we only support direct bank transfers. A 3% fee applies to all withdrawals.
+            Enter your bank details to request a payout. For international transfers (e.g., outside Africa), please provide an IBAN and SWIFT/BIC code.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -156,7 +163,8 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance }: With
             </div>
             
             <Separator className="pt-4"/>
-
+            <h3 className="font-semibold text-primary">Receiving Account Details</h3>
+            
             <FormField
               control={form.control}
               name="accountName"
@@ -168,6 +176,19 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance }: With
                   </FormControl>
                   <FormMessage />
                 </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="bankName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Bank Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Global Bank Inc." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </Item>
               )}
             />
              <FormField
@@ -185,15 +206,30 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance }: With
             />
              <FormField
               control={form.control}
-              name="bankName"
+              name="iban"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Bank Name</FormLabel>
+                  <FormLabel>IBAN</FormLabel>
                   <FormControl>
-                    <Input placeholder="Global Bank Inc." {...field} />
+                    <Input placeholder="International Bank Account Number" {...field} />
                   </FormControl>
+                   <FormDescription>Required for Europe, UAE, and some other regions.</FormDescription>
                   <FormMessage />
-                </Item>
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="swiftBic"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>SWIFT / BIC Code</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Bank's SWIFT/BIC code" {...field} />
+                  </FormControl>
+                  <FormDescription>Required for most international transfers.</FormDescription>
+                  <FormMessage />
+                </FormItem>
               )}
             />
             <DialogFooter className="pt-4">
