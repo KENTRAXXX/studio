@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
-import { Gem, PlusCircle, Loader2, Check } from 'lucide-react';
+import { Gem, PlusCircle, Loader2, Check, Warehouse } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -24,8 +24,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useUser, useCollection, useFirestore } from '@/firebase';
 import { useUserProfile } from '@/firebase/user-profile-provider';
-import { collection, doc, setDoc, getDocs } from 'firebase/firestore';
-import { demoProducts, type DemoProduct } from '@/lib/demo-data';
+import { collection, doc, setDoc, getDocs, query, where } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 type Product = {
@@ -38,6 +37,7 @@ type Product = {
   imageSrc?: string; // For demo data
   productType: 'INTERNAL' | 'EXTERNAL';
   vendorId: string;
+  isActive?: boolean;
 };
 
 // A unified function to get an image URL
@@ -66,7 +66,11 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
   const [syncingProducts, setSyncingProducts] = useState<Set<string>>(new Set());
 
   // Firestore logic
-  const masterCatalogRef = firestore && !isDemo ? collection(firestore, 'Master_Catalog') : null;
+  const masterCatalogRef = useMemo(() => {
+    if (!firestore || isDemo) return null;
+    return query(collection(firestore, 'Master_Catalog'), where('isActive', '==', true));
+  }, [firestore, isDemo]);
+  
   const { data: liveCatalog, loading: catalogLoading } = useCollection<Product>(masterCatalogRef);
   
   const userProductsRef = useMemo(() => {
@@ -75,7 +79,7 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
   }, [firestore, user, isDemo]);
 
   // Determine which data to use
-  const masterCatalog = isDemo ? demoProducts.map(p => ({...p, masterCost: p.wholesalePrice, productType: 'INTERNAL', vendorId: 'soma-admin', stockLevel: 100})) as unknown as Product[] : liveCatalog;
+  const masterCatalog = isDemo ? [] : liveCatalog;
   const isLoading = isDemo ? false : catalogLoading;
 
   useEffect(() => {
@@ -183,6 +187,12 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
                  <div className="flex h-64 w-full items-center justify-center">
                     <Loader2 className="h-12 w-12 animate-spin text-primary" />
                 </div>
+            ) : !masterCatalog || masterCatalog.length === 0 ? (
+                <div className="flex flex-col items-center justify-center text-center h-64 border-2 border-dashed border-primary/20 rounded-lg">
+                    <Warehouse className="h-16 w-16 text-muted-foreground mb-4" />
+                    <h3 className="text-xl font-bold font-headline text-primary">No Products Available</h3>
+                    <p className="text-muted-foreground mt-2">There are currently no active products in the master catalog.</p>
+                </div>
             ) : (
                 <Table>
                     <TableHeader>
@@ -197,7 +207,7 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
                     </TableRow>
                     </TableHeader>
                     <TableBody>
-                    {masterCatalog && masterCatalog.map((product) => {
+                    {masterCatalog.map((product) => {
                       const isSynced = syncedProducts.has(product.id);
                       const isSyncing = syncingProducts.has(product.id);
                       return (
