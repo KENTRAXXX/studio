@@ -74,6 +74,10 @@
                 "heroSubtitle": {
                     "type": "string",
                     "description": "The sub-headline for the hero section."
+                },
+                "visitorCount": {
+                    "type": "number",
+                    "description": "The number of visitors to the store."
                 }
             },
             "required": ["userId", "instanceId", "theme", "currency", "createdAt", "storeName"]

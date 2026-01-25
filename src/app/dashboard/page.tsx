@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -17,6 +18,7 @@ type StoreData = {
     customDomain?: string;
     domainStatus?: 'unverified' | 'pending_dns' | 'connected';
     status?: 'Live' | 'Maintenance';
+    visitorCount?: number;
 }
 
 type Product = {
@@ -104,12 +106,12 @@ export default function DashboardOverviewPage() {
                 </Card>
                  <Card className="border-primary/50">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Visitors Today</CardTitle>
+                        <CardTitle className="text-sm font-medium">Total Visitors</CardTitle>
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-primary">--</div>
-                         <p className="text-xs text-muted-foreground">Analytics coming soon</p>
+                        <div className="text-3xl font-bold text-primary">{storeData?.visitorCount || 0}</div>
+                         <p className="text-xs text-muted-foreground">Total unique visitor sessions</p>
                     </CardContent>
                 </Card>
             </div>
