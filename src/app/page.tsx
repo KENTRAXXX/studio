@@ -20,8 +20,13 @@ function LiveCounter() {
     const now = new Date();
     const daysSinceLaunch = Math.max(0, Math.floor((now.getTime() - launchDate.getTime()) / (1000 * 60 * 60 * 24)));
     const initialStores = 184;
-    const storesPerDay = 3;
-    return initialStores + (daysSinceLaunch * storesPerDay);
+    
+    let dynamicStores = 0;
+    for (let i = 0; i < daysSinceLaunch; i++) {
+        dynamicStores += Math.floor(Math.random() * (25 - 5 + 1)) + 5;
+    }
+
+    return initialStores + dynamicStores;
   };
   const [count, setCount] = useState(getInitialStoreCount);
 
@@ -71,20 +76,23 @@ function PlatformPulse() {
         const now = new Date();
         const daysSinceLaunch = Math.max(0, Math.floor((now.getTime() - launchDate.getTime()) / (1000 * 60 * 60 * 24)));
 
-        // Sales
         const initialSales = 4455321.98;
-        const salesPerDay = 2500;
-        const currentSales = initialSales + (daysSinceLaunch * salesPerDay);
-
-        // Sellers
         const initialSellers = 127;
-        const sellersPerDay = 1;
-        const currentSellers = initialSellers + (daysSinceLaunch * sellersPerDay);
-
-        // Brands
         const initialBrands = 89;
-        const brandsGrowthFactor = 0.5; // Slower growth for brands
-        const currentBrands = initialBrands + Math.floor(daysSinceLaunch * brandsGrowthFactor);
+
+        let dynamicSales = 0;
+        let dynamicSellers = 0;
+        let dynamicBrands = 0;
+
+        for (let i = 0; i < daysSinceLaunch; i++) {
+            dynamicSales += Math.random() * (50000 - 11000) + 11000;
+            dynamicSellers += Math.floor(Math.random() * (17 - 3 + 1)) + 3;
+            dynamicBrands += Math.floor(Math.random() * (7 - 1 + 1)) + 1;
+        }
+
+        const currentSales = initialSales + dynamicSales;
+        const currentSellers = initialSellers + dynamicSellers;
+        const currentBrands = initialBrands + dynamicBrands;
         
         return { currentSales, currentSellers, currentBrands };
     };
