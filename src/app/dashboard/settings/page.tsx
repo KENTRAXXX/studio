@@ -1,0 +1,202 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Settings, Loader2, Save, Eye } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import SomaLogo from '@/components/logo';
+import Image from 'next/image';
+
+const settingsSchema = z.object({
+  storeName: z.string().min(3, 'Store name must be at least 3 characters.'),
+  heroTitle: z.string().min(5, 'Hero title must be at least 5 characters.'),
+  heroSubtitle: z.string().min(10, 'Hero subtitle must be at least 10 characters.'),
+  logoUrl: z.string().url('Please enter a valid URL.').or(z.literal('')),
+  faviconUrl: z.string().url('Please enter a valid URL.').or(z.literal('')),
+});
+
+type SettingsFormValues = z.infer<typeof settingsSchema>;
+
+type StoreData = {
+    storeName?: string;
+    heroTitle?: string;
+    heroSubtitle?: string;
+    logoUrl?: string;
+    faviconUrl?: string;
+};
+
+const StorePreview = ({ formData }: { formData: Partial<SettingsFormValues> }) => {
+    return (
+        <Card className="border-primary/50">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Eye className="h-5 w-5" /> Live Preview</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="border rounded-lg p-4 bg-card">
+                    <div className="flex items-center gap-2">
+                        {formData.logoUrl ? (
+                            <Image src={formData.logoUrl} alt="logo" width={32} height={32} className="rounded-full" />
+                        ) : (
+                            <SomaLogo className="h-8 w-8" />
+                        )}
+                        <span className="font-headline text-xl font-bold text-primary">{formData.storeName || 'Your Store'}</span>
+                    </div>
+                </div>
+                 <div className="relative h-32 mt-4 rounded-lg flex items-center justify-center text-center text-white bg-black/50 overflow-hidden">
+                    {/* A simple background to simulate the hero image */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-black via-neutral-900 to-yellow-900/50 -z-10"></div>
+                     <div className="relative z-10 p-2">
+                        <h1 className="text-2xl font-bold font-headline text-primary">{formData.heroTitle || 'Hero Title'}</h1>
+                        <p className="text-xs mt-1">{formData.heroSubtitle || 'Hero Subtitle'}</p>
+                     </div>
+                 </div>
+            </CardContent>
+        </Card>
+    )
+}
+
+export default function StoreSettingsPage() {
+    const { user, loading: userLoading } = useUser();
+    const firestore = useFirestore();
+    const { toast } = useToast();
+
+    const storeRef = useMemoFirebase(() => user ? doc(firestore!, 'stores', user.uid) : null, [firestore, user]);
+    const { data: storeData, loading: storeLoading } = useDoc<StoreData>(storeRef);
+
+    const form = useForm<SettingsFormValues>({
+        resolver: zodResolver(settingsSchema),
+        mode: 'onBlur',
+    });
+
+    const watchedData = form.watch();
+
+    useEffect(() => {
+        if (storeData) {
+            form.reset({
+                storeName: storeData.storeName || '',
+                heroTitle: storeData.heroTitle || '',
+                heroSubtitle: storeData.heroSubtitle || '',
+                logoUrl: storeData.logoUrl || '',
+                faviconUrl: storeData.faviconUrl || '',
+            });
+        }
+    }, [storeData, form]);
+
+    const handleUpdate = async (data: SettingsFormValues) => {
+        if (!storeRef) return;
+        try {
+            await updateDoc(storeRef, data);
+            toast({
+                title: 'Store Updated',
+                description: 'Your changes have been saved successfully.',
+            });
+        } catch (error: any) {
+            toast({
+                variant: 'destructive',
+                title: 'Update Failed',
+                description: error.message || 'An unexpected error occurred.',
+            });
+        }
+    };
+
+    const isLoading = userLoading || storeLoading;
+    if (isLoading) {
+        return (
+            <div className="flex h-96 w-full items-center justify-center">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+        );
+    }
+    
+    if (!storeData && !isLoading) {
+        return (
+             <div className="flex h-96 w-full items-center justify-center text-center">
+                <Card className="p-8 border-primary/50">
+                    <CardTitle className="font-headline text-2xl">No Store Found</CardTitle>
+                    <CardDescription className="mt-2">Please complete the launch wizard to set up your store first.</CardDescription>
+                </Card>
+            </div>
+        )
+    }
+
+    return (
+        <div className="space-y-8">
+            <div className="flex items-center gap-4">
+                <Settings className="h-8 w-8 text-primary" />
+                <h1 className="text-3xl font-bold font-headline">Store Customization</h1>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <Card className="lg:col-span-2 border-primary/50">
+                    <CardHeader>
+                        <CardTitle>General Settings</CardTitle>
+                        <CardDescription>Update your store's branding and hero section content.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                         <Form {...form}>
+                            <form onSubmit={form.handleSubmit(handleUpdate)} className="space-y-6">
+                                <FormField control={form.control} name="storeName" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Store Name</FormLabel>
+                                        <FormControl><Input placeholder="Elegance & Co." {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <div className="grid md:grid-cols-2 gap-6">
+                                     <FormField control={form.control} name="logoUrl" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Logo URL</FormLabel>
+                                            <FormControl><Input placeholder="https://cdn.com/logo.png" {...field} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                     <FormField control={form.control} name="faviconUrl" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Favicon URL</FormLabel>
+                                            <FormControl><Input placeholder="https://cdn.com/favicon.ico" {...field} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                </div>
+                                <h3 className="font-semibold text-lg border-t border-border pt-6">Hero Section</h3>
+                                 <FormField control={form.control} name="heroTitle" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Hero Title</FormLabel>
+                                        <FormControl><Input placeholder="Welcome to Your Store" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <FormField control={form.control} name="heroSubtitle" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Hero Subtitle</FormLabel>
+                                        <FormControl><Input placeholder="Discover curated collections..." {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <div className="flex justify-end pt-4">
+                                    <Button type="submit" disabled={form.formState.isSubmitting} className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+                                        {form.formState.isSubmitting ? <Loader2 className="animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
+                                        Save Changes
+                                    </Button>
+                                </div>
+                            </form>
+                         </Form>
+                    </CardContent>
+                </Card>
+                
+                <div className="space-y-8">
+                     <StorePreview formData={watchedData} />
+                </div>
+            </div>
+        </div>
+    )
+}

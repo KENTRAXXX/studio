@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -15,7 +14,7 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard,
-  Store,
+  Settings,
   Boxes,
   Globe,
   BarChart2,
@@ -35,7 +34,7 @@ import { useUserProfile } from '@/firebase/user-profile-provider';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
-  { href: '/dashboard/my-store', icon: Store, label: 'My Store' },
+  { href: '/dashboard/settings', icon: Settings, label: 'Store Settings' },
   { href: '/dashboard/global-product-catalog', icon: Boxes, label: 'Global Product Catalog' },
   { href: '/dashboard/my-private-inventory', icon: Package, label: 'My Private Inventory' },
   { href: '/dashboard/my-orders', icon: ShoppingBag, label: 'My Orders' },
