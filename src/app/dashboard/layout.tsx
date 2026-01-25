@@ -28,6 +28,7 @@ import {
   PiggyBank,
   Users,
   Gift,
+  Gem,
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
@@ -55,6 +56,8 @@ const adminNavItems = [
     { href: '/admin/approval-queue', icon: ShieldCheck, label: 'Approval Queue' },
     { href: '/admin/treasury', icon: PiggyBank, label: 'Treasury' },
     { href: '/admin/users', icon: Users, label: 'User Management' },
+    { href: '/admin/orders', icon: ShoppingBag, label: 'Admin Orders' },
+    { href: '/admin/catalog', icon: Gem, label: 'Catalog Editor' },
 ]
 
 export default function DashboardLayout({
