@@ -7,7 +7,7 @@ import { useEffect, useState, useRef } from 'react';
 import { AnimatePresence, motion, useInView } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Globe, DollarSign, Boxes, Check, Rocket, Gem, Users, ShieldCheck } from 'lucide-react';
+import { Globe, DollarSign, Boxes, Check, Rocket, Gem, Users, ShieldCheck, Loader2 } from 'lucide-react';
 import AnimatedCounter from '@/components/ui/animated-counter';
 import Image from 'next/image';
 import { useToastWithRandomCity } from '@/hooks/use-toast-with-random-city';
@@ -15,25 +15,28 @@ import { LiveFeedTicker } from '@/components/ui/live-feed-ticker';
 
 
 function LiveCounter() {
-  const getInitialStoreCount = () => {
-    const launchDate = new Date('2024-07-01T00:00:00Z');
-    const now = new Date();
-    const daysSinceLaunch = Math.max(0, Math.floor((now.getTime() - launchDate.getTime()) / (1000 * 60 * 60 * 24)));
-    const initialStores = 184;
-    
-    let dynamicStores = 0;
-    for (let i = 0; i < daysSinceLaunch; i++) {
-        dynamicStores += Math.floor(Math.random() * (25 - 5 + 1)) + 5;
-    }
-
-    return initialStores + dynamicStores;
-  };
-  const [count, setCount] = useState(getInitialStoreCount);
-
+  const [count, setCount] = useState<number | null>(null);
 
   useEffect(() => {
+    const getInitialStoreCount = () => {
+      const launchDate = new Date('2024-07-01T00:00:00Z');
+      const now = new Date();
+      const daysSinceLaunch = Math.max(0, Math.floor((now.getTime() - launchDate.getTime()) / (1000 * 60 * 60 * 24)));
+      const initialStores = 184;
+      
+      let dynamicStores = 0;
+      for (let i = 0; i < daysSinceLaunch; i++) {
+          dynamicStores += Math.floor(Math.random() * (25 - 5 + 1)) + 5;
+      }
+  
+      return initialStores + dynamicStores;
+    };
+    
+    const initialCount = getInitialStoreCount();
+    setCount(initialCount);
+
     const updateCount = () => {
-        setCount((prev) => prev + 1);
+        setCount((prev) => (prev || 0) + 1);
         const randomInterval = Math.random() * (600000 - 300000) + 300000; // 5 to 10 minutes
         setTimeout(updateCount, randomInterval);
     };
@@ -43,6 +46,7 @@ function LiveCounter() {
     return () => clearTimeout(firstTimeout);
   }, []);
 
+
   return (
     <div className="inline-flex items-center gap-2 rounded-full border border-primary/50 bg-primary/10 px-4 py-1.5 text-sm">
       <span className="relative flex h-2 w-2">
@@ -51,16 +55,20 @@ function LiveCounter() {
       </span>
       <span className="text-primary-foreground/80">[Live]</span>
       <AnimatePresence mode="wait">
-        <motion.span
-          key={count}
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 10 }}
-          transition={{ duration: 0.3 }}
-          className="font-mono font-bold text-primary"
-        >
-          {count.toLocaleString()}+
-        </motion.span>
+        {count !== null ? (
+            <motion.span
+            key={count}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.3 }}
+            className="font-mono font-bold text-primary w-20 text-left"
+            >
+            {count.toLocaleString()}+
+            </motion.span>
+        ) : (
+            <Loader2 className="h-4 w-4 animate-spin" />
+        )}
       </AnimatePresence>
       <span className="text-primary-foreground/80">Active Stores</span>
     </div>
@@ -71,41 +79,51 @@ function PlatformPulse() {
     const ref = useRef(null);
     const isInView = useInView(ref, { once: true, amount: 0.5 });
     
-    const getInitialValues = () => {
-        const launchDate = new Date('2024-07-01T00:00:00Z');
-        const now = new Date();
-        const daysSinceLaunch = Math.max(0, Math.floor((now.getTime() - launchDate.getTime()) / (1000 * 60 * 60 * 24)));
-
-        const initialSales = 4455321.98;
-        const initialSellers = 127;
-        const initialBrands = 89;
-
-        let dynamicSales = 0;
-        let dynamicSellers = 0;
-        let dynamicBrands = 0;
-
-        for (let i = 0; i < daysSinceLaunch; i++) {
-            dynamicSales += Math.random() * (50000 - 11000) + 11000;
-            dynamicSellers += Math.floor(Math.random() * (17 - 3 + 1)) + 3;
-            dynamicBrands += Math.floor(Math.random() * (7 - 1 + 1)) + 1;
-        }
-
-        const currentSales = initialSales + dynamicSales;
-        const currentSellers = initialSellers + dynamicSellers;
-        const currentBrands = initialBrands + dynamicBrands;
-        
-        return { currentSales, currentSellers, currentBrands };
-    };
-
-    const [initialValues] = useState(getInitialValues);
-    const [globalSalesSum, setGlobalSalesSum] = useState(initialValues.currentSales);
+    const [initialValues, setInitialValues] = useState<{currentSales: number, currentSellers: number, currentBrands: number} | null>(null);
+    const [globalSalesSum, setGlobalSalesSum] = useState<number | null>(null);
     const [isGlowing, setIsGlowing] = useState(false);
     const { showRandomCityToast } = useToastWithRandomCity();
 
+
     useEffect(() => {
+        const getInitialValuesClient = () => {
+            const launchDate = new Date('2024-07-01T00:00:00Z');
+            const now = new Date();
+            const daysSinceLaunch = Math.max(0, Math.floor((now.getTime() - launchDate.getTime()) / (1000 * 60 * 60 * 24)));
+
+            const initialSales = 4455321.98;
+            const initialSellers = 127;
+            const initialBrands = 89;
+
+            let dynamicSales = 0;
+            let dynamicSellers = 0;
+            let dynamicBrands = 0;
+
+            for (let i = 0; i < daysSinceLaunch; i++) {
+                dynamicSales += Math.random() * (50000 - 11000) + 11000;
+                dynamicSellers += Math.floor(Math.random() * (17 - 3 + 1)) + 3;
+                dynamicBrands += Math.floor(Math.random() * (7 - 1 + 1)) + 1;
+            }
+
+            const currentSales = initialSales + dynamicSales;
+            const currentSellers = initialSellers + dynamicSellers;
+            const currentBrands = initialBrands + dynamicBrands;
+            
+            return { currentSales, currentSellers, currentBrands };
+        };
+
+        const values = getInitialValuesClient();
+        setInitialValues(values);
+        setGlobalSalesSum(values.currentSales);
+    }, []);
+
+
+    useEffect(() => {
+        if (globalSalesSum === null) return;
+
         const updateSales = () => {
             const saleAmount = Math.random() * (185.00 - 14.50) + 14.50;
-            setGlobalSalesSum(prev => prev + saleAmount);
+            setGlobalSalesSum(prev => (prev || 0) + saleAmount);
             showRandomCityToast(saleAmount);
 
             setIsGlowing(true);
@@ -119,7 +137,7 @@ function PlatformPulse() {
         
         return () => clearTimeout(timeoutId);
 
-    }, [showRandomCityToast]);
+    }, [globalSalesSum, showRandomCityToast]);
 
     return (
         <section ref={ref} className="container z-10 py-20">
@@ -132,7 +150,7 @@ function PlatformPulse() {
                         </CardHeader>
                         <CardContent>
                             <p className="text-4xl font-bold">
-                                <AnimatedCounter from={0} to={initialValues.currentSellers} isInView={isInView} />+
+                                <AnimatedCounter from={0} to={initialValues?.currentSellers || 0} isInView={isInView} />+
                             </p>
                             <p className="text-muted-foreground mt-2">Supplying the Master Catalog</p>
                         </CardContent>
@@ -147,8 +165,8 @@ function PlatformPulse() {
                         <CardContent>
                              <p className="text-4xl font-bold">
                                 $<AnimatedCounter 
-                                    from={initialValues.currentSales} 
-                                    to={globalSalesSum} 
+                                    from={initialValues?.currentSales || 0} 
+                                    to={globalSalesSum || 0} 
                                     isInView={isInView}
                                     formatOptions={{ minimumFractionDigits: 2, maximumFractionDigits: 2 }} 
                                 />
@@ -165,7 +183,7 @@ function PlatformPulse() {
                         </CardHeader>
                         <CardContent>
                             <p className="text-4xl font-bold">
-                               <AnimatedCounter from={0} to={initialValues.currentBrands} isInView={isInView} />+
+                               <AnimatedCounter from={0} to={initialValues?.currentBrands || 0} isInView={isInView} />+
                             </p>
                             <p className="text-muted-foreground mt-2">Premium brand partnerships</p>
                         </CardContent>
