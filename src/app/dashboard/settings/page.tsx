@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -93,14 +94,22 @@ export default function StoreSettingsPage() {
 
     const handleUpdate = async (data: SettingsFormValues) => {
         if (!storeRef) return;
+        
+        const savingToast = toast({
+            title: 'Saving...',
+            description: 'Your changes are being saved.',
+        });
+
         try {
             await updateDoc(storeRef, data);
-            toast({
+            savingToast.update({
+                id: savingToast.id,
                 title: 'Store Updated',
                 description: 'Your changes have been saved successfully.',
             });
         } catch (error: any) {
-            toast({
+            savingToast.update({
+                id: savingToast.id,
                 variant: 'destructive',
                 title: 'Update Failed',
                 description: error.message || 'An unexpected error occurred.',
@@ -200,3 +209,5 @@ export default function StoreSettingsPage() {
         </div>
     )
 }
+
+    

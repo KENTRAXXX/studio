@@ -7,11 +7,12 @@ import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, Percent, Banknote, Loader2, Wallet, Bank } from 'lucide-react';
+import { DollarSign, Percent, Banknote, Loader2, Wallet, Bank, WalletCards } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { addDays, format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { WithdrawalModal } from '@/components/WithdrawalModal';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type Payout = {
     id: string;
@@ -26,6 +27,30 @@ type Withdrawal = {
     status: 'pending' | 'processing' | 'completed' | 'rejected';
     paidAt?: string;
 }
+
+const TransactionTableSkeleton = () => (
+    <Table>
+        <TableHeader>
+            <TableRow className="border-slate-800 hover:bg-slate-800/50">
+                <TableHead className="text-slate-400">Date</TableHead>
+                <TableHead className="text-slate-400">Order ID</TableHead>
+                <TableHead className="text-slate-400 text-right">Net Payout</TableHead>
+                <TableHead className="text-slate-400 text-center">Status</TableHead>
+            </TableRow>
+        </TableHeader>
+        <TableBody>
+            {Array.from({ length: 3 }).map((_, i) => (
+                <TableRow key={i} className="border-slate-800">
+                    <TableCell><Skeleton className="h-5 w-24 bg-slate-700" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-32 bg-slate-700" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-5 w-20 ml-auto bg-slate-700" /></TableCell>
+                    <TableCell className="text-center"><Skeleton className="h-6 w-20 mx-auto rounded-full bg-slate-700" /></TableCell>
+                </TableRow>
+            ))}
+        </TableBody>
+    </Table>
+);
+
 
 export default function BackstageFinancesPage() {
     const { user, loading: userLoading } = useUser();
@@ -130,10 +155,8 @@ export default function BackstageFinancesPage() {
                             </CardHeader>
                             <CardContent>
                                 {isLoading ? (
-                                    <div className="flex justify-center items-center h-40">
-                                        <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
-                                    </div>
-                                ) : (
+                                    <TransactionTableSkeleton />
+                                ) : pendingPayouts && pendingPayouts.length > 0 ? (
                                     <Table>
                                         <TableHeader>
                                             <TableRow className="border-slate-800 hover:bg-slate-800/50">
@@ -144,8 +167,7 @@ export default function BackstageFinancesPage() {
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {pendingPayouts && pendingPayouts.length > 0 ? (
-                                                pendingPayouts.map((payout) => (
+                                                {pendingPayouts.map((payout) => (
                                                     <TableRow key={payout.id} className="border-slate-800 hover:bg-slate-800/50">
                                                         <TableCell className="text-slate-400">{new Date(payout.createdAt).toLocaleDateString()}</TableCell>
                                                         <TableCell className="font-mono text-xs text-slate-300">{payout.orderId}</TableCell>
@@ -154,16 +176,15 @@ export default function BackstageFinancesPage() {
                                                             <Badge variant="outline" className="text-yellow-400 border-yellow-400/50">{payout.status}</Badge>
                                                         </TableCell>
                                                     </TableRow>
-                                                ))
-                                            ) : (
-                                                <TableRow className="border-slate-800 hover:bg-slate-800/50">
-                                                    <TableCell colSpan={4} className="text-center h-24 text-slate-500">
-                                                        No transactions found.
-                                                    </TableCell>
-                                                </TableRow>
-                                            )}
+                                                ))}
                                         </TableBody>
                                     </Table>
+                                ) : (
+                                    <div className="h-64 flex flex-col items-center justify-center text-center">
+                                        <WalletCards className="h-16 w-16 text-primary mb-4" />
+                                        <p className="text-lg text-muted-foreground">No transactions yet.</p>
+                                        <p className="text-sm text-muted-foreground">Your profit journey starts here.</p>
+                                    </div>
                                 )}
                             </CardContent>
                         </Card>
@@ -193,3 +214,5 @@ export default function BackstageFinancesPage() {
         </>
     );
 }
+
+    

@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -8,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useCart } from '@/app/store/[storeId]/layout';
 import { Loader2, Warehouse } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type StorefrontProduct = {
     id: string;
@@ -22,6 +24,18 @@ interface ProductGridProps {
   products: StorefrontProduct[];
   storeId: string;
 }
+
+const ProductSkeletonCard = () => (
+    <Card className="overflow-hidden rounded-lg">
+        <Skeleton className="w-full aspect-square bg-muted" />
+        <CardContent className="p-4 text-center">
+            <Skeleton className="h-6 w-3/4 mx-auto bg-muted" />
+            <Skeleton className="h-5 w-1/2 mx-auto mt-2 bg-muted" />
+            <Skeleton className="h-10 w-full mt-4 bg-muted" />
+        </CardContent>
+    </Card>
+);
+
 
 export function ProductGrid({ products, storeId }: ProductGridProps) {
   const { toast } = useToast();
@@ -42,8 +56,10 @@ export function ProductGrid({ products, storeId }: ProductGridProps) {
 
   if (!products) {
     return (
-        <div className="flex justify-center items-center h-64">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {Array.from({ length: 4 }).map((_, index) => (
+                <ProductSkeletonCard key={index} />
+            ))}
         </div>
     )
   }
@@ -97,3 +113,5 @@ export function ProductGrid({ products, storeId }: ProductGridProps) {
     </div>
   );
 }
+
+    
