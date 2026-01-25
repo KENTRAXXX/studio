@@ -80,6 +80,11 @@ function SignUpForm() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     mode: 'onBlur',
+    defaultValues: {
+      email: '',
+      password: '',
+      referralCode: '',
+    },
   });
 
   const onSubmit = (data: FormValues) => {
