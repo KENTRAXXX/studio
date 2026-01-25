@@ -1,14 +1,69 @@
-
 'use client';
 
-import { useUserProfile } from '@/firebase/user-profile-provider';
-import { Loader2 } from 'lucide-react';
-import DashboardController from './dashboard-controller';
+import { useMemo } from 'react';
+import Link from 'next/link';
+import { useUser, useFirestore, useCollection, useDoc, useUserProfile, useMemoFirebase } from '@/firebase';
+import { collection, query, doc } from 'firebase/firestore';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from '@/components/ui/button';
+import { CheckCircle2, Loader2, Store, DollarSign, Users, ArrowRight } from "lucide-react";
+import { cn } from '@/lib/utils';
 
-export default function DashboardOverview() {
-    const { userProfile, loading } = useUserProfile();
+type Order = {
+    total: number;
+}
 
-    if (loading) {
+type StoreData = {
+    customDomain?: string;
+    domainStatus?: 'unverified' | 'pending_dns' | 'connected';
+    status?: 'Live' | 'Maintenance';
+}
+
+type Product = {
+    id: string;
+}
+
+const ChecklistItem = ({ isComplete, children }: { isComplete: boolean, children: React.ReactNode }) => (
+    <li className="flex items-center gap-3">
+        <div className={cn("flex h-6 w-6 items-center justify-center rounded-full border-2", isComplete ? "border-primary bg-primary/20" : "border-border")}>
+            {isComplete && <CheckCircle2 className="h-4 w-4 text-primary" />}
+        </div>
+        <span className={cn("text-muted-foreground", isComplete && "text-foreground line-through")}>
+            {children}
+        </span>
+    </li>
+);
+
+
+export default function DashboardOverviewPage() {
+    const { user, loading: userLoading } = useUser();
+    const { userProfile, loading: profileLoading } = useUserProfile();
+    const firestore = useFirestore();
+
+    // Data fetching
+    const storeRef = useMemoFirebase(() => user && firestore ? doc(firestore, 'stores', user.uid) : null, [user, firestore]);
+    const { data: storeData, loading: storeLoading } = useDoc<StoreData>(storeRef);
+
+    const ordersRef = useMemoFirebase(() => user && firestore ? collection(firestore, `stores/${user.uid}/orders`) : null, [user, firestore]);
+    const { data: orders, loading: ordersLoading } = useCollection<Order>(ordersRef);
+
+    const productsRef = useMemoFirebase(() => user && firestore ? collection(firestore, `stores/${user.uid}/products`) : null, [user, firestore]);
+    const { data: products, loading: productsLoading } = useCollection<Product>(productsRef);
+
+    // Calculations
+    const totalSales = useMemo(() => {
+        return orders?.reduce((acc, order) => acc + order.total, 0) || 0;
+    }, [orders]);
+
+    // Checklist logic
+    const isDomainConnected = storeData?.domainStatus === 'connected';
+    const isProductSynced = !!(products && products.length > 0);
+    const isProfileComplete = !!userProfile?.planTier; // A simple check
+    const isSaleMade = !!(orders && orders.length > 0);
+    
+    const isLoading = userLoading || profileLoading || storeLoading || ordersLoading || productsLoading;
+    
+    if (isLoading) {
         return (
             <div className="flex h-96 w-full items-center justify-center">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -16,14 +71,76 @@ export default function DashboardOverview() {
         );
     }
     
-    if (!userProfile) {
-        // This can happen briefly or if there's an error fetching the profile
-        return (
-             <div className="flex h-96 w-full items-center justify-center">
-                <p>Could not load user profile.</p>
-            </div>
-        )
-    }
+    return (
+        <div className="space-y-8">
+            <h1 className="text-3xl font-bold font-headline">Welcome, {userProfile?.email ? userProfile.email.split('@')[0] : 'Mogul'}</h1>
 
-    return <DashboardController planTier={userProfile.planTier} />;
+            <div className="grid gap-6 md:grid-cols-3">
+                <Card className="border-primary/50">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium">Store Status</CardTitle>
+                        <Store className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-bold text-primary flex items-center gap-2">
+                            <span className="relative flex h-3 w-3">
+                                <span className={cn("absolute inline-flex h-full w-full rounded-full opacity-75", storeData?.status === 'Live' ? 'bg-green-400 animate-ping' : 'bg-yellow-400')}></span>
+                                <span className={cn("relative inline-flex rounded-full h-3 w-3", storeData?.status === 'Live' ? 'bg-green-500' : 'bg-yellow-500')}></span>
+                            </span>
+                            {storeData?.status || 'Draft'}
+                        </div>
+                         <p className="text-xs text-muted-foreground">Your storefront is currently {storeData?.status?.toLowerCase()}</p>
+                    </CardContent>
+                </Card>
+                 <Card className="border-primary/50">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
+                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-bold text-primary">${totalSales.toFixed(2)}</div>
+                         <p className="text-xs text-muted-foreground">{orders?.length || 0} total orders</p>
+                    </CardContent>
+                </Card>
+                 <Card className="border-primary/50">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium">Visitors Today</CardTitle>
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-bold text-primary">--</div>
+                         <p className="text-xs text-muted-foreground">Analytics coming soon</p>
+                    </CardContent>
+                </Card>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                 <Card className="border-primary/50">
+                    <CardHeader>
+                        <CardTitle className="font-headline">Quick Start Checklist</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ul className="space-y-4 text-lg">
+                            <ChecklistItem isComplete={isDomainConnected}>Connect Domain</ChecklistItem>
+                            <ChecklistItem isComplete={isProductSynced}>Sync First Product</ChecklistItem>
+                            <ChecklistItem isComplete={isProfileComplete}>Complete Profile</ChecklistItem>
+                            <ChecklistItem isComplete={isSaleMade}>Make First Sale</ChecklistItem>
+                        </ul>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-primary/50 flex flex-col items-center justify-center text-center p-8">
+                    <CardTitle className="font-headline text-2xl">Ready to sell?</CardTitle>
+                    <CardContent className="p-0 mt-4">
+                        <p className="text-muted-foreground mb-6">Visit your live storefront and see your changes.</p>
+                        <Button asChild size="lg" className="h-12 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+                            <Link href={storeData?.customDomain ? `https://${storeData.customDomain}` : `/store/${user?.uid}`} target="_blank">
+                                View My Store <ArrowRight className="ml-2 h-5 w-5" />
+                            </Link>
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+    );
 }
