@@ -11,9 +11,10 @@ service cloud.firestore {
 
     // == USERS ==
     // Any authenticated user can read user profiles (for referral program).
-    // Users can update their own profile, but cannot change their role, plan, access status, or referral info once set.
+    // Users can create and update their own profile, but cannot change their role, plan, access status, or referral info once set.
     match /users/{userId} {
       allow read: if request.auth != null;
+      allow create: if request.auth.uid == userId;
       allow update: if request.auth.uid == userId
         && !(request.resource.data.userRole is string && request.resource.data.userRole != resource.data.userRole)
         && !(request.resource.data.planTier is string && request.resource.data.planTier != resource.data.planTier)
