@@ -23,6 +23,16 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "stores",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "customDomain",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ]
 }
