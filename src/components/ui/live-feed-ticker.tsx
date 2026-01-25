@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Clock, DollarSign, Package } from "lucide-react";
+import { Clock, DollarSign, Package, ShieldCheck, Banknote } from "lucide-react";
 
 const events = [
   {
@@ -24,6 +24,26 @@ const events = [
   {
     icon: <DollarSign className="h-4 w-4 text-green-400" />,
     text: "25 mins ago: $890.00 sale processed for 'Timepiece Emporium'.",
+  },
+  {
+    icon: <ShieldCheck className="h-4 w-4 text-yellow-400" />,
+    text: "31 mins ago: New Brand 'Atelier Luxe' joined as a Verified Supplier.",
+  },
+  {
+    icon: <DollarSign className="h-4 w-4 text-green-400" />,
+    text: "35 mins ago: $1,250.00 sale processed for 'The Gilded Cage' store in Dubai.",
+  },
+  {
+    icon: <Package className="h-4 w-4 text-blue-400" />,
+    text: "42 mins ago: 5 new Diamond Necklaces added to the Master Catalog.",
+  },
+  {
+    icon: <Banknote className="h-4 w-4 text-indigo-400" />,
+    text: "48 mins ago: Payout of $2,300.00 sent to a Mogul in New York.",
+  },
+  {
+    icon: <Clock className="h-4 w-4 text-primary" />,
+    text: "55 mins ago: New store 'CoutureHaus' launched in Berlin.",
   },
 ];
 
@@ -51,7 +71,7 @@ export function LiveFeedTicker() {
         }}
         transition={{
           ease: "linear",
-          duration: 40,
+          duration: 80,
           repeat: Infinity,
         }}
       >
