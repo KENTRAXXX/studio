@@ -16,12 +16,14 @@ import { useCollection } from './firestore/use-collection';
 import { useDoc } from './firestore/use-doc';
 import { useUser } from './auth/use-user';
 import { useMemoFirebase } from '../lib/use-memo-firebase';
+import { useUserProfile } from './user-profile-provider';
 
 export {
   useFirebase,
   useCollection,
   useDoc,
   useUser,
+  useUserProfile,
   useMemoFirebase,
   firebaseConfig,
 };

@@ -4,7 +4,10 @@
 import { createContext, useContext, useEffect, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { doc } from 'firebase/firestore';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser } from './auth/use-user';
+import { useFirestore } from './provider';
+import { useDoc } from './firestore/use-doc';
+import { useMemoFirebase } from '../lib/use-memo-firebase';
 
 type UserProfile = {
   id?: string;
