@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useMemo } from 'react';
 import {
   SidebarProvider,
   Sidebar,
@@ -33,11 +34,10 @@ import {
 import SomaLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
 
-const navItems = [
+const mogulNavItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
   { href: '/dashboard/settings', icon: Settings, label: 'Store Settings' },
   { href: '/dashboard/global-product-catalog', icon: Boxes, label: 'Global Product Catalog' },
-  { href: '/dashboard/my-private-inventory', icon: Package, label: 'My Private Inventory' },
   { href: '/dashboard/my-orders', icon: ShoppingBag, label: 'My Orders' },
   { href: '/dashboard/training-center', icon: GraduationCap, label: 'Training Center' },
   { href: '/dashboard/domain-settings', icon: Globe, label: 'Domain Settings' },
@@ -47,10 +47,23 @@ const navItems = [
   { href: '/dashboard/accessibility-checker', icon: Accessibility, label: 'A11y Checker' },
 ];
 
-const backstageNavItems = [
+const merchantNavItems = [
+  { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
+  { href: '/dashboard/settings', icon: Settings, label: 'Store Settings' },
+  { href: '/dashboard/my-private-inventory', icon: Package, label: 'My Private Inventory' },
+  { href: '/dashboard/my-orders', icon: ShoppingBag, label: 'My Orders' },
+  { href: '/dashboard/domain-settings', icon: Globe, label: 'Domain Settings' },
+  { href: '/dashboard/analytics', icon: BarChart2, label: 'Analytics' },
+  { href: '/dashboard/wallet', icon: Wallet, label: 'SOMA Wallet' },
+  { href: '/dashboard/referrals', icon: Gift, label: 'Referrals' },
+  { href: '/dashboard/accessibility-checker', icon: Accessibility, label: 'A11y Checker' },
+];
+
+const sellerNavItems = [
+    { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
     { href: '/backstage/add-product', icon: Package, label: 'Add Product' },
     { href: '/backstage/finances', icon: Landmark, label: 'Finances' },
-]
+];
 
 const adminNavItems = [
     { href: '/admin/approval-queue', icon: ShieldCheck, label: 'Approval Queue' },
@@ -58,7 +71,7 @@ const adminNavItems = [
     { href: '/admin/users', icon: Users, label: 'User Management' },
     { href: '/admin/orders', icon: ShoppingBag, label: 'Admin Orders' },
     { href: '/admin/catalog', icon: Gem, label: 'Catalog Editor' },
-]
+];
 
 export default function DashboardLayout({
   children,
@@ -67,7 +80,29 @@ export default function DashboardLayout({
 }) {
   const { userProfile } = useUserProfile();
 
-  const isSeller = userProfile?.userRole === 'SELLER';
+  const currentNavItems = useMemo(() => {
+    if (!userProfile) return [];
+
+    if (userProfile.userRole === 'ADMIN') {
+        // Admins see the Mogul view as a base, plus their Admin panel.
+        return mogulNavItems;
+    }
+
+    switch (userProfile.planTier) {
+        case 'MERCHANT':
+            return merchantNavItems;
+        case 'MOGUL':
+        case 'SCALER':
+        case 'ENTERPRISE':
+            return mogulNavItems;
+        case 'SELLER':
+        case 'BRAND':
+            return sellerNavItems;
+        default:
+            return [];
+    }
+  }, [userProfile]);
+
   const isAdmin = userProfile?.userRole === 'ADMIN';
 
   return (
@@ -81,7 +116,7 @@ export default function DashboardLayout({
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
-            {navItems.map((item) => (
+            {currentNavItems.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <Link href={item.href}>
                   <SidebarMenuButton tooltip={item.label}>
@@ -91,24 +126,6 @@ export default function DashboardLayout({
                 </Link>
               </SidebarMenuItem>
             ))}
-
-            {isSeller && (
-              <>
-                <SidebarMenuItem>
-                    <div className="p-2 text-xs font-medium text-muted-foreground">Backstage</div>
-                </SidebarMenuItem>
-                {backstageNavItems.map((item) => (
-                  <SidebarMenuItem key={item.href}>
-                    <Link href={item.href}>
-                      <SidebarMenuButton tooltip={item.label}>
-                        <item.icon />
-                        <span>{item.label}</span>
-                      </SidebarMenuButton>
-                    </Link>
-                  </SidebarMenuItem>
-                ))}
-              </>
-            )}
 
             {isAdmin && (
               <>
