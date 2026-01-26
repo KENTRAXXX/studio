@@ -69,7 +69,7 @@ const OnboardingSuccess = ({ onAcknowledge }: { onAcknowledge: () => void }) => 
             <p className="mt-2 text-muted-foreground max-w-md mx-auto">
                 The SOMA Quality Control team will review your warehouse details within 48 hours. You will be notified via email upon approval.
             </p>
-            <Button onClick={onAcknowledge} className="mt-8">Go to Dashboard</Button>
+            <Button onClick={onAcknowledge} className="mt-8">Go to Finances</Button>
         </motion.div>
     );
 };
@@ -93,13 +93,17 @@ export default function BackstagePage() {
 
   useEffect(() => {
     const isLoading = profileLoading || userLoading;
-    if (!isLoading) {
-        if (userProfile?.planTier !== 'SELLER') {
+    if (!isLoading && userProfile) {
+        if (userProfile.planTier !== 'SELLER' && userProfile.planTier !== 'BRAND') {
             router.push('/access-denied');
             return;
         }
-        if (userProfile?.status === 'pending_review' || userProfile?.status === 'approved') {
-            setIsSuccess(true);
+        if (userProfile.status === 'approved') {
+            router.push('/backstage/finances');
+            return; // Redirect approved users immediately
+        }
+        if (userProfile.status === 'pending_review') {
+            setIsSuccess(true); // Show success/pending screen
         }
     }
   }, [userProfile, profileLoading, userLoading, router]);
@@ -140,8 +144,12 @@ export default function BackstagePage() {
   }
   
   // This prevents a flash of the form before redirecting
-  if (userProfile?.planTier !== 'SELLER') {
-      return null;
+  if (!userProfile || userProfile.status === 'approved') {
+      return (
+        <div className="flex h-screen w-full items-center justify-center bg-background">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      );
   }
 
 
@@ -156,7 +164,7 @@ export default function BackstagePage() {
         <Card className="w-full max-w-2xl border-primary/50">
             <AnimatePresence mode="wait">
             {isSuccess ? (
-                <OnboardingSuccess onAcknowledge={() => router.push('/dashboard')} />
+                <OnboardingSuccess onAcknowledge={() => router.push('/backstage/finances')} />
             ) : (
                 <motion.div
                     key="form"

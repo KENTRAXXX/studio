@@ -37,7 +37,7 @@ import { useUserProfile } from '@/firebase/user-profile-provider';
 const mogulNavItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
   { href: '/dashboard/settings', icon: Settings, label: 'Store Settings' },
-  { href: '/dashboard/global-product-catalog', icon: Boxes, label: 'Global Product Catalog' },
+  { href: '/dashboard/product-catalog', icon: Boxes, label: 'Global Product Catalog' },
   { href: '/dashboard/my-orders', icon: ShoppingBag, label: 'My Orders' },
   { href: '/dashboard/training-center', icon: GraduationCap, label: 'Training Center' },
   { href: '/dashboard/domain-settings', icon: Globe, label: 'Domain Settings' },
@@ -60,9 +60,9 @@ const merchantNavItems = [
 ];
 
 const sellerNavItems = [
-    { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
+    { href: '/backstage/finances', icon: Landmark, label: 'Finances & Payouts' },
     { href: '/backstage/add-product', icon: Package, label: 'Add Product' },
-    { href: '/backstage/finances', icon: Landmark, label: 'Finances' },
+    { href: '/backstage', icon: ShieldCheck, label: 'Onboarding Status' },
 ];
 
 const adminNavItems = [
@@ -71,6 +71,7 @@ const adminNavItems = [
     { href: '/admin/users', icon: Users, label: 'User Management' },
     { href: '/admin/orders', icon: ShoppingBag, label: 'Admin Orders' },
     { href: '/admin/catalog', icon: Gem, label: 'Catalog Editor' },
+    { href: '/dashboard/product-catalog', icon: Boxes, label: 'View Global Catalog' },
 ];
 
 export default function DashboardLayout({
