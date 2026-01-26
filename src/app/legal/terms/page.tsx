@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import SomaLogo from '@/components/logo';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 const LegalContent = () => (
   <div className="space-y-8 max-w-4xl mx-auto">
@@ -59,7 +59,7 @@ export default function TermsPage() {
     const firestore = useFirestore();
     const router = useRouter();
     const { toast } = useToast();
-    const [isSubmitting, setIsSubmitting] = React.useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         // If the user has already accepted the terms, redirect them to the dashboard.
