@@ -55,9 +55,9 @@ const initializePaystackTransactionFlow = ai.defineFlow(
         body.plan = input.plan;
     } else {
         // For one-time USD payments, ensure a valid amount in cents is provided.
-        // Paystack has a minimum transaction amount, typically around $0.50 (50 cents).
-        if (typeof input.amount !== 'number' || input.amount < 50) {
-            throw new Error('Invalid Amount Sent. Amount must be at least 50 cents ($0.50).');
+        // Paystack has a minimum transaction amount for USD, typically $1.00 (100 cents).
+        if (typeof input.amount !== 'number' || input.amount < 100) {
+            throw new Error('Invalid Amount Sent. Amount must be at least 100 cents ($1.00).');
         }
         body.amount = Math.round(input.amount); // Ensure it's an integer in cents
         body.currency = 'USD'; // Explicitly set currency for one-time payments
