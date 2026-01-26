@@ -1,14 +1,16 @@
-
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useCollection, useDoc, useUserProfile, useMemoFirebase } from '@/firebase';
 import { collection, query, doc } from 'firebase/firestore';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Loader2, Store, DollarSign, Users, ArrowRight } from "lucide-react";
 import { cn } from '@/lib/utils';
+import { CompletePaymentPrompt } from '@/components/complete-payment-prompt';
+
 
 type Order = {
     total: number;
@@ -41,6 +43,7 @@ export default function DashboardOverviewPage() {
     const { user, loading: userLoading } = useUser();
     const { userProfile, loading: profileLoading } = useUserProfile();
     const firestore = useFirestore();
+    const router = useRouter();
 
     // Data fetching
     const storeRef = useMemoFirebase(() => user && firestore ? doc(firestore, 'stores', user.uid) : null, [user, firestore]);
@@ -51,6 +54,18 @@ export default function DashboardOverviewPage() {
 
     const productsRef = useMemoFirebase(() => user && firestore ? collection(firestore, `stores/${user.uid}/products`) : null, [user, firestore]);
     const { data: products, loading: productsLoading } = useCollection<Product>(productsRef);
+
+    const isLoading = userLoading || profileLoading || storeLoading || ordersLoading || productsLoading;
+    
+    useEffect(() => {
+        if (!isLoading && userProfile) {
+            const planTier = userProfile.planTier;
+            if (planTier === 'SELLER' || planTier === 'BRAND') {
+                router.push('/backstage/finances');
+            }
+        }
+    }, [isLoading, userProfile, router]);
+
 
     // Calculations
     const totalSales = useMemo(() => {
@@ -63,14 +78,32 @@ export default function DashboardOverviewPage() {
     const isProfileComplete = !!userProfile?.planTier; // A simple check
     const isSaleMade = !!(orders && orders.length > 0);
     
-    const isLoading = userLoading || profileLoading || storeLoading || ordersLoading || productsLoading;
-    
-    if (isLoading) {
+    if (isLoading || userProfile?.planTier === 'SELLER' || userProfile?.planTier === 'BRAND') {
         return (
             <div className="flex h-96 w-full items-center justify-center">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
             </div>
         );
+    }
+    
+    // If the user hasn't paid, show payment prompt.
+    if (userProfile && !userProfile.hasAccess) {
+        return <CompletePaymentPrompt />;
+    }
+
+    // If they have paid, but the store doesn't exist yet (webhook delay), show a waiting message.
+    if (!storeData && !isLoading) {
+        return (
+             <div className="flex h-96 w-full items-center justify-center text-center">
+                <Card className="p-8 border-primary/50">
+                    <CardTitle className="font-headline text-2xl">Provisioning Your Store</CardTitle>
+                    <CardDescription className="mt-2 flex items-center gap-2">
+                        <Loader2 className="animate-spin" />
+                        Please wait a moment. This page will reload automatically.
+                    </CardDescription>
+                </Card>
+            </div>
+        )
     }
     
     return (
