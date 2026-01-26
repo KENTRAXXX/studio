@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle2, Loader2, Store, DollarSign, Users, ArrowRight } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { CompletePaymentPrompt } from '@/components/complete-payment-prompt';
+import { ProvisioningLoader } from '@/components/store/provisioning-loader';
 
 
 type Order = {
@@ -93,17 +94,7 @@ export default function DashboardOverviewPage() {
 
     // If they have paid, but the store doesn't exist yet (webhook delay), show a waiting message.
     if (!storeData && !isLoading) {
-        return (
-             <div className="flex h-96 w-full items-center justify-center text-center">
-                <Card className="p-8 border-primary/50">
-                    <CardTitle className="font-headline text-2xl">Provisioning Your Store</CardTitle>
-                    <CardDescription className="mt-2 flex items-center gap-2">
-                        <Loader2 className="animate-spin" />
-                        Please wait a moment. This page will reload automatically.
-                    </CardDescription>
-                </Card>
-            </div>
-        )
+        return <ProvisioningLoader />;
     }
     
     return (
