@@ -50,12 +50,16 @@ const initializePaystackTransactionFlow = ai.defineFlow(
         metadata: input.metadata,
     };
 
-    if (input.plan) {
+    // This logic ensures we send the correct parameters for either a subscription or a one-time payment.
+    if (input.plan && input.plan.trim() !== '') {
         // For subscriptions, only send the plan code. Paystack uses the plan's amount and currency.
         body.plan = input.plan;
     } else {
-        // For one-time payments, send the amount and currency.
-        body.amount = input.amount;
+        // For one-time payments, ensure a valid amount is provided and send it as an integer.
+        if (typeof input.amount !== 'number' || input.amount <= 0) {
+            throw new Error('A valid amount is required for one-time payments.');
+        }
+        body.amount = Math.round(input.amount); // Ensure it's an integer in cents/kobo
         body.currency = 'USD';
     }
 
