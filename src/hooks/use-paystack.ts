@@ -17,6 +17,7 @@ type PaystackMetadata = {
 type InitializePaymentArgs = {
   email: string;
   amount: number;
+  plan?: string | null;
   metadata?: PaystackMetadata;
 };
 
@@ -25,7 +26,7 @@ export function usePaystack() {
   const [isInitializing, setIsInitializing] = useState(false);
 
   const initializePayment = async (
-    { email, amount, metadata }: InitializePaymentArgs,
+    { email, amount, plan, metadata }: InitializePaymentArgs,
     onSuccess: (reference: any) => void,
     onClose: () => void
   ) => {
@@ -45,6 +46,7 @@ export function usePaystack() {
       const result = await initializePaystackTransaction({
         email,
         amount,
+        plan: plan || undefined,
         metadata,
       });
 
