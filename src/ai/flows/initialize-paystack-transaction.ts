@@ -14,7 +14,7 @@ import { z } from 'zod';
 
 const InitializePaystackTransactionInputSchema = z.object({
   email: z.string().email().describe('The email of the customer.'),
-  amount: z.number().int().positive().describe('The amount in the lowest currency unit (e.g., Kobo, Cents).'),
+  amount: z.number().int().positive().optional().describe('The amount in the lowest currency unit (e.g., Kobo, Cents).'),
   plan: z.string().optional().describe('The Paystack plan code for recurring payments.'),
   metadata: z.any().optional().describe('An object containing any extra data you want to pass to Paystack.'),
 });
