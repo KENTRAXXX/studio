@@ -6,17 +6,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import DashboardController from '../dashboard-controller';
 import { Eye } from 'lucide-react';
 
-type PlanTier = 'MERCHANT' | 'MOGUL' | 'SCALER' | 'SELLER';
+type PlanTier = 'MERCHANT' | 'SCALER' | 'SELLER';
 
 const planTiers: { id: PlanTier, name: string }[] = [
-    { id: 'MOGUL', name: 'Mogul View' },
     { id: 'SCALER', name: 'Scaler View' },
     { id: 'MERCHANT', name: 'Merchant View' },
     { id: 'SELLER', name: 'Seller View' },
 ];
 
 export default function DashboardDemoPage() {
-    const [activeTab, setActiveTab] = useState<PlanTier>('MOGUL');
+    const [activeTab, setActiveTab] = useState<PlanTier>('SCALER');
 
     return (
         <div className="space-y-8 p-4 md:p-8">
@@ -29,7 +28,7 @@ export default function DashboardDemoPage() {
             </div>
 
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as PlanTier)} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto">
+                <TabsList className="grid w-full grid-cols-1 md:grid-cols-3 h-auto">
                     {planTiers.map(tier => (
                         <TabsTrigger key={tier.id} value={tier.id} className="py-2">
                             {tier.name}

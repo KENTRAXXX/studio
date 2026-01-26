@@ -89,7 +89,7 @@ const SupplierUploadView = () => {
     );
 };
 
-// Moguls and Scalers see the dropshipping catalog
+// Scalers and Enterprise see the dropshipping catalog
 const DropshipCatalogView = ({ isDemo = false }: { isDemo?: boolean }) => (
     <GlobalProductCatalogPage isDemo={isDemo} />
 );
@@ -99,7 +99,6 @@ export default function DashboardController({ planTier, isDemo = false }: { plan
     switch (planTier) {
         case 'MERCHANT':
             return <PrivateInventoryView />;
-        case 'MOGUL':
         case 'SCALER':
         case 'ENTERPRISE':
             return <DropshipCatalogView isDemo={isDemo} />;

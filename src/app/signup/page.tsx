@@ -41,9 +41,6 @@ const plans: { [key: string]: { id: string; name: string; pricing: any } } = {
         monthly: { amount: 1999, planCode: process.env.NEXT_PUBLIC_MERCHANT_MONTHLY_PLAN_CODE },
         yearly: { amount: 19900, planCode: process.env.NEXT_PUBLIC_MERCHANT_YEARLY_PLAN_CODE },
     }},
-    MOGUL: { id: 'MOGUL', name: 'Mogul', pricing: {
-        lifetime: { amount: 50000, planCode: null }
-    }},
     SCALER: { id: 'SCALER', name: 'Scaler', pricing: {
         monthly: { amount: 2900, planCode: process.env.NEXT_PUBLIC_SCALER_MONTHLY_PLAN_CODE },
         yearly: { amount: 29000, planCode: process.env.NEXT_PUBLIC_SCALER_YEARLY_PLAN_CODE },
@@ -72,10 +69,10 @@ function SignUpForm() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isPendingTransition, startTransition] = useTransition();
 
-  const planTier = searchParams.get('planTier') || 'MOGUL';
-  const interval = (searchParams.get('interval') as PlanInterval) || 'lifetime';
+  const planTier = searchParams.get('planTier') || 'SCALER';
+  const interval = (searchParams.get('interval') as PlanInterval) || 'monthly';
   
-  const selectedPlanDetails = plans[planTier] || plans.MOGUL;
+  const selectedPlanDetails = plans[planTier] || plans.SCALER;
   const paymentDetails = selectedPlanDetails.pricing[interval];
   
   const form = useForm<FormValues>({

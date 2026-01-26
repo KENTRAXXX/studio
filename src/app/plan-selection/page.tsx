@@ -13,17 +13,6 @@ type Interval = 'monthly' | 'yearly';
 
 const plans = [
     {
-        id: 'MOGUL',
-        title: 'Mogul',
-        icon: Star,
-        description: 'Dropship VIP. A lifetime deal for serious entrepreneurs.',
-        features: ['One-Click Cloning', 'Priority Shipping Speed', 'VIP Support'],
-        bestValue: true,
-        pricing: {
-            lifetime: { price: 500, planCode: null }
-        }
-    },
-    {
         id: 'SCALER',
         title: 'Scaler',
         icon: Rocket,
@@ -85,7 +74,7 @@ const plans = [
 ];
 
 export default function PlanSelectionPage() {
-    const [selectedPlan, setSelectedPlan] = useState('MOGUL');
+    const [selectedPlan, setSelectedPlan] = useState('SCALER');
     const [interval, setInterval] = useState<Interval>('monthly');
     const router = useRouter();
 

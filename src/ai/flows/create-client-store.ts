@@ -22,7 +22,7 @@ const { firestore } = initializeFirebase();
 const CreateClientStoreInputSchema = z.object({
   userId: z.string().describe('The ID of the user for whom the store is being created.'),
   plan: z.string().describe('The subscription plan (e.g., "monthly", "lifetime").'),
-  planTier: z.enum(['MERCHANT', 'MOGUL', 'SCALER', 'SELLER', 'ENTERPRISE']),
+  planTier: z.enum(['MERCHANT', 'SCALER', 'SELLER', 'ENTERPRISE']),
   template: z.string().describe('The selected template for the store.'),
   logoUrl: z.string().optional().describe("URL of the store's logo."),
   faviconUrl: z.string().optional().describe("URL of the store's favicon."),
@@ -87,8 +87,8 @@ const createClientStoreFlow = ai.defineFlow(
 
         await setDoc(storeRef, defaultStoreConfig);
 
-        // 3. Conditionally clone products for Dropship tiers (Mogul, Scaler)
-        if (planTier === 'MOGUL' || planTier === 'SCALER' || planTier === 'ENTERPRISE') {
+        // 3. Conditionally clone products for Dropship tiers (Scaler, Enterprise)
+        if (planTier === 'SCALER' || planTier === 'ENTERPRISE') {
             const productsRef = collection(storeRef, 'products');
             const batch = writeBatch(firestore);
             const top10Products = masterCatalog.slice(0, 10);

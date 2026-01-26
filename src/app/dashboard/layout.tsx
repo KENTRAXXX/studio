@@ -95,7 +95,6 @@ export default function DashboardLayout({
     switch (userProfile.planTier) {
         case 'MERCHANT':
             return merchantNavItems;
-        case 'MOGUL':
         case 'SCALER':
         case 'ENTERPRISE':
             return mogulNavItems;
