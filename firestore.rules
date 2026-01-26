@@ -14,14 +14,20 @@ service cloud.firestore {
       // 1. The user must be the owner of the document.
       let isOwner = request.auth.uid == userId;
 
-      // 2. Define the list of fields that a user CANNOT change themselves.
-      let protectedFields = ['userRole', 'planTier', 'plan', 'hasAccess', 'paidAt', 'email', 'referralCode', 'isDisabled', 'referredBy'];
+      // 2. The update is allowed IF the user is the owner AND they are not trying to change any of the protected fields.
+      // This is done by explicitly checking that the value of each protected field is the same before and after the update.
+      let protectedFieldsUnchanged =
+          request.resource.data.get('userRole', null) == resource.data.get('userRole', null) &&
+          request.resource.data.get('planTier', null) == resource.data.get('planTier', null) &&
+          request.resource.data.get('plan', null) == resource.data.get('plan', null) &&
+          request.resource.data.get('hasAccess', null) == resource.data.get('hasAccess', null) &&
+          request.resource.data.get('paidAt', null) == resource.data.get('paidAt', null) &&
+          request.resource.data.get('email', null) == resource.data.get('email', null) &&
+          request.resource.data.get('referralCode', null) == resource.data.get('referralCode', null) &&
+          request.resource.data.get('isDisabled', null) == resource.data.get('isDisabled', null) &&
+          request.resource.data.get('referredBy', null) == resource.data.get('referredBy', null);
 
-      // 3. Get the list of fields the user is trying to modify.
-      let changedKeys = request.resource.data.diff(resource.data).affectedKeys();
-
-      // 4. The update is allowed IF the user is the owner AND they are not trying to change any of the protected fields.
-      return isOwner && changedKeys.disjoint(protectedFields);
+      return isOwner && protectedFieldsUnchanged;
     }
 
     // == USERS ==
