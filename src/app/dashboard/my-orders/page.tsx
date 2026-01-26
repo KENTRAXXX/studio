@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { useUser, useFirestore, useCollection } from "@/firebase";
 import { collection, query, orderBy } from "firebase/firestore";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle, DollarSign, Package, TrendingUp } from "lucide-react";
 import { useMemo } from "react";
 
 const getStatusClasses = (status: string) => {
@@ -92,22 +92,50 @@ export default function MyOrdersPage() {
         <h1 className="text-3xl font-bold font-headline">My Orders</h1>
       </div>
 
-      <Card className="border-primary">
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6">
-            <div className="text-center">
-                <p className="text-sm text-muted-foreground">Gross Revenue</p>
-                <p className="text-2xl font-bold text-foreground">${grossRevenue.toFixed(2)}</p>
-            </div>
-            <div className="text-center">
-                <p className="text-sm text-muted-foreground">SOMA Wholesale Cost (Est.)</p>
-                <p className="text-2xl font-bold text-foreground">- ${wholesaleCost.toFixed(2)}</p>
-            </div>
-            <div className="text-center">
-                <p className="text-sm text-muted-foreground">Net Profit (Est.)</p>
-                <p className="text-2xl font-bold text-primary">${netProfit.toFixed(2)}</p>
-            </div>
+       <Card className="border-destructive bg-destructive/10 text-destructive-foreground">
+        <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-6 w-6" />
+                Your wallet is currently under review...
+            </CardTitle>
+            <CardDescription className="text-destructive/80">
+                To protect the integrity of the SOMA platform, your wallet has been flagged for a manual review by our treasury team.
+            </CardDescription>
+        </CardHeader>
+        <CardContent>
+            <p>This process typically takes 24-48 hours. You will be notified via email once the review is complete.</p>
         </CardContent>
       </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="border-primary/50">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Gross Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">${grossRevenue.toFixed(2)}</div>
+          </CardContent>
+        </Card>
+        <Card className="border-primary/50">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">SOMA Wholesale Cost (Est.)</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">- ${wholesaleCost.toFixed(2)}</div>
+          </CardContent>
+        </Card>
+        <Card className="border-green-500/50">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Net Profit (Est.)</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-400">${netProfit.toFixed(2)}</div>
+          </CardContent>
+        </Card>
+      </div>
 
       <Card className="border-primary/50">
         <CardHeader>
