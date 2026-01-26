@@ -21,8 +21,8 @@ const { firestore } = initializeFirebase();
 
 const CreateClientStoreInputSchema = z.object({
   userId: z.string().describe('The ID of the user for whom the store is being created.'),
-  plan: z.string().describe('The subscription plan (e.g., "monthly", "lifetime").'),
-  planTier: z.enum(['MERCHANT', 'SCALER', 'SELLER', 'ENTERPRISE']),
+  plan: z.string().describe('The subscription plan (e.g., "monthly", "yearly").'),
+  planTier: z.enum(['MERCHANT', 'SCALER', 'SELLER', 'ENTERPRISE', 'BRAND']),
   template: z.string().describe('The selected template for the store.'),
   logoUrl: z.string().optional().describe("URL of the store's logo."),
   faviconUrl: z.string().optional().describe("URL of the store's favicon."),
@@ -60,12 +60,14 @@ const createClientStoreFlow = ai.defineFlow(
         const storeRef = doc(firestore, 'stores', userId);
         const userRef = doc(firestore, 'users', userId);
 
+        const userRole = (planTier === 'SELLER' || planTier === 'BRAND') ? 'SELLER' : 'MOGUL';
+
         // 1. Update user document to grant access and log payment
         await updateDoc(userRef, {
             hasAccess: true,
             plan: plan,
             paidAt: new Date().toISOString(), // Timestamp of payment confirmation
-            userRole: 'MOGUL', // This might need to be more dynamic based on planTier
+            userRole: userRole,
             planTier: planTier,
         });
 

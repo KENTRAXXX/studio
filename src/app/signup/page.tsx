@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense, useTransition } from 'react';
@@ -86,7 +87,7 @@ function SignUpForm() {
             title: isFreePlan ? 'Account Created!' : 'Payment Successful!',
             description: isFreePlan ? "You're all set." : 'Your store is being provisioned. This may take a moment.',
           });
-          const redirectPath = (planTier === 'SELLER' || planTier === 'BRAND') ? '/backstage' : '/dashboard/my-store';
+          const redirectPath = (planTier === 'SELLER' || planTier === 'BRAND') ? '/backstage' : '/dashboard';
           router.push(redirectPath);
         };
 

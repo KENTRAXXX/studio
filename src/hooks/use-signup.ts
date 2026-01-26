@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import { createUserWithEmailAndPassword, UserCredential } from 'firebase/auth';
@@ -7,7 +8,7 @@ import { useAuth, useFirestore } from '@/firebase';
 type SignUpCredentials = {
   email: string;
   password: string;
-  planTier: 'MERCHANT' | 'MOGUL' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND';
+  planTier: 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND';
   plan: 'monthly' | 'yearly' | 'lifetime' | 'free';
   referralCode?: string;
 };
