@@ -149,6 +149,8 @@ const PaymentStep = ({ onBack, storeId, checkoutData }: { onBack: () => void; st
   const shippingPrice = 4.99;
   const subtotal = getCartTotal();
   const total = subtotal + shippingPrice;
+  const totalInCents = Math.round(total * 100);
+
 
   const handlePayment = async () => {
     if (!checkoutData.email) {
@@ -159,7 +161,10 @@ const PaymentStep = ({ onBack, storeId, checkoutData }: { onBack: () => void; st
     await initializePayment(
       {
         email: checkoutData.email,
-        amount: Math.round(total * 100),
+        payment: {
+            type: 'cart',
+            amountInCents: totalInCents
+        },
         metadata: {
           cart: cart.map(item => ({id: item.product.id, name: item.product.name, quantity: item.quantity})),
           shippingAddress: checkoutData,

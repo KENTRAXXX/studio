@@ -11,10 +11,44 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
+// Server-side source of truth for plan details
+const plansConfig: { [key: string]: { pricing: any } } = {
+    MERCHANT: { pricing: {
+        monthly: { amount: 1999, planCode: process.env.NEXT_PUBLIC_MERCHANT_MONTHLY_PLAN_CODE },
+        yearly: { amount: 19900, planCode: process.env.NEXT_PUBLIC_MERCHANT_YEARLY_PLAN_CODE },
+    }},
+    SCALER: { pricing: {
+        monthly: { amount: 2900, planCode: process.env.NEXT_PUBLIC_SCALER_MONTHLY_PLAN_CODE },
+        yearly: { amount: 29000, planCode: process.env.NEXT_PUBLIC_SCALER_YEARLY_PLAN_CODE },
+    }},
+    SELLER: { pricing: {
+        free: { amount: 0, planCode: null }
+    }},
+    ENTERPRISE: { pricing: {
+        monthly: { amount: 3333, planCode: process.env.NEXT_PUBLIC_ENTERPRISE_MONTHLY_PLAN_CODE },
+        yearly: { amount: 33300, planCode: process.env.NEXT_PUBLIC_ENTERPRISE_YEARLY_PLAN_CODE },
+    }},
+    BRAND: { pricing: {
+        monthly: { amount: 2100, planCode: process.env.NEXT_PUBLIC_BRAND_MONTHLY_PLAN_CODE },
+        yearly: { amount: 21000, planCode: process.env.NEXT_PUBLIC_BRAND_YEARLY_PLAN_CODE },
+    }},
+};
+
+
+const SignupPaymentSchema = z.object({
+    type: z.literal('signup'),
+    planTier: z.enum(['MERCHANT', 'SCALER', 'SELLER', 'ENTERPRISE', 'BRAND']),
+    interval: z.enum(['monthly', 'yearly', 'free']),
+});
+
+const CartPaymentSchema = z.object({
+    type: z.literal('cart'),
+    amountInCents: z.number().int().min(100, "Cart total must be at least $1.00."),
+});
+
 const InitializePaystackTransactionInputSchema = z.object({
   email: z.string().email().describe('The email of the customer.'),
-  amount: z.number().int().positive().optional().describe('The amount in the lowest currency unit (e.g., Kobo, Cents).'),
-  plan: z.string().optional().describe('The Paystack plan code for recurring payments.'),
+  payment: z.union([SignupPaymentSchema, CartPaymentSchema]),
   metadata: z.any().optional().describe('An object containing any extra data you want to pass to Paystack.'),
 });
 export type InitializePaystackTransactionInput = z.infer<typeof InitializePaystackTransactionInputSchema>;
@@ -48,20 +82,44 @@ const initializePaystackTransactionFlow = ai.defineFlow(
         email: input.email,
         metadata: input.metadata,
     };
+    
+    let isSubscription = false;
+    let amountInCents = 0;
 
-    // This logic ensures we send the correct parameters for either a subscription or a one-time payment.
-    if (input.plan && input.plan.trim() !== '') {
-        // For subscriptions, only send the plan code. Paystack uses the plan's amount and currency.
-        body.plan = input.plan;
-    } else {
-        // For one-time USD payments, ensure a valid amount in cents is provided.
-        // Paystack has a minimum transaction amount for USD, typically $1.00 (100 cents).
-        if (typeof input.amount !== 'number' || input.amount < 100) {
-            throw new Error('Invalid Amount Sent. Amount must be at least 100 cents ($1.00).');
+    if (input.payment.type === 'signup') {
+        const { planTier, interval } = input.payment;
+        const planDetails = plansConfig[planTier]?.pricing[interval];
+
+        if (!planDetails) {
+            throw new Error(`Invalid plan specified: ${planTier} - ${interval}`);
         }
-        body.amount = Math.round(input.amount); // Ensure it's an integer in cents
-        body.currency = 'USD'; // Explicitly set currency for one-time payments
+        
+        amountInCents = planDetails.amount;
+        
+        // Use plan code only if it's a valid subscription plan
+        if (planDetails.planCode && planDetails.planCode.trim() !== '') {
+            isSubscription = true;
+            body.plan = planDetails.planCode;
+        }
+
+    } else if (input.payment.type === 'cart') {
+        amountInCents = input.payment.amountInCents;
     }
+
+    // If it's not a subscription, it's a one-time payment. Add amount and currency.
+    if (!isSubscription) {
+        // For free signups, amount is 0. This case should be handled client-side.
+        if (amountInCents === 0) {
+            throw new Error("Free plans do not require payment initialization.");
+        }
+        // Paystack has a minimum transaction amount for USD, typically $1.00 (100 cents).
+        if (amountInCents < 100) {
+           throw new Error('Invalid Amount Sent. Amount must be at least $1.00.');
+        }
+        body.amount = amountInCents;
+        body.currency = 'USD';
+    }
+
 
     const response = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',

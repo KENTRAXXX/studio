@@ -9,31 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
 type PlanInterval = 'monthly' | 'yearly' | 'lifetime' | 'free';
-
-const plans: { [key: string]: { id: string; name: string; pricing: any } } = {
-    MERCHANT: { id: 'MERCHANT', name: 'Merchant', pricing: {
-        monthly: { amount: 1999, planCode: process.env.NEXT_PUBLIC_MERCHANT_MONTHLY_PLAN_CODE },
-        yearly: { amount: 19900, planCode: process.env.NEXT_PUBLIC_MERCHANT_YEARLY_PLAN_CODE },
-    }},
-    MOGUL: { id: 'MOGUL', name: 'Mogul', pricing: {
-        lifetime: { amount: 50000, planCode: null }
-    }},
-    SCALER: { id: 'SCALER', name: 'Scaler', pricing: {
-        monthly: { amount: 2900, planCode: process.env.NEXT_PUBLIC_SCALER_MONTHLY_PLAN_CODE },
-        yearly: { amount: 29000, planCode: process.env.NEXT_PUBLIC_SCALER_YEARLY_PLAN_CODE },
-    }},
-    SELLER: { id: 'SELLER', name: 'Seller', pricing: {
-        free: { amount: 0, planCode: null }
-    }},
-    ENTERPRISE: { id: 'ENTERPRISE', name: 'Enterprise', pricing: {
-        monthly: { amount: 3333, planCode: process.env.NEXT_PUBLIC_ENTERPRISE_MONTHLY_PLAN_CODE },
-        yearly: { amount: 33300, planCode: process.env.NEXT_PUBLIC_ENTERPRISE_YEARLY_PLAN_CODE },
-    }},
-    BRAND: { id: 'BRAND', name: 'Brand', pricing: {
-        monthly: { amount: 2100, planCode: process.env.NEXT_PUBLIC_BRAND_MONTHLY_PLAN_CODE },
-        yearly: { amount: 21000, planCode: process.env.NEXT_PUBLIC_BRAND_YEARLY_PLAN_CODE },
-    }},
-};
+type PlanTier = 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND';
 
 export function CompletePaymentPrompt() {
     const { userProfile } = useUserProfile();
@@ -49,11 +25,17 @@ export function CompletePaymentPrompt() {
         );
     }
 
-    const planTier = userProfile.planTier;
+    const planTier = userProfile.planTier as PlanTier;
     const interval = userProfile.plan as PlanInterval;
 
-    const selectedPlanDetails = plans[planTier] || plans.MOGUL;
-    const paymentDetails = selectedPlanDetails.pricing[interval];
+    const planName = {
+        MERCHANT: 'Merchant',
+        SCALER: 'Scaler',
+        SELLER: 'Seller',
+        ENTERPRISE: 'Enterprise',
+        BRAND: 'Brand',
+    }[planTier] || 'Plan';
+
 
     const handleRetryPayment = async () => {
         const onPaystackSuccess = () => {
@@ -75,8 +57,11 @@ export function CompletePaymentPrompt() {
 
         await initializePayment({
             email: userProfile.email!,
-            amount: paymentDetails.amount,
-            plan: paymentDetails.planCode,
+            payment: {
+                type: 'signup',
+                planTier: planTier,
+                interval: interval
+            },
             metadata: {
                 userId: userProfile.id,
                 plan: interval,
@@ -102,7 +87,7 @@ export function CompletePaymentPrompt() {
             </CardHeader>
             <CardContent>
                 <Button onClick={handleRetryPayment} disabled={isInitializing} className="w-full bg-destructive hover:bg-destructive/90 text-destructive-foreground">
-                    {isInitializing ? <Loader2 className="animate-spin" /> : `Complete Payment for ${selectedPlanDetails.name} Plan`}
+                    {isInitializing ? <Loader2 className="animate-spin" /> : `Complete Payment for ${planName} Plan`}
                 </Button>
             </CardContent>
         </Card>

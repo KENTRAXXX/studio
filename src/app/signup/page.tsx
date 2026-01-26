@@ -35,28 +35,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 type PlanInterval = 'monthly' | 'yearly' | 'lifetime' | 'free';
-
-const plans: { [key: string]: { id: string; name: string; pricing: any } } = {
-    MERCHANT: { id: 'MERCHANT', name: 'Merchant', pricing: {
-        monthly: { amount: 1999, planCode: process.env.NEXT_PUBLIC_MERCHANT_MONTHLY_PLAN_CODE },
-        yearly: { amount: 19900, planCode: process.env.NEXT_PUBLIC_MERCHANT_YEARLY_PLAN_CODE },
-    }},
-    SCALER: { id: 'SCALER', name: 'Scaler', pricing: {
-        monthly: { amount: 2900, planCode: process.env.NEXT_PUBLIC_SCALER_MONTHLY_PLAN_CODE },
-        yearly: { amount: 29000, planCode: process.env.NEXT_PUBLIC_SCALER_YEARLY_PLAN_CODE },
-    }},
-    SELLER: { id: 'SELLER', name: 'Seller', pricing: {
-        free: { amount: 0, planCode: null }
-    }},
-    ENTERPRISE: { id: 'ENTERPRISE', name: 'Enterprise', pricing: {
-        monthly: { amount: 3333, planCode: process.env.NEXT_PUBLIC_ENTERPRISE_MONTHLY_PLAN_CODE },
-        yearly: { amount: 33300, planCode: process.env.NEXT_PUBLIC_ENTERPRISE_YEARLY_PLAN_CODE },
-    }},
-    BRAND: { id: 'BRAND', name: 'Brand', pricing: {
-        monthly: { amount: 2100, planCode: process.env.NEXT_PUBLIC_BRAND_MONTHLY_PLAN_CODE },
-        yearly: { amount: 21000, planCode: process.env.NEXT_PUBLIC_BRAND_YEARLY_PLAN_CODE },
-    }},
-};
+type PlanTier = 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND';
 
 
 function SignUpForm() {
@@ -69,11 +48,16 @@ function SignUpForm() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isPendingTransition, startTransition] = useTransition();
 
-  const planTier = searchParams.get('planTier') || 'SCALER';
+  const planTier = (searchParams.get('planTier') || 'SCALER') as PlanTier;
   const interval = (searchParams.get('interval') as PlanInterval) || 'monthly';
   
-  const selectedPlanDetails = plans[planTier] || plans.SCALER;
-  const paymentDetails = selectedPlanDetails.pricing[interval];
+  const planName = {
+    MERCHANT: 'Merchant',
+    SCALER: 'Scaler',
+    SELLER: 'Seller',
+    ENTERPRISE: 'Enterprise',
+    BRAND: 'Brand',
+  }[planTier] || 'Scaler';
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -86,57 +70,56 @@ function SignUpForm() {
   });
 
   const onSubmit = (data: FormValues) => {
-    signUp({ ...data, planTier: selectedPlanDetails.id, plan: interval }, {
+    const isFreePlan = planTier === 'SELLER' && interval === 'free';
+    
+    signUp({ ...data, planTier: planTier, plan: interval }, {
       onSuccess: async (user) => {
-        toast({
-          title: 'Account Created',
-          description: "Welcome! Let's get you set up.",
-        });
-
-        if (paymentDetails && paymentDetails.amount > 0) {
-            const onPaystackSuccess = () => {
-              console.log('Paystack success callback triggered.');
-              toast({
-                title: 'Payment Successful!',
-                description: 'Your store is being provisioned. This may take a moment.',
-              });
-              const redirectPath = (planTier === 'SELLER' || planTier === 'BRAND') ? '/backstage' : '/dashboard/my-store';
-              router.push(redirectPath);
-            };
-
-            const onPaystackClose = () => {
-              console.log('Paystack popup closed.');
-              toast({
-                variant: 'default',
-                title: 'Payment Incomplete',
-                description: 'Your store will not be created until payment is complete. You can restart from your dashboard.',
-              });
-              const redirectPath = (planTier === 'SELLER' || planTier === 'BRAND') ? '/backstage' : '/dashboard';
-              router.push(redirectPath);
-            };
-
-            await initializePayment({
-                email: data.email,
-                amount: paymentDetails.amount,
-                plan: paymentDetails.planCode, // Pass plan code for subscriptions
-                metadata: {
-                  userId: user.user.uid,
-                  plan: interval,
-                  planTier: selectedPlanDetails.id,
-                  template: 'gold-standard',
-                },
-              },
-              onPaystackSuccess,
-              onPaystackClose
-            );
-            setIsSuccess(true);
-        } else {
+        if (!isFreePlan) {
             toast({
-                title: 'Account Created!',
-                description: "You're all set. Let's get you onboarded."
+              title: 'Account Created',
+              description: "Welcome! Let's get you set up.",
             });
-            const redirectPath = (planTier === 'SELLER' || planTier === 'BRAND') ? '/backstage' : '/dashboard';
-            router.push(redirectPath);
+        }
+
+        const onPaystackSuccess = () => {
+          toast({
+            title: isFreePlan ? 'Account Created!' : 'Payment Successful!',
+            description: isFreePlan ? "You're all set." : 'Your store is being provisioned. This may take a moment.',
+          });
+          const redirectPath = (planTier === 'SELLER' || planTier === 'BRAND') ? '/backstage' : '/dashboard/my-store';
+          router.push(redirectPath);
+        };
+
+        const onPaystackClose = () => {
+          toast({
+            variant: 'default',
+            title: 'Payment Incomplete',
+            description: 'Your store will not be created until payment is complete. You can restart from your dashboard.',
+          });
+          const redirectPath = (planTier === 'SELLER' || planTier === 'BRAND') ? '/backstage' : '/dashboard';
+          router.push(redirectPath);
+        };
+
+        await initializePayment({
+            email: data.email,
+            payment: {
+                type: 'signup',
+                planTier,
+                interval
+            },
+            metadata: {
+              userId: user.user.uid,
+              plan: interval,
+              planTier: planTier,
+              template: 'gold-standard',
+            },
+          },
+          onPaystackSuccess,
+          onPaystackClose
+        );
+
+        if (!isFreePlan) {
+            setIsSuccess(true);
         }
       },
       onError: (err) => {
@@ -150,7 +133,8 @@ function SignUpForm() {
   };
 
   const isPending = isSigningUp || isInitializing;
-  const buttonText = paymentDetails && paymentDetails.amount > 0 ? 'Create Account & Pay' : 'Create Free Account';
+  const isFreePlan = planTier === 'SELLER' && interval === 'free';
+  const buttonText = isFreePlan ? 'Create Free Account' : 'Create Account & Pay';
 
   return (
       <div className="w-full max-w-lg">
@@ -164,7 +148,7 @@ function SignUpForm() {
                 >
                     <Card className="border-primary/50">
                         <CardHeader>
-                            <CardTitle>Sign Up for {selectedPlanDetails.name}</CardTitle>
+                            <CardTitle>Sign Up for {planName}</CardTitle>
                             <CardDescription>Enter your details to create an account.</CardDescription>
                         </CardHeader>
                         <CardContent>

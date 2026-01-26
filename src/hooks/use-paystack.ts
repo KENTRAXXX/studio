@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { initializePaystackTransaction } from '@/ai/flows/initialize-paystack-transaction';
+import { initializePaystackTransaction, type InitializePaystackTransactionInput } from '@/ai/flows/initialize-paystack-transaction';
 
 declare global {
   interface Window {
@@ -10,29 +10,29 @@ declare global {
   }
 }
 
-type PaystackMetadata = {
-  [key: string]: any;
-};
-
-type InitializePaymentArgs = {
-  email: string;
-  amount: number;
-  plan?: string | null;
-  metadata?: PaystackMetadata;
-};
+// More descriptive type for arguments
+type InitializePaymentArgs = Omit<InitializePaystackTransactionInput, 'metadata'> & {
+    metadata?: InitializePaystackTransactionInput['metadata'];
+}
 
 export function usePaystack() {
   const { toast } = useToast();
   const [isInitializing, setIsInitializing] = useState(false);
 
   const initializePayment = async (
-    { email, amount, plan, metadata }: InitializePaymentArgs,
+    args: InitializePaymentArgs,
     onSuccess: (reference: any) => void,
     onClose: () => void
   ) => {
-    if (!email) {
+    if (!args.email) {
       toast({ variant: 'destructive', title: 'Error', description: 'Email is required to proceed.' });
       return;
+    }
+    
+    // For free plans, don't call paystack
+    if (args.payment.type === 'signup' && args.payment.interval === 'free') {
+        onSuccess({ trxref: `free-signup-${Date.now()}`});
+        return;
     }
     
     setIsInitializing(true);
@@ -44,18 +44,16 @@ export function usePaystack() {
       }
 
       const result = await initializePaystackTransaction({
-        email,
-        amount,
-        plan: plan || undefined,
-        metadata,
+        email: args.email,
+        payment: args.payment,
+        metadata: args.metadata,
       });
 
       const handler = window.PaystackPop.setup({
         key: paystackPublicKey,
-        email: email,
-        amount: amount,
+        email: args.email,
         ref: result.reference,
-        metadata: metadata,
+        metadata: args.metadata,
         onClose: () => {
           onClose();
         },
@@ -69,6 +67,7 @@ export function usePaystack() {
     } catch (error: any) {
       console.error("Paystack initialization failed", error);
       toast({ variant: 'destructive', title: 'Payment Error', description: error.message || 'Could not initialize payment. Please try again.' });
+      onClose(); // Also call onClose on error
     } finally {
         setIsInitializing(false);
     }
