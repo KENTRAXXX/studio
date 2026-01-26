@@ -30,12 +30,14 @@ import {
   Users,
   Gift,
   Gem,
+  User,
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
 
 const mogulNavItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
+  { href: '/dashboard/profile-settings', icon: User, label: 'Profile' },
   { href: '/dashboard/settings', icon: Settings, label: 'Store Settings' },
   { href: '/dashboard/product-catalog', icon: Boxes, label: 'Global Product Catalog' },
   { href: '/dashboard/my-orders', icon: ShoppingBag, label: 'My Orders' },
@@ -49,6 +51,7 @@ const mogulNavItems = [
 
 const merchantNavItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
+  { href: '/dashboard/profile-settings', icon: User, label: 'Profile' },
   { href: '/dashboard/settings', icon: Settings, label: 'Store Settings' },
   { href: '/dashboard/my-private-inventory', icon: Package, label: 'My Private Inventory' },
   { href: '/dashboard/my-orders', icon: ShoppingBag, label: 'My Orders' },

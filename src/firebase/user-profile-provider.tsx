@@ -12,6 +12,7 @@ import { useMemoFirebase } from '../lib/use-memo-firebase';
 type UserProfile = {
   id?: string;
   email: string;
+  displayName?: string;
   hasAccess: boolean;
   hasAcceptedTerms?: boolean;
   userRole?: 'ADMIN' | 'MOGUL' | 'SELLER';

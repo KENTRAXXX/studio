@@ -75,7 +75,7 @@ export default function DashboardOverviewPage() {
     
     return (
         <div className="space-y-8">
-            <h1 className="text-3xl font-bold font-headline">Welcome, {userProfile?.email ? userProfile.email.split('@')[0] : 'Mogul'}</h1>
+            <h1 className="text-3xl font-bold font-headline">Welcome, {userProfile?.displayName || (userProfile?.email ? userProfile.email.split('@')[0] : 'Mogul')}</h1>
 
             <div className="grid gap-6 md:grid-cols-3">
                 <Card className="border-primary/50">
