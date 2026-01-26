@@ -84,7 +84,6 @@ const initializePaystackTransactionFlow = ai.defineFlow(
     };
     
     let isSubscription = false;
-    let amountInCents = 0;
 
     if (input.payment.type === 'signup') {
         const { planTier, interval } = input.payment;
@@ -94,35 +93,43 @@ const initializePaystackTransactionFlow = ai.defineFlow(
             throw new Error(`Invalid plan specified: ${planTier} - ${interval}`);
         }
         
-        amountInCents = planDetails.amount;
-        
         // Use plan code only if it's a valid subscription plan
         if (planDetails.planCode && planDetails.planCode.trim() !== '') {
             isSubscription = true;
             body.plan = planDetails.planCode;
+        } else {
+            const amountInCents = planDetails.amount;
+             if (amountInCents === 0) {
+                 throw new Error("Free plans do not require payment initialization.");
+            }
+            body.amount = Math.round(amountInCents); // Already in cents
         }
 
     } else if (input.payment.type === 'cart') {
-        amountInCents = input.payment.amountInCents;
+        body.amount = input.payment.amountInCents; // Already calculated in cents
     }
 
-    // If it's not a subscription, it's a one-time payment. Add amount and currency.
+    // If it's not a subscription, it's a one-time payment. Add amount and currency, and validate.
     if (!isSubscription) {
-        // For free signups, amount is 0. This case should be handled client-side.
-        if (amountInCents === 0) {
-            throw new Error("Free plans do not require payment initialization.");
+        if (body.amount === undefined) {
+            throw new Error("Amount is missing for one-time payment.");
         }
         
-        // Ensure the amount is a rounded integer before validation and sending
-        const finalAmount = Math.round(amountInCents);
-
+        // Ensure amount is a rounded integer, just in case.
+        body.amount = Math.round(Number(body.amount));
+        
         // Paystack has a minimum transaction amount for USD, typically $1.00 (100 cents).
-        if (finalAmount < 100) {
+        if (body.amount < 100) {
            throw new Error('Invalid Amount Sent. Amount must be at least $1.00.');
         }
 
-        body.amount = finalAmount;
         body.currency = 'USD';
+    }
+
+    // Final safeguard: Do not send amount if plan is present. This is the most common
+    // cause of "Invalid Amount" when a plan is also specified.
+    if (body.plan && body.amount) {
+        delete body.amount;
     }
 
 
