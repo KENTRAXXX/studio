@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -6,7 +5,7 @@
  *
  * - initializePaystackTransaction - A function that returns a Paystack authorization URL.
  * - InitializePaystackTransactionInput - The input type for the initializePaystackTransaction function.
- * - InitializePaystackTransactionOutput - The output type for the initializePaystackTransaction function.
+ * - InitializePaystackTransactionOutput - The return type for the initializePaystackTransaction function.
  */
 
 import { ai } from '@/ai/genkit';
@@ -55,12 +54,13 @@ const initializePaystackTransactionFlow = ai.defineFlow(
         // For subscriptions, only send the plan code. Paystack uses the plan's amount and currency.
         body.plan = input.plan;
     } else {
-        // For one-time payments, ensure a valid amount is provided and send it as an integer.
-        if (typeof input.amount !== 'number' || input.amount <= 0) {
-            throw new Error('A valid amount is required for one-time payments.');
+        // For one-time USD payments, ensure a valid amount in cents is provided.
+        // Paystack has a minimum transaction amount, typically around $0.50 (50 cents).
+        if (typeof input.amount !== 'number' || input.amount < 50) {
+            throw new Error('Invalid Amount Sent. Amount must be at least 50 cents ($0.50).');
         }
-        body.amount = Math.round(input.amount); // Ensure it's an integer in cents/kobo
-        body.currency = 'USD';
+        body.amount = Math.round(input.amount); // Ensure it's an integer in cents
+        body.currency = 'USD'; // Explicitly set currency for one-time payments
     }
 
     const response = await fetch('https://api.paystack.co/transaction/initialize', {
