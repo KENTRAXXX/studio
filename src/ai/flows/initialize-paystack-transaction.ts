@@ -11,26 +11,26 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
-// Server-side source of truth for plan details
+// Server-side source of truth for plan details. Amounts are now in DOLLARS.
 const plansConfig: { [key: string]: { pricing: any } } = {
     MERCHANT: { pricing: {
-        monthly: { amount: 1999, planCode: process.env.NEXT_PUBLIC_MERCHANT_MONTHLY_PLAN_CODE },
-        yearly: { amount: 19900, planCode: process.env.NEXT_PUBLIC_MERCHANT_YEARLY_PLAN_CODE },
+        monthly: { amount: 19.99, planCode: process.env.NEXT_PUBLIC_MERCHANT_MONTHLY_PLAN_CODE },
+        yearly: { amount: 199, planCode: process.env.NEXT_PUBLIC_MERCHANT_YEARLY_PLAN_CODE },
     }},
     SCALER: { pricing: {
-        monthly: { amount: 2900, planCode: process.env.NEXT_PUBLIC_SCALER_MONTHLY_PLAN_CODE },
-        yearly: { amount: 29000, planCode: process.env.NEXT_PUBLIC_SCALER_YEARLY_PLAN_CODE },
+        monthly: { amount: 29, planCode: process.env.NEXT_PUBLIC_SCALER_MONTHLY_PLAN_CODE },
+        yearly: { amount: 290, planCode: process.env.NEXT_PUBLIC_SCALER_YEARLY_PLAN_CODE },
     }},
     SELLER: { pricing: {
         free: { amount: 0, planCode: null }
     }},
     ENTERPRISE: { pricing: {
-        monthly: { amount: 3333, planCode: process.env.NEXT_PUBLIC_ENTERPRISE_MONTHLY_PLAN_CODE },
-        yearly: { amount: 33300, planCode: process.env.NEXT_PUBLIC_ENTERPRISE_YEARLY_PLAN_CODE },
+        monthly: { amount: 33.33, planCode: process.env.NEXT_PUBLIC_ENTERPRISE_MONTHLY_PLAN_CODE },
+        yearly: { amount: 333, planCode: process.env.NEXT_PUBLIC_ENTERPRISE_YEARLY_PLAN_CODE },
     }},
     BRAND: { pricing: {
-        monthly: { amount: 2100, planCode: process.env.NEXT_PUBLIC_BRAND_MONTHLY_PLAN_CODE },
-        yearly: { amount: 21000, planCode: process.env.NEXT_PUBLIC_BRAND_YEARLY_PLAN_CODE },
+        monthly: { amount: 21, planCode: process.env.NEXT_PUBLIC_BRAND_MONTHLY_PLAN_CODE },
+        yearly: { amount: 210, planCode: process.env.NEXT_PUBLIC_BRAND_YEARLY_PLAN_CODE },
     }},
 };
 
@@ -98,15 +98,16 @@ const initializePaystackTransactionFlow = ai.defineFlow(
             isSubscription = true;
             body.plan = planDetails.planCode;
         } else {
-            const amountInCents = planDetails.amount;
-             if (amountInCents === 0) {
+            const amountInDollars = planDetails.amount;
+             if (amountInDollars === 0) {
                  throw new Error("Free plans do not require payment initialization.");
             }
-            body.amount = Math.round(amountInCents); // Already in cents
+            // Convert dollar amount to cents for one-time payment
+            body.amount = Math.round(amountInDollars * 100);
         }
 
     } else if (input.payment.type === 'cart') {
-        body.amount = input.payment.amountInCents; // Already calculated in cents
+        body.amount = input.payment.amountInCents; // This is already in cents
     }
 
     // If it's not a subscription, it's a one-time payment. Add amount and currency, and validate.
