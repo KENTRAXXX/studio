@@ -70,6 +70,7 @@ function SignUpForm() {
   const { initializePayment, isInitializing } = usePaystack();
   const [isSuccess, setIsSuccess] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [isPendingTransition, startTransition] = useTransition();
 
   const planTier = searchParams.get('planTier') || 'MOGUL';
   const interval = (searchParams.get('interval') as PlanInterval) || 'lifetime';
@@ -216,7 +217,11 @@ function SignUpForm() {
                                         <Checkbox 
                                             id="terms" 
                                             checked={agreedToTerms}
-                                            onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+                                            onCheckedChange={(checked) => {
+                                                startTransition(() => {
+                                                    setAgreedToTerms(checked as boolean)
+                                                });
+                                            }}
                                         />
                                         <label
                                             htmlFor="terms"
