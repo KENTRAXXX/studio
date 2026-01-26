@@ -48,6 +48,7 @@ const initializePaystackTransactionFlow = ai.defineFlow(
     const body: Record<string, any> = {
         email: input.email,
         amount: input.amount,
+        currency: 'NGN', // Explicitly set currency
         metadata: input.metadata,
     };
 
