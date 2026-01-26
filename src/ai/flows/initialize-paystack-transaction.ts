@@ -112,11 +112,16 @@ const initializePaystackTransactionFlow = ai.defineFlow(
         if (amountInCents === 0) {
             throw new Error("Free plans do not require payment initialization.");
         }
+        
+        // Ensure the amount is a rounded integer before validation and sending
+        const finalAmount = Math.round(amountInCents);
+
         // Paystack has a minimum transaction amount for USD, typically $1.00 (100 cents).
-        if (amountInCents < 100) {
+        if (finalAmount < 100) {
            throw new Error('Invalid Amount Sent. Amount must be at least $1.00.');
         }
-        body.amount = amountInCents;
+
+        body.amount = finalAmount;
         body.currency = 'USD';
     }
 
