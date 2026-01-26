@@ -48,12 +48,15 @@ const initializePaystackTransactionFlow = ai.defineFlow(
     const body: Record<string, any> = {
         email: input.email,
         amount: input.amount,
-        currency: 'USD', // Explicitly set currency
         metadata: input.metadata,
     };
 
     if (input.plan) {
+        // If a plan code is provided, Paystack uses the plan's currency and amount.
         body.plan = input.plan;
+    } else {
+        // For one-time payments, we must explicitly set the currency.
+        body.currency = 'USD';
     }
 
     const response = await fetch('https://api.paystack.co/transaction/initialize', {
