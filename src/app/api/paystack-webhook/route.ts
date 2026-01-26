@@ -76,7 +76,7 @@ async function executePaymentSplit(eventData: any) {
                         payoutDocs.push({
                             userId: vendorId,
                             amount: sellerPayout * item.quantity,
-                            currency: 'NGN',
+                            currency: 'USD',
                             status: 'pending',
                             orderId,
                             paymentReference: reference,
@@ -87,7 +87,7 @@ async function executePaymentSplit(eventData: any) {
                     if(platformFee > 0) {
                         revenueDocs.push({
                             amount: platformFee * item.quantity,
-                            currency: 'NGN',
+                            currency: 'USD',
                             orderId,
                             paymentReference: reference,
                             createdAt: new Date().toISOString()
@@ -105,7 +105,7 @@ async function executePaymentSplit(eventData: any) {
                 payoutDocs.push({
                     userId: storeId, // Mogul's ID is the storeId
                     amount: mogulProfit,
-                    currency: 'NGN',
+                    currency: 'USD',
                     status: 'pending',
                     orderId,
                     paymentReference: reference,
