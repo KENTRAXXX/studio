@@ -9,18 +9,32 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userRole == role;
     }
 
+    // Helper function to check if a user is updating their own profile correctly
+    function userCanUpdateProfile(userId) {
+      let incoming = request.resource.data;
+      let existing = resource.data;
+      // Users can update their profile, but cannot change immutable properties.
+      return request.auth.uid == userId
+        && incoming.userRole == existing.userRole
+        && incoming.planTier == existing.planTier
+        && incoming.plan == existing.plan
+        && incoming.hasAccess == existing.hasAccess
+        && incoming.paidAt == existing.paidAt
+        && incoming.referralCode == existing.referralCode
+        && incoming.referredBy == existing.referredBy
+        && incoming.isDisabled == existing.isDisabled;
+    }
+
     // == USERS ==
     // Any authenticated user can read user profiles (for referral program).
-    // Users can create and update their own profile, but cannot change their role, plan, access status, or referral info once set.
+    // Users can create their own profile.
+    // Users can update their own profile as long as they don't change protected fields.
     match /users/{userId} {
       allow read: if request.auth != null;
       allow create: if request.auth.uid == userId;
-      allow update: if request.auth.uid == userId
-        && !(request.resource.data.userRole is string && request.resource.data.userRole != resource.data.userRole)
-        && !(request.resource.data.planTier is string && request.resource.data.planTier != resource.data.planTier)
-        && (resource.data.referredBy == null || request.resource.data.referredBy == resource.data.referredBy);
+      allow update: if userCanUpdateProfile(userId);
       
-      // Admins can read and write any user profile.
+      // Admins can read and write any user profile, overriding the user update rule.
       allow write: if isRole('ADMIN');
     }
 
