@@ -11,18 +11,17 @@ service cloud.firestore {
 
     // Helper function to check if a user is updating their own profile correctly
     function userCanUpdateProfile(userId) {
-      let incoming = request.resource.data;
-      let existing = resource.data;
-      // Users can update their profile, but cannot change immutable properties.
-      return request.auth.uid == userId
-        && incoming.userRole == existing.userRole
-        && incoming.planTier == existing.planTier
-        && incoming.plan == existing.plan
-        && incoming.hasAccess == existing.hasAccess
-        && incoming.paidAt == existing.paidAt
-        && incoming.referralCode == existing.referralCode
-        && incoming.referredBy == existing.referredBy
-        && incoming.isDisabled == existing.isDisabled;
+      // 1. The user must be the owner of the document.
+      let isOwner = request.auth.uid == userId;
+
+      // 2. Define the list of fields that a user CANNOT change themselves.
+      let protectedFields = ['userRole', 'planTier', 'plan', 'hasAccess', 'paidAt', 'email', 'referralCode', 'isDisabled', 'referredBy'];
+
+      // 3. Get the list of fields the user is trying to modify.
+      let changedKeys = request.resource.data.diff(resource.data).affectedKeys();
+
+      // 4. The update is allowed IF the user is the owner AND they are not trying to change any of the protected fields.
+      return isOwner && changedKeys.disjoint(protectedFields);
     }
 
     // == USERS ==
