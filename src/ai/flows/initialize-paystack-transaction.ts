@@ -84,7 +84,7 @@ const initializePaystackTransactionFlow = ai.defineFlow(
         metadata: input.metadata,
     };
     
-    let amountInCents: number | undefined;
+    let isSubscription = false;
 
     if (input.payment.type === 'signup') {
         const { planTier, interval } = input.payment;
@@ -94,39 +94,36 @@ const initializePaystackTransactionFlow = ai.defineFlow(
             throw new Error(`Invalid plan specified: ${planTier} - ${interval}`);
         }
 
-        // Check if a subscription plan code exists and is valid
         if (planDetails.planCode && planDetails.planCode.trim() !== '') {
             body.plan = planDetails.planCode;
-        } else {
-            // Otherwise, treat it as a one-time payment
-            const amountInDollars = planDetails.amount;
-            if (amountInDollars > 0) {
-                amountInCents = Math.round(amountInDollars * 100);
-            } else if (amountInDollars === 0) {
-                throw new Error("Free plans do not require payment initialization.");
-            }
+            isSubscription = true;
         }
-    } 
-    else if (input.payment.type === 'cart') {
-        amountInCents = input.payment.amountInCents;
     }
 
-    // If an amount has been determined, it's a one-time payment.
-    // Validate it and add it to the body.
-    if (amountInCents !== undefined) {
-        if (amountInCents < 100) {
-             throw new Error('Invalid Amount Sent. Amount must be at least $1.00.');
+    if (!isSubscription) {
+        let amountInCents: number;
+
+        if (input.payment.type === 'signup') {
+            const { planTier, interval } = input.payment;
+            const planDetails = plansConfig[planTier]?.pricing[interval];
+            
+            if (planDetails.amount === 0) {
+                 throw new Error("Free plans do not require payment initialization.");
+            }
+            amountInCents = Math.round(planDetails.amount * 100);
+
+        } else { // Cart payment
+            amountInCents = input.payment.amountInCents;
         }
+
+        if (amountInCents < 100) {
+            throw new Error('Invalid Amount Sent. Amount must be at least $1.00.');
+        }
+
         body.amount = amountInCents;
         body.currency = 'USD';
     }
 
-    // Final safeguard: Paystack doesn't allow sending both plan and amount.
-    // If for some reason both are present, prioritize the subscription plan.
-    if (body.plan && body.amount) {
-        delete body.amount;
-        delete body.currency;
-    }
 
     const response = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',
