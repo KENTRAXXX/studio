@@ -79,12 +79,12 @@ const initializePaystackTransactionFlow = ai.defineFlow(
       throw new Error('Paystack secret key is not configured.');
     }
 
-    const body: Record<string, any> = {
+    const basePayload: Record<string, any> = {
         email: input.email,
         metadata: input.metadata,
     };
     
-    let isSubscription = false;
+    let finalPayload: Record<string, any>;
 
     if (input.payment.type === 'signup') {
         const { planTier, interval } = input.payment;
@@ -94,34 +94,28 @@ const initializePaystackTransactionFlow = ai.defineFlow(
             throw new Error(`Invalid plan specified: ${planTier} - ${interval}`);
         }
 
+        // Logic for subscription plans
         if (planDetails.planCode && planDetails.planCode.trim() !== '') {
-            body.plan = planDetails.planCode;
-            isSubscription = true;
-        }
-    }
-
-    if (!isSubscription) {
-        let amountInCents: number;
-
-        if (input.payment.type === 'signup') {
-            const { planTier, interval } = input.payment;
-            const planDetails = plansConfig[planTier]?.pricing[interval];
-            
+            finalPayload = { ...basePayload, plan: planDetails.planCode };
+        } 
+        // Logic for one-time signup payments
+        else {
             if (planDetails.amount === 0) {
                  throw new Error("Free plans do not require payment initialization.");
             }
-            amountInCents = Math.round(planDetails.amount * 100);
-
-        } else { // Cart payment
-            amountInCents = input.payment.amountInCents;
+            const amountInCents = Math.round(planDetails.amount * 100);
+            if (amountInCents < 100) {
+                throw new Error(`Invalid Amount Sent. Amount for plan ${planTier} must be at least $1.00.`);
+            }
+            finalPayload = { ...basePayload, amount: amountInCents, currency: 'USD' };
         }
-
+    } else { // Logic for cart payments
+        const amountInCents = input.payment.amountInCents;
+        // The Zod schema already validates min: 100, but an extra server-side check is good practice.
         if (amountInCents < 100) {
-            throw new Error('Invalid Amount Sent. Amount must be at least $1.00.');
+            throw new Error('Invalid Amount Sent. Cart total must be at least $1.00.');
         }
-
-        body.amount = amountInCents;
-        body.currency = 'USD';
+        finalPayload = { ...basePayload, amount: amountInCents, currency: 'USD' };
     }
 
 
@@ -131,7 +125,7 @@ const initializePaystackTransactionFlow = ai.defineFlow(
         Authorization: `Bearer ${paystackSecretKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(finalPayload),
     });
 
     if (!response.ok) {
