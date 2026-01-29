@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -149,7 +150,6 @@ const PaymentStep = ({ onBack, storeId, checkoutData }: { onBack: () => void; st
   const shippingPrice = 4.99;
   const subtotal = getCartTotal();
   const total = subtotal + shippingPrice;
-  const totalInCents = Math.round(total * 100);
 
 
   const handlePayment = async () => {
@@ -163,7 +163,7 @@ const PaymentStep = ({ onBack, storeId, checkoutData }: { onBack: () => void; st
         email: checkoutData.email,
         payment: {
             type: 'cart',
-            amountInCents: totalInCents
+            amountInUSD: total
         },
         metadata: {
           cart: cart.map(item => ({id: item.product.id, name: item.product.name, quantity: item.quantity})),
@@ -266,7 +266,6 @@ export default function CheckoutPage() {
             </AnimatePresence>
           </div>
         </main>
-        
         <aside className="hidden lg:block bg-card p-8 rounded-lg border border-primary/20 h-fit sticky top-28">
             <h2 className="text-xl font-headline font-semibold">Order Summary</h2>
             <Separator className="my-4 bg-primary/20"/>

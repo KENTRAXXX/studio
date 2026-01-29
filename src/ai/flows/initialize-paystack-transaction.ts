@@ -11,6 +11,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { convertToCents } from '@/lib/currency';
 
 // Server-side source of truth for plan details. Amounts are in DOLLARS.
 const plansConfig: { [key: string]: { pricing: any } } = {
@@ -44,7 +45,7 @@ const SignupPaymentSchema = z.object({
 
 const CartPaymentSchema = z.object({
     type: z.literal('cart'),
-    amountInCents: z.number().int().min(100, "Cart total must be at least $1.00."),
+    amountInUSD: z.number().min(1, "Cart total must be at least $1.00."),
 });
 
 const InitializePaystackTransactionInputSchema = z.object({
@@ -94,7 +95,7 @@ const initializePaystackTransactionFlow = ai.defineFlow(
             throw new Error(`Invalid plan specified: ${planTier} - ${interval}`);
         }
 
-        // Logic for subscription plans
+        // Logic for recurring subscription plans via Paystack Plans
         if (planDetails.planCode && planDetails.planCode.trim() !== '') {
             finalPayload = { ...basePayload, plan: planDetails.planCode };
         } 
@@ -103,18 +104,11 @@ const initializePaystackTransactionFlow = ai.defineFlow(
             if (planDetails.amount === 0) {
                  throw new Error("Free plans do not require payment initialization.");
             }
-            const amountInCents = Math.round(planDetails.amount * 100);
-            if (amountInCents < 100) {
-                throw new Error(`Invalid Amount Sent. Amount for plan ${planTier} must be at least $1.00.`);
-            }
+            const amountInCents = convertToCents(planDetails.amount);
             finalPayload = { ...basePayload, amount: amountInCents, currency: 'USD' };
         }
     } else { // Logic for cart payments
-        const amountInCents = input.payment.amountInCents;
-        // The Zod schema already validates min: 100, but an extra server-side check is good practice.
-        if (amountInCents < 100) {
-            throw new Error('Invalid Amount Sent. Cart total must be at least $1.00.');
-        }
+        const amountInCents = convertToCents(input.payment.amountInUSD);
         finalPayload = { ...basePayload, amount: amountInCents, currency: 'USD' };
     }
 
