@@ -112,6 +112,7 @@ const initializePaystackTransactionFlow = ai.defineFlow(
         finalPayload = { ...basePayload, amount: amountInCents, currency: 'USD' };
     }
 
+    console.log('Final Paystack Payload:', JSON.stringify(finalPayload));
 
     const response = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',
