@@ -105,11 +105,11 @@ const initializePaystackTransactionFlow = ai.defineFlow(
                  throw new Error("Free plans do not require payment initialization.");
             }
             const amountInCents = convertToCents(planDetails.amount);
-            finalPayload = { ...basePayload, amount: amountInCents, currency: 'USD' };
+            finalPayload = { ...basePayload, amount: amountInCents.toString(), currency: 'USD' };
         }
     } else { // Logic for cart payments
         const amountInCents = convertToCents(input.payment.amountInUSD);
-        finalPayload = { ...basePayload, amount: amountInCents, currency: 'USD' };
+        finalPayload = { ...basePayload, amount: amountInCents.toString(), currency: 'USD' };
     }
 
     console.log('Final Paystack Payload:', JSON.stringify(finalPayload));
