@@ -80,13 +80,11 @@ const initializePaystackTransactionFlow = ai.defineFlow(
       throw new Error('Paystack secret key is not configured.');
     }
 
-    const basePayload: Record<string, any> = {
+    let finalPayload: Record<string, any> = {
         email: input.email,
         metadata: input.metadata,
     };
     
-    let finalPayload: Record<string, any>;
-
     if (input.payment.type === 'signup') {
         const { planTier, interval } = input.payment;
         const planDetails = plansConfig[planTier]?.pricing[interval];
@@ -97,7 +95,7 @@ const initializePaystackTransactionFlow = ai.defineFlow(
 
         // Logic for recurring subscription plans via Paystack Plans
         if (planDetails.planCode && planDetails.planCode.trim() !== '') {
-            finalPayload = { ...basePayload, plan: planDetails.planCode };
+            finalPayload.plan = planDetails.planCode;
         } 
         // Logic for one-time signup payments
         else {
@@ -105,11 +103,13 @@ const initializePaystackTransactionFlow = ai.defineFlow(
                  throw new Error("Free plans do not require payment initialization.");
             }
             const amountInCents = convertToCents(planDetails.amount);
-            finalPayload = { ...basePayload, amount: amountInCents.toString(), currency: 'USD' };
+            finalPayload.amount = amountInCents.toString();
+            finalPayload.currency = 'USD';
         }
     } else { // Logic for cart payments
         const amountInCents = convertToCents(input.payment.amountInUSD);
-        finalPayload = { ...basePayload, amount: amountInCents.toString(), currency: 'USD' };
+        finalPayload.amount = amountInCents.toString();
+        finalPayload.currency = 'USD';
     }
 
     console.log('Final Paystack Payload:', JSON.stringify(finalPayload));
