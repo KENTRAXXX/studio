@@ -22,7 +22,6 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-        <Script src="https://js.paystack.co/v1/inline.js" strategy="lazyOnload" />
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>

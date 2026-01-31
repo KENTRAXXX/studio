@@ -1,14 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { initializePaystackTransaction, type InitializePaystackTransactionInput } from '@/ai/flows/initialize-paystack-transaction';
-
-declare global {
-  interface Window {
-    PaystackPop: any;
-  }
-}
+import { usePaystackScript } from './use-paystack-script';
 
 // More descriptive type for arguments
 type InitializePaymentArgs = Omit<InitializePaystackTransactionInput, 'metadata'> & {
@@ -18,12 +13,32 @@ type InitializePaymentArgs = Omit<InitializePaystackTransactionInput, 'metadata'
 export function usePaystack() {
   const { toast } = useToast();
   const [isInitializing, setIsInitializing] = useState(false);
+  const { isLoaded, error: scriptError } = usePaystackScript();
+
+  useEffect(() => {
+    if (scriptError) {
+      toast({
+        variant: 'destructive',
+        title: 'Payment Error',
+        description: 'The payment gateway failed to load. Please check your connection and try again.'
+      });
+    }
+  }, [scriptError, toast]);
 
   const initializePayment = async (
     args: InitializePaymentArgs,
     onSuccess: (reference: any) => void,
     onClose: () => void
   ) => {
+    if (!isLoaded) {
+      toast({
+        variant: 'default',
+        title: 'Initializing Payment...',
+        description: 'Please wait a moment for the payment gateway to load.'
+      });
+      return;
+    }
+
     if (!args.email) {
       toast({ variant: 'destructive', title: 'Error', description: 'Email is required to proceed.' });
       return;
