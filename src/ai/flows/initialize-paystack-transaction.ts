@@ -79,43 +79,45 @@ const initializePaystackTransactionFlow = ai.defineFlow(
       throw new Error('Paystack secret key is not configured.');
     }
 
-    let finalPayload: Record<string, any> = {
+    // Initialize clean payload with common fields
+    const finalPayload: Record<string, any> = {
         email: input.email,
         metadata: input.metadata,
     };
     
+    // Path A: Signup Flow
     if (input.payment.type === 'signup') {
         const { planTier, interval } = input.payment;
         const planDetails = plansConfig[planTier]?.pricing[interval];
 
         if (!planDetails) {
-            throw new Error(`Invalid plan specified: ${planTier} - ${interval}`);
+            throw new Error(`Invalid plan tier or interval: ${planTier} - ${interval}`);
         }
 
-        // 1. Check for a subscription Plan Code
+        // Sub-path A1: Subscription with Plan Code
         if (planDetails.planCode && planDetails.planCode.trim() !== '') {
             finalPayload.plan = planDetails.planCode;
-            // Paystack requires only the 'plan' for subscriptions. Amount/Currency should NOT be sent.
+            // When 'plan' is sent, Paystack ignores 'amount' and 'currency'.
+            // We omit them entirely to prevent any "Invalid Amount" errors.
         } 
-        // 2. If no plan code, treat as a one-time signup charge
+        // Sub-path A2: One-time Signup Charge (no plan code configured)
         else {
             if (planDetails.amount === 0) {
                  throw new Error("Free plans do not require payment initialization.");
             }
             const amountInCents = convertToCents(planDetails.amount);
-            // CRITICAL: amount must be an INTEGER (Number), not a string.
-            finalPayload.amount = amountInCents;
+            finalPayload.amount = amountInCents; // Strictly a Number (Integer)
             finalPayload.currency = 'USD';
         }
-    } else { 
-        // 3. Logic for one-time cart payments
+    } 
+    // Path B: Cart Checkout Flow
+    else { 
         const amountInCents = convertToCents(input.payment.amountInUSD);
-        // CRITICAL: amount must be an INTEGER (Number), not a string.
-        finalPayload.amount = amountInCents;
+        finalPayload.amount = amountInCents; // Strictly a Number (Integer)
         finalPayload.currency = 'USD';
     }
 
-    console.log('Final Paystack Payload:', JSON.stringify(finalPayload));
+    console.log('Final Paystack Payload (Serialized):', JSON.stringify(finalPayload));
 
     const response = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',
@@ -129,13 +131,13 @@ const initializePaystackTransactionFlow = ai.defineFlow(
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('Paystack API Error:', data);
+      console.error('Paystack API Error Response:', JSON.stringify(data));
       throw new Error(`Paystack API Error: ${data.message || 'Unknown error'}`);
     }
 
-    if (!data.status) {
-        console.error('Paystack API Error Status False:', data);
-        throw new Error(`Paystack API Error: ${data.message || 'Initialization failed'}`);
+    if (!data.status || !data.data) {
+        console.error('Paystack API Response Success but status false:', data);
+        throw new Error(`Paystack API Error: ${data.message || 'Transaction initialization failed'}`);
     }
 
     return data.data;
