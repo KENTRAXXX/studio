@@ -1,15 +1,15 @@
 'use server';
 
 /**
- * @fileOverview A simplified flow for initializing a Paystack transaction using direct amounts.
- * This version removes plan codes to isolate and debug the "Invalid Amount Sent" error.
+ * @fileOverview Initializes a Paystack transaction.
+ * Supports both recurring subscriptions (via Plan Codes) and one-time payments.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { convertToCents } from '@/lib/currency';
 
-// Dollar-based prices for direct testing.
+// Base prices for fallback calculations
 const basePrices: Record<string, number> = {
     MERCHANT: 19.99,
     SCALER: 29.00,
@@ -17,6 +17,15 @@ const basePrices: Record<string, number> = {
     ENTERPRISE: 33.33,
     BRAND: 21.00,
 };
+
+/**
+ * Retrieves the Paystack Plan Code from environment variables.
+ * These must be created in the Paystack Dashboard first.
+ */
+function getPlanCode(tier: string, interval: string): string | undefined {
+    const key = `PAYSTACK_${tier}_${interval.toUpperCase()}_PLAN_CODE`;
+    return process.env[key];
+}
 
 const SignupPaymentSchema = z.object({
     type: z.literal('signup'),
@@ -61,45 +70,49 @@ const initializePaystackTransactionFlow = ai.defineFlow(
       throw new Error('Paystack secret key is not configured.');
     }
 
-    let finalAmountCents: number;
-
-    // Direct path: Calculate the amount in cents regardless of the type
-    if (input.payment.type === 'signup') {
-        const { planTier, interval } = input.payment;
-        const basePrice = basePrices[planTier] || 0;
-        
-        if (basePrice === 0) {
-            throw new Error("Free plans do not require payment initialization.");
-        }
-
-        // Simple yearly logic: 10 months for the price of 12 (approx)
-        const dollarAmount = interval === 'yearly' ? basePrice * 10 : basePrice;
-        finalAmountCents = convertToCents(dollarAmount);
-    } else {
-        finalAmountCents = convertToCents(input.payment.amountInUSD);
-    }
-
-    // Double check that it's a strict integer
-    if (!Number.isInteger(finalAmountCents)) {
-        console.error('CRITICAL: finalAmountCents is not an integer:', finalAmountCents);
-        finalAmountCents = Math.floor(finalAmountCents);
-    }
-
-    // Build a CLEAN payload with NO conflicting 'plan' field
-    const finalPayload = {
+    // Start with a clean base payload
+    const finalPayload: any = {
         email: input.email,
-        amount: finalAmountCents, // Must be an Integer
-        currency: 'USD',
         metadata: {
             ...input.metadata,
-            // Ensure we track the type internally
             payment_type: input.payment.type
         },
     };
 
-    console.log('DEBUG: Initializing Paystack Transaction...');
-    console.log('DEBUG: URL: https://api.paystack.co/transaction/initialize');
-    console.log('DEBUG: Payload:', JSON.stringify(finalPayload, null, 2));
+    /**
+     * LOGIC GATE: 
+     * 1. If it's a signup and a Plan Code exists, send ONLY the plan (RECURRING).
+     * 2. Otherwise, send ONLY the amount and currency (ONE-TIME).
+     * Sending both often triggers the "Invalid Amount Sent" error.
+     */
+    if (input.payment.type === 'signup') {
+        const { planTier, interval } = input.payment;
+        
+        if (planTier === 'SELLER' && interval === 'free') {
+            throw new Error("Free plans do not require payment initialization.");
+        }
+
+        const planCode = getPlanCode(planTier, interval);
+
+        if (planCode) {
+            console.log(`DEBUG: Using Recurring Plan Code: ${planCode}`);
+            finalPayload.plan = planCode;
+            // Note: We do NOT send 'amount' here. Paystack uses the plan's defined price.
+        } else {
+            console.log(`DEBUG: No Plan Code found for ${planTier} ${interval}. Falling back to one-time charge.`);
+            const basePrice = basePrices[planTier] || 0;
+            const dollarAmount = interval === 'yearly' ? basePrice * 10 : basePrice;
+            
+            finalPayload.amount = convertToCents(dollarAmount);
+            finalPayload.currency = 'USD';
+        }
+    } else {
+        // Cart transactions are always one-time
+        finalPayload.amount = convertToCents(input.payment.amountInUSD);
+        finalPayload.currency = 'USD';
+    }
+
+    console.log('DEBUG: Final Payload to Paystack:', JSON.stringify(finalPayload, null, 2));
 
     const response = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',
@@ -113,17 +126,14 @@ const initializePaystackTransactionFlow = ai.defineFlow(
     const responseData = await response.json();
 
     if (!response.ok) {
-      console.error('PAYSTACK API ERROR STATUS:', response.status);
-      console.error('PAYSTACK API ERROR BODY:', JSON.stringify(responseData, null, 2));
+      console.error('PAYSTACK API ERROR:', JSON.stringify(responseData, null, 2));
       throw new Error(`Paystack API Error: ${responseData.message || 'Unknown error'}`);
     }
 
     if (!responseData.status || !responseData.data) {
-        console.error('PAYSTACK API SUCCESS LOGIC FAIL:', responseData);
-        throw new Error(`Paystack API Error: ${responseData.message || 'Transaction initialization failed'}`);
+        throw new Error('Transaction initialization failed on Paystack.');
     }
 
-    console.log('DEBUG: Paystack Initialization Successful.');
     return responseData.data;
   }
 );

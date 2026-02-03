@@ -43,8 +43,7 @@ export function usePaystack() {
         metadata: args.metadata,
       });
 
-      // 2. Dynamically import PaystackPop to avoid SSR "window is not defined" error
-      // This ensures the library is only evaluated in the browser.
+      // 2. Dynamically import PaystackPop to ensure it only runs in the browser
       const PaystackModule = await import('@paystack/inline-js');
       const PaystackPop = PaystackModule.default;
       const paystack = new PaystackPop();
