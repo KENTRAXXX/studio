@@ -1,40 +1,22 @@
 'use server';
 
 /**
- * @fileOverview A flow for initializing a Paystack transaction.
- *
- * - initializePaystackTransaction - A function that returns a Paystack authorization URL.
- * - InitializePaystackTransactionInput - The input type for the initializePaystackTransaction function.
- * - InitializePaystackTransactionOutput - The return type for the initializePaystackTransaction function.
+ * @fileOverview A simplified flow for initializing a Paystack transaction using direct amounts.
+ * This version removes plan codes to isolate and debug the "Invalid Amount Sent" error.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { convertToCents } from '@/lib/currency';
 
-// Server-side source of truth for plan details. Amounts are in DOLLARS.
-const plansConfig: { [key: string]: { pricing: any } } = {
-    MERCHANT: { pricing: {
-        monthly: { amount: 19.99, planCode: process.env.NEXT_PUBLIC_MERCHANT_MONTHLY_PLAN_CODE },
-        yearly: { amount: 199, planCode: process.env.NEXT_PUBLIC_MERCHANT_YEARLY_PLAN_CODE },
-    }},
-    SCALER: { pricing: {
-        monthly: { amount: 29, planCode: process.env.NEXT_PUBLIC_SCALER_MONTHLY_PLAN_CODE },
-        yearly: { amount: 290, planCode: process.env.NEXT_PUBLIC_SCALER_YEARLY_PLAN_CODE },
-    }},
-    SELLER: { pricing: {
-        free: { amount: 0, planCode: null }
-    }},
-    ENTERPRISE: { pricing: {
-        monthly: { amount: 33.33, planCode: process.env.NEXT_PUBLIC_ENTERPRISE_MONTHLY_PLAN_CODE },
-        yearly: { amount: 333, planCode: process.env.NEXT_PUBLIC_ENTERPRISE_YEARLY_PLAN_CODE },
-    }},
-    BRAND: { pricing: {
-        monthly: { amount: 21, planCode: process.env.NEXT_PUBLIC_BRAND_MONTHLY_PLAN_CODE },
-        yearly: { amount: 210, planCode: process.env.NEXT_PUBLIC_BRAND_YEARLY_PLAN_CODE },
-    }},
+// Dollar-based prices for direct testing.
+const basePrices: Record<string, number> = {
+    MERCHANT: 19.99,
+    SCALER: 29.00,
+    SELLER: 0,
+    ENTERPRISE: 33.33,
+    BRAND: 21.00,
 };
-
 
 const SignupPaymentSchema = z.object({
     type: z.literal('signup'),
@@ -79,45 +61,45 @@ const initializePaystackTransactionFlow = ai.defineFlow(
       throw new Error('Paystack secret key is not configured.');
     }
 
-    // Initialize clean payload with common fields
-    const finalPayload: Record<string, any> = {
-        email: input.email,
-        metadata: input.metadata,
-    };
-    
-    // Path A: Signup Flow
+    let finalAmountCents: number;
+
+    // Direct path: Calculate the amount in cents regardless of the type
     if (input.payment.type === 'signup') {
         const { planTier, interval } = input.payment;
-        const planDetails = plansConfig[planTier]?.pricing[interval];
-
-        if (!planDetails) {
-            throw new Error(`Invalid plan tier or interval: ${planTier} - ${interval}`);
+        const basePrice = basePrices[planTier] || 0;
+        
+        if (basePrice === 0) {
+            throw new Error("Free plans do not require payment initialization.");
         }
 
-        // Sub-path A1: Subscription with Plan Code
-        if (planDetails.planCode && planDetails.planCode.trim() !== '') {
-            finalPayload.plan = planDetails.planCode;
-            // IMPORTANT: When 'plan' is sent, Paystack forbids 'amount' and 'currency'.
-        } 
-        // Sub-path A2: One-time Signup Charge (no plan code configured)
-        else {
-            if (planDetails.amount === 0) {
-                 throw new Error("Free plans do not require payment initialization.");
-            }
-            const amountInCents = convertToCents(planDetails.amount);
-            finalPayload.amount = amountInCents; // Strictly a Number (Integer)
-            finalPayload.currency = 'USD';
-        }
-    } 
-    // Path B: Cart Checkout Flow
-    else { 
-        const amountInCents = convertToCents(input.payment.amountInUSD);
-        finalPayload.amount = amountInCents; // Strictly a Number (Integer)
-        finalPayload.currency = 'USD';
+        // Simple yearly logic: 10 months for the price of 12 (approx)
+        const dollarAmount = interval === 'yearly' ? basePrice * 10 : basePrice;
+        finalAmountCents = convertToCents(dollarAmount);
+    } else {
+        finalAmountCents = convertToCents(input.payment.amountInUSD);
     }
 
-    // DEBUG LOG: Verify payload structure before sending
-    console.log('Final Paystack Payload (Serialized):', JSON.stringify(finalPayload));
+    // Double check that it's a strict integer
+    if (!Number.isInteger(finalAmountCents)) {
+        console.error('CRITICAL: finalAmountCents is not an integer:', finalAmountCents);
+        finalAmountCents = Math.floor(finalAmountCents);
+    }
+
+    // Build a CLEAN payload with NO conflicting 'plan' field
+    const finalPayload = {
+        email: input.email,
+        amount: finalAmountCents, // Must be an Integer
+        currency: 'USD',
+        metadata: {
+            ...input.metadata,
+            // Ensure we track the type internally
+            payment_type: input.payment.type
+        },
+    };
+
+    console.log('DEBUG: Initializing Paystack Transaction...');
+    console.log('DEBUG: URL: https://api.paystack.co/transaction/initialize');
+    console.log('DEBUG: Payload:', JSON.stringify(finalPayload, null, 2));
 
     const response = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',
@@ -128,18 +110,20 @@ const initializePaystackTransactionFlow = ai.defineFlow(
       body: JSON.stringify(finalPayload),
     });
 
-    const data = await response.json();
+    const responseData = await response.json();
 
     if (!response.ok) {
-      console.error('Paystack API Error Response:', JSON.stringify(data));
-      throw new Error(`Paystack API Error: ${data.message || 'Unknown error'}`);
+      console.error('PAYSTACK API ERROR STATUS:', response.status);
+      console.error('PAYSTACK API ERROR BODY:', JSON.stringify(responseData, null, 2));
+      throw new Error(`Paystack API Error: ${responseData.message || 'Unknown error'}`);
     }
 
-    if (!data.status || !data.data) {
-        console.error('Paystack API Response Success but status false:', data);
-        throw new Error(`Paystack API Error: ${data.message || 'Transaction initialization failed'}`);
+    if (!responseData.status || !responseData.data) {
+        console.error('PAYSTACK API SUCCESS LOGIC FAIL:', responseData);
+        throw new Error(`Paystack API Error: ${responseData.message || 'Transaction initialization failed'}`);
     }
 
-    return data.data;
+    console.log('DEBUG: Paystack Initialization Successful.');
+    return responseData.data;
   }
 );
