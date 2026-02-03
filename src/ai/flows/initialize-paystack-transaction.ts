@@ -97,8 +97,7 @@ const initializePaystackTransactionFlow = ai.defineFlow(
         // Sub-path A1: Subscription with Plan Code
         if (planDetails.planCode && planDetails.planCode.trim() !== '') {
             finalPayload.plan = planDetails.planCode;
-            // When 'plan' is sent, Paystack ignores 'amount' and 'currency'.
-            // We omit them entirely to prevent any "Invalid Amount" errors.
+            // IMPORTANT: When 'plan' is sent, Paystack forbids 'amount' and 'currency'.
         } 
         // Sub-path A2: One-time Signup Charge (no plan code configured)
         else {
@@ -117,6 +116,7 @@ const initializePaystackTransactionFlow = ai.defineFlow(
         finalPayload.currency = 'USD';
     }
 
+    // DEBUG LOG: Verify payload structure before sending
     console.log('Final Paystack Payload (Serialized):', JSON.stringify(finalPayload));
 
     const response = await fetch('https://api.paystack.co/transaction/initialize', {

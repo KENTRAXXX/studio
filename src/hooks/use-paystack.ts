@@ -4,9 +4,6 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { initializePaystackTransaction, type InitializePaystackTransactionInput } from '@/ai/flows/initialize-paystack-transaction';
 
-// Import PaystackPop directly from the NPM package
-import PaystackPop from '@paystack/inline-js';
-
 type InitializePaymentArgs = Omit<InitializePaystackTransactionInput, 'metadata'> & {
     metadata?: InitializePaystackTransactionInput['metadata'];
 }
@@ -46,8 +43,12 @@ export function usePaystack() {
         metadata: args.metadata,
       });
 
-      // 2. Open the Paystack popup using the access_code (the most robust method)
+      // 2. Dynamically import PaystackPop to avoid SSR "window is not defined" error
+      // This ensures the library is only evaluated in the browser.
+      const PaystackModule = await import('@paystack/inline-js');
+      const PaystackPop = PaystackModule.default;
       const paystack = new PaystackPop();
+      
       paystack.resumeTransaction(result.access_code, {
         onSuccess: (response: any) => {
           onSuccess(response);
