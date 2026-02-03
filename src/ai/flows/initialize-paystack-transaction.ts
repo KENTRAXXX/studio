@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -93,22 +92,26 @@ const initializePaystackTransactionFlow = ai.defineFlow(
             throw new Error(`Invalid plan specified: ${planTier} - ${interval}`);
         }
 
-        // Logic for recurring subscription plans via Paystack Plans
+        // 1. Check for a subscription Plan Code
         if (planDetails.planCode && planDetails.planCode.trim() !== '') {
             finalPayload.plan = planDetails.planCode;
+            // Paystack requires only the 'plan' for subscriptions. Amount/Currency should NOT be sent.
         } 
-        // Logic for one-time signup payments
+        // 2. If no plan code, treat as a one-time signup charge
         else {
             if (planDetails.amount === 0) {
                  throw new Error("Free plans do not require payment initialization.");
             }
             const amountInCents = convertToCents(planDetails.amount);
-            finalPayload.amount = amountInCents.toString();
+            // CRITICAL: amount must be an INTEGER (Number), not a string.
+            finalPayload.amount = amountInCents;
             finalPayload.currency = 'USD';
         }
-    } else { // Logic for cart payments
+    } else { 
+        // 3. Logic for one-time cart payments
         const amountInCents = convertToCents(input.payment.amountInUSD);
-        finalPayload.amount = amountInCents.toString();
+        // CRITICAL: amount must be an INTEGER (Number), not a string.
+        finalPayload.amount = amountInCents;
         finalPayload.currency = 'USD';
     }
 
@@ -123,17 +126,16 @@ const initializePaystackTransactionFlow = ai.defineFlow(
       body: JSON.stringify(finalPayload),
     });
 
-    if (!response.ok) {
-      const errorBody = await response.json();
-      console.error('Paystack API Error:', errorBody);
-      throw new Error(`Paystack API Error: ${errorBody.message}`);
-    }
-
     const data = await response.json();
 
+    if (!response.ok) {
+      console.error('Paystack API Error:', data);
+      throw new Error(`Paystack API Error: ${data.message || 'Unknown error'}`);
+    }
+
     if (!data.status) {
-        console.error('Paystack API Error:', data);
-        throw new Error(`Paystack API Error: ${data.message}`);
+        console.error('Paystack API Error Status False:', data);
+        throw new Error(`Paystack API Error: ${data.message || 'Initialization failed'}`);
     }
 
     return data.data;

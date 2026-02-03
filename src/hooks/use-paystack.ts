@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { initializePaystackTransaction, type InitializePaystackTransactionInput } from '@/ai/flows/initialize-paystack-transaction';
-import { usePaystackScript } from './use-paystack-script';
 
-// More descriptive type for arguments
+// Import PaystackPop directly from the NPM package
+import PaystackPop from '@paystack/inline-js';
+
 type InitializePaymentArgs = Omit<InitializePaystackTransactionInput, 'metadata'> & {
     metadata?: InitializePaystackTransactionInput['metadata'];
 }
@@ -13,32 +14,12 @@ type InitializePaymentArgs = Omit<InitializePaystackTransactionInput, 'metadata'
 export function usePaystack() {
   const { toast } = useToast();
   const [isInitializing, setIsInitializing] = useState(false);
-  const { isLoaded, error: scriptError } = usePaystackScript();
-
-  useEffect(() => {
-    if (scriptError) {
-      toast({
-        variant: 'destructive',
-        title: 'Payment Error',
-        description: 'The payment gateway failed to load. Please check your connection and try again.'
-      });
-    }
-  }, [scriptError, toast]);
 
   const initializePayment = async (
     args: InitializePaymentArgs,
     onSuccess: (reference: any) => void,
     onClose: () => void
   ) => {
-    if (!isLoaded) {
-      toast({
-        variant: 'default',
-        title: 'Initializing Payment...',
-        description: 'Please wait a moment for the payment gateway to load.'
-      });
-      return;
-    }
-
     if (!args.email) {
       toast({ variant: 'destructive', title: 'Error', description: 'Email is required to proceed.' });
       return;
@@ -58,31 +39,32 @@ export function usePaystack() {
         throw new Error('Paystack public key is not configured.');
       }
 
+      // 1. Initialize the transaction on the backend to get a secure access_code
       const result = await initializePaystackTransaction({
         email: args.email,
         payment: args.payment,
         metadata: args.metadata,
       });
 
-      const handler = window.PaystackPop.setup({
-        key: paystackPublicKey,
-        email: args.email,
-        ref: result.reference,
-        metadata: args.metadata,
-        onClose: () => {
-          onClose();
-        },
-        callback: (response: any) => {
+      // 2. Open the Paystack popup using the access_code (the most robust method)
+      const paystack = new PaystackPop();
+      paystack.resumeTransaction(result.access_code, {
+        onSuccess: (response: any) => {
           onSuccess(response);
         },
+        onCancel: () => {
+          onClose();
+        },
       });
-      
-      handler.openIframe();
 
     } catch (error: any) {
       console.error("Paystack initialization failed", error);
-      toast({ variant: 'destructive', title: 'Payment Error', description: error.message || 'Could not initialize payment. Please try again.' });
-      onClose(); // Also call onClose on error
+      toast({ 
+        variant: 'destructive', 
+        title: 'Payment Error', 
+        description: error.message || 'Could not initialize payment. Please try again.' 
+      });
+      onClose();
     } finally {
         setIsInitializing(false);
     }
