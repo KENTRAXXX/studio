@@ -16,7 +16,7 @@ import {
 } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from '@/badge';
+import { Badge } from '@/components/ui/badge';
 import { DollarSign, Percent, Banknote, Loader2, Wallet, Landmark, WalletCards, ChevronDown } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { addDays, format, parseISO } from 'date-fns';
