@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClientStore } from '@/ai/flows/create-client-store';
@@ -182,10 +183,11 @@ export async function POST(req: Request) {
     const { metadata } = event.data;
 
     if (!metadata) {
+        console.warn('Paystack webhook: No metadata found in event.');
         return NextResponse.json({ status: 'success', message: 'Event acknowledged, no metadata.' });
     }
 
-    const { userId, plan, cart, storeId } = metadata;
+    const { userId, plan, cart, storeId, planTier: rawPlanTier } = metadata;
 
     if (cart && storeId) {
         await executePaymentSplit(event.data);
@@ -197,16 +199,17 @@ export async function POST(req: Request) {
             if (userSnap.exists() && userSnap.data().hasAccess) {
                 console.log(`User ${userId} already has access. Skipping store creation.`);
             } else {
-                 // Ensure we don't pass the deprecated "MOGUL" planTier
-                 const rawPlanTier = metadata.planTier;
+                 // Map the planTier, ensuring we don't pass the deprecated "MOGUL"
                  const planTier = (rawPlanTier && rawPlanTier !== 'MOGUL') ? rawPlanTier : 'SCALER';
 
                  const createClientStoreInput = {
                     userId,
                     plan: plan || 'monthly',
-                    planTier: planTier,
+                    planTier: planTier as any,
                     template: 'gold-standard',
                 };
+                
+                console.log(`Paystack webhook: Provisioning store for ${userId} with tier ${planTier}`);
                 await createClientStore(createClientStoreInput);
             }
         } catch (error: any) {

@@ -71,9 +71,12 @@ export function useSignUp() {
       // MOGUL is the role name for all store owners (Scaler, Merchant, Enterprise)
       const userRole = (credentials.planTier === 'SELLER' || credentials.planTier === 'BRAND') ? 'SELLER' : 'MOGUL';
       
+      // If it's a free seller plan, we grant access immediately since there is no payment webhook.
+      const isFreeTier = credentials.planTier === 'SELLER' && credentials.plan === 'free';
+
       const newUserProfile: any = {
         email: user.email,
-        hasAccess: false,
+        hasAccess: isFreeTier,
         hasAcceptedTerms: false,
         userRole: userRole,
         planTier: credentials.planTier,

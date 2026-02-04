@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useEffect } from 'react';
@@ -61,6 +62,7 @@ export default function DashboardOverviewPage() {
     useEffect(() => {
         if (!isLoading && userProfile) {
             const planTier = userProfile.planTier;
+            // Redirect Sellers and Brands to their dedicated backstage hub
             if (planTier === 'SELLER' || planTier === 'BRAND') {
                 router.push('/backstage/finances');
             }
@@ -79,7 +81,16 @@ export default function DashboardOverviewPage() {
     const isProfileComplete = !!userProfile?.planTier; // A simple check
     const isSaleMade = !!(orders && orders.length > 0);
     
-    if (isLoading || userProfile?.planTier === 'SELLER' || userProfile?.planTier === 'BRAND') {
+    if (isLoading) {
+        return (
+            <div className="flex h-96 w-full items-center justify-center">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    // Special case: If they are a Seller/Brand, we show a loader while the redirect in useEffect triggers.
+    if (userProfile?.planTier === 'SELLER' || userProfile?.planTier === 'BRAND') {
         return (
             <div className="flex h-96 w-full items-center justify-center">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />

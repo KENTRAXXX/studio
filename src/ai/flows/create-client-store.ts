@@ -68,7 +68,7 @@ const createClientStoreFlow = ai.defineFlow(
 
         const userRole = (planTier === 'SELLER' || planTier === 'BRAND') ? 'SELLER' : 'MOGUL';
 
-        // 1. Update user document to grant access and log payment
+        // 1. Update user document to grant access and log payment details immediately
         await updateDoc(userRef, {
             hasAccess: true,
             plan: plan,
