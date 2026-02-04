@@ -24,6 +24,12 @@ type UserProfile = {
   referralCode?: string;
   referredBy?: string;
   verificationFeedback?: string;
+  brandBio?: string;
+  avatarUrl?: string;
+  socialLinks?: {
+    instagram?: string;
+    x?: string;
+  };
   verificationData?: {
     legalBusinessName: string;
     warehouseAddress: string;
