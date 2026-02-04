@@ -22,7 +22,8 @@ import {
     User, 
     Instagram, 
     Camera, 
-    Save 
+    Save,
+    Bell
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -39,13 +40,19 @@ export default function BackstageSettingsPage() {
 
   const [isSendingReset, setIsSendingReset] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isSavingPrefs, setIsSavingPrefs] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
-  // Form State
+  // Profile Form State
   const [brandBio, setBrandBio] = useState('');
   const [instagram, setInstagram] = useState('');
   const [xHandle, setXHandle] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
+
+  // Preferences State
+  const [emailOnNewSales, setEmailOnNewSales] = useState(true);
+  const [emailOnConciergeReplies, setEmailOnConciergeReplies] = useState(true);
+  const [weeklyReports, setWeeklyReports] = useState(true);
 
   useEffect(() => {
     if (userProfile) {
@@ -53,6 +60,12 @@ export default function BackstageSettingsPage() {
       setInstagram(userProfile.socialLinks?.instagram || '');
       setXHandle(userProfile.socialLinks?.x || '');
       setAvatarUrl(userProfile.avatarUrl || '');
+
+      if (userProfile.preferences) {
+        setEmailOnNewSales(userProfile.preferences.emailOnNewSales ?? true);
+        setEmailOnConciergeReplies(userProfile.preferences.emailOnConciergeReplies ?? true);
+        setWeeklyReports(userProfile.preferences.weeklyPerformanceReports ?? true);
+      }
     }
   }, [userProfile]);
 
@@ -122,6 +135,26 @@ export default function BackstageSettingsPage() {
     }
   };
 
+  const handlePreferencesSave = async () => {
+    if (!user || !firestore) return;
+    setIsSavingPrefs(true);
+    try {
+      const userRef = doc(firestore, 'users', user.uid);
+      await updateDoc(userRef, {
+        preferences: {
+          emailOnNewSales,
+          emailOnConciergeReplies,
+          weeklyPerformanceReports: weeklyReports
+        }
+      });
+      toast({ title: 'Preferences Saved', description: 'Your notification settings have been updated.' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+    } finally {
+      setIsSavingPrefs(false);
+    }
+  };
+
   if (profileLoading) {
     return (
         <div className="flex h-screen items-center justify-center bg-background">
@@ -139,94 +172,145 @@ export default function BackstageSettingsPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Brand Profile Section */}
-        <Card className="lg:col-span-2 border-primary/20 bg-slate-900/30">
-          <CardHeader>
-            <CardTitle className="text-xl font-headline flex items-center gap-2 text-slate-200">
-              <User className="h-5 w-5 text-primary" />
-              Brand Identity
-            </CardTitle>
-            <CardDescription className="text-slate-500">How your brand appears to Moguls and elite customers.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex flex-col md:flex-row gap-8 items-start">
-                <div className="space-y-4 flex flex-col items-center">
-                    <Avatar className="h-24 w-24 border-2 border-primary/20 bg-slate-950">
-                        <AvatarImage src={avatarUrl} className="object-cover" />
-                        <AvatarFallback className="bg-slate-800 text-primary text-2xl font-bold">
-                            {user?.email?.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                    </Avatar>
-                    <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="h-8 text-[10px] uppercase tracking-widest font-black border-primary/30 text-primary hover:bg-primary/10"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isUploadingAvatar}
-                    >
-                        {isUploadingAvatar ? <Loader2 className="animate-spin h-3 w-3" /> : <Camera className="h-3 w-3 mr-1" />}
-                        Change Avatar
-                    </Button>
-                    <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        className="hidden" 
-                        accept="image/*" 
-                        onChange={handleAvatarUpload}
-                    />
-                </div>
-
-                <div className="flex-1 w-full space-y-4">
-                    <div className="space-y-2">
-                        <Label className="text-xs uppercase tracking-widest text-slate-500 font-bold">Brand Biography</Label>
-                        <Textarea 
-                            placeholder="Tell your brand's story..." 
-                            className="min-h-[120px] bg-slate-950/50 border-primary/10 focus-visible:ring-primary text-slate-200"
-                            value={brandBio}
-                            onChange={(e) => setBrandBio(e.target.value)}
+        <div className="lg:col-span-2 space-y-8">
+            {/* Brand Profile Section */}
+            <Card className="border-primary/20 bg-slate-900/30">
+            <CardHeader>
+                <CardTitle className="text-xl font-headline flex items-center gap-2 text-slate-200">
+                <User className="h-5 w-5 text-primary" />
+                Brand Identity
+                </CardTitle>
+                <CardDescription className="text-slate-500">How your brand appears to Moguls and elite customers.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="flex flex-col md:flex-row gap-8 items-start">
+                    <div className="space-y-4 flex flex-col items-center">
+                        <Avatar className="h-24 w-24 border-2 border-primary/20 bg-slate-950">
+                            <AvatarImage src={avatarUrl} className="object-cover" />
+                            <AvatarFallback className="bg-slate-800 text-primary text-2xl font-bold">
+                                {user?.email?.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                        </Avatar>
+                        <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="h-8 text-[10px] uppercase tracking-widest font-black border-primary/30 text-primary hover:bg-primary/10"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isUploadingAvatar}
+                        >
+                            {isUploadingAvatar ? <Loader2 className="animate-spin h-3 w-3" /> : <Camera className="h-3 w-3 mr-1" />}
+                            Change Avatar
+                        </Button>
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            className="hidden" 
+                            accept="image/*" 
+                            onChange={handleAvatarUpload}
                         />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex-1 w-full space-y-4">
                         <div className="space-y-2">
-                            <Label className="text-xs uppercase tracking-widest text-slate-500 font-bold flex items-center gap-2">
-                                <Instagram className="h-3 w-3 text-primary" /> Instagram
-                            </Label>
-                            <Input 
-                                placeholder="@yourbrand" 
-                                className="bg-slate-950/50 border-primary/10 focus-visible:ring-primary text-slate-200"
-                                value={instagram}
-                                onChange={(e) => setInstagram(e.target.value)}
+                            <Label className="text-xs uppercase tracking-widest text-slate-500 font-bold">Brand Biography</Label>
+                            <Textarea 
+                                placeholder="Tell your brand's story..." 
+                                className="min-h-[120px] bg-slate-950/50 border-primary/10 focus-visible:ring-primary text-slate-200"
+                                value={brandBio}
+                                onChange={(e) => setBrandBio(e.target.value)}
                             />
                         </div>
-                        <div className="space-y-2">
-                            <Label className="text-xs uppercase tracking-widest text-slate-500 font-bold flex items-center gap-2">
-                                <svg viewBox="0 0 24 24" className="h-3 w-3 fill-primary"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> 
-                                X (Twitter)
-                            </Label>
-                            <Input 
-                                placeholder="@yourbrand" 
-                                className="bg-slate-950/50 border-primary/10 focus-visible:ring-primary text-slate-200"
-                                value={xHandle}
-                                onChange={(e) => setXHandle(e.target.value)}
-                            />
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label className="text-xs uppercase tracking-widest text-slate-500 font-bold flex items-center gap-2">
+                                    <Instagram className="h-3 w-3 text-primary" /> Instagram
+                                </Label>
+                                <Input 
+                                    placeholder="@yourbrand" 
+                                    className="bg-slate-950/50 border-primary/10 focus-visible:ring-primary text-slate-200"
+                                    value={instagram}
+                                    onChange={(e) => setInstagram(e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs uppercase tracking-widest text-slate-500 font-bold flex items-center gap-2">
+                                    <svg viewBox="0 0 24 24" className="h-3 w-3 fill-primary"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> 
+                                    X (Twitter)
+                                </Label>
+                                <Input 
+                                    placeholder="@yourbrand" 
+                                    className="bg-slate-950/50 border-primary/10 focus-visible:ring-primary text-slate-200"
+                                    value={xHandle}
+                                    onChange={(e) => setXHandle(e.target.value)}
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="flex justify-end pt-4 border-t border-primary/5">
-                <Button 
-                    className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
-                    onClick={handleProfileSave}
-                    disabled={isSavingProfile}
-                >
-                    {isSavingProfile ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                    Save Brand Identity
-                </Button>
-            </div>
-          </CardContent>
-        </Card>
+                <div className="flex justify-end pt-4 border-t border-primary/5">
+                    <Button 
+                        className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
+                        onClick={handleProfileSave}
+                        disabled={isSavingProfile}
+                    >
+                        {isSavingProfile ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                        Save Brand Identity
+                    </Button>
+                </div>
+            </CardContent>
+            </Card>
+
+            {/* Notification Preferences Section */}
+            <Card className="border-primary/20 bg-slate-900/30">
+            <CardHeader>
+                <CardTitle className="text-xl font-headline flex items-center gap-2 text-slate-200">
+                <Bell className="h-5 w-5 text-primary" />
+                Global Preferences
+                </CardTitle>
+                <CardDescription className="text-slate-500">Control how and when SOMA contacts you.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 rounded-lg bg-muted/20 border border-slate-800">
+                    <div className="space-y-0.5">
+                    <Label className="text-sm font-bold text-slate-200">Email on New Sales</Label>
+                    <p className="text-[10px] text-muted-foreground">Receive instant alerts when a Mogul sells your product.</p>
+                    </div>
+                    <Switch checked={emailOnNewSales} onCheckedChange={setEmailOnNewSales} />
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-lg bg-muted/20 border border-slate-800">
+                    <div className="space-y-0.5">
+                    <Label className="text-sm font-bold text-slate-200">Email on Concierge Replies</Label>
+                    <p className="text-[10px] text-muted-foreground">Get notified when the support team responds to your tickets.</p>
+                    </div>
+                    <Switch checked={emailOnConciergeReplies} onCheckedChange={setEmailOnConciergeReplies} />
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-lg bg-muted/20 border border-slate-800">
+                    <div className="space-y-0.5">
+                    <Label className="text-sm font-bold text-slate-200">Weekly Performance Reports</Label>
+                    <p className="text-[10px] text-muted-foreground">A summary of your global sync counts and market reach.</p>
+                    </div>
+                    <Switch checked={weeklyReports} onCheckedChange={setWeeklyReports} />
+                </div>
+                </div>
+
+                <div className="flex justify-end pt-4 border-t border-primary/5">
+                    <Button 
+                        className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
+                        onClick={handlePreferencesSave}
+                        disabled={isSavingPrefs}
+                    >
+                        {isSavingPrefs ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                        Save Preferences
+                    </Button>
+                </div>
+            </CardContent>
+            </Card>
+        </div>
 
         <div className="space-y-8">
             {/* Security Protocols Card */}

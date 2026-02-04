@@ -30,6 +30,11 @@ type UserProfile = {
     instagram?: string;
     x?: string;
   };
+  preferences?: {
+    emailOnNewSales?: boolean;
+    emailOnConciergeReplies?: boolean;
+    weeklyPerformanceReports?: boolean;
+  };
   verificationData?: {
     legalBusinessName: string;
     warehouseAddress: string;
