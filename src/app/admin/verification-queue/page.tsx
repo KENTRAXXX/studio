@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useFirestore, useCollection, useUserProfile } from '@/firebase';
+import { useFirestore, useCollection, useUserProfile, useMemoFirebase } from '@/firebase';
 import { collection, query, where, doc, updateDoc, setDoc, getDoc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Loader2, ShieldCheck, Check, X, FileText, MapPin, MessageSquareText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { sendWelcomeEmail } from '@/ai/flows/send-welcome-email';
@@ -124,9 +123,10 @@ export default function VerificationQueuePage() {
     }
   }, [userProfile, profileLoading, router]);
 
-  const pendingUsersQuery = firestore 
-    ? query(collection(firestore, 'users'), where('status', '==', 'pending_review')) 
-    : null;
+  const pendingUsersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'users'), where('status', '==', 'pending_review'));
+  }, [firestore]);
   
   const { data: pendingSellers, loading: usersLoading } = useCollection<PendingSeller>(pendingUsersQuery);
 

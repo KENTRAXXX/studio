@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -7,9 +6,8 @@ import {
   where,
   writeBatch,
   doc,
-  addDoc,
 } from 'firebase/firestore';
-import { useCollection, useFirestore, useUserProfile } from '@/firebase';
+import { useCollection, useFirestore, useUserProfile, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -28,9 +26,12 @@ export default function ApprovalQueuePage() {
   const { userProfile, loading: profileLoading } = useUserProfile();
   const router = useRouter();
   
-  const pendingProductsRef = firestore ? collection(firestore, 'Pending_Master_Catalog') : null;
-  const q = pendingProductsRef ? query(pendingProductsRef, where('isApproved', '==', false)) : null;
-  const { data: pendingProducts, loading: productsLoading } = useCollection<PendingProduct>(q);
+  const pendingProductsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'Pending_Master_Catalog'), where('isApproved', '==', false));
+  }, [firestore]);
+
+  const { data: pendingProducts, loading: productsLoading } = useCollection<PendingProduct>(pendingProductsQuery);
 
   useEffect(() => {
     if (!profileLoading) {

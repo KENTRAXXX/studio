@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useFirestore, useUserProfile, useCollection } from '@/firebase';
+import { useFirestore, useUserProfile, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, collectionGroup } from 'firebase/firestore';
 import {
   Card,
@@ -62,10 +62,18 @@ export default function AdminOrdersPage() {
     }
   }, [userProfile, profileLoading, router]);
 
-  const allOrdersQuery = firestore ? query(collectionGroup(firestore, 'orders'), orderBy('createdAt', 'desc')) : null;
+  const allOrdersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collectionGroup(firestore, 'orders'), orderBy('createdAt', 'desc'));
+  }, [firestore]);
+
   const { data: allOrders, loading: ordersLoading } = useCollection<Order>(allOrdersQuery);
 
-  const allStoresQuery = firestore ? query(collection(firestore, 'stores')) : null;
+  const allStoresQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'stores'));
+  }, [firestore]);
+
   const { data: allStores, loading: storesLoading } = useCollection<Store>(allStoresQuery);
 
   const storesMap = useMemo(() => {

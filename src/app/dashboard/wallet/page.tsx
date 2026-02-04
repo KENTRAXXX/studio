@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useUser, useFirestore, useCollection, useUserProfile } from '@/firebase';
+import { useUser, useFirestore, useCollection, useUserProfile, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,12 +15,16 @@ export default function SomaWalletPage() {
     const firestore = useFirestore();
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const payoutsRef = firestore && user ? query(collection(firestore, 'payouts_pending'), where('userId', '==', user.uid)) : null;
-    const { data: payoutDocs, loading: payoutsLoading } = useCollection(payoutsRef);
+    const payoutsQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return query(collection(firestore, 'payouts_pending'), where('userId', '==', user.uid));
+    }, [firestore, user]);
+
+    const { data: payoutDocs, loading: payoutsLoading } = useCollection(payoutsQuery);
 
     const availableBalance = useMemo(() => {
         if (!payoutDocs) return 0;
-        return payoutDocs.reduce((acc, doc) => acc + (doc.amount || 0), 0);
+        return payoutDocs.reduce((acc, doc: any) => acc + (doc.amount || 0), 0);
     }, [payoutDocs]);
     
     const isLoading = userLoading || payoutsLoading || profileLoading;

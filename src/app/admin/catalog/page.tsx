@@ -18,7 +18,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 import { useUserProfile } from '@/firebase/user-profile-provider';
-import { useFirestore, useCollection } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { AddMasterProductModal } from '@/components/AddMasterProductModal';
@@ -51,8 +51,12 @@ export default function AdminCatalogPage() {
     }
   }, [userProfile, profileLoading, router]);
 
-  const catalogRef = firestore ? query(collection(firestore, 'Master_Catalog')) : null;
-  const { data: masterCatalog, loading: productsLoading } = useCollection<MasterProduct>(catalogRef);
+  const catalogQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'Master_Catalog'));
+  }, [firestore]);
+
+  const { data: masterCatalog, loading: productsLoading } = useCollection<MasterProduct>(catalogQuery);
 
   const handleEditClick = (product: MasterProduct) => {
     setSelectedProduct(product);

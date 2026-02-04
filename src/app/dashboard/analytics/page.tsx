@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useUser, useFirestore, useCollection } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart2, DollarSign, Loader2, Package, TrendingUp } from 'lucide-react';
@@ -49,7 +49,7 @@ export default function AnalyticsPage() {
   const { user, loading: userLoading } = useUser();
   const firestore = useFirestore();
 
-  const ordersRef = useMemo(() => {
+  const ordersQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return query(
       collection(firestore, `stores/${user.uid}/orders`),
@@ -57,7 +57,7 @@ export default function AnalyticsPage() {
     );
   }, [user, firestore]);
 
-  const { data: orders, loading: ordersLoading } = useCollection<Order>(ordersRef);
+  const { data: orders, loading: ordersLoading } = useCollection<Order>(ordersQuery);
 
   const { totalRevenue, totalOrders, totalWholesaleCost, netProfit, salesByDay } = useMemo(() => {
     if (!orders) {

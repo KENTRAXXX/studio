@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
@@ -12,7 +12,7 @@ import {
   serverTimestamp,
   orderBy,
 } from 'firebase/firestore';
-import { useFirestore, useCollection, useUserProfile } from '@/firebase';
+import { useFirestore, useCollection, useUserProfile, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -35,10 +34,7 @@ import {
   XCircle,
   Eye,
   Gem,
-  LayoutGrid,
   TrendingUp,
-  AlertCircle,
-  ArrowLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { sendActionRequiredEmail } from '@/ai/flows/send-action-required-email';
@@ -80,7 +76,7 @@ export default function ProductCurationPage() {
   }, [userProfile, profileLoading, router]);
 
   // Data Fetching
-  const curationQuery = useMemo(() => {
+  const curationQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(
       collection(firestore, 'Master_Catalog'),
@@ -137,7 +133,7 @@ export default function ProductCurationPage() {
         rejectedAt: serverTimestamp(),
       });
 
-      // Notification logic (Simulated for this tool context)
+      // Notification logic
       await sendActionRequiredEmail({
         to: selectedProduct.vendorId, // Assuming vendorId is the email or linked to one
         name: 'SOMA Supplier',

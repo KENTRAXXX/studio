@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useCollection, useUserProfile } from '@/firebase';
+import { useUser, useFirestore, useCollection, useUserProfile, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -65,11 +65,19 @@ export default function BackstageFinancesPage() {
         }
     }, [userProfile, profileLoading, router]);
 
-    const pendingPayoutsRef = firestore && user ? query(collection(firestore, 'payouts_pending'), where('userId', '==', user.uid)) : null;
-    const { data: pendingPayouts, loading: payoutsLoading } = useCollection<Payout>(pendingPayoutsRef);
+    const pendingPayoutsQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return query(collection(firestore, 'payouts_pending'), where('userId', '==', user.uid));
+    }, [firestore, user]);
+
+    const { data: pendingPayouts, loading: payoutsLoading } = useCollection<Payout>(pendingPayoutsQuery);
     
-    const completedWithdrawalsRef = firestore && user ? query(collection(firestore, 'withdrawal_requests'), where('userId', '==', user.uid), where('status', '==', 'completed'), orderBy('paidAt', 'desc')) : null;
-    const { data: completedWithdrawals, loading: withdrawalsLoading } = useCollection<Withdrawal>(completedWithdrawalsRef);
+    const completedWithdrawalsQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return query(collection(firestore, 'withdrawal_requests'), where('userId', '==', user.uid), where('status', '==', 'completed'), orderBy('paidAt', 'desc'));
+    }, [firestore, user]);
+
+    const { data: completedWithdrawals, loading: withdrawalsLoading } = useCollection<Withdrawal>(completedWithdrawalsQuery);
 
     const { totalEarned, platformFees } = useMemo(() => {
         if (!pendingPayouts) return { totalEarned: 0, platformFees: 0 };

@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { useUser, useCollection, useFirestore, useUserProfile } from '@/firebase';
+import { useCollection, useFirestore, useUserProfile, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, query, doc, updateDoc } from 'firebase/firestore';
 import {
@@ -26,7 +25,6 @@ import { Input } from '@/components/ui/input';
 import {
   Loader2,
   Users,
-  ShieldCheck,
   Search,
   CheckCircle,
   XCircle,
@@ -90,8 +88,12 @@ export default function UserManagementPage() {
   const [tierFilter, setTierFilter] = useState('all');
   const [processingId, setProcessingId] = useState<string | null>(null);
   
-  const usersRef = firestore ? query(collection(firestore, 'users')) : null;
-  const { data: users, loading: usersLoading } = useCollection<UserProfile>(usersRef);
+  const usersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'users'));
+  }, [firestore]);
+
+  const { data: users, loading: usersLoading } = useCollection<UserProfile>(usersQuery);
 
   useEffect(() => {
     if (!profileLoading) {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useUser, useUserProfile, useFirestore, useCollection } from '@/firebase';
+import { useUser, useUserProfile, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -23,7 +23,7 @@ export default function ReferralsPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
 
-    const referralsQuery = useMemo(() => {
+    const referralsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return query(collection(firestore, 'users'), where('referredBy', '==', user.uid));
     }, [firestore, user]);
