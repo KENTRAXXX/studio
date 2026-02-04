@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -232,7 +233,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
                         <p><span className="font-medium text-muted-foreground">Account:</span> ****{userProfile.bankDetails.accountNumber.slice(-4)}</p>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                        To protect your security, payout details are locked after the first withdrawal. Please contact support to change your bank account.
+                        Payout details are locked after the first withdrawal. Contact support to change bank accounts.
                     </p>
                 </div>
             ) : (

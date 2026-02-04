@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -132,7 +133,6 @@ export default function BackstageFinancesPage() {
                                 <CardContent>
                                      {isLoading ? <Loader2 className="h-8 w-8 animate-spin text-slate-400" /> : <div className="text-3xl font-bold text-slate-200">${platformFees.toFixed(2)}</div>}
                                 </CardContent>
-                            </Card>
                              <Card className="border-slate-700 bg-slate-900/50">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="text-sm font-medium text-slate-400">Next Payout Date</CardTitle>

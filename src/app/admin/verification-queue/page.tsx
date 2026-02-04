@@ -4,14 +4,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useCollection, useUserProfile } from '@/firebase';
-import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, doc, updateDoc, setDoc, getDoc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ShieldCheck, ExternalLink, Check, X, FileText, MapPin } from 'lucide-react';
+import { Loader2, ShieldCheck, Check, X, FileText, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import SomaLogo from '@/components/logo';
 import { sendWelcomeEmail } from '@/ai/flows/send-welcome-email';
 
 type PendingSeller = {
@@ -37,7 +36,6 @@ export default function VerificationQueuePage() {
   const { toast } = useToast();
   const [processingId, setProcessingId] = useState<string | null>(null);
 
-  // Auth Guard
   useEffect(() => {
     if (!profileLoading) {
       if (!userProfile || userProfile.userRole !== 'ADMIN') {
@@ -61,7 +59,21 @@ export default function VerificationQueuePage() {
       await updateDoc(userRef, { status: decision });
 
       if (decision === 'approved') {
-        // Trigger welcome email
+        // 1. Provision a basic store record for reference (if needed by platform logic)
+        const storeRef = doc(firestore, 'stores', seller.id);
+        const storeSnap = await getDoc(storeRef);
+        if (!storeSnap.exists()) {
+            await setDoc(storeRef, {
+                userId: seller.id,
+                storeName: seller.verificationData.legalBusinessName || 'SOMA Supplier',
+                status: 'Live',
+                createdAt: new Date().toISOString(),
+                theme: 'Minimalist',
+                currency: 'USD'
+            });
+        }
+
+        // 2. Trigger the official Welcome to SOMA email
         await sendWelcomeEmail({
           to: seller.email,
           storeName: seller.verificationData.legalBusinessName || 'Your SOMA Store',
@@ -69,7 +81,7 @@ export default function VerificationQueuePage() {
 
         toast({
           title: 'Seller Approved',
-          description: `${seller.verificationData.legalBusinessName} has been verified and notified.`,
+          description: `${seller.verificationData.legalBusinessName} is now live and notified.`,
         });
       } else {
         toast({
@@ -112,7 +124,7 @@ export default function VerificationQueuePage() {
         <CardHeader>
           <CardTitle>Pending Supplier Applications</CardTitle>
           <CardDescription>
-            Review business credentials and identity documents for new SOMA suppliers.
+            Verify business credentials before granting full Master Catalog access.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -120,7 +132,7 @@ export default function VerificationQueuePage() {
             <div className="flex flex-col items-center justify-center text-center h-64 border-2 border-dashed border-primary/20 rounded-lg">
               <ShieldCheck className="h-16 w-16 text-muted-foreground mb-4" />
               <h3 className="text-xl font-bold font-headline text-primary">All Clear</h3>
-              <p className="text-muted-foreground mt-2">There are no pending verification requests at this time.</p>
+              <p className="text-muted-foreground mt-2">No pending applications at this time.</p>
             </div>
           ) : (
             <Table>

@@ -187,16 +187,14 @@ export async function POST(req: Request) {
         return NextResponse.json({ status: 'success', message: 'Event acknowledged, no metadata.' });
     }
 
-    const { userId, plan, cart, storeId, planTier: rawPlanTier } = metadata;
+    const { userId, plan, cart, storeId, planTier } = metadata;
 
     if (cart && storeId) {
         await executePaymentSplit(event.data);
     } else if (userId) {
         try {
+            // 1. Grant access in Firestore
             const userRef = doc(firestore, "users", userId);
-            const userSnap = await getDoc(userRef);
-
-            // 1. Update User Access Status
             await updateDoc(userRef, {
                 hasAccess: true,
                 paidAt: new Date().toISOString(),
@@ -204,14 +202,17 @@ export async function POST(req: Request) {
 
             console.log(`Paystack webhook: Access granted for ${userId}`);
 
-            // 2. Trigger welcome flow
-            const planTier = (rawPlanTier && rawPlanTier !== 'MOGUL') ? rawPlanTier : 'SCALER';
+            // 2. Trigger welcome flow ONLY for Mogul tiers. 
+            // Brand/Seller verification happens first, then they get their welcome email.
+            const isSupplierTier = planTier === 'SELLER' || planTier === 'BRAND';
             
-            await createClientStore({
-                userId,
-                email: customer.email,
-                storeName: 'Your SOMA Store', // Default placeholder until they name it
-            });
+            if (!isSupplierTier) {
+                await createClientStore({
+                    userId,
+                    email: customer.email,
+                    storeName: 'Your SOMA Store',
+                });
+            }
             
         } catch (error: any) {
             console.error(`Failed to handle signup success for ${userId}:`, error);
