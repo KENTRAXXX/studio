@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -37,24 +36,18 @@ import {
   Accessibility,
   Wallet,
   ShoppingBag,
-  ShieldCheck,
   GraduationCap,
   Package,
-  Landmark,
-  PiggyBank,
   Users,
   Gift,
-  Gem,
   User,
-  ClipboardList,
-  SearchCode,
-  Image as ImageIcon,
+  ImageIcon,
   FolderOpen,
   Warehouse,
   MessageSquare,
   LogOut,
   Palette,
-  ShieldAlert
+  ShieldCheck
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
@@ -121,19 +114,6 @@ const sellerNavItems = [
     { href: '/backstage', icon: ShieldCheck, label: 'Onboarding Status' },
 ];
 
-const adminNavItems = [
-    { href: '/admin/concierge', icon: MessageSquare, label: 'Concierge Inbox' },
-    { href: '/admin/curation', icon: SearchCode, label: 'Product Curation' },
-    { href: '/admin/verification-queue', icon: ClipboardList, label: 'Verification Queue' },
-    { href: '/admin/approval-queue', icon: ShieldCheck, label: 'Catalog Approvals' },
-    { href: '/admin/treasury', icon: PiggyBank, label: 'Treasury' },
-    { href: '/admin/users', icon: Users, label: 'User Management' },
-    { href: '/admin/referrals', icon: ShieldAlert, label: 'Referral Audit' },
-    { href: '/admin/orders', icon: ShoppingBag, label: 'Admin Orders' },
-    { href: '/admin/catalog', icon: Gem, label: 'Catalog Editor' },
-    { href: '/dashboard/product-catalog', icon: Boxes, label: 'View Global Catalog' },
-];
-
 export default function DashboardLayout({
   children,
 }: {
@@ -158,8 +138,9 @@ export default function DashboardLayout({
   const currentNavItems = useMemo(() => {
     if (!userProfile) return [];
 
+    // Admins are redirected to /admin, but we keep this fallback just in case
     if (userProfile.userRole === 'ADMIN') {
-        return enterpriseNavItems; // Admins see everything
+        return [];
     }
 
     const isPendingReview = userProfile.status === 'pending_review';
@@ -173,12 +154,10 @@ export default function DashboardLayout({
             return enterpriseNavItems;
         case 'SELLER':
         case 'BRAND':
-            // If pending review, only show the non-financial/non-product tools
             if (isPendingReview) {
                 return sellerNavItems.filter(item => 
                     item.href === '/dashboard' || 
                     item.href === '/backstage' || 
-                    item.href === '/backstage/pending-review' ||
                     item.href === '/backstage/concierge'
                 );
             }
@@ -188,15 +167,13 @@ export default function DashboardLayout({
     }
   }, [userProfile]);
 
-  const isAdmin = userProfile?.userRole === 'ADMIN';
-
   return (
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-2">
             <SomaLogo className="h-6 w-6 text-primary" aria-hidden="true" />
-            <span className="font-headline font-bold text-xl text-primary">SomaDS</span>
+            <span className="font-headline font-bold text-xl text-primary uppercase tracking-tighter">SomaDS</span>
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -211,24 +188,6 @@ export default function DashboardLayout({
                 </Link>
               </SidebarMenuItem>
             ))}
-
-            {isAdmin && (
-              <>
-                <SidebarMenuItem>
-                    <div className="p-2 text-xs font-medium text-muted-foreground uppercase tracking-wider mt-4">Platform Administration</div>
-                </SidebarMenuItem>
-                {adminNavItems.map((item) => (
-                  <SidebarMenuItem key={item.href}>
-                    <Link href={item.href}>
-                      <SidebarMenuButton tooltip={item.label}>
-                        <item.icon aria-hidden="true" />
-                        <span>{item.label}</span>
-                      </SidebarMenuButton>
-                    </Link>
-                  </SidebarMenuItem>
-                ))}
-              </>
-            )}
           </SidebarMenu>
         </SidebarContent>
         <SidebarSeparator />

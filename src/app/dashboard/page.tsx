@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useCollection, useDoc, useUserProfile, useMemoFirebase } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
@@ -33,6 +33,14 @@ export default function DashboardOverviewPage() {
     const { user, loading: userLoading } = useUser();
     const { userProfile, loading: profileLoading } = useUserProfile();
     const firestore = useFirestore();
+    const router = useRouter();
+
+    // Redirect Admins to the specialized /admin layout
+    useEffect(() => {
+        if (!profileLoading && userProfile?.userRole === 'ADMIN') {
+            router.push('/admin');
+        }
+    }, [userProfile, profileLoading, router]);
 
     // Data fetching for overview metrics
     const storeRef = useMemoFirebase(() => user && firestore ? doc(firestore, 'stores', user.uid) : null, [user, firestore]);
@@ -51,7 +59,7 @@ export default function DashboardOverviewPage() {
         return orders?.reduce((acc, order) => acc + order.total, 0) || 0;
     }, [orders]);
 
-    if (isLoading) {
+    if (isLoading || userProfile?.userRole === 'ADMIN') {
         return (
             <div className="flex h-96 w-full items-center justify-center">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -64,8 +72,8 @@ export default function DashboardOverviewPage() {
         return <CompletePaymentPrompt />;
     }
 
-    // Special view for Sellers, Brands, and Admins handled by DashboardController
-    if (userProfile?.userRole === 'ADMIN' || userProfile?.planTier === 'SELLER' || userProfile?.planTier === 'BRAND') {
+    // Special view for Sellers and Brands handled by DashboardController
+    if (userProfile?.planTier === 'SELLER' || userProfile?.planTier === 'BRAND') {
         return <DashboardController planTier={userProfile.planTier} />;
     }
 
