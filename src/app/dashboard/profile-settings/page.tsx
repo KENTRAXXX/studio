@@ -365,7 +365,7 @@ export default function ProfileSettingsPage() {
                                             <FormLabel>Public Bio</FormLabel>
                                             <FormControl>
                                                 <Textarea 
-                                                    placeholder="Describe your boutique's mission and philosophy..." 
+                                                    placeholder="Describe your boutique's mission and philosophy... (e.g. 'Crafting timeless elegance for the modern aristocrat.')" 
                                                     className="min-h-[120px] border-primary/20 resize-none"
                                                     {...field}
                                                 />

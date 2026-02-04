@@ -52,18 +52,19 @@ export default function CheckerForm() {
   const handleAutomatedAudit = () => {
     if (!storeData) return;
 
-    // Construct a "Virtual Component" string based on their live configuration
+    // Construct a semantic Virtual Component string based on their live configuration
     const virtualComponent = `
-      <BoutiqueHeader 
-        storeName="${storeData.storeName}"
-        tagline="${storeData.heroTitle}"
-        theme="${storeData.themeConfig?.id || 'onyx'}"
-        primaryColor="${storeData.themeConfig?.colors?.primary || '45 74% 51%'}"
-        background="${storeData.themeConfig?.colors?.background || '0 0% 2%'}"
-      />
-      <BoutiqueBio>
-        ${userProfile?.bio || 'No bio provided.'}
-      </BoutiqueBio>
+      <header>
+        <h1>${storeData.storeName}</h1>
+        <p>${storeData.heroTitle}</p>
+      </header>
+      <section aria-label="Boutique Biography">
+        <h2>About Our Brand</h2>
+        <p>${userProfile?.bio || 'No brand narrative established yet. Complete your profile to share your luxury vision with the world.'}</p>
+      </section>
+      <footer>
+        <p>&copy; 2024 ${storeData.storeName}</p>
+      </footer>
     `;
 
     const formData = new FormData();

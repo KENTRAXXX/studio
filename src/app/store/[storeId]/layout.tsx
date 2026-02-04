@@ -225,9 +225,9 @@ export default function StoreLayout({
                 ) : (
                     <SomaLogo className="h-8 w-8 text-primary" />
                 )}
-                <span className="font-headline text-2xl font-bold text-primary tracking-tighter transition-colors group-hover:text-primary/80">
+                <h1 className="font-headline text-2xl font-bold text-primary tracking-tighter transition-colors group-hover:text-primary/80">
                     {storeLoading ? 'Loading...' : storeName}
-                </span>
+                </h1>
               </Link>
               <div className="flex items-center gap-4">
                 <div className="relative hidden md:block">

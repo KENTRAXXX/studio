@@ -18,7 +18,7 @@ export function HeroSection({ imageUrl, title, subtitle }: HeroSectionProps) {
   };
   
   return (
-    <section className="relative h-[60vh] w-full flex items-center justify-center text-center text-white">
+    <section className="relative h-[60vh] w-full flex items-center justify-center text-center text-white" aria-labelledby="hero-title">
       {imageUrl && (
         <Image
           src={imageUrl}
@@ -31,9 +31,9 @@ export function HeroSection({ imageUrl, title, subtitle }: HeroSectionProps) {
       )}
       <div className="absolute inset-0 bg-black/50" />
       <div className="relative z-10 p-4">
-        <h1 className="text-5xl md:text-7xl font-extrabold font-headline text-primary animate-gold-pulse">
+        <h2 id="hero-title" className="text-5xl md:text-7xl font-extrabold font-headline text-primary animate-gold-pulse">
           {title}
-        </h1>
+        </h2>
         <p className="mt-4 text-lg md:text-xl max-w-2xl mx-auto">
           {subtitle}
         </p>
