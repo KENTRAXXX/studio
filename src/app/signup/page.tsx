@@ -99,8 +99,9 @@ function SignUpForm() {
             title: isFreePlan ? 'Account Created!' : 'Payment Successful!',
             description: isFreePlan ? "You're all set." : 'Your store is being provisioned. This may take a moment.',
           });
-          const redirectPath = (planTier === 'SELLER' || planTier === 'BRAND') ? '/backstage' : '/dashboard';
-          router.push(redirectPath);
+          
+          // Unified redirection to the return page for premium loading state
+          router.push('/backstage/return');
         };
 
         const onPaystackClose = () => {
@@ -109,8 +110,7 @@ function SignUpForm() {
             title: 'Payment Incomplete',
             description: 'Your store will not be created until payment is complete. You can restart from your dashboard.',
           });
-          const redirectPath = (planTier === 'SELLER' || planTier === 'BRAND') ? '/backstage' : '/dashboard';
-          router.push(redirectPath);
+          router.push('/backstage/return');
         };
 
         await initializePayment({

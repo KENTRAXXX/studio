@@ -84,6 +84,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
     const isLegalPage = pathname.startsWith('/legal');
     const isAccessDeniedPage = pathname === '/access-denied';
     const isPendingReviewPage = pathname === '/backstage/pending-review';
+    const isReturnPage = pathname === '/backstage/return';
 
     if (userProfile) {
        // 1. Check if account is disabled
@@ -93,7 +94,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
        }
       
        // 2. Check if terms have been accepted (bypass for Admins)
-       if (userProfile.userRole !== 'ADMIN' && userProfile.hasAcceptedTerms === false && !isLegalPage && !isPublicRoute && !isPendingReviewPage) {
+       if (userProfile.userRole !== 'ADMIN' && userProfile.hasAcceptedTerms === false && !isLegalPage && !isPublicRoute && !isPendingReviewPage && !isReturnPage) {
          router.push('/legal/terms');
          return;
        }
