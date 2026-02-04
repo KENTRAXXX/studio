@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
-import { Gem, PlusCircle, Loader2, Check, Warehouse, TrendingUp, Sparkles } from 'lucide-react';
+import { Gem, Loader2, Check, Warehouse, Sparkles } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -97,18 +97,6 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
     }
   }, [userProductsRef]);
 
-  const handleAddToCatalog = () => {
-    if (userProfile?.planTier === 'SELLER') {
-      router.push('/backstage/add-product');
-    } else {
-      toast({
-        title: 'Redirecting to Seller Onboarding...',
-        description: 'You need to be a verified seller to add products.',
-      });
-      router.push('/backstage');
-    }
-  };
-
   const handleSync = async (product: Product) => {
     if (isDemo) {
         toast({ title: 'Demo Action', description: 'This is a demo. Syncing is disabled.'});
@@ -178,15 +166,11 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Gem className="h-8 w-8 text-primary" />
+          < Gem className="h-8 w-8 text-primary" />
           <h1 className="text-3xl font-bold font-headline">
             Global Product Catalog
           </h1>
         </div>
-        <Button onClick={handleAddToCatalog} className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
-          <PlusCircle className="mr-2 h-5 w-5" />
-          Add to Global Catalog
-        </Button>
       </div>
 
       <Card className="border-primary/50">
