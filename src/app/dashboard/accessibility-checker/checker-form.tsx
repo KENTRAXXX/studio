@@ -9,6 +9,7 @@ import { Loader2, Sparkles, Monitor, Code2, AlertCircle, CheckCircle2 } from "lu
 import { useUserProfile, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { cn } from "@/lib/utils";
+import { AnimatePresence, motion } from "framer-motion";
 
 type AIState = {
   suggestions?: string;
