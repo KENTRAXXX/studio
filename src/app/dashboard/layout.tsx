@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   SidebarProvider,
@@ -16,6 +16,17 @@ import {
   SidebarInset,
   SidebarSeparator,
 } from '@/components/ui/sidebar';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   LayoutDashboard,
   Settings,
@@ -45,6 +56,7 @@ import {
 import SomaLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
 import { useAuth } from '@/firebase';
+import { Button } from '@/components/ui/button';
 
 const scalerNavItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
@@ -122,13 +134,13 @@ export default function DashboardLayout({
   const { userProfile } = useUserProfile();
   const auth = useAuth();
   const router = useRouter();
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
   const handleLogout = async () => {
     if (!auth) return;
     try {
       await auth.signOut();
       router.push('/');
-      // Ensuring a clean state for the next user
       window.location.reload();
     } catch (error) {
       console.error('Logout failed:', error);
@@ -215,13 +227,36 @@ export default function DashboardLayout({
         <SidebarFooter>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton 
-                onClick={handleLogout}
-                className="text-muted-foreground hover:text-red-400 transition-colors"
-              >
-                <LogOut className="h-4 w-4" />
-                <span>Sign Out</span>
-              </SidebarMenuButton>
+              <AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
+                <AlertDialogTrigger asChild>
+                  <SidebarMenuButton 
+                    className="text-muted-foreground hover:text-red-400 transition-colors"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Sign Out</span>
+                  </SidebarMenuButton>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="bg-card border-primary/30 max-w-sm">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="font-headline text-xl text-primary text-center">Executive Departure</AlertDialogTitle>
+                    <AlertDialogDescription className="text-center text-slate-400 pt-2">
+                      Are you sure you wish to exit the SOMA ecosystem?
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="flex flex-col sm:flex-row gap-3 pt-6 sm:justify-center">
+                    <AlertDialogCancel asChild>
+                      <Button variant="outline" className="border-primary text-primary hover:bg-primary/10 w-full sm:w-28 h-11">
+                        Stay
+                      </Button>
+                    </AlertDialogCancel>
+                    <AlertDialogAction asChild>
+                      <Button onClick={handleLogout} className="bg-slate-800 hover:bg-slate-700 text-slate-200 w-full sm:w-28 h-11">
+                        Logout
+                      </Button>
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>
