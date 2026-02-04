@@ -1,20 +1,30 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser, useFirestore, useUserProfile } from '@/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import { Loader2, ShieldCheck, Crown, Rocket } from 'lucide-react';
+import { Loader2, Crown, Rocket } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 
 export default function BackstageReturnPage() {
   const { user, loading: userLoading } = useUser();
+  const { userProfile, loading: profileLoading } = useUserProfile();
   const firestore = useFirestore();
   const router = useRouter();
+  
   const [statusMessage, setStatusMessage] = useState('Verifying payment integrity...');
   const [isFinalizing, setIsFinalizing] = useState(false);
+
+  // Determine the friendly label for the user's role
+  const tierLabel = useMemo(() => {
+    if (!userProfile) return 'Mogul';
+    if (userProfile.planTier === 'BRAND') return 'Brand';
+    if (userProfile.planTier === 'SELLER') return 'Seller';
+    return 'Mogul';
+  }, [userProfile]);
 
   useEffect(() => {
     if (userLoading || !user || !firestore) return;
@@ -26,7 +36,7 @@ export default function BackstageReturnPage() {
       const data = snapshot.data();
       if (data?.hasAccess) {
         setIsFinalizing(true);
-        setStatusMessage('Mogul access granted. Welcome to the elite.');
+        setStatusMessage(`${tierLabel} access granted. Welcome to the elite.`);
         
         // Trigger gold confetti celebration
         const duration = 3 * 1000;
@@ -63,13 +73,23 @@ export default function BackstageReturnPage() {
         }, 3000);
       } else {
           // Progress simulation for better UX
-          setTimeout(() => setStatusMessage('Finalizing your Mogul status...'), 2000);
+          setTimeout(() => setStatusMessage(`Finalizing your ${tierLabel} status...`), 2000);
           setTimeout(() => setStatusMessage('Syncing Master Catalog permissions...'), 4000);
       }
     });
 
     return () => unsubscribe();
-  }, [user, userLoading, firestore, router]);
+  }, [user, userLoading, firestore, router, tierLabel]);
+
+  const isLoading = userLoading || profileLoading;
+
+  if (isLoading && !isFinalizing) {
+    return (
+        <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-black gold-mesh-gradient text-white p-4">
