@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -9,6 +10,10 @@ service cloud.firestore {
 
     function userCanUpdateProfile(userId) {
       let isOwner = request.auth.uid == userId;
+      
+      // We check that sensitive fields are not modified by the user directly,
+      // EXCEPT when they are being set for the first time during the onboarding/payment finalization process.
+      // We use the safe get() with default values to prevent crashes if fields are missing.
       
       let emailUnchanged = request.resource.data.get('email', resource.data.get('email', '')) == resource.data.get('email', '');
       let referralCodeUnchanged = request.resource.data.get('referralCode', resource.data.get('referralCode', '')) == resource.data.get('referralCode', '');
@@ -74,7 +79,7 @@ service cloud.firestore {
     
     match /withdrawal_requests/{reqId} {
         allow create: if request.auth.uid == request.resource.data.userId;
-        allow read: if request.auth.uid == resource.data.userId || isRole('ADMIN');
+        allow read: if request.auth.uid == request.resource.data.userId || isRole('ADMIN');
         allow update: if isRole('ADMIN');
     }
     

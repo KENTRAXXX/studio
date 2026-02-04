@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -11,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Settings, Loader2, Save, Eye } from 'lucide-react';
+import { Settings, Loader2, Save, Eye, UploadCloud, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import SomaLogo from '@/components/logo';
 import Image from 'next/image';
@@ -44,7 +45,9 @@ const StorePreview = ({ formData }: { formData: Partial<SettingsFormValues> }) =
                 <div className="border rounded-lg p-4 bg-card">
                     <div className="flex items-center gap-2">
                         {formData.logoUrl ? (
-                            <Image src={formData.logoUrl} alt="logo" width={32} height={32} className="rounded-full" />
+                            <div className="relative h-8 w-8 rounded-full overflow-hidden border border-primary/20">
+                                <img src={formData.logoUrl} alt="logo" className="h-full w-full object-contain" />
+                            </div>
                         ) : (
                             <SomaLogo className="h-8 w-8" />
                         )}
@@ -52,7 +55,6 @@ const StorePreview = ({ formData }: { formData: Partial<SettingsFormValues> }) =
                     </div>
                 </div>
                  <div className="relative h-32 mt-4 rounded-lg flex items-center justify-center text-center text-white bg-black/50 overflow-hidden">
-                    {/* A simple background to simulate the hero image */}
                     <div className="absolute inset-0 bg-gradient-to-br from-black via-neutral-900 to-yellow-900/50 -z-10"></div>
                      <div className="relative z-10 p-2">
                         <h1 className="text-2xl font-bold font-headline text-primary">{formData.heroTitle || 'Hero Title'}</h1>
@@ -68,6 +70,9 @@ export default function StoreSettingsPage() {
     const { user, loading: userLoading } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
+
+    const logoInputRef = useRef<HTMLInputElement>(null);
+    const faviconInputRef = useRef<HTMLInputElement>(null);
 
     const storeRef = useMemoFirebase(() => user ? doc(firestore!, 'stores', user.uid) : null, [firestore, user]);
     const { data: storeData, loading: storeLoading } = useDoc<StoreData>(storeRef);
@@ -98,12 +103,26 @@ export default function StoreSettingsPage() {
         }
     }, [storeData, form]);
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'logoUrl' | 'faviconUrl') => {
+        const file = e.target.files?.[0];
+        if (file) {
+            // In a real app, you would upload this to Firebase Storage here
+            // For the prototype, we generate a preview URL
+            const previewUrl = URL.createObjectURL(file);
+            form.setValue(field, previewUrl);
+            toast({
+                title: 'File Selected',
+                description: `${file.name} has been selected. Remember to Save Changes.`,
+            });
+        }
+    };
+
     const handleUpdate = async (data: SettingsFormValues) => {
         if (!storeRef) return;
         
         const savingToast = toast({
             title: 'Saving...',
-            description: 'Your changes are being saved.',
+            description: 'Your luxury assets are being deployed.',
         });
 
         try {
@@ -158,7 +177,7 @@ export default function StoreSettingsPage() {
                     </CardHeader>
                     <CardContent>
                          <Form {...form}>
-                            <form onSubmit={form.handleSubmit(handleUpdate)} className="space-y-6">
+                            <form onSubmit={form.handleSubmit(handleUpdate)} className="space-y-8">
                                 <FormField control={form.control} name="storeName" render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Store Name</FormLabel>
@@ -166,22 +185,88 @@ export default function StoreSettingsPage() {
                                         <FormMessage />
                                     </FormItem>
                                 )} />
-                                <div className="grid md:grid-cols-2 gap-6">
+
+                                <div className="grid md:grid-cols-2 gap-8 pt-4">
                                      <FormField control={form.control} name="logoUrl" render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Logo URL</FormLabel>
-                                            <FormControl><Input placeholder="https://cdn.com/logo.png" {...field} /></FormControl>
+                                            <FormLabel>Store Logo</FormLabel>
+                                            <div className="flex flex-col gap-4">
+                                                {field.value ? (
+                                                    <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-primary/20 bg-muted/50 flex items-center justify-center group">
+                                                        <img src={field.value} alt="Logo preview" className="max-w-[80%] max-h-[80%] object-contain" />
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={() => field.onChange('')}
+                                                            className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        >
+                                                            <X className="h-8 w-8 text-white" />
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div 
+                                                        onClick={() => logoInputRef.current?.click()}
+                                                        className="w-full aspect-video rounded-lg border-2 border-dashed border-primary/30 hover:border-primary flex flex-col items-center justify-center cursor-pointer transition-colors bg-muted/20"
+                                                    >
+                                                        <UploadCloud className="h-10 w-10 text-muted-foreground mb-2" />
+                                                        <span className="text-sm text-muted-foreground font-medium">Upload Store Logo</span>
+                                                        <span className="text-[10px] text-muted-foreground/60 mt-1">PNG, SVG, or JPG (Max 5MB)</span>
+                                                    </div>
+                                                )}
+                                                <input 
+                                                    type="file" 
+                                                    ref={logoInputRef} 
+                                                    className="hidden" 
+                                                    accept="image/*" 
+                                                    onChange={(e) => handleFileChange(e, 'logoUrl')} 
+                                                />
+                                                <FormControl>
+                                                    <Input placeholder="Or enter logo URL manually..." {...field} className="text-xs h-8" />
+                                                </FormControl>
+                                            </div>
                                             <FormMessage />
                                         </FormItem>
                                     )} />
+
                                      <FormField control={form.control} name="faviconUrl" render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Favicon URL</FormLabel>
-                                            <FormControl><Input placeholder="https://cdn.com/favicon.ico" {...field} /></FormControl>
+                                            <FormLabel>Favicon</FormLabel>
+                                            <div className="flex flex-col gap-4">
+                                                {field.value ? (
+                                                    <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-primary/20 bg-muted/50 flex items-center justify-center group mx-auto md:mx-0">
+                                                        <img src={field.value} alt="Favicon preview" className="w-12 h-12 object-contain" />
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={() => field.onChange('')}
+                                                            className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        >
+                                                            <X className="h-6 w-6 text-white" />
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div 
+                                                        onClick={() => faviconInputRef.current?.click()}
+                                                        className="w-24 h-24 rounded-lg border-2 border-dashed border-primary/30 hover:border-primary flex flex-col items-center justify-center cursor-pointer transition-colors bg-muted/20 mx-auto md:mx-0"
+                                                    >
+                                                        <UploadCloud className="h-6 w-6 text-muted-foreground mb-1" />
+                                                        <span className="text-[10px] text-muted-foreground font-medium text-center">Upload Favicon</span>
+                                                    </div>
+                                                )}
+                                                <input 
+                                                    type="file" 
+                                                    ref={faviconInputRef} 
+                                                    className="hidden" 
+                                                    accept="image/x-icon,image/png,image/jpeg" 
+                                                    onChange={(e) => handleFileChange(e, 'faviconUrl')} 
+                                                />
+                                                <FormControl>
+                                                    <Input placeholder="Or favicon URL..." {...field} className="text-xs h-8" />
+                                                </FormControl>
+                                            </div>
                                             <FormMessage />
                                         </FormItem>
                                     )} />
                                 </div>
+
                                 <h3 className="font-semibold text-lg border-t border-border pt-6">Hero Section</h3>
                                  <FormField control={form.control} name="heroTitle" render={({ field }) => (
                                     <FormItem>
