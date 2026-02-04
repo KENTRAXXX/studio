@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
-import { Gem, PlusCircle, Loader2, Check, Warehouse, TrendingUp } from 'lucide-react';
+import { Gem, PlusCircle, Loader2, Check, Warehouse, TrendingUp, Sparkles } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -39,6 +39,8 @@ type Product = {
   productType: 'INTERNAL' | 'EXTERNAL';
   vendorId: string;
   isActive?: boolean;
+  status?: string;
+  approvedAt?: any;
 };
 
 // A unified function to get an image URL
@@ -66,10 +68,13 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
   const [syncedProducts, setSyncedProducts] = useState<Set<string>>(new Set());
   const [syncingProducts, setSyncingProducts] = useState<Set<string>>(new Set());
 
-  // Firestore logic
+  // Firestore logic - Only pull 'active' products
   const masterCatalogRef = useMemo(() => {
     if (!firestore || isDemo) return null;
-    return query(collection(firestore, 'Master_Catalog'), where('isActive', '==', true));
+    return query(
+        collection(firestore, 'Master_Catalog'), 
+        where('status', '==', 'active')
+    );
   }, [firestore, isDemo]);
   
   const { data: liveCatalog, loading: catalogLoading } = useCollection<Product>(masterCatalogRef);
@@ -160,6 +165,14 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
     }
   };
 
+  const checkIfNew = (approvedAt: any) => {
+    if (!approvedAt) return false;
+    const approvalDate = approvedAt.toDate ? approvedAt.toDate() : new Date(approvedAt);
+    const now = new Date();
+    const diffInHours = (now.getTime() - approvalDate.getTime()) / (1000 * 60 * 60);
+    return diffInHours <= 48;
+  };
+
 
   return (
     <div className="space-y-8">
@@ -178,9 +191,9 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
 
       <Card className="border-primary/50">
         <CardHeader>
-          <CardTitle>All Products</CardTitle>
+          <CardTitle>Discovery Engine</CardTitle>
           <CardDescription>
-            This is the master list of all products available for dropshipping.
+            Browse the SOMA Master Catalog for your next best-selling luxury items.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -199,7 +212,6 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
                     <TableHeader>
                     <TableRow>
                         <TableHead className="w-[80px]">Image</TableHead>
-                        <TableHead>SKU</TableHead>
                         <TableHead>Product Name</TableHead>
                         <TableHead className="text-right">Wholesale Cost</TableHead>
                         <TableHead className="text-right">Retail</TableHead>
@@ -212,6 +224,7 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
                     {masterCatalog.map((product) => {
                       const isSynced = syncedProducts.has(product.id);
                       const isSyncing = syncingProducts.has(product.id);
+                      const isNew = checkIfNew(product.approvedAt);
                       const wholesale = product.masterCost || 0;
                       const retail = product.retailPrice || 0;
                       const margin = retail > 0 ? ((retail - wholesale) / retail) * 100 : 0;
@@ -229,19 +242,28 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
                             />
                             </div>
                         </TableCell>
-                        <TableCell className="font-mono text-xs">
-                            {product.id}
+                        <TableCell>
+                            <div className="flex flex-col">
+                                <div className="flex items-center gap-2">
+                                    <span className="font-medium">{product.name}</span>
+                                    {isNew && (
+                                        <Badge className="bg-primary text-primary-foreground text-[10px] h-5 px-1.5 animate-pulse">
+                                            <Sparkles className="h-3 w-3 mr-1" /> NEW
+                                        </Badge>
+                                    )}
+                                </div>
+                                <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-tighter mt-0.5">SKU: {product.id.slice(0, 8)}</span>
+                            </div>
                         </TableCell>
-                        <TableCell className="font-medium">{product.name}</TableCell>
-                        <TableCell className="text-right font-mono">
+                        <TableCell className="text-right font-mono text-sm">
                             ${wholesale.toFixed(2)}
                         </TableCell>
-                        <TableCell className="text-right font-mono">
+                        <TableCell className="text-right font-mono text-sm">
                             ${retail.toFixed(2)}
                         </TableCell>
                         <TableCell className="text-center">
                             <div className={cn(
-                                "font-bold font-mono",
+                                "font-bold font-mono text-sm",
                                 margin < 20 ? "text-orange-500" : margin > 40 ? "text-primary" : "text-muted-foreground"
                             )}>
                                 {margin.toFixed(0)}%
@@ -250,13 +272,12 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
                         <TableCell className="text-center">
                             <Badge
                             variant={
-                                product.stockLevel > 20 ? 'default' : 'destructive'
+                                product.stockLevel > 20 ? 'outline' : 'destructive'
                             }
-                            className={
-                                product.stockLevel > 20
-                                ? 'bg-green-600/20 text-green-400 border-green-600/50'
-                                : ''
-                            }
+                            className={cn(
+                                "text-[10px]",
+                                product.stockLevel > 20 && 'bg-green-600/10 text-green-400 border-green-600/20'
+                            )}
                             >
                             {product.stockLevel}
                             </Badge>
@@ -272,8 +293,9 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
                                 size="sm"
                                 onClick={() => handleSync(product)}
                                 disabled={isSyncing}
+                                className="border-primary/20 hover:border-primary/50"
                               >
-                                {isSyncing ? <Loader2 className="animate-spin" /> : 'Sync'}
+                                {isSyncing ? <Loader2 className="animate-spin" /> : 'Sync Item'}
                               </Button>
                            )}
                         </TableCell>
