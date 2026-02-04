@@ -14,9 +14,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { User, Loader2, Save, Camera, CheckCircle2, BookOpen } from 'lucide-react';
+import { User, Loader2, Save, Camera, CheckCircle2, BookOpen, ShieldCheck, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 const profileSchema = z.object({
@@ -126,13 +127,27 @@ export default function ProfileSettingsPage() {
     
     return (
         <div className="space-y-8 max-w-4xl mx-auto">
-            <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
-                    <User className="h-8 w-8 text-primary" />
-                </div>
-                <div>
-                    <h1 className="text-3xl font-bold font-headline">Profile Settings</h1>
-                    <p className="text-muted-foreground">Manage your public identity and brand persona.</p>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
+                        <User className="h-8 w-8 text-primary" />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-3xl font-bold font-headline">Profile Settings</h1>
+                            {userProfile?.walletStatus === 'under_review' && (
+                                <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/50 flex items-center gap-1">
+                                    <Clock className="h-3 w-3" /> Verification Pending
+                                </Badge>
+                            )}
+                            {userProfile?.walletStatus === 'active' && (
+                                <Badge className="bg-primary/20 text-primary border-primary/50 flex items-center gap-1">
+                                    <ShieldCheck className="h-3 w-3" /> SOMA Verified Mogul
+                                </Badge>
+                            )}
+                        </div>
+                        <p className="text-muted-foreground mt-1">Manage your public identity and brand persona.</p>
+                    </div>
                 </div>
             </div>
             
