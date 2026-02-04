@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useMemo } from 'react';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, doc, query, orderBy } from 'firebase/firestore';
+import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
     BarChart2, 
@@ -14,16 +15,21 @@ import {
     ShoppingBag, 
     ArrowUpRight,
     MousePointer2,
-    Target
+    Target,
+    Globe,
+    BarChart3
 } from 'lucide-react';
 import {
   ResponsiveContainer,
   LineChart,
   Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
+  Cell
 } from 'recharts';
 import { format } from 'date-fns';
 import { formatCurrency } from '@/utils/format';
@@ -47,14 +53,22 @@ type Order = {
 type StoreData = {
     visitorCount?: number;
     productViewCount?: number;
+    customDomain?: string;
+}
+
+type TrafficLog = {
+    source: string;
+    timestamp: any;
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-background/80 backdrop-blur-sm p-2 border border-primary/50 rounded-lg shadow-lg">
-        <p className="label font-bold text-primary">{`${format(new Date(label), 'PPP')}`}</p>
-        <p className="intro text-sm text-foreground">{`Sales : ${formatCurrency(Math.round(payload[0].value * 100))}`}</p>
+        <p className="label font-bold text-primary">{label.includes('-') ? format(new Date(label), 'PPP') : label}</p>
+        <p className="intro text-sm text-foreground">
+            {payload[0].name === 'total' ? `Sales : ${formatCurrency(Math.round(payload[0].value * 100))}` : `Visits : ${payload[0].value}`}
+        </p>
       </div>
     );
   }
@@ -114,6 +128,17 @@ export default function AnalyticsPage() {
 
   const { data: orders, loading: ordersLoading } = useCollection<Order>(ordersQuery);
 
+  const trafficQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(
+        collection(firestore, `stores/${user.uid}/traffic_logs`),
+        orderBy('timestamp', 'desc'),
+        limit(500)
+    );
+  }, [user, firestore]);
+
+  const { data: trafficLogs, loading: trafficLoading } = useCollection<TrafficLog>(trafficQuery);
+
   const stats = useMemo(() => {
     if (!orders) {
       return { 
@@ -160,8 +185,19 @@ export default function AnalyticsPage() {
       avgOrderValue: aov
     };
   }, [orders, storeData]);
+
+  const trafficData = useMemo(() => {
+      if (!trafficLogs) return [];
+      const sources: Record<string, number> = {};
+      trafficLogs.forEach(log => {
+          sources[log.source] = (sources[log.source] || 0) + 1;
+      });
+      return Object.entries(sources)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value);
+  }, [trafficLogs]);
   
-  const isLoading = userLoading || ordersLoading || storeLoading;
+  const isLoading = userLoading || ordersLoading || storeLoading || trafficLoading;
 
   if (isLoading) {
       return (
@@ -284,10 +320,56 @@ export default function AnalyticsPage() {
             </CardContent>
         </Card>
 
-        {/* Sales Trajectory */}
+        {/* Traffic Sources */}
         <Card className="lg:col-span-7 border-primary/20 bg-card/30">
             <CardHeader>
-                <CardTitle className="text-xl font-headline">Sales Trajectory</CardTitle>
+                <CardTitle className="text-xl font-headline flex items-center gap-2">
+                    <Globe className="h-5 w-5 text-primary" />
+                    Traffic Acquisition
+                </CardTitle>
+                <CardDescription>Where your luxury audience is discovering you.</CardDescription>
+            </CardHeader>
+            <CardContent className="h-80 w-full pt-4">
+                {trafficData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={trafficData} layout="vertical" margin={{ left: 20, right: 40 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.2)" horizontal={true} vertical={false} />
+                            <XAxis type="number" hide />
+                            <YAxis 
+                                dataKey="name" 
+                                type="category" 
+                                axisLine={false} 
+                                tickLine={false} 
+                                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                                width={100}
+                            />
+                            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--primary) / 0.05)' }} />
+                            <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={32}>
+                                {trafficData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={`hsl(var(--primary) / ${1 - index * 0.15})`} />
+                                ))}
+                            </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
+                ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
+                        <div className="p-4 rounded-full bg-muted">
+                            <Globe className="h-10 w-10 text-muted-foreground opacity-20" />
+                        </div>
+                        <p className="text-muted-foreground italic">Acquiring discovery data... Promote your link to see sources.</p>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+      </div>
+
+      {/* Sales Trajectory */}
+      <Card className="border-primary/20 bg-card/30">
+            <CardHeader>
+                <CardTitle className="text-xl font-headline flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-primary" />
+                    Sales Trajectory
+                </CardTitle>
                 <CardDescription>Historical performance over the last active period.</CardDescription>
             </CardHeader>
             <CardContent className="h-80 w-full pt-4">
@@ -332,7 +414,6 @@ export default function AnalyticsPage() {
                 )}
             </CardContent>
         </Card>
-      </div>
     </div>
   );
 }

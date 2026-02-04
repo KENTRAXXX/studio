@@ -131,6 +131,22 @@
             },
             "required": ["name", "suggestedRetailPrice", "imageUrl", "productType", "vendorId"]
         },
+        "trafficLog": {
+            "title": "Traffic Log",
+            "description": "Record of a visitor's source of entry.",
+            "type": "object",
+            "properties": {
+                "source": {
+                    "type": "string",
+                    "description": "The marketing source (e.g., Instagram, TikTok, Direct)."
+                },
+                "timestamp": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            },
+            "required": ["source", "timestamp"]
+        },
         "userProfile": {
             "title": "User Profile",
             "description": "Represents a user's profile information in Firestore.",
@@ -356,7 +372,7 @@
                 "title": { "type": "string" },
                 "duration": { "type": "number", "description": "Duration in minutes." },
                 "category": { "type": "string" },
-                "difficulty": { "type": "string", "enum": ["Beginner", "Intermediate", "Advanced", "Masterclass"] },
+                "difficulty": { "type": "string", enum: ["Beginner", "Intermediate", "Advanced", "Masterclass"] },
                 "thumbnailUrl": { "type": "string", "format": "uri" },
                 "videoUrl": { "type": "string", "format": "uri", "description": "URL for embedding (e.g., YouTube, Vimeo)." }
             },
@@ -384,8 +400,8 @@
                 "brandName": { "type": "string" },
                 "subject": { "type": "string" },
                 "message": { "type": "string" },
-                "status": { "type": "string", "enum": ["open", "resolved"] },
-                "priority": { "type": "string", "enum": ["standard", "urgent"] },
+                "status": { "type": "string", enum: ["open", "resolved"] },
+                "priority": { "type": "string", enum: ["standard", "urgent"] },
                 "createdAt": { "type": "string", "format": "date-time" }
             },
             "required": ["brandId", "subject", "message", "status", "priority", "createdAt"]
@@ -402,6 +418,10 @@
         "/stores/{storeId}/products/{productId}": {
             "schema": { "$ref": "#/entities/storefrontProduct" },
             "description": "Products for a specific client store."
+        },
+        "/stores/{storeId}/traffic_logs/{logId}": {
+            "schema": { "$ref": "#/entities/trafficLog" },
+            "description": "Acquisition source logs for store traffic."
         },
         "/users/{userId}": {
             "schema": { "$ref": "#/entities/userProfile" },
