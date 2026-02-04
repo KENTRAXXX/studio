@@ -18,7 +18,7 @@ type UserProfile = {
   plan?: 'monthly' | 'yearly' | 'lifetime' | 'free';
   paidAt?: string;
   planTier?: 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND';
-  status?: 'pending_review' | 'approved' | 'rejected';
+  status?: 'pending_review' | 'approved' | 'rejected' | 'action_required';
   completedLessons?: string[];
   isDisabled?: boolean;
   referralCode?: string;
@@ -37,6 +37,7 @@ type UserProfile = {
     contactPhone: string;
     governmentIdUrl: string;
     isPhoneVerified: boolean;
+    feedback?: string;
   };
   legalAgreements?: {
     termsAccepted: boolean;

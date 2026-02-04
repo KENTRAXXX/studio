@@ -20,10 +20,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Send, ShieldCheck, CheckCircle2, UploadCloud, Phone, Check, MapPin } from 'lucide-react';
+import { Loader2, Send, ShieldCheck, CheckCircle2, UploadCloud, Phone, Check, MapPin, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import SomaLogo from '@/components/logo';
 import { cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const onboardingSchema = z.object({
   legalBusinessName: z.string().min(3, 'A business name is required.'),
@@ -373,167 +374,180 @@ export default function BackstagePage() {
             <p className="mt-2 text-lg text-muted-foreground">Supplier Onboarding</p>
         </div>
       
-        <Card className="w-full max-w-2xl border-primary/50">
-            <div className="p-0">
-                <motion.div
-                    key="form"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                >
-                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                             <ShieldCheck className="h-6 w-6 text-primary" />
-                            Seller Verification
-                        </CardTitle>
-                        <CardDescription>
-                            Please provide your business details for our quality control team.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-6 md:p-8">
-                        <Form {...form}>
-                            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-                                <FormField control={form.control} name="legalBusinessName" render={({ field }) => (
-                                    <FormItem><FormLabel>Business Legal Name</FormLabel><FormControl><Input placeholder="e.g., Luxe Imports Inc." {...field} /></FormControl><FormMessage /></FormItem>
-                                )} />
-                                
-                                <FormField control={form.control} name="warehouseAddress" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="flex items-center gap-2">
-                                            <MapPin className="h-4 w-4 text-primary"/>
-                                            Primary Warehouse Address
-                                        </FormLabel>
-                                        <FormControl>
-                                            <Input 
-                                                {...field} 
-                                                ref={(e) => {
-                                                    field.ref(e); 
-                                                    addressInputRef.current = e; 
-                                                }}
-                                                placeholder={isMapsAvailable ? "Start typing your warehouse address..." : "Enter your warehouse address"}
-                                            />
-                                        </FormControl>
-                                        <FormDescription>{isMapsAvailable ? "Select your verified location from the suggestions." : "Enter your full warehouse location."}</FormDescription>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
+        <div className="w-full max-w-2xl space-y-6">
+            {userProfile?.status === 'action_required' && userProfile.verificationData?.feedback && (
+                <Alert variant="destructive" className="bg-destructive/10 border-destructive/50">
+                    <AlertTriangle className="h-5 w-5" />
+                    <AlertTitle className="font-bold">Updates Required</AlertTitle>
+                    <AlertDescription className="mt-2">
+                        Our review team requires you to update your application:
+                        <p className="mt-1 font-semibold italic">"{userProfile.verificationData.feedback}"</p>
+                    </AlertDescription>
+                </Alert>
+            )}
 
-                                <div className="grid md:grid-cols-2 gap-6">
-                                    <FormField control={form.control} name="taxId" render={({ field }) => (
-                                        <FormItem><FormLabel>Tax ID / Business Number</FormLabel><FormControl><Input placeholder="Your business registration number" {...field} /></FormControl><FormMessage /></FormItem>
+            <Card className="border-primary/50">
+                <div className="p-0">
+                    <motion.div
+                        key="form"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                    >
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <ShieldCheck className="h-6 w-6 text-primary" />
+                                Seller Verification
+                            </CardTitle>
+                            <CardDescription>
+                                Please provide your business details for our quality control team.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-6 md:p-8">
+                            <Form {...form}>
+                                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+                                    <FormField control={form.control} name="legalBusinessName" render={({ field }) => (
+                                        <FormItem><FormLabel>Business Legal Name</FormLabel><FormControl><Input placeholder="e.g., Luxe Imports Inc." {...field} /></FormControl><FormMessage /></FormItem>
                                     )} />
-                                     <FormField control={form.control} name="contactPhone" render={({ field }) => (
+                                    
+                                    <FormField control={form.control} name="warehouseAddress" render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Contact Phone (E.164 format)</FormLabel>
-                                            <div className="flex gap-2">
-                                                <FormControl>
-                                                    <Input 
-                                                        placeholder="+15551234567" 
-                                                        {...field} 
-                                                        disabled={isPhoneVerified || isSubmitting}
-                                                    />
-                                                </FormControl>
-                                                <Button 
-                                                    type="button" 
-                                                    variant={isPhoneVerified ? "outline" : "secondary"}
-                                                    disabled={isPhoneVerified || !field.value || isSendingOTP}
-                                                    onClick={handleSendOTP}
-                                                    className={cn(
-                                                        "w-24 shrink-0 transition-all",
-                                                        isPhoneVerified && "border-green-500 text-green-500 bg-green-500/5 hover:bg-green-500/10"
-                                                    )}
-                                                >
-                                                    {isSendingOTP ? <Loader2 className="animate-spin h-4 w-4" /> : isPhoneVerified ? <><Check className="mr-1 h-4 w-4"/>Verified</> : "Verify"}
-                                                </Button>
-                                            </div>
-                                            <FormDescription>Verification code will be sent via SMS.</FormDescription>
+                                            <FormLabel className="flex items-center gap-2">
+                                                <MapPin className="h-4 w-4 text-primary"/>
+                                                Primary Warehouse Address
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input 
+                                                    {...field} 
+                                                    ref={(e) => {
+                                                        field.ref(e); 
+                                                        addressInputRef.current = e; 
+                                                    }}
+                                                    placeholder={isMapsAvailable ? "Start typing your warehouse address..." : "Enter your warehouse address"}
+                                                />
+                                            </FormControl>
+                                            <FormDescription>{isMapsAvailable ? "Select your verified location from the suggestions." : "Enter your full warehouse location."}</FormDescription>
                                             <FormMessage />
                                         </FormItem>
                                     )} />
-                                </div>
-                                
-                                <FormField control={form.control} name="governmentIdUrl" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Government ID Document</FormLabel>
-                                        <FormControl>
-                                            <div className="flex flex-col gap-4">
-                                                <div 
-                                                    onClick={() => !uploadComplete && fileInputRef.current?.click()}
-                                                    className={cn(
-                                                        "w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all duration-300",
-                                                        uploadComplete ? "border-green-500 bg-green-500/5 cursor-default" : "border-primary/30 hover:border-primary bg-muted/20",
-                                                        isUploading && "opacity-50 cursor-wait"
-                                                    )}
-                                                >
-                                                    {isUploading ? (
-                                                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                                    ) : uploadComplete ? (
-                                                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
-                                                            <CheckCircle2 className="h-10 w-10 text-green-500 mx-auto mb-2" />
-                                                            <p className="text-sm font-medium text-green-500">ID Document Securely Stored</p>
-                                                        </motion.div>
-                                                    ) : (
-                                                        <>
-                                                            <UploadCloud className="h-8 w-8 text-muted-foreground mb-2" />
-                                                            <span className="text-sm font-medium">Click to upload ID document</span>
-                                                            <span className="text-xs text-muted-foreground mt-1">PDF, JPG, or PNG (Max 10MB)</span>
-                                                        </>
-                                                    )}
-                                                </div>
-                                                <input 
-                                                    type="file" 
-                                                    ref={fileInputRef} 
-                                                    className="hidden" 
-                                                    accept="image/*,.pdf" 
-                                                    onChange={handleFileUpload} 
-                                                    disabled={isUploading || uploadComplete}
-                                                />
-                                                <Input type="hidden" {...field} />
-                                            </div>
-                                        </FormControl>
-                                        <FormDescription>A clear scan or photo of your passport, license, or national ID.</FormDescription>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
 
-                                <div className="space-y-4 pt-4">
-                                    <h3 className="font-semibold text-primary">SOMA Shield: Seller Terms of Service</h3>
-                                    <ScrollArea className="h-48 w-full rounded-md border border-border p-4">
-                                        <SomaShieldTerms />
-                                    </ScrollArea>
-                                    <div className="flex items-start space-x-3 pt-2">
-                                        <Checkbox 
-                                            id="terms"
-                                            checked={agreedToTerms}
-                                            onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
-                                        />
-                                        <div className="grid gap-1.5 leading-none">
-                                            <label
-                                                htmlFor="terms"
-                                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                            >
-                                               I have read and agree to the SOMA Seller Terms of Service.
-                                            </label>
+                                    <div className="grid md:grid-cols-2 gap-6">
+                                        <FormField control={form.control} name="taxId" render={({ field }) => (
+                                            <FormItem><FormLabel>Tax ID / Business Number</FormLabel><FormControl><Input placeholder="Your business registration number" {...field} /></FormControl><FormMessage /></FormItem>
+                                        )} />
+                                        <FormField control={form.control} name="contactPhone" render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Contact Phone (E.164 format)</FormLabel>
+                                                <div className="flex gap-2">
+                                                    <FormControl>
+                                                        <Input 
+                                                            placeholder="+15551234567" 
+                                                            {...field} 
+                                                            disabled={isPhoneVerified || isSubmitting}
+                                                        />
+                                                    </FormControl>
+                                                    <Button 
+                                                        type="button" 
+                                                        variant={isPhoneVerified ? "outline" : "secondary"}
+                                                        disabled={isPhoneVerified || !field.value || isSendingOTP}
+                                                        onClick={handleSendOTP}
+                                                        className={cn(
+                                                            "w-24 shrink-0 transition-all",
+                                                            isPhoneVerified && "border-green-500 text-green-500 bg-green-500/5 hover:bg-green-500/10"
+                                                        )}
+                                                    >
+                                                        {isSendingOTP ? <Loader2 className="animate-spin h-4 w-4" /> : isPhoneVerified ? <><Check className="mr-1 h-4 w-4"/>Verified</> : "Verify"}
+                                                    </Button>
+                                                </div>
+                                                <FormDescription>Verification code will be sent via SMS.</FormDescription>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
+                                    </div>
+                                    
+                                    <FormField control={form.control} name="governmentIdUrl" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Government ID Document</FormLabel>
+                                            <FormControl>
+                                                <div className="flex flex-col gap-4">
+                                                    <div 
+                                                        onClick={() => !uploadComplete && fileInputRef.current?.click()}
+                                                        className={cn(
+                                                            "w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all duration-300",
+                                                            uploadComplete ? "border-green-500 bg-green-500/5 cursor-default" : "border-primary/30 hover:border-primary bg-muted/20",
+                                                            isUploading && "opacity-50 cursor-wait"
+                                                        )}
+                                                    >
+                                                        {isUploading ? (
+                                                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                                        ) : uploadComplete ? (
+                                                            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                                                                <CheckCircle2 className="h-10 w-10 text-green-500 mx-auto mb-2" />
+                                                                <p className="text-sm font-medium text-green-500">ID Document Securely Stored</p>
+                                                            </motion.div>
+                                                        ) : (
+                                                            <>
+                                                                <UploadCloud className="h-8 w-8 text-muted-foreground mb-2" />
+                                                                <span className="text-sm font-medium">Click to upload ID document</span>
+                                                                <span className="text-xs text-muted-foreground mt-1">PDF, JPG, or PNG (Max 10MB)</span>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                    <input 
+                                                        type="file" 
+                                                        ref={fileInputRef} 
+                                                        className="hidden" 
+                                                        accept="image/*,.pdf" 
+                                                        onChange={handleFileUpload} 
+                                                        disabled={isUploading || uploadComplete}
+                                                    />
+                                                    <Input type="hidden" {...field} />
+                                                </div>
+                                            </FormControl>
+                                            <FormDescription>A clear scan or photo of your passport, license, or national ID.</FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+
+                                    <div className="space-y-4 pt-4">
+                                        <h3 className="font-semibold text-primary">SOMA Shield: Seller Terms of Service</h3>
+                                        <ScrollArea className="h-48 w-full rounded-md border border-border p-4">
+                                            <SomaShieldTerms />
+                                        </ScrollArea>
+                                        <div className="flex items-start space-x-3 pt-2">
+                                            <Checkbox 
+                                                id="terms"
+                                                checked={agreedToTerms}
+                                                onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+                                            />
+                                            <div className="grid gap-1.5 leading-none">
+                                                <label
+                                                    htmlFor="terms"
+                                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                                >
+                                                I have read and agree to the SOMA Seller Terms of Service.
+                                                </label>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
 
-                                <div className="flex justify-end pt-4">
-                                    <Button 
-                                        type="submit" 
-                                        disabled={isSubmitting || !agreedToTerms || !uploadComplete || !isPhoneVerified} 
-                                        size="lg" 
-                                        className="h-12 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        {isSubmitting ? <Loader2 className="animate-spin" /> : <><Send className="mr-2 h-5 w-5"/>Submit for Review</>}
-                                    </Button>
-                                </div>
-                            </form>
-                        </Form>
-                    </CardContent>
-                </motion.div>
-            </div>
-        </Card>
+                                    <div className="flex justify-end pt-4">
+                                        <Button 
+                                            type="submit" 
+                                            disabled={isSubmitting || !agreedToTerms || !uploadComplete || !isPhoneVerified} 
+                                            size="lg" 
+                                            className="h-12 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                            {isSubmitting ? <Loader2 className="animate-spin" /> : <><Send className="mr-2 h-5 w-5"/>Submit for Review</>}
+                                        </Button>
+                                    </div>
+                                </form>
+                            </Form>
+                        </CardContent>
+                    </motion.div>
+                </div>
+            </Card>
+        </div>
     </div>
   );
 }

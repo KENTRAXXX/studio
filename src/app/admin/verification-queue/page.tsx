@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -9,24 +8,103 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ShieldCheck, Check, X, FileText, MapPin } from 'lucide-react';
+import { Loader2, ShieldCheck, Check, X, FileText, MapPin, MessageSquareText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { sendWelcomeEmail } from '@/ai/flows/send-welcome-email';
+import { sendActionRequiredEmail } from '@/ai/flows/send-action-required-email';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
 type PendingSeller = {
   id: string;
   email: string;
-  status: 'pending_review' | 'approved' | 'rejected';
+  status: 'pending_review' | 'approved' | 'rejected' | 'action_required';
   verificationData: {
     legalBusinessName: string;
     warehouseAddress: string;
     governmentIdUrl: string;
     contactPhone: string;
+    feedback?: string;
     structuredAddress?: {
         city: string;
         country: string;
     };
   };
+};
+
+const RequestChangesModal = ({ seller, onComplete }: { seller: PendingSeller, onComplete: () => void }) => {
+    const [feedback, setFeedback] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const firestore = useFirestore();
+    const { toast } = useToast();
+
+    const handleRequest = async () => {
+        if (!firestore || !feedback.trim()) return;
+        setIsSubmitting(true);
+        try {
+            const userRef = doc(firestore, 'users', seller.id);
+            await updateDoc(userRef, {
+                status: 'action_required',
+                'verificationData.feedback': feedback.trim()
+            });
+
+            await sendActionRequiredEmail({
+                to: seller.email,
+                feedback: feedback.trim()
+            });
+
+            toast({ title: 'Feedback Sent', description: 'Seller has been notified to make changes.' });
+            onComplete();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error', description: error.message });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="border-primary/50 text-primary hover:bg-primary/10">
+                    <MessageSquareText className="h-4 w-4 mr-1" /> Request Changes
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-card border-primary">
+                <DialogHeader>
+                    <DialogTitle className="text-primary font-headline">Request Changes</DialogTitle>
+                    <DialogDescription>
+                        Explain to the seller what they need to fix (e.g., 'ID is blurry').
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="feedback">Message to Seller</Label>
+                        <Textarea 
+                            id="feedback" 
+                            placeholder="Please re-upload your ID, the current one is unreadable..."
+                            value={feedback}
+                            onChange={(e) => setFeedback(e.target.value)}
+                            className="min-h-[120px]"
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button onClick={handleRequest} disabled={!feedback.trim() || isSubmitting} className="w-full btn-gold-glow bg-primary">
+                        {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : 'Send Feedback & Notify'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
 };
 
 export default function VerificationQueuePage() {
@@ -182,6 +260,7 @@ export default function VerificationQueuePage() {
                         <Loader2 className="animate-spin ml-auto h-6 w-6" />
                       ) : (
                         <>
+                          <RequestChangesModal seller={seller} onComplete={() => {}} />
                           <Button 
                             size="sm" 
                             className="bg-green-600 hover:bg-green-700" 
