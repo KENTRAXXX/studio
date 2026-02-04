@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useRef } from 'react';
@@ -23,14 +22,14 @@ export function HeroSection({ imageUrl, title, subtitle }: HeroSectionProps) {
       {imageUrl && (
         <Image
           src={imageUrl}
-          alt={`Visual representation of ${title}`}
+          alt={`Luxury background visual for ${title}`}
           fill
           priority
           className="object-cover"
           data-ai-hint="luxury abstract"
         />
       )}
-      <div className="absolute inset-0 bg-black/50" />
+      <div className="absolute inset-0 bg-black/50" aria-hidden="true" />
       <div className="relative z-10 p-4">
         <h2 id="hero-title" className="text-5xl md:text-7xl font-extrabold font-headline text-primary animate-gold-pulse">
           {title}

@@ -145,7 +145,7 @@ function PlatformPulse() {
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.5, delay: 0.1 }}>
                     <Card className="h-full bg-card/50 border-primary/20 text-center">
                         <CardHeader>
-                            <Users className="h-10 w-10 mx-auto text-primary"/>
+                            <Users className="h-10 w-10 mx-auto text-primary" aria-hidden="true" />
                             <CardTitle className="font-headline text-2xl text-primary">Verified Sellers</CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -159,7 +159,7 @@ function PlatformPulse() {
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.5, delay: 0.2 }}>
                     <Card className={cn("h-full bg-card/50 border-primary/20 text-center transition-all duration-500", isGlowing && "card-gold-pulse")}>
                         <CardHeader>
-                            <DollarSign className="h-10 w-10 mx-auto text-primary"/>
+                            <DollarSign className="h-10 w-10 mx-auto text-primary" aria-hidden="true" />
                             <CardTitle className="font-headline text-2xl text-primary">Total Sales Processed</CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -178,7 +178,7 @@ function PlatformPulse() {
                  <motion.div initial={{ opacity: 0, y: 20 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.5, delay: 0.3 }}>
                     <Card className="h-full bg-card/50 border-primary/20 text-center">
                         <CardHeader>
-                            <ShieldCheck className="h-10 w-10 mx-auto text-primary"/>
+                            <ShieldCheck className="h-10 w-10 mx-auto text-primary" aria-hidden="true" />
                             <CardTitle className="font-headline text-2xl text-primary">Partner Brands</CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -199,26 +199,27 @@ const HowItWorks = () => {
     const isInView = useInView(ref, { once: true, amount: 0.5 });
     const steps = [
         {
-            icon: <Gem className="h-10 w-10 text-primary"/>,
+            icon: <Gem className="h-10 w-10 text-primary" aria-hidden="true" />,
             title: "1. Select Your Plan",
             description: "Choose a tier that fits your ambition, from a starting Merchant to a global Mogul."
         },
         {
-            icon: <Rocket className="h-10 w-10 text-primary"/>,
+            icon: <Rocket className="h-10 w-10 text-primary" aria-hidden="true" />,
             title: "2. Launch Your Store",
             description: "Use our intuitive wizard to name your brand, upload your logo, and sync your first luxury products in minutes."
         },
         {
-            icon: <Globe className="h-10 w-10 text-primary"/>,
+            icon: <Globe className="h-10 w-10 text-primary" aria-hidden="true" />,
             title: "3. Go Live Worldwide",
             description: "Connect your custom domain and start selling to a global audience. SOMA handles the payments and logistics."
         }
     ];
 
     return (
-        <section ref={ref} className="container z-10 py-20">
+        <section ref={ref} className="container z-10 py-20" aria-labelledby="steps-title">
             <div className="text-center max-w-2xl mx-auto">
                  <motion.h2 
+                    id="steps-title"
                     className="text-4xl sm:text-5xl font-bold font-headline text-transparent bg-clip-text bg-gradient-to-br from-white via-neutral-200 to-primary"
                     initial={{ opacity: 0, y: 20 }}
                     animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -267,7 +268,7 @@ function SneakPeek() {
     ];
 
     return (
-        <section ref={ref} className="container z-10 py-20">
+        <section ref={ref} className="container z-10 py-20" aria-labelledby="features-title">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                 <motion.div 
                     className="[perspective:800px]"
@@ -282,7 +283,7 @@ function SneakPeek() {
                         <div className="h-full w-full rounded-2xl overflow-hidden bg-black">
                              <Image 
                                 src="https://picsum.photos/seed/store-mockup/400/800" 
-                                alt="Store mockup"
+                                alt="Visual representation of a live SOMA boutique on a mobile device"
                                 width={400}
                                 height={800}
                                 className="object-cover w-full h-full"
@@ -294,6 +295,7 @@ function SneakPeek() {
 
                 <div className="space-y-8">
                     <motion.h2 
+                        id="features-title"
                         className="text-4xl sm:text-5xl font-bold font-headline text-transparent bg-clip-text bg-gradient-to-br from-white via-neutral-200 to-primary"
                         initial={{ opacity: 0, y: 20 }}
                         animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -314,7 +316,7 @@ function SneakPeek() {
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={isInView ? { opacity: 1, x: 0 } : {}}
                             >
-                                <Check className="h-6 w-6 text-primary flex-shrink-0" />
+                                <Check className="h-6 w-6 text-primary flex-shrink-0" aria-hidden="true" />
                                 <span className="text-muted-foreground">{feature}</span>
                             </motion.li>
                         ))}
@@ -340,42 +342,44 @@ export default function Home() {
     <div className="relative flex flex-col items-center justify-center min-h-screen w-full bg-black gold-mesh-gradient overflow-x-hidden">
       <header className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center z-20">
         <div className="flex items-center gap-2">
-          <SomaLogo />
-          <span className="font-headline font-bold text-xl text-primary tracking-tighter">SomaDS</span>
+          <SomaLogo aria-hidden="true" />
+          <span className="font-headline font-bold text-xl text-primary tracking-tighter uppercase">SomaDS</span>
         </div>
         <Button variant="ghost" asChild className="font-headline text-primary hover:text-primary/80 hover:bg-primary/5">
           <Link href="/login">Sign In</Link>
         </Button>
       </header>
 
-      <main className="container z-10 flex flex-col items-center text-center px-4 pt-32">
-        <LiveCounter />
+      <main id="main-content" className="w-full">
+        <section className="container z-10 flex flex-col items-center text-center px-4 pt-32 pb-20">
+            <LiveCounter />
 
-        <h1 className="mt-6 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold font-headline max-w-4xl text-transparent bg-clip-text bg-gradient-to-br from-white via-neutral-200 to-primary">
-          Launch Your Luxury E-Commerce Empire, Instantly.
-        </h1>
+            <h1 className="mt-6 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold font-headline max-w-4xl text-transparent bg-clip-text bg-gradient-to-br from-white via-neutral-200 to-primary">
+            Launch Your Luxury E-Commerce Empire, Instantly.
+            </h1>
 
-        <p className="mt-6 max-w-2xl text-base md:text-lg text-muted-foreground">
-          SOMA provides the tools, the technology, and the top-tier products to launch a sophisticated online brand. No code, no inventory, no limits.
-        </p>
+            <p className="mt-6 max-w-2xl text-base md:text-lg text-muted-foreground">
+            SOMA provides the tools, the technology, and the top-tier products to launch a sophisticated online brand. No code, no inventory, no limits.
+            </p>
 
-        <div className="mt-10 flex flex-col sm:flex-row items-center gap-4">
-          <Button asChild size="lg" className="h-12 text-lg w-full sm:w-auto btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
-            <Link href="/plan-selection">Get Started Now</Link>
-          </Button>
-          <Button asChild size="lg" variant="outline" className="h-12 text-lg w-full sm:w-auto border-primary/50 text-primary hover:bg-primary/10 hover:text-primary">
-            <Link href="/store/demo">View Store Demo</Link>
-          </Button>
-           <Button asChild size="lg" variant="outline" className="h-12 text-lg w-full sm:w-auto border-primary/50 text-primary hover:bg-primary/10 hover:text-primary">
-            <Link href="/dashboard/demo">View Dashboard Demo</Link>
-          </Button>
-        </div>
+            <div className="mt-10 flex flex-col sm:flex-row items-center gap-4">
+            <Button asChild size="lg" className="h-12 text-lg w-full sm:w-auto btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Link href="/plan-selection">Get Started Now</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="h-12 text-lg w-full sm:w-auto border-primary/50 text-primary hover:bg-primary/10 hover:text-primary">
+                <Link href="/store/demo">View Store Demo</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="h-12 text-lg w-full sm:w-auto border-primary/50 text-primary hover:bg-primary/10 hover:text-primary">
+                <Link href="/dashboard/demo">View Dashboard Demo</Link>
+            </Button>
+            </div>
+        </section>
+
+        <PlatformPulse />
+        <HowItWorks />
+        <SneakPeek />
+        <LiveFeedTicker />
       </main>
-
-      <PlatformPulse />
-      <HowItWorks />
-      <SneakPeek />
-      <LiveFeedTicker />
     </div>
   );
 }

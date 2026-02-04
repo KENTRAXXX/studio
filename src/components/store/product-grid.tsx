@@ -67,7 +67,7 @@ export function ProductGrid({ products, storeId }: ProductGridProps) {
   if (products.length === 0) {
     return (
         <div className="flex flex-col items-center justify-center text-center h-64 border-2 border-dashed border-primary/20 rounded-lg p-8">
-            <Warehouse className="h-16 w-16 text-muted-foreground mb-4" />
+            <Warehouse className="h-16 w-16 text-muted-foreground mb-4" aria-hidden="true" />
             <h3 className="text-xl font-bold font-headline text-primary">A Collection in the Making</h3>
             <p className="text-muted-foreground mt-2">This boutique is currently curating its collection. Check back soon.</p>
         </div>
@@ -75,41 +75,44 @@ export function ProductGrid({ products, storeId }: ProductGridProps) {
   }
   
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+    <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8" aria-label="Product collection">
       {products.map((product) => (
-        <Card key={product.id} className="group overflow-hidden rounded-lg border-primary/20 bg-card hover:border-primary/50 transition-all duration-300 transform hover:-translate-y-2">
-          <Link href={`/store/${storeId}/product/${product.id}`} className="block">
-            <div className="relative w-full aspect-square">
-              <Image
-                src={getPlaceholderImage(product.imageUrl)}
-                alt={product.name}
-                fill
-                className="object-cover transition-transform duration-500 group-hover:scale-110"
-                data-ai-hint="product photo"
-              />
-            </div>
-          </Link>
-          <CardContent className="p-4 text-center">
+        <li key={product.id}>
+            <Card className="group overflow-hidden rounded-lg border-primary/20 bg-card hover:border-primary/50 transition-all duration-300 transform hover:-translate-y-2">
             <Link href={`/store/${storeId}/product/${product.id}`} className="block">
-              <h3 className="text-lg font-semibold truncate group-hover:text-primary">{product.name}</h3>
+                <div className="relative w-full aspect-square">
+                <Image
+                    src={getPlaceholderImage(product.imageUrl)}
+                    alt={`View details for ${product.name}`}
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-110"
+                    data-ai-hint="product photo"
+                />
+                </div>
             </Link>
-             <div className="flex justify-center items-baseline gap-2 mt-1">
-                <p className="font-bold text-lg text-foreground">{formatCurrency(Math.round(product.suggestedRetailPrice * 100))}</p>
-                {product.compareAtPrice && product.compareAtPrice > product.suggestedRetailPrice && (
-                    <p className="text-md text-muted-foreground line-through">
-                        {formatCurrency(Math.round(product.compareAtPrice * 100))}
-                    </p>
-                )}
-            </div>
-            <Button 
-              className="mt-4 w-full btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground"
-              onClick={() => handleAddToCart(product)}
-            >
-              Add to Cart
-            </Button>
-          </CardContent>
-        </Card>
+            <CardContent className="p-4 text-center">
+                <Link href={`/store/${storeId}/product/${product.id}`} className="block">
+                <h3 className="text-lg font-semibold truncate group-hover:text-primary">{product.name}</h3>
+                </Link>
+                <div className="flex justify-center items-baseline gap-2 mt-1">
+                    <p className="font-bold text-lg text-foreground">{formatCurrency(Math.round(product.suggestedRetailPrice * 100))}</p>
+                    {product.compareAtPrice && product.compareAtPrice > product.suggestedRetailPrice && (
+                        <p className="text-md text-muted-foreground line-through" aria-label="Original price">
+                            {formatCurrency(Math.round(product.compareAtPrice * 100))}
+                        </p>
+                    )}
+                </div>
+                <Button 
+                className="mt-4 w-full btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground"
+                onClick={() => handleAddToCart(product)}
+                aria-label={`Add ${product.name} to cart`}
+                >
+                Add to Cart
+                </Button>
+            </CardContent>
+            </Card>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }
