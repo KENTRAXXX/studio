@@ -22,12 +22,14 @@ import {
     Sparkles, 
     Type, 
     FileSearch,
-    CheckCircle2,
-    Monitor
+    Monitor,
+    ShoppingBag,
+    Menu
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import SomaLogo from '@/components/logo';
 
 const storefrontSchema = z.object({
   storeName: z.string().min(3, 'Store name must be at least 3 characters.'),
@@ -76,6 +78,71 @@ const THEMES: ThemeOption[] = [
     }
 ];
 
+// WYSIWYG Storefront Preview Component
+const BoutiqueLivePreview = ({ storeName, tagline, logoUrl, themeId }: { storeName: string, tagline: string, logoUrl?: string, themeId: string }) => {
+    const theme = THEMES.find(t => t.id === themeId) || THEMES[0];
+    
+    return (
+        <div className="space-y-4">
+            <div className="flex items-center gap-2 text-[10px] text-slate-500 uppercase tracking-widest font-black">
+                <Monitor className="h-3 w-3" /> Digital Storefront Monitor
+            </div>
+            
+            <div className="relative aspect-[4/3] w-full rounded-2xl border-8 border-slate-900 bg-slate-900 shadow-2xl overflow-hidden group">
+                <div className="absolute inset-0 overflow-hidden flex flex-col" style={{ backgroundColor: `hsl(${theme.colors.background})` }}>
+                    {/* Header */}
+                    <div className="h-12 border-b flex items-center justify-between px-4" style={{ borderColor: `hsl(${theme.colors.primary} / 0.1)` }}>
+                        <div className="flex items-center gap-2">
+                            {logoUrl ? (
+                                <img src={logoUrl} alt="Logo" className="h-5 w-auto object-contain" />
+                            ) : (
+                                <SomaLogo className="h-4 w-4" style={{ color: `hsl(${theme.colors.primary})` }} />
+                            )}
+                            <span className="text-[10px] font-headline font-bold uppercase tracking-tighter" style={{ color: `hsl(${theme.colors.primary})` }}>
+                                {storeName || 'Boutique'}
+                            </span>
+                        </div>
+                        <div className="flex gap-2">
+                            <Menu className="h-3 w-3 opacity-40" style={{ color: `hsl(${theme.colors.primary})` }} />
+                            <ShoppingBag className="h-3 w-3 opacity-40" style={{ color: `hsl(${theme.colors.primary})` }} />
+                        </div>
+                    </div>
+
+                    {/* Hero Section */}
+                    <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-3">
+                        <div className="relative w-full h-24 rounded-lg bg-slate-800 overflow-hidden">
+                            <img src="https://picsum.photos/seed/soma-hero/600/400" className="w-full h-full object-cover opacity-40" alt="Hero" />
+                            <div className="absolute inset-0 flex flex-col items-center justify-center p-2">
+                                <h3 className="text-sm font-headline font-black uppercase tracking-tight leading-none" style={{ color: `hsl(${theme.colors.primary})` }}>
+                                    {tagline || 'Timeless Luxury'}
+                                </h3>
+                                <div className="mt-2 h-4 w-16 rounded-full text-[6px] flex items-center justify-center font-bold" style={{ backgroundColor: `hsl(${theme.colors.primary})`, color: `hsl(${theme.colors.background})` }}>
+                                    SHOP NOW
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Product Grid Mockup */}
+                        <div className="grid grid-cols-2 gap-2 w-full pt-2">
+                            {[1, 2].map((i) => (
+                                <div key={i} className="space-y-1">
+                                    <div className="aspect-square rounded bg-slate-800/50" />
+                                    <div className="h-1 w-12 bg-slate-700/50 rounded mx-auto" />
+                                    <div className="h-1 w-8 bg-primary/20 rounded mx-auto" />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+                
+                {/* Glass Overlay for Premium Feel */}
+                <div className="absolute inset-0 pointer-events-none border border-white/5 rounded-xl shadow-inner" />
+            </div>
+            <p className="text-center text-[10px] text-muted-foreground italic">Live visual feedback • Changes apply instantly to preview</p>
+        </div>
+    );
+};
+
 export default function StorefrontSettingsPage() {
     const { user } = useUser();
     const firestore = useFirestore();
@@ -98,6 +165,11 @@ export default function StorefrontSettingsPage() {
             logoUrl: '',
         },
     });
+
+    // Watch values for live preview
+    const watchedStoreName = form.watch('storeName');
+    const watchedTagline = form.watch('tagline');
+    const watchedLogoUrl = form.watch('logoUrl');
 
     useEffect(() => {
         if (storeData) {
@@ -166,7 +238,7 @@ export default function StorefrontSettingsPage() {
     }
 
     return (
-        <div className="max-w-6xl mx-auto space-y-10 pb-20">
+        <div className="max-w-7xl mx-auto space-y-10 pb-20 px-4">
             <div className="text-center">
                 <Palette className="h-12 w-12 mx-auto text-primary" />
                 <h1 className="text-4xl font-bold font-headline mt-4 text-primary tracking-tight">Visual Architect</h1>
@@ -174,9 +246,9 @@ export default function StorefrontSettingsPage() {
             </div>
 
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                     
-                    {/* Left: Core Branding & Theme */}
+                    {/* Left Panel: Configuration */}
                     <div className="lg:col-span-7 space-y-8">
                         <Card className="border-primary/20 bg-slate-900/30 overflow-hidden">
                             <CardHeader>
@@ -210,8 +282,8 @@ export default function StorefrontSettingsPage() {
                                         className="relative h-32 w-full rounded-xl border-2 border-dashed border-primary/20 bg-slate-950/50 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-all group"
                                         onClick={() => fileInputRef.current?.click()}
                                     >
-                                        {form.watch('logoUrl') ? (
-                                            <img src={form.watch('logoUrl')} alt="Logo" className="h-20 object-contain" />
+                                        {watchedLogoUrl ? (
+                                            <img src={watchedLogoUrl} alt="Logo" className="h-20 object-contain" />
                                         ) : (
                                             <>
                                                 <UploadCloud className="h-8 w-8 text-slate-600 mb-2" />
@@ -263,15 +335,32 @@ export default function StorefrontSettingsPage() {
                         </Card>
                     </div>
 
-                    {/* Right: SEO & Live Preview */}
-                    <div className="lg:col-span-5 space-y-8">
+                    {/* Right Panel: Live Preview & SEO */}
+                    <div className="lg:col-span-5 space-y-8 lg:sticky lg:top-24">
+                        {/* WYSIWYG Preview */}
+                        <Card className="border-primary/20 bg-slate-900/30 overflow-hidden">
+                            <CardHeader className="bg-muted/30 border-b border-primary/10">
+                                <CardTitle className="text-sm font-headline uppercase tracking-widest text-slate-200 flex items-center gap-2">
+                                    <Sparkles className="h-4 w-4 text-primary" /> Live Boutique View
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-6">
+                                <BoutiqueLivePreview 
+                                    storeName={watchedStoreName} 
+                                    tagline={watchedTagline} 
+                                    logoUrl={watchedLogoUrl} 
+                                    themeId={selectedTheme} 
+                                />
+                            </CardContent>
+                        </Card>
+
+                        {/* SEO Section */}
                         <Card className="border-primary/20 bg-slate-900/30">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-slate-200">
                                     <FileSearch className="h-5 w-5 text-primary" />
-                                    SEO & Search Visibility
+                                    SEO & Visibility
                                 </CardTitle>
-                                <CardDescription>How your boutique appears in Google search snippets.</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-6">
                                 <FormField control={form.control} name="storeDescription" render={({ field }) => (
@@ -279,28 +368,24 @@ export default function StorefrontSettingsPage() {
                                         <FormLabel>Search Snippet Description</FormLabel>
                                         <FormControl>
                                             <Textarea 
-                                                placeholder="Experience the pinnacle of luxury with our curated collection of fine watches and bespoke leather goods..." 
-                                                className="min-h-[120px] bg-slate-950/50 border-primary/10"
+                                                placeholder="Experience the pinnacle of luxury..." 
+                                                className="min-h-[100px] bg-slate-950/50 border-primary/10"
                                                 {...field}
                                             />
                                         </FormControl>
-                                        <FormDescription>Optimized for search engine visibility.</FormDescription>
                                         <FormMessage />
                                     </FormItem>
-                                )} />
+                                ) } />
 
-                                <div className="p-4 rounded-lg bg-slate-950 border border-slate-800 space-y-2">
+                                <div className="p-4 rounded-lg bg-slate-950 border border-slate-800 space-y-2 opacity-60">
                                     <div className="flex items-center gap-2 text-[10px] text-slate-500 uppercase tracking-widest font-black">
                                         <Search className="h-3 w-3" /> Search Result Preview
                                     </div>
-                                    <p className="text-blue-400 text-lg font-medium hover:underline cursor-pointer truncate">
-                                        {form.watch('storeName') || 'Boutique Name'} | SOMA Luxury
+                                    <p className="text-blue-400 text-sm font-medium hover:underline cursor-pointer truncate">
+                                        {watchedStoreName || 'Boutique Name'} | SOMA Luxury
                                     </p>
-                                    <p className="text-green-600 text-xs truncate">
+                                    <p className="text-green-600 text-[10px] truncate">
                                         https://{storeData?.customDomain || 'your-boutique.com'}
-                                    </p>
-                                    <p className="text-slate-400 text-xs line-clamp-2">
-                                        {form.watch('storeDescription') || 'Your store description will appear here to attract global customers...'}
                                     </p>
                                 </div>
                             </CardContent>
@@ -315,12 +400,12 @@ export default function StorefrontSettingsPage() {
                                 {form.formState.isSubmitting ? (
                                     <>
                                         <Loader2 className="animate-spin mr-3 h-6 w-6" />
-                                        Deploying Architectural Changes...
+                                        Deploying Changes...
                                     </>
                                 ) : (
                                     <>
                                         <Sparkles className="mr-3 h-6 w-6" />
-                                        Save & Synchronize Boutique
+                                        Synchronize Global Store
                                     </>
                                 )}
                             </Button>
