@@ -34,12 +34,13 @@ import {
     Check,
     X,
     UserCheck,
-    PackagePlus
+    PackagePlus,
+    Package
 } from "lucide-react";
 import Link from 'next/link';
 import { formatCurrency } from '@/utils/format';
-import { LiveFeedTicker } from '@/components/ui/live-feed-ticker';
-import { differenceInDays } from 'date-fns';
+import { LiveFeedTicker, type TickerEvent } from '@/components/ui/live-feed-ticker';
+import { differenceInDays, formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -57,44 +58,44 @@ export default function AdminOverviewPage() {
     // 1. Sector Logic: Stable Query Definitions
     const pendingSellersQ = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collection(firestore, 'users'), where('status', '==', 'pending_review'));
+        return query(collection(firestore, 'users'), where('status', '==', 'pending_review'), limit(100));
     }, [firestore]);
 
     const openTicketsQ = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collection(firestore, 'concierge_tickets'), where('status', '==', 'open'));
+        return query(collection(firestore, 'concierge_tickets'), where('status', '==', 'open'), limit(100));
     }, [firestore]);
 
     const maturedRewardsQ = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collection(firestore, 'payouts_pending'), where('status', '==', 'pending_maturity'));
+        return query(collection(firestore, 'payouts_pending'), where('status', '==', 'pending_maturity'), limit(100));
     }, [firestore]);
 
     // 2. Financial Growth Data (Treasury)
     const allOrdersQ = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collectionGroup(firestore, 'orders'), limit(500));
+        return query(collectionGroup(firestore, 'orders'), limit(100));
     }, [firestore]);
 
     const revenueLogsQ = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collection(firestore, 'revenue_logs'), limit(500));
+        return query(collection(firestore, 'revenue_logs'), orderBy('createdAt', 'desc'), limit(100));
     }, [firestore]);
 
     const allPendingPayoutsQ = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collection(firestore, 'payouts_pending'), limit(500));
+        return query(collection(firestore, 'payouts_pending'), limit(100));
     }, [firestore]);
 
     // 3. System KPI Aggregates
     const activeUsersQ = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collection(firestore, 'users'), where('hasAccess', '==', true));
+        return query(collection(firestore, 'users'), where('hasAccess', '==', true), limit(500));
     }, [firestore]);
 
     const pendingItemsQ = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collection(firestore, 'Pending_Master_Catalog'), where('isApproved', '==', false));
+        return query(collection(firestore, 'Pending_Master_Catalog'), where('isApproved', '==', false), limit(100));
     }, [firestore]);
 
     const { data: pendingSellers, loading: sellersLoading } = useCollection<any>(pendingSellersQ);
@@ -118,6 +119,39 @@ export default function AdminOverviewPage() {
 
         return { gmv, netRevenue, liability, maturedCount };
     }, [allOrders, revenueLogs, allPayouts, maturedRewardsRaw]);
+
+    // Dynamic Ticker Generation
+    const tickerEvents = useMemo(() => {
+        const events: TickerEvent[] = [];
+
+        // 1. Recent Orders from Revenue Logs
+        revenueLogs?.forEach(log => {
+            const date = log.createdAt?.toDate ? log.createdAt.toDate() : new Date(log.createdAt);
+            events.push({
+                icon: <DollarSign className="h-4 w-4 text-green-400" />,
+                text: `${formatDistanceToNow(date)} ago: ${formatCurrency(Math.round(log.amount * 100))} platform revenue processed from Order #${log.orderId?.slice(-6) || '---'}.`
+            });
+        });
+
+        // 2. New Brand Applications
+        pendingSellers?.forEach(seller => {
+            const name = seller.verificationData?.legalBusinessName || seller.email?.split('@')[0] || 'A Brand';
+            events.push({
+                icon: <ShieldCheck className="h-4 w-4 text-yellow-400" />,
+                text: `Action Required: New Brand application received from '${name}'.`
+            });
+        });
+
+        // 3. New Product Submissions
+        pendingItems?.forEach(item => {
+            events.push({
+                icon: <Package className="h-4 w-4 text-blue-400" />,
+                text: `Catalog Update: '${item.productName}' submitted for Master Catalog curation.`
+            });
+        });
+
+        return events.sort(() => Math.random() - 0.5); // Shuffle for variety
+    }, [revenueLogs, pendingSellers, pendingItems]);
 
     // Workspaces Logic
     const recentPendingSellers = useMemo(() => pendingSellers?.slice(0, 5) || [], [pendingSellers]);
@@ -427,7 +461,7 @@ export default function AdminOverviewPage() {
                     <Activity className="h-4 w-4" /> Live Network Transmission
                 </h2>
                 <div className="rounded-2xl overflow-hidden border border-primary/10 bg-slate-900/40">
-                    <LiveFeedTicker />
+                    <LiveFeedTicker events={tickerEvents} />
                 </div>
             </section>
         </div>

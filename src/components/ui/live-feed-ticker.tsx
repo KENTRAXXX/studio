@@ -4,7 +4,12 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Clock, DollarSign, Package, ShieldCheck, Banknote } from "lucide-react";
 
-const events = [
+export type TickerEvent = {
+  icon: React.ReactNode;
+  text: string;
+};
+
+const defaultEvents: TickerEvent[] = [
   {
     icon: <Clock className="h-4 w-4 text-primary" />,
     text: "2 mins ago: New store 'GoldVibe' launched in Lagos.",
@@ -60,10 +65,17 @@ const TickerItem = ({
   </div>
 );
 
-export function LiveFeedTicker() {
+interface LiveFeedTickerProps {
+  events?: TickerEvent[];
+  className?: string;
+}
+
+export function LiveFeedTicker({ events = defaultEvents, className }: LiveFeedTickerProps) {
+  if (!events || events.length === 0) return null;
+
   return (
-    <div className="relative w-full overflow-hidden bg-background border-y border-primary/20 py-4">
-        <div className="absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-background to-transparent z-10"></div>
+    <div className={cn("relative w-full overflow-hidden bg-background border-y border-primary/20 py-4", className)}>
+      <div className="absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-background to-transparent z-10"></div>
       <motion.div
         className="flex"
         animate={{
@@ -71,7 +83,7 @@ export function LiveFeedTicker() {
         }}
         transition={{
           ease: "linear",
-          duration: 80,
+          duration: Math.max(20, events.length * 8), // Dynamic speed based on content
           repeat: Infinity,
         }}
       >
