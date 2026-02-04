@@ -47,7 +47,8 @@ import {
   Building2,
   ShieldAlert,
   Activity,
-  RefreshCw
+  RefreshCw,
+  Info
 } from 'lucide-react';
 import {
   Dialog,
@@ -186,6 +187,13 @@ export default function TreasuryPage() {
   const liquidityBuffer = paystackBalance - metrics.liability;
   const coverageRatio = metrics.liability > 0 ? (paystackBalance / metrics.liability) * 100 : 100;
 
+  // Extraction Safety Logic
+  const transferAmountNum = parseFloat(corporateTransferAmount) || 0;
+  // Rule: Cannot extract more than Net Profit AND cannot dip below liability floor
+  const isOverProfitLimit = transferAmountNum > metrics.netRevenue;
+  const wouldDipBelowFloor = (paystackBalance - transferAmountNum) < metrics.liability;
+  const isExtractionBlocked = isLiquidityLow || isOverProfitLimit || wouldDipBelowFloor;
+
   // 4. Operations
   const handleSyncBalance = async () => {
       if (!firestore || !adminProfile || !metaRef) return;
@@ -249,13 +257,12 @@ export default function TreasuryPage() {
   };
 
   const handleCorporateTransfer = async () => {
-      if (!firestore || !corporateTransferAmount) return;
+      if (!firestore || !corporateTransferAmount || isExtractionBlocked) return;
       setIsTransferring(true);
 
       try {
           const amount = parseFloat(corporateTransferAmount);
           if (isNaN(amount) || amount <= 0) throw new Error("Invalid transfer amount.");
-          if (amount > metrics.netRevenue) throw new Error("Transfer amount exceeds platform net profit.");
 
           await addDoc(collection(firestore, 'corporate_transfers'), {
               amount,
@@ -537,7 +544,10 @@ export default function TreasuryPage() {
                                 placeholder="0.00"
                                 value={corporateTransferAmount}
                                 onChange={(e) => setCorporateTransferAmount(e.target.value)}
-                                className="h-14 text-xl font-mono border-primary/20 bg-black/40 focus-visible:ring-primary"
+                                className={cn(
+                                    "h-14 text-xl font-mono border-primary/20 bg-black/40 focus-visible:ring-primary",
+                                    isExtractionBlocked && transferAmountNum > 0 && "border-destructive focus-visible:ring-destructive"
+                                )}
                             />
                         </div>
 
@@ -545,10 +555,10 @@ export default function TreasuryPage() {
                             <DialogTrigger asChild>
                                 <Button 
                                     className="w-full h-16 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest group"
-                                    disabled={!corporateTransferAmount || parseFloat(corporateTransferAmount) <= 0 || parseFloat(corporateTransferAmount) > metrics.netRevenue || isLiquidityLow}
+                                    disabled={!corporateTransferAmount || transferAmountNum <= 0 || isExtractionBlocked}
                                 >
                                     <ArrowRightLeft className="mr-3 h-6 w-6 group-hover:rotate-180 transition-transform duration-500" />
-                                    {isLiquidityLow ? "Extraction Frozen" : "Transfer to Corporate"}
+                                    {isLiquidityLow ? "Extraction Frozen" : "Extract Profit"}
                                 </Button>
                             </DialogTrigger>
                             <DialogContent className="bg-card border-primary p-8">
@@ -558,7 +568,7 @@ export default function TreasuryPage() {
                                     </div>
                                     <DialogTitle className="text-2xl font-headline text-center text-primary">Authorize Executive Transfer</DialogTitle>
                                     <DialogDescription className="text-center pt-2 text-base text-slate-400">
-                                        Confirm extraction of <span className="text-white font-bold font-mono">{formatCurrency(Math.round(parseFloat(corporateTransferAmount || '0') * 100))}</span> to the SOMA corporate account.
+                                        Confirm extraction of <span className="text-white font-bold font-mono">{formatCurrency(Math.round(transferAmountNum * 100))}</span> to the SOMA corporate account.
                                     </DialogDescription>
                                 </DialogHeader>
                                 <div className="py-6 border-y border-primary/10 my-4 space-y-4">
@@ -577,7 +587,7 @@ export default function TreasuryPage() {
                                     <Button 
                                         className="w-full h-14 text-lg btn-gold-glow font-bold" 
                                         onClick={handleCorporateTransfer}
-                                        disabled={isTransferring || isLiquidityLow}
+                                        disabled={isTransferring || isExtractionBlocked}
                                     >
                                         {isTransferring ? <Loader2 className="animate-spin mr-2" /> : <ShieldCheck className="mr-2" />}
                                         Confirm Transfer
@@ -588,6 +598,20 @@ export default function TreasuryPage() {
                                 </DialogFooter>
                             </DialogContent>
                         </Dialog>
+
+                        {isExtractionBlocked && transferAmountNum > 0 && (
+                            <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-[11px] font-bold leading-tight uppercase animate-in slide-in-from-top-2">
+                                <AlertTriangle className="h-4 w-4 shrink-0" />
+                                <span>
+                                    {isLiquidityLow 
+                                        ? "Extraction blocked: Gateway balance must cover all Mogul liabilities before profit can be moved."
+                                        : isOverProfitLimit 
+                                            ? `Extraction exceeds available profit of ${formatCurrency(Math.round(metrics.netRevenue * 100))}.`
+                                            : "Extraction would dip gateway balance below the required liability floor."
+                                    }
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </CardContent>
             </Card>
