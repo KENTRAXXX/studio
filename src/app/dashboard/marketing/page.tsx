@@ -77,6 +77,8 @@ export default function MarketingToolkitPage() {
         width: 1080,
         height: 1920,
         cacheBust: true,
+        // skipFonts: true prevents the SecurityError when accessing cross-origin stylesheets
+        skipFonts: true,
       });
 
       const link = document.createElement('a');
