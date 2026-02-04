@@ -35,6 +35,7 @@ import {
   ClipboardList,
   SearchCode,
   Image as ImageIcon,
+  FolderOpen,
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
@@ -88,6 +89,7 @@ const sellerNavItems = [
     { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
     { href: '/backstage/finances', icon: Landmark, label: 'Finances & Payouts' },
     { href: '/backstage/analytics', icon: BarChart2, label: 'Insights & Analytics' },
+    { href: '/backstage/marketing-assets', icon: FolderOpen, label: 'Brand Assets' },
     { href: '/backstage/add-product', icon: Package, label: 'Add Product' },
     { href: '/backstage', icon: ShieldCheck, label: 'Onboarding Status' },
 ];
