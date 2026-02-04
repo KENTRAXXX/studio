@@ -16,7 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { formatCurrency } from '@/utils/format';
 
 type CartItem = {
-  product: any; // Using 'any' as product structure might vary
+  product: any;
   quantity: number;
 };
 
@@ -37,7 +37,7 @@ export function useCart() {
   return context;
 }
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
+export function CartProvider({ children }: { children: React.PropsWithChildren<{}>['children'] }) {
   const [cart, setCart] = useState<CartItem[]>([]);
 
   const addToCart = (product: any) => {
@@ -102,7 +102,7 @@ function CartSheet({storeId}: {storeId: string}) {
                                         return (
                                         <li key={item.product.id} className="flex items-center gap-4">
                                             <div className="relative h-16 w-16 rounded-md overflow-hidden border border-primary/20">
-                                                <Image src={getPlaceholderImage(item.product.imageId)?.imageUrl || ''} alt={item.product.name} fill className="object-cover" />
+                                                <Image src={getPlaceholderImage(item.product.imageId)?.imageUrl || item.product.imageUrl || ''} alt={item.product.name} fill className="object-cover" />
                                             </div>
                                             <div className="flex-1">
                                                 <h3 className="font-semibold">{item.product.name}</h3>
@@ -183,32 +183,49 @@ export default function StoreLayout({
   const storeRef = useMemoFirebase(() => {
     return firestore && storeId ? doc(firestore, 'stores', storeId) : null;
   }, [firestore, storeId]);
-  const { data: storeData, loading: storeLoading } = useDoc(storeRef);
+  const { data: storeData, loading: storeLoading } = useDoc<any>(storeRef);
   
   const ownerRef = useMemoFirebase(() => {
     if (!firestore || !storeData?.userId) return null;
     return doc(firestore, 'users', storeData.userId);
   }, [firestore, storeData?.userId]);
-  const { data: ownerData } = useDoc(ownerRef);
+  const { data: ownerData } = useDoc<any>(ownerRef);
 
-  
   const storeName = storeData?.storeName || "SOMA Store";
   const logoUrl = storeData?.logoUrl;
+  const themeColors = storeData?.themeConfig?.colors;
+
+  // Injection of CSS variables based on store's theme configuration
+  const customStyles = themeColors ? {
+    '--primary': themeColors.primary,
+    '--background': themeColors.background,
+    '--card': themeColors.background,
+    '--accent': themeColors.accent,
+    '--ring': themeColors.primary,
+    '--border': `hsl(${themeColors.primary} / 0.2)`,
+  } as React.CSSProperties : {};
 
   return (
     <CartProvider>
-        <div className="min-h-screen bg-background text-foreground font-body">
+        <div 
+            className="min-h-screen bg-background text-foreground font-body selection:bg-primary/30"
+            style={customStyles}
+        >
           <header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-sm border-b border-primary/20">
             <div className="container mx-auto flex h-20 items-center justify-between px-4 sm:px-6 lg:px-8">
-              <Link href={`/store/${storeId}`} className="flex items-center gap-2">
+              <Link href={`/store/${storeId}`} className="flex items-center gap-2 group">
                 {storeLoading ? (
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 ) : logoUrl ? (
-                    <Image src={logoUrl} alt={storeName} width={40} height={40} className="rounded-full" data-ai-hint="logo" />
+                    <div className="relative h-10 w-auto">
+                        <img src={logoUrl} alt={storeName} className="h-10 w-auto object-contain transition-transform group-hover:scale-105" />
+                    </div>
                 ) : (
-                    <SomaLogo className="h-8 w-8" />
+                    <SomaLogo className="h-8 w-8 text-primary" />
                 )}
-                <span className="font-headline text-2xl font-bold text-primary">{storeLoading ? 'Loading...' : storeName}</span>
+                <span className="font-headline text-2xl font-bold text-primary tracking-tighter transition-colors group-hover:text-primary/80">
+                    {storeLoading ? 'Loading...' : storeName}
+                </span>
               </Link>
               <div className="flex items-center gap-4">
                 <div className="relative hidden md:block">
@@ -222,8 +239,8 @@ export default function StoreLayout({
               </div>
             </div>
           </header>
-          <main>{children}</main>
-          <footer className="bg-card border-t border-primary/20">
+          <main className="animate-in fade-in duration-700">{children}</main>
+          <footer className="bg-card border-t border-primary/10">
             <div className="container mx-auto flex flex-col items-center justify-between gap-4 py-8 px-4 sm:flex-row sm:px-6 lg:px-8">
               <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} {storeName}. All Rights Reserved.</p>
               <div className="flex gap-6">

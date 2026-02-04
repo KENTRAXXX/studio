@@ -1,11 +1,9 @@
-
-
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { getFirestore, doc, getDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import type { Metadata, ResolvingMetadata } from 'next';
 
-import { initializeApp, getApps, getApp } from 'firebase/app';
+import { initializeApp, getApps } from 'firebase/app';
 import { firebaseConfig } from '@/firebase/config';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { demoProducts } from '@/lib/demo-data';
@@ -13,8 +11,6 @@ import { HeroSection } from '@/components/store/hero-section';
 import { ProductGrid } from '@/components/store/product-grid';
 import { StoreVisitorTracker } from '@/components/store/visitor-tracker';
 
-// Initialize Firebase for server-side usage
-// This function ensures we initialize Firebase only once.
 const getFirestoreInstance = () => {
     const apps = getApps();
     const app = apps.length > 0 ? apps[0] : initializeApp(firebaseConfig);
@@ -34,7 +30,6 @@ type StorefrontProduct = {
     isManagedBySoma: boolean;
 };
 
-// This function generates dynamic metadata for each store page
 export async function generateMetadata(
   { params }: { params: { storeId: string } },
   parent: ResolvingMetadata
@@ -110,7 +105,6 @@ export default async function StorefrontPage({ params }: { params: { storeId: st
 
   const isDemoMode = storeId === 'demo';
 
-  // Fetch data on the server
   let storeData;
   let products;
 
@@ -124,7 +118,7 @@ export default async function StorefrontPage({ params }: { params: { storeId: st
         ...p, 
         price: p.retailPrice, 
         suggestedRetailPrice: p.retailPrice 
-    })) as StorefrontProduct[];
+    })) as unknown as StorefrontProduct[];
   } else {
     try {
         [storeData, products] = await Promise.all([
@@ -133,11 +127,10 @@ export default async function StorefrontPage({ params }: { params: { storeId: st
         ]);
     } catch (error) {
         console.error("Failed to fetch storefront data:", error);
-        // Render a fallback or error state if necessary
     }
   }
 
-  // Hero section data
+  // Hero section data maps custom tagline to heroTitle
   const heroTitle = storeData?.heroTitle || 'Elegance Redefined';
   const heroSubtitle = storeData?.heroSubtitle || 'Discover curated collections of timeless luxury.';
   const heroImageUrl = storeData?.heroImageUrl || PlaceHolderImages.find(img => img.id === 'storefront-hero')?.imageUrl;
@@ -145,14 +138,12 @@ export default async function StorefrontPage({ params }: { params: { storeId: st
   return (
     <div>
       <StoreVisitorTracker storeId={storeId} />
-      {/* Hero Section - remains a Server Component, but interactivity is moved to its own Client Component */}
       <HeroSection
         imageUrl={heroImageUrl}
         title={heroTitle}
         subtitle={heroSubtitle}
       />
 
-      {/* Product Grid - data is fetched on server and passed to the client component */}
       <section id="products" className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <h2 className="text-3xl font-bold text-center font-headline mb-10">Featured Products</h2>
         <ProductGrid products={products || []} storeId={storeId} />
