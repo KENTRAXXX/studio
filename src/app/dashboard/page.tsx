@@ -64,8 +64,8 @@ export default function DashboardOverviewPage() {
         return <CompletePaymentPrompt />;
     }
 
-    // Special view for Sellers and Brands handled by DashboardController
-    if (userProfile?.planTier === 'SELLER' || userProfile?.planTier === 'BRAND') {
+    // Special view for Sellers, Brands, and Admins handled by DashboardController
+    if (userProfile?.userRole === 'ADMIN' || userProfile?.planTier === 'SELLER' || userProfile?.planTier === 'BRAND') {
         return <DashboardController planTier={userProfile.planTier} />;
     }
 
@@ -127,7 +127,7 @@ export default function DashboardOverviewPage() {
                         <p className="text-muted-foreground mb-6">Visit your live storefront and see your changes.</p>
                         <Button asChild size="lg" className="h-12 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
                             <Link href={storeData?.customDomain ? `https://${storeData.customDomain}` : `/store/${user?.uid}`} target="_blank">
-                                View My Store <ArrowRight className="ml-2 h-5 w-5" />
+                                View My Store <ArrowRight className="ml-2 h-4 w-4" />
                             </Link>
                         </Button>
                     </CardContent>
