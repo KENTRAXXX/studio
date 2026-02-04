@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useUserProfile, useStorage } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, CheckCircle2, UploadCloud, X, ImageIcon } from 'lucide-react';
+import { Loader2, PackagePlus, CheckCircle2, UploadCloud, X, ImageIcon, TrendingUp } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import SomaLogo from '@/components/logo';
 import { cn } from '@/lib/utils';
@@ -35,6 +35,14 @@ export default function AddProductPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  // Dynamic Margin Calculation
+  const margin = useMemo(() => {
+    const w = parseFloat(wholesalePrice) || 0;
+    const r = parseFloat(suggestedRetailPrice) || 0;
+    if (r <= 0) return 0;
+    return ((r - w) / r) * 100;
+  }, [wholesalePrice, suggestedRetailPrice]);
 
   // Secondary layer of protection: Redirect if pending review
   useEffect(() => {
@@ -100,7 +108,7 @@ export default function AddProductPage() {
       await addDoc(pendingCatalogRef, {
         productName,
         description,
-        imageUrl, // Now storing the Firebase Storage URL
+        imageUrl, 
         wholesalePrice: parseFloat(wholesalePrice),
         suggestedRetailPrice: parseFloat(suggestedRetailPrice),
         vendorId: user.uid,
@@ -209,6 +217,26 @@ export default function AddProductPage() {
                                 <p className="text-[10px] text-muted-foreground uppercase tracking-tight">Global listing price</p>
                             </div>
                         </div>
+
+                        {/* Calculated Margin Display */}
+                        {(parseFloat(wholesalePrice) > 0 && parseFloat(suggestedRetailPrice) > 0) && (
+                            <motion.div 
+                                initial={{ opacity: 0, y: 10 }} 
+                                animate={{ opacity: 1, y: 0 }}
+                                className="p-4 rounded-lg border border-border bg-muted/30 flex justify-between items-center"
+                            >
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                    <TrendingUp className="h-4 w-4" />
+                                    <span className="text-sm font-medium">Proposed Margin</span>
+                                </div>
+                                <span className={cn(
+                                    "text-2xl font-bold font-mono",
+                                    margin < 20 ? "text-orange-500" : margin > 40 ? "text-primary" : "text-foreground"
+                                )}>
+                                    {margin.toFixed(1)}%
+                                </span>
+                            </motion.div>
+                        )}
                     </div>
 
                     <div className="space-y-6">

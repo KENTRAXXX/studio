@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -6,15 +5,17 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { notFound, useParams, useRouter } from 'next/navigation';
-import { ShoppingBag, Check, Loader2, DollarSign, TrendingUp, Percent } from 'lucide-react';
+import { ShoppingBag, Check, Loader2, DollarSign, TrendingUp, Percent, ArrowLeft } from 'lucide-react';
 import { useCart } from '../../layout';
 import { useDoc, useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useUserProfile } from '@/firebase/user-profile-provider';
+import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -36,12 +37,19 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     if (product) {
-      setCurrentPrice(product.suggestedRetailPrice);
+      setCurrentPrice(product.suggestedRetailPrice || product.price);
       setCompareAtPrice(product.compareAtPrice || 0);
     }
   }, [product]);
 
   const isLoading = productLoading || profileLoading;
+
+  const wholesalePrice = product?.wholesalePrice || 0;
+  
+  const margin = useMemo(() => {
+    if (currentPrice <= 0) return 0;
+    return ((currentPrice - wholesalePrice) / currentPrice) * 100;
+  }, [currentPrice, wholesalePrice]);
 
   if (isLoading) {
       return (
@@ -55,7 +63,6 @@ export default function ProductDetailPage() {
     notFound();
   }
   
-  const wholesalePrice = product.wholesalePrice || 0;
   const somaFee = wholesalePrice * 0.03;
   const floorPrice = wholesalePrice + somaFee;
   const profit = currentPrice - wholesalePrice;
@@ -105,12 +112,16 @@ export default function ProductDetailPage() {
 
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16">
+      <Link href={`/store/${storeId}`} className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-8 transition-colors">
+        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Collection
+      </Link>
+
       <div className="grid md:grid-cols-2 gap-12 items-start">
         {/* Image Gallery */}
         <div className="space-y-8">
-            <div className="relative aspect-square rounded-lg overflow-hidden border border-primary/20">
-            {productImage && (
+            <div className="relative aspect-square rounded-lg overflow-hidden border border-primary/20 bg-muted/20">
+            {productImage ? (
                 <Image
                 src={productImage.imageUrl}
                 alt={product.name}
@@ -118,18 +129,29 @@ export default function ProductDetailPage() {
                 className="object-cover"
                 data-ai-hint={productImage.imageHint}
                 />
-            )}
+            ) : product.imageUrl ? (
+                <Image
+                src={product.imageUrl}
+                alt={product.name}
+                fill
+                className="object-cover"
+                data-ai-hint="luxury product"
+                />
+            ) : null}
             </div>
             
             {/* Store Owner Pricing Box */}
-            {(userProfile?.planTier === 'MERCHANT' || userProfile?.planTier === 'SCALER' || userProfile?.planTier === 'ENTERPRISE') && (
-              <Card className="border-primary/50 bg-card">
+            {(userProfile?.planTier === 'MERCHANT' || userProfile?.planTier === 'SCALER' || userProfile?.planTier === 'ENTERPRISE' || userProfile?.userRole === 'ADMIN') && (
+              <Card className="border-primary/50 bg-card shadow-lg">
                   <CardHeader>
-                      <CardTitle className="font-headline text-primary">Owner Pricing</CardTitle>
+                      <CardTitle className="font-headline text-primary flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5" />
+                        Owner Pricing & Strategy
+                      </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-6">
                       {product.isManagedBySoma && (
-                        <div className="flex justify-between items-center p-3 rounded-md bg-muted/50">
+                        <div className="flex justify-between items-center p-4 rounded-md bg-muted/50 border border-border/50">
                             <div className="flex items-center gap-2">
                                 <DollarSign className="h-5 w-5 text-muted-foreground"/>
                                 <span className="font-medium text-muted-foreground">Wholesale Cost</span>
@@ -137,6 +159,7 @@ export default function ProductDetailPage() {
                             <span className="font-bold font-mono text-lg">${wholesalePrice.toFixed(2)}</span>
                         </div>
                       )}
+                      
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="current-price">Your Retail Price</Label>
@@ -145,7 +168,7 @@ export default function ProductDetailPage() {
                                 type="number"
                                 value={currentPrice}
                                 onChange={(e) => setCurrentPrice(parseFloat(e.target.value) || 0)}
-                                className="text-lg font-bold h-12"
+                                className="text-lg font-bold h-12 border-primary/20 focus:border-primary"
                             />
                         </div>
                          <div className="space-y-2">
@@ -160,29 +183,39 @@ export default function ProductDetailPage() {
                             />
                         </div>
                       </div>
+
+                      {/* Calculated Margin Display */}
+                      <div className="p-4 rounded-lg border border-border bg-muted/30 flex justify-between items-center">
+                        <div className="space-y-0.5">
+                            <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Calculated Margin</span>
+                            <p className="text-[10px] text-muted-foreground/60 italic">Profit percentage based on retail</p>
+                        </div>
+                        <span className={cn(
+                            "text-3xl font-bold font-mono",
+                            margin < 20 ? "text-orange-500" : margin > 40 ? "text-primary" : "text-foreground"
+                        )}>
+                            {margin.toFixed(1)}%
+                        </span>
+                      </div>
+
                        {product.isManagedBySoma && isPriceInvalid && (
-                            <p className="text-sm text-destructive font-medium">Retail price cannot be lower than floor price of ${floorPrice.toFixed(2)} (Wholesale + 3% Fee).</p>
+                            <p className="text-sm text-destructive font-medium p-2 bg-destructive/10 rounded-md border border-destructive/20">Retail price cannot be lower than floor price of ${floorPrice.toFixed(2)} (Wholesale + 3% Fee).</p>
                         )}
                        {product.isManagedBySoma && (
-                         <>
-                            <div className="flex justify-between items-center p-3 rounded-md bg-green-600/10 border border-green-600/30">
-                                <div className="flex items-center gap-2">
-                                    <TrendingUp className="h-5 w-5 text-green-400"/>
-                                    <span className="font-medium text-green-400">Projected Profit</span>
-                                </div>
-                                <span className="font-bold font-mono text-lg text-green-400">${profit.toFixed(2)}</span>
+                         <div className="grid grid-cols-2 gap-4">
+                            <div className="flex flex-col p-3 rounded-md bg-green-600/5 border border-green-600/20">
+                                <span className="text-[10px] text-green-400 font-bold uppercase mb-1">Projected Profit</span>
+                                <span className="font-bold font-mono text-xl text-green-400">${profit.toFixed(2)}</span>
                             </div>
-                            <div className="flex justify-between items-center p-3 rounded-md bg-red-600/10 border border-red-600/30">
-                                <div className="flex items-center gap-2">
-                                    <Percent className="h-5 w-5 text-red-400"/>
-                                    <span className="font-medium text-red-400">SOMA Fee (3%)</span>
-                                </div>
-                                <span className="font-bold font-mono text-lg text-red-400">-${somaFee.toFixed(2)}</span>
+                            <div className="flex flex-col p-3 rounded-md bg-red-600/5 border border-red-600/20 text-right">
+                                <span className="text-[10px] text-red-400 font-bold uppercase mb-1">SOMA Fee (3%)</span>
+                                <span className="font-bold font-mono text-xl text-red-400">-${somaFee.toFixed(2)}</span>
                             </div>
-                         </>
+                         </div>
                        )}
-                      <Button onClick={handlePriceSave} disabled={(product.isManagedBySoma && isPriceInvalid) || isSaving} className="w-full">
-                          {isSaving ? <Loader2 className="animate-spin" /> : 'Save Price'}
+                      <Button onClick={handlePriceSave} disabled={(product.isManagedBySoma && isPriceInvalid) || isSaving} className="w-full h-12 btn-gold-glow">
+                          {isSaving ? <Loader2 className="animate-spin mr-2" /> : <Check className="mr-2 h-4 w-4" />}
+                          Save Pricing Strategy
                       </Button>
                   </CardContent>
               </Card>
@@ -191,26 +224,45 @@ export default function ProductDetailPage() {
 
 
         {/* Product Info */}
-        <div className="space-y-6">
-          <h1 className="text-4xl font-bold font-headline text-primary">{product.name}</h1>
-          <div className="flex items-baseline gap-4">
-            <p className="text-3xl font-bold">${currentPrice.toFixed(2)}</p>
-            {compareAtPrice > currentPrice && (
-                <p className="text-2xl font-bold text-muted-foreground line-through">
-                    ${compareAtPrice.toFixed(2)}
-                </p>
-            )}
+        <div className="space-y-8 pt-4">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-bold font-headline text-primary leading-tight">{product.name}</h1>
+            <div className="flex items-baseline gap-4 mt-4">
+                <p className="text-4xl font-bold">${currentPrice.toFixed(2)}</p>
+                {compareAtPrice > currentPrice && (
+                    <p className="text-2xl font-bold text-muted-foreground line-through opacity-50">
+                        ${compareAtPrice.toFixed(2)}
+                    </p>
+                )}
+            </div>
           </div>
-          <p className="text-muted-foreground text-lg">{product.description}</p>
+
+          <div className="prose prose-invert max-w-none">
+            <p className="text-muted-foreground text-lg leading-relaxed">{product.description}</p>
+          </div>
           
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Button size="lg" className="h-12 text-lg flex-1" variant="outline" onClick={handleAddToCart}>
+          <div className="flex flex-col sm:flex-row gap-4 pt-4">
+            <Button size="lg" className="h-14 text-lg flex-1 border-primary/20 hover:border-primary/50" variant="outline" onClick={handleAddToCart}>
               <ShoppingBag className="mr-2 h-5 w-5" />
               Add to Cart
             </Button>
-            <Button size="lg" className="h-12 text-lg flex-1 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleBuyNow} disabled={isBuyingNow}>
-              {isBuyingNow ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Securing Item...</> : "Buy Now"}
+            <Button size="lg" className="h-14 text-lg flex-1 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold" onClick={handleBuyNow} disabled={isBuyingNow}>
+              {isBuyingNow ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Securing Item...</> : "Buy It Now"}
             </Button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6 pt-8 border-t border-border/50">
+            <div className="space-y-1">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Availability</p>
+                <p className="text-sm font-medium flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                    In Stock & Ready to Ship
+                </p>
+            </div>
+            <div className="space-y-1">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Shipping</p>
+                <p className="text-sm font-medium">Global Express Insured</p>
+            </div>
           </div>
         </div>
       </div>

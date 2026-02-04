@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
-import { Gem, PlusCircle, Loader2, Check, Warehouse } from 'lucide-react';
+import { Gem, PlusCircle, Loader2, Check, Warehouse, TrendingUp } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -26,6 +26,7 @@ import { useUser, useCollection, useFirestore } from '@/firebase';
 import { useUserProfile } from '@/firebase/user-profile-provider';
 import { collection, doc, setDoc, getDocs, query, where } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { cn } from '@/lib/utils';
 
 type Product = {
   id: string;
@@ -201,7 +202,8 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
                         <TableHead>SKU</TableHead>
                         <TableHead>Product Name</TableHead>
                         <TableHead className="text-right">Wholesale Cost</TableHead>
-                        <TableHead className="text-right">Suggested Retail</TableHead>
+                        <TableHead className="text-right">Retail</TableHead>
+                        <TableHead className="text-center">Margin</TableHead>
                         <TableHead className="text-center">Stock Level</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -210,6 +212,10 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
                     {masterCatalog.map((product) => {
                       const isSynced = syncedProducts.has(product.id);
                       const isSyncing = syncingProducts.has(product.id);
+                      const wholesale = product.masterCost || 0;
+                      const retail = product.retailPrice || 0;
+                      const margin = retail > 0 ? ((retail - wholesale) / retail) * 100 : 0;
+
                       return (
                         <TableRow key={product.id}>
                         <TableCell>
@@ -228,10 +234,18 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
                         </TableCell>
                         <TableCell className="font-medium">{product.name}</TableCell>
                         <TableCell className="text-right font-mono">
-                            ${(product.masterCost || 0).toFixed(2)}
+                            ${wholesale.toFixed(2)}
                         </TableCell>
                         <TableCell className="text-right font-mono">
-                            ${product.retailPrice.toFixed(2)}
+                            ${retail.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                            <div className={cn(
+                                "font-bold font-mono",
+                                margin < 20 ? "text-orange-500" : margin > 40 ? "text-primary" : "text-muted-foreground"
+                            )}>
+                                {margin.toFixed(0)}%
+                            </div>
                         </TableCell>
                         <TableCell className="text-center">
                             <Badge
