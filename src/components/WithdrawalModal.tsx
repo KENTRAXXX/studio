@@ -97,7 +97,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
 
   const watchedAmount = form.watch('amount');
   // Explicitly ensure numeric type to prevent string concatenation during fee calculation
-  const requestedAmount = typeof watchedAmount === 'number' ? watchedAmount : (parseFloat(watchedAmount) || 0);
+  const requestedAmount = Number(watchedAmount) || 0;
   const withdrawalFee = requestedAmount * 0.03;
   const totalDeduction = requestedAmount + withdrawalFee;
   const isAmountInvalid = totalDeduction > availableBalance;

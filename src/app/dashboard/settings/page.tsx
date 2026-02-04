@@ -105,8 +105,7 @@ export default function StoreSettingsPage() {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'logoUrl' | 'faviconUrl') => {
         const file = e.target.files?.[0];
         if (file) {
-            // Note: In this prototype, we simulate an upload by using a temporary URL.
-            // A production app would upload to Firebase Storage first.
+            // In this prototype, we simulate an upload by using a temporary URL.
             const previewUrl = URL.createObjectURL(file);
             form.setValue(field, previewUrl);
             toast({

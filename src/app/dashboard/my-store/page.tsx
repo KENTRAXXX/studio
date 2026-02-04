@@ -321,7 +321,9 @@ const DeploymentOverlay = ({ messages, onComplete }: { messages: string[], onCom
                 setCurrentMessageIndex(prev => prev + 1);
             }, 1500);
         } else {
-            timeout = setTimeout(onComplete, 1500);
+            timeout = setTimeout(() => {
+                onComplete();
+            }, 1500);
         }
         return () => clearTimeout(timeout);
     }, [currentMessageIndex, messages, onComplete]);
@@ -394,6 +396,7 @@ export default function MyStorePage() {
         const userRole = (planTier === 'SELLER' || planTier === 'BRAND') ? 'SELLER' : 'MOGUL';
 
         // 1. Update User Profile (Client Side)
+        // All mutations must be client-side to have auth context for security rules
         await updateDoc(userRef, {
             hasAccess: true,
             planTier: planTier,
@@ -464,7 +467,7 @@ export default function MyStorePage() {
             await batch.commit();
         }
 
-        // 4. Trigger Welcome Email (Server Side)
+        // 4. Trigger Welcome Email (Server Side - non-database task)
         await createClientStore({
             userId,
             email: user.email!,
