@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   SidebarProvider,
@@ -42,7 +42,8 @@ import {
   MessageSquare,
   Accessibility,
   LogOut,
-  ClipboardList
+  ClipboardList,
+  Loader2
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
@@ -79,6 +80,12 @@ export default function AdminLayout({
   const router = useRouter();
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
+  useEffect(() => {
+    if (!profileLoading && userProfile?.userRole !== 'ADMIN') {
+      router.push('/access-denied');
+    }
+  }, [userProfile, profileLoading, router]);
+
   const handleLogout = async () => {
     if (!auth) return;
     try {
@@ -90,8 +97,15 @@ export default function AdminLayout({
     }
   };
 
-  if (!profileLoading && userProfile?.userRole !== 'ADMIN') {
-    router.push('/access-denied');
+  if (profileLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (userProfile?.userRole !== 'ADMIN') {
     return null;
   }
 
