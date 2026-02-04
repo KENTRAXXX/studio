@@ -26,6 +26,7 @@ type UserProfile = {
   verificationFeedback?: string;
   brandBio?: string;
   avatarUrl?: string;
+  coverPhotoUrl?: string;
   socialLinks?: {
     instagram?: string;
     x?: string;
@@ -90,30 +91,41 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
   const { data: userProfile, loading: profileLoading } = useDoc<UserProfile>(userDocRef);
 
   useEffect(() => {
-    if (profileLoading) return;
+    if (userLoading || profileLoading) return;
 
-    // Public/Auth routes that don't require checks
-    const isPublicRoute = pathname.startsWith('/signup') || pathname.startsWith('/plan-selection') || pathname === '/' || pathname.startsWith('/store');
+    // Routes that are accessible without being logged in
+    const isPublicRoute = 
+      pathname === '/' || 
+      pathname.startsWith('/signup') || 
+      pathname.startsWith('/plan-selection') || 
+      pathname.startsWith('/store') || 
+      pathname.startsWith('/api');
+      
     const isLegalPage = pathname.startsWith('/legal');
     const isAccessDeniedPage = pathname === '/access-denied';
     const isPendingReviewPage = pathname === '/backstage/pending-review';
     const isReturnPage = pathname === '/backstage/return';
 
+    // 1. AUTH GUARD: If not logged in and not on a public or legal route, redirect to home
+    if (!user && !isPublicRoute && !isLegalPage) {
+      router.push('/');
+      return;
+    }
+
     if (userProfile) {
-       // 1. Check if account is disabled
+       // 2. Check if account is disabled
        if (userProfile.isDisabled && !isAccessDeniedPage) {
          router.push('/access-denied');
          return;
        }
       
-       // 2. Check if terms have been accepted (bypass for Admins)
+       // 3. Check if terms have been accepted (bypass for Admins)
        if (userProfile.userRole !== 'ADMIN' && userProfile.hasAcceptedTerms === false && !isLegalPage && !isPublicRoute && !isPendingReviewPage && !isReturnPage) {
          router.push('/legal/terms');
          return;
        }
 
-       // 3. Status Guard: If pending review, lock to the status page
-       // This restricts users from accessing dashboard tools or product upload until approved
+       // 4. Status Guard: If pending review, lock to the status page
        const isDashboardOrBackstage = pathname.startsWith('/dashboard') || pathname.startsWith('/backstage');
        if (userProfile.status === 'pending_review' && isDashboardOrBackstage && !isPendingReviewPage && !isPublicRoute && !isLegalPage && !isReturnPage) {
           router.push('/backstage/pending-review');
@@ -121,7 +133,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
        }
     }
 
-  }, [userProfile, profileLoading, pathname, router]);
+  }, [user, userLoading, userProfile, profileLoading, pathname, router]);
 
   const value = useMemo(() => ({
     userProfile: userProfile ? { ...userProfile, id: user?.uid } : null,
