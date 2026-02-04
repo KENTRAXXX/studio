@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense, useTransition, useEffect } from 'react';
@@ -38,7 +39,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 type PlanInterval = 'monthly' | 'yearly' | 'lifetime' | 'free';
-type PlanTier = 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND';
+type PlanTier = 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND' | 'ADMIN';
 
 
 function SignUpForm() {
@@ -62,6 +63,7 @@ function SignUpForm() {
     SELLER: 'Seller',
     ENTERPRISE: 'Enterprise',
     BRAND: 'Brand',
+    ADMIN: 'Administrator',
   }[planTier] || 'Scaler';
   
   const form = useForm<FormValues>({
@@ -82,7 +84,7 @@ function SignUpForm() {
   }, [refParam, form]);
 
   const onSubmit = (data: FormValues) => {
-    const isFreePlan = planTier === 'SELLER' && interval === 'free';
+    const isFreePlan = (planTier === 'SELLER' && interval === 'free') || planTier === 'ADMIN';
     
     signUp({ ...data, planTier: planTier, plan: interval }, {
       onSuccess: async (user) => {
@@ -121,6 +123,11 @@ function SignUpForm() {
           router.push('/backstage/return');
         };
 
+        if (isFreePlan) {
+            onPaystackSuccess();
+            return;
+        }
+
         await initializePayment({
             email: data.email,
             payment: {
@@ -139,9 +146,7 @@ function SignUpForm() {
           onPaystackClose
         );
 
-        if (!isFreePlan) {
-            setIsSuccess(true);
-        }
+        setIsSuccess(true);
       },
       onError: (err) => {
         toast({
@@ -154,8 +159,8 @@ function SignUpForm() {
   };
 
   const isPending = isSigningUp || isInitializing;
-  const isFreePlan = planTier === 'SELLER' && interval === 'free';
-  const buttonText = isFreePlan ? 'Create Free Account' : 'Create Account & Pay';
+  const isFreePlan = (planTier === 'SELLER' && interval === 'free') || planTier === 'ADMIN';
+  const buttonText = isFreePlan ? 'Create Admin Account' : 'Create Account & Pay';
 
   return (
       <div className="w-full max-w-lg">
@@ -259,8 +264,8 @@ function SignUpForm() {
                     <Card className="border-primary/50">
                         <CardContent className="p-6 text-center">
                             <Loader2 className="animate-spin h-8 w-8 text-primary mx-auto mb-4"/>
-                            <p className="text-lg font-medium">Redirecting to Paystack...</p>
-                            <p className="text-muted-foreground text-sm">Please complete the payment in the popup.</p>
+                            <p className="text-lg font-medium">Provisioning Session...</p>
+                            <p className="text-muted-foreground text-sm">Synchronizing your credentials with the platform.</p>
                         </CardContent>
                     </Card>
                  </motion.div>

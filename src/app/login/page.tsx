@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -21,7 +22,7 @@ import {
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import SomaLogo from '@/components/logo';
-import { Loader2, Lock, ArrowRight } from 'lucide-react';
+import { Loader2, Lock, ArrowRight, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 
 const formSchema = z.object({
@@ -131,6 +132,15 @@ export default function LoginPage() {
                     Claim Your Access <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
             </Button>
+            
+            <div className="pt-6 border-t border-white/5">
+                <Link 
+                    href="/signup?planTier=ADMIN&interval=free" 
+                    className="text-[10px] uppercase font-black tracking-widest text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-1"
+                >
+                    <ShieldCheck className="h-3 w-3" /> Platform Administration Gateway
+                </Link>
+            </div>
           </div>
         </CardContent>
       </Card>

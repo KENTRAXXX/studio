@@ -8,7 +8,7 @@ import { useAuth, useFirestore } from '@/firebase';
 type SignUpCredentials = {
   email: string;
   password: string;
-  planTier: 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND';
+  planTier: 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND' | 'ADMIN';
   plan: 'monthly' | 'yearly' | 'lifetime' | 'free';
   referralCode?: string;
 };
@@ -68,11 +68,18 @@ export function useSignUp() {
       
       const userDocRef = doc(firestore, 'users', user.uid);
       
-      // MOGUL is the role name for all store owners (Scaler, Merchant, Enterprise)
-      const userRole = (credentials.planTier === 'SELLER' || credentials.planTier === 'BRAND') ? 'SELLER' : 'MOGUL';
+      // Determine Role
+      let userRole: 'ADMIN' | 'SELLER' | 'MOGUL';
+      if (credentials.planTier === 'ADMIN') {
+        userRole = 'ADMIN';
+      } else if (credentials.planTier === 'SELLER' || credentials.planTier === 'BRAND') {
+        userRole = 'SELLER';
+      } else {
+        userRole = 'MOGUL';
+      }
       
-      // If it's a free seller plan, we grant access immediately since there is no payment webhook.
-      const isFreeTier = credentials.planTier === 'SELLER' && credentials.plan === 'free';
+      // If it's a free seller plan or an admin, we grant access immediately since there is no payment webhook.
+      const isFreeTier = (credentials.planTier === 'SELLER' && credentials.plan === 'free') || credentials.planTier === 'ADMIN';
 
       const newUserProfile: any = {
         email: user.email,
