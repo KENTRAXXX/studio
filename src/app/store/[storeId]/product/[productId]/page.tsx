@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -76,9 +77,7 @@ export default function ProductDetailPage() {
     setIsBuyingNow(true);
     const productWithCurrentPrice = { ...product, suggestedRetailPrice: currentPrice };
     addToCart(productWithCurrentPrice);
-    // No toast needed for instant redirect
     router.push(`/store/${storeId}/checkout`);
-    // No need to setIsBuyingNow(false) as the user is navigated away
   };
   
   const handlePriceSave = async () => {
@@ -122,20 +121,22 @@ export default function ProductDetailPage() {
             )}
             </div>
             
-            {/* Mogul Pricing Box */}
-            {(userProfile?.planTier === 'MOGUL' || userProfile?.planTier === 'SCALER' || userProfile?.planTier === 'ENTERPRISE') && (
+            {/* Store Owner Pricing Box */}
+            {(userProfile?.planTier === 'MERCHANT' || userProfile?.planTier === 'SCALER' || userProfile?.planTier === 'ENTERPRISE') && (
               <Card className="border-primary/50 bg-card">
                   <CardHeader>
-                      <CardTitle className="font-headline text-primary">Mogul Pricing</CardTitle>
+                      <CardTitle className="font-headline text-primary">Owner Pricing</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                      <div className="flex justify-between items-center p-3 rounded-md bg-muted/50">
-                          <div className="flex items-center gap-2">
-                              <DollarSign className="h-5 w-5 text-muted-foreground"/>
-                              <span className="font-medium text-muted-foreground">Wholesale Cost</span>
-                          </div>
-                          <span className="font-bold font-mono text-lg">${wholesalePrice.toFixed(2)}</span>
-                      </div>
+                      {product.isManagedBySoma && (
+                        <div className="flex justify-between items-center p-3 rounded-md bg-muted/50">
+                            <div className="flex items-center gap-2">
+                                <DollarSign className="h-5 w-5 text-muted-foreground"/>
+                                <span className="font-medium text-muted-foreground">Wholesale Cost</span>
+                            </div>
+                            <span className="font-bold font-mono text-lg">${wholesalePrice.toFixed(2)}</span>
+                        </div>
+                      )}
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="current-price">Your Retail Price</Label>
@@ -159,24 +160,28 @@ export default function ProductDetailPage() {
                             />
                         </div>
                       </div>
-                       {isPriceInvalid && (
+                       {product.isManagedBySoma && isPriceInvalid && (
                             <p className="text-sm text-destructive font-medium">Retail price cannot be lower than floor price of ${floorPrice.toFixed(2)} (Wholesale + 3% Fee).</p>
                         )}
-                       <div className="flex justify-between items-center p-3 rounded-md bg-green-600/10 border border-green-600/30">
-                          <div className="flex items-center gap-2">
-                              <TrendingUp className="h-5 w-5 text-green-400"/>
-                              <span className="font-medium text-green-400">Projected Profit</span>
-                          </div>
-                          <span className="font-bold font-mono text-lg text-green-400">${profit.toFixed(2)}</span>
-                      </div>
-                       <div className="flex justify-between items-center p-3 rounded-md bg-red-600/10 border border-red-600/30">
-                          <div className="flex items-center gap-2">
-                              <Percent className="h-5 w-5 text-red-400"/>
-                              <span className="font-medium text-red-400">SOMA Fee (3%)</span>
-                          </div>
-                          <span className="font-bold font-mono text-lg text-red-400">-${somaFee.toFixed(2)}</span>
-                      </div>
-                      <Button onClick={handlePriceSave} disabled={isPriceInvalid || isSaving} className="w-full">
+                       {product.isManagedBySoma && (
+                         <>
+                            <div className="flex justify-between items-center p-3 rounded-md bg-green-600/10 border border-green-600/30">
+                                <div className="flex items-center gap-2">
+                                    <TrendingUp className="h-5 w-5 text-green-400"/>
+                                    <span className="font-medium text-green-400">Projected Profit</span>
+                                </div>
+                                <span className="font-bold font-mono text-lg text-green-400">${profit.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between items-center p-3 rounded-md bg-red-600/10 border border-red-600/30">
+                                <div className="flex items-center gap-2">
+                                    <Percent className="h-5 w-5 text-red-400"/>
+                                    <span className="font-medium text-red-400">SOMA Fee (3%)</span>
+                                </div>
+                                <span className="font-bold font-mono text-lg text-red-400">-${somaFee.toFixed(2)}</span>
+                            </div>
+                         </>
+                       )}
+                      <Button onClick={handlePriceSave} disabled={(product.isManagedBySoma && isPriceInvalid) || isSaving} className="w-full">
                           {isSaving ? <Loader2 className="animate-spin" /> : 'Save Price'}
                       </Button>
                   </CardContent>

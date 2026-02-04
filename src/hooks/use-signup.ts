@@ -68,6 +68,7 @@ export function useSignUp() {
       
       const userDocRef = doc(firestore, 'users', user.uid);
       
+      // MOGUL is the role name for all store owners (Scaler, Merchant, Enterprise)
       const userRole = (credentials.planTier === 'SELLER' || credentials.planTier === 'BRAND') ? 'SELLER' : 'MOGUL';
       
       const newUserProfile: any = {

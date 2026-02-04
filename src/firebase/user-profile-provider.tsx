@@ -18,11 +18,18 @@ type UserProfile = {
   userRole?: 'ADMIN' | 'MOGUL' | 'SELLER';
   plan?: 'monthly' | 'yearly' | 'lifetime' | 'free';
   paidAt?: string;
-  planTier?: 'MERCHANT' | 'MOGUL' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND';
+  planTier?: 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND';
   completedLessons?: string[];
   isDisabled?: boolean;
   referralCode?: string;
   referredBy?: string;
+  bankDetails?: {
+    accountName: string;
+    accountNumber: string;
+    bankName: string;
+    iban?: string;
+    swiftBic?: string;
+  };
 };
 
 interface UserProfileContextValue {

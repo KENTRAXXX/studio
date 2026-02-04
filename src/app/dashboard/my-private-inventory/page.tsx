@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useMemo, useState, useRef } from 'react';
@@ -53,7 +54,7 @@ export default function MyPrivateInventoryPage() {
 
   useEffect(() => {
     if (!isLoading) {
-      if (!userProfile || (userProfile.planTier !== 'MERCHANT' && userProfile.planTier !== 'ENTERPRISE')) {
+      if (!userProfile || (userProfile.planTier !== 'MERCHANT' && userProfile.planTier !== 'SCALER' && userProfile.planTier !== 'ENTERPRISE')) {
         router.push('/access-denied');
       }
     }
@@ -129,7 +130,6 @@ export default function MyPrivateInventoryPage() {
             });
         } finally {
             setIsImporting(false);
-            // Reset file input value to allow re-uploading the same file
             if(fileInputRef.current) fileInputRef.current.value = '';
         }
     };
@@ -147,10 +147,6 @@ export default function MyPrivateInventoryPage() {
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
-  }
-
-  if (userProfile?.planTier !== 'MERCHANT' && userProfile?.planTier !== 'ENTERPRISE') {
-      return null; // Render nothing while redirecting
   }
 
   return (

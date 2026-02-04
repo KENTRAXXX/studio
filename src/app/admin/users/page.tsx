@@ -46,7 +46,7 @@ import Link from 'next/link';
 type UserProfile = {
   id: string;
   email: string;
-  planTier: 'MERCHANT' | 'MOGUL' | 'SCALER' | 'SELLER' | 'ENTERPRISE';
+  planTier: 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND';
   status: 'pending_review' | 'approved' | 'rejected';
   isDisabled?: boolean;
 };
@@ -68,14 +68,13 @@ const getStatusBadgeVariant = (status: UserProfile['status'] | 'disabled') => {
 
 const getPlanTierBadgeVariant = (planTier: UserProfile['planTier']) => {
     switch (planTier) {
-        case 'MOGUL':
         case 'SCALER':
         case 'ENTERPRISE':
-            return 'bg-primary/20 text-primary border-primary/50'; // Gold
+            return 'bg-primary/20 text-primary border-primary/50';
         case 'MERCHANT':
-            return 'bg-slate-400/20 text-slate-300 border-slate-400/50'; // Silver
+            return 'bg-slate-400/20 text-slate-300 border-slate-400/50';
         case 'SELLER':
-            return 'bg-orange-400/20 text-orange-300 border-orange-400/50'; // Bronze
+            return 'bg-orange-400/20 text-orange-300 border-orange-400/50';
         default:
             return 'bg-secondary text-secondary-foreground';
     }
@@ -164,7 +163,6 @@ export default function UserManagementPage() {
                 <SelectContent>
                     <SelectItem value="all">All Tiers</SelectItem>
                     <SelectItem value="MERCHANT">Merchant</SelectItem>
-                    <SelectItem value="MOGUL">Mogul</SelectItem>
                     <SelectItem value="SCALER">Scaler</SelectItem>
                     <SelectItem value="SELLER">Seller</SelectItem>
                     <SelectItem value="ENTERPRISE">Enterprise</SelectItem>

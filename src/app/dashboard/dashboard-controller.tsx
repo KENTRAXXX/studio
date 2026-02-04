@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -6,10 +7,9 @@ import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Package, Warehouse, DollarSign, Landmark, ArrowRight, Loader2 } from "lucide-react";
-import GlobalProductCatalogPage from "../dashboard/product-catalog/page";
+import { Package, Warehouse, DollarSign, Landmark, ArrowRight, Loader2, Boxes } from "lucide-react";
 
-const PrivateInventoryView = () => {
+const PrivateInventoryCard = () => {
     const { user } = useUser();
     const firestore = useFirestore();
 
@@ -24,7 +24,7 @@ const PrivateInventoryView = () => {
     const { data: privateProducts, loading } = useCollection(privateProductsRef);
 
     return (
-        <Card className="border-primary/50 text-center flex flex-col items-center justify-center h-96">
+        <Card className="border-primary/50 text-center flex flex-col items-center justify-center p-6 h-full">
             <CardHeader>
                 <div className="mx-auto bg-muted rounded-full p-4 border border-primary/20">
                    <Warehouse className="h-12 w-12 text-primary" />
@@ -37,11 +37,32 @@ const PrivateInventoryView = () => {
                 ) : (
                     <p className="text-4xl font-bold text-primary my-3">{privateProducts?.length || 0}</p>
                 )}
-                <p className="text-muted-foreground mt-2 mb-6">
+                <p className="text-muted-foreground mt-2 mb-6 text-sm">
                     Products you manage and fulfill yourself.
                 </p>
-                <Button asChild>
+                <Button asChild className="w-full">
                     <Link href="/dashboard/my-private-inventory">Manage Inventory <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                </Button>
+            </CardContent>
+        </Card>
+    );
+};
+
+const DropshipCatalogCard = () => {
+    return (
+        <Card className="border-primary/50 text-center flex flex-col items-center justify-center p-6 h-full">
+            <CardHeader>
+                <div className="mx-auto bg-muted rounded-full p-4 border border-primary/20">
+                   <Boxes className="h-12 w-12 text-primary" />
+                </div>
+            </CardHeader>
+            <CardContent>
+                <CardTitle className="text-2xl font-headline">Global Catalog</CardTitle>
+                <p className="text-muted-foreground mt-4 mb-6 text-sm">
+                    Access thousands of premium dropshippable products.
+                </p>
+                <Button asChild className="w-full">
+                    <Link href="/dashboard/product-catalog">Browse Catalog <ArrowRight className="ml-2 h-4 w-4" /></Link>
                 </Button>
             </CardContent>
         </Card>
@@ -65,7 +86,7 @@ const SupplierUploadView = () => {
     }, [payoutDocs]);
 
     return (
-     <Card className="border-primary/50 text-center flex flex-col items-center justify-center h-96">
+     <Card className="border-primary/50 text-center flex flex-col items-center justify-center h-96 max-w-lg mx-auto">
         <CardHeader>
             <div className="mx-auto bg-muted rounded-full p-4 border border-primary/20">
                <DollarSign className="h-12 w-12 text-primary" />
@@ -89,20 +110,23 @@ const SupplierUploadView = () => {
     );
 };
 
-// Scalers and Enterprise see the dropshipping catalog
-const DropshipCatalogView = ({ isDemo = false }: { isDemo?: boolean }) => (
-    <GlobalProductCatalogPage isDemo={isDemo} />
+const HybridDashboardView = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <DropshipCatalogCard />
+        <PrivateInventoryCard />
+    </div>
 );
 
 
-export default function DashboardController({ planTier, isDemo = false }: { planTier?: string, isDemo?: boolean }) {
+export default function DashboardController({ planTier }: { planTier?: string, isDemo?: boolean }) {
     switch (planTier) {
         case 'MERCHANT':
-            return <PrivateInventoryView />;
+            return <div className="max-w-lg mx-auto"><PrivateInventoryCard /></div>;
         case 'SCALER':
         case 'ENTERPRISE':
-            return <DropshipCatalogView isDemo={isDemo} />;
+            return <HybridDashboardView />;
         case 'SELLER':
+        case 'BRAND':
             return <SupplierUploadView />;
         default:
              return (
