@@ -88,6 +88,13 @@ export default function BackstagePage() {
   const form = useForm<OnboardingFormValues>({
     resolver: zodResolver(onboardingSchema),
     mode: 'onBlur',
+    defaultValues: {
+        legalBusinessName: '',
+        warehouseAddress: '',
+        taxId: '',
+        contactPhone: '',
+        governmentIdUrl: '',
+    },
   });
   const { isSubmitting } = form.formState;
 

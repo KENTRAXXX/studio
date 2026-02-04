@@ -28,6 +28,9 @@ export default function ProfileSettingsPage() {
     const form = useForm<ProfileFormValues>({
         resolver: zodResolver(profileSchema),
         mode: 'onBlur',
+        defaultValues: {
+            displayName: '',
+        },
     });
 
     useEffect(() => {

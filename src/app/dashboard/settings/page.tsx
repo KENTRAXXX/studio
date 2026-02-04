@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -76,6 +75,13 @@ export default function StoreSettingsPage() {
     const form = useForm<SettingsFormValues>({
         resolver: zodResolver(settingsSchema),
         mode: 'onBlur',
+        defaultValues: {
+            storeName: '',
+            heroTitle: '',
+            heroSubtitle: '',
+            logoUrl: '',
+            faviconUrl: '',
+        },
     });
 
     const watchedData = form.watch();
@@ -209,5 +215,3 @@ export default function StoreSettingsPage() {
         </div>
     )
 }
-
-    
