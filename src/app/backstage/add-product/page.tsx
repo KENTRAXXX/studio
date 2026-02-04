@@ -91,6 +91,7 @@ export default function AddProductPage() {
             if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
                 throw new Error(`File ${file.name} is not a supported format.`);
             }
+            // Store in /master_catalog/{productId}/
             const storageRef = ref(storage, `master_catalog/${tempId}/${Date.now()}_${index}_${file.name}`);
             const snapshot = await uploadBytes(storageRef, file);
             return getDownloadURL(snapshot.ref);
@@ -308,6 +309,7 @@ export default function AddProductPage() {
                             </motion.div>
                         )}
 
+                        {/* Real-time Profit Margin Display */}
                         {(numericWholesale > 0 && numericRetail > 0 && !isPriceInvalid) && (
                             <motion.div 
                                 initial={{ opacity: 0, y: 10 }} 
@@ -419,5 +421,3 @@ export default function AddProductPage() {
     </div>
   );
 }
-
-    
