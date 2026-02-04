@@ -16,11 +16,12 @@ service cloud.firestore {
 
       // 2. We allow the owner to update their profile. 
       // In this MVP architecture, we trust the client-side finalization after payment.
+      // We check that sensitive administrative fields remain unchanged.
       let protectedFieldsUnchanged =
-          request.resource.data.get('email', null) == resource.data.get('email', null) &&
-          request.resource.data.get('referralCode', null) == resource.data.get('referralCode', null) &&
-          request.resource.data.get('isDisabled', null) == resource.data.get('isDisabled', null) &&
-          request.resource.data.get('referredBy', null) == resource.data.get('referredBy', null);
+          request.resource.data.get('email', resource.data.email) == resource.data.email &&
+          request.resource.data.get('referralCode', resource.data.referralCode) == resource.data.referralCode &&
+          request.resource.data.get('isDisabled', resource.data.isDisabled) == resource.data.isDisabled &&
+          request.resource.data.get('referredBy', resource.data.referredBy) == resource.data.referredBy;
 
       return isOwner && protectedFieldsUnchanged;
     }

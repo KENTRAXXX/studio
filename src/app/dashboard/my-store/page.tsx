@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -315,7 +315,7 @@ const ProductUploadStep = ({ onBack, onLaunch }: { onBack: () => void, onLaunch:
 const DeploymentOverlay = ({ messages, onComplete }: { messages: string[], onComplete: () => void }) => {
     const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 
-    useState(() => {
+    useEffect(() => {
         if (currentMessageIndex < messages.length - 1) {
             const timer = setTimeout(() => {
                 setCurrentMessageIndex(prev => prev + 1);
@@ -325,7 +325,7 @@ const DeploymentOverlay = ({ messages, onComplete }: { messages: string[], onCom
             const finalTimer = setTimeout(onComplete, 1500);
             return () => clearTimeout(finalTimer);
         }
-    });
+    }, [currentMessageIndex, messages, onComplete]);
 
     return (
         <motion.div
@@ -395,7 +395,7 @@ export default function MyStorePage() {
         const userRole = (planTier === 'SELLER' || planTier === 'BRAND') ? 'SELLER' : 'MOGUL';
 
         // 1. Update User Profile (Client Side)
-        updateDoc(userRef, {
+        await updateDoc(userRef, {
             hasAccess: true,
             planTier: planTier,
             userRole: userRole,
@@ -407,6 +407,7 @@ export default function MyStorePage() {
                 requestResourceData: { hasAccess: true, planTier },
             } satisfies SecurityRuleContext);
             errorEmitter.emit('permission-error', permissionError);
+            throw err;
         });
 
         // 2. Create Store Configuration (Client Side)
@@ -425,20 +426,21 @@ export default function MyStorePage() {
             status: 'Live',
         };
 
-        setDoc(storeRef, storeConfig).catch(async (err) => {
+        await setDoc(storeRef, storeConfig).catch(async (err) => {
             const permissionError = new FirestorePermissionError({
                 path: storeRef.path,
                 operation: 'create',
                 requestResourceData: storeConfig,
             } satisfies SecurityRuleContext);
             errorEmitter.emit('permission-error', permissionError);
+            throw err;
         });
 
         // 3. Handle Product Selection / Upload
         if (storeType === 'MERCHANT' && firstProduct) {
             const productsRef = collection(storeRef, 'products');
             const productDocRef = doc(productsRef);
-            setDoc(productDocRef, {
+            await setDoc(productDocRef, {
                 ...firstProduct,
                 vendorId: userId,
             });
@@ -460,17 +462,18 @@ export default function MyStorePage() {
                     isManagedBySoma: true,
                 });
             });
-            batch.commit();
+            await batch.commit();
         }
 
         // 4. Trigger Welcome Email (Server Side)
-        createClientStore({
+        await createClientStore({
             userId,
             email: user.email!,
             storeName: storeConfig.storeName,
         });
 
     } catch (error: any) {
+        setIsLaunching(false);
         toast({
             variant: "destructive",
             title: 'Launch Failed',
