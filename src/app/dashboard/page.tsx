@@ -1,18 +1,17 @@
-
 'use client';
 
-import { useMemo, useEffect } from 'react';
-import Link from 'next/link';
+import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useCollection, useDoc, useUserProfile, useMemoFirebase } from '@/firebase';
-import { collection, query, doc } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Loader2, Store, DollarSign, Users, ArrowRight } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { CompletePaymentPrompt } from '@/components/complete-payment-prompt';
 import { ProvisioningLoader } from '@/components/store/provisioning-loader';
-
+import Link from 'next/link';
+import DashboardController from './dashboard-controller';
 
 type Order = {
     total: number;
@@ -40,12 +39,10 @@ const ChecklistItem = ({ isComplete, children }: { isComplete: boolean, children
     </li>
 );
 
-
 export default function DashboardOverviewPage() {
     const { user, loading: userLoading } = useUser();
     const { userProfile, loading: profileLoading } = useUserProfile();
     const firestore = useFirestore();
-    const router = useRouter();
 
     // Data fetching
     const storeRef = useMemoFirebase(() => user && firestore ? doc(firestore, 'stores', user.uid) : null, [user, firestore]);
@@ -59,17 +56,6 @@ export default function DashboardOverviewPage() {
 
     const isLoading = userLoading || profileLoading || storeLoading || ordersLoading || productsLoading;
     
-    useEffect(() => {
-        if (!isLoading && userProfile) {
-            const planTier = userProfile.planTier;
-            // Redirect Sellers and Brands to their dedicated backstage hub
-            if (planTier === 'SELLER' || planTier === 'BRAND') {
-                router.push('/backstage/finances');
-            }
-        }
-    }, [isLoading, userProfile, router]);
-
-
     // Calculations
     const totalSales = useMemo(() => {
         return orders?.reduce((acc, order) => acc + order.total, 0) || 0;
@@ -78,7 +64,7 @@ export default function DashboardOverviewPage() {
     // Checklist logic
     const isDomainConnected = storeData?.domainStatus === 'connected';
     const isProductSynced = !!(products && products.length > 0);
-    const isProfileComplete = !!userProfile?.planTier; // A simple check
+    const isProfileComplete = !!userProfile?.planTier;
     const isSaleMade = !!(orders && orders.length > 0);
     
     if (isLoading) {
@@ -89,22 +75,18 @@ export default function DashboardOverviewPage() {
         );
     }
 
-    // Special case: If they are a Seller/Brand, we show a loader while the redirect in useEffect triggers.
-    if (userProfile?.planTier === 'SELLER' || userProfile?.planTier === 'BRAND') {
-        return (
-            <div className="flex h-96 w-full items-center justify-center">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            </div>
-        );
-    }
-    
     // If the user hasn't paid, show payment prompt.
     if (userProfile && !userProfile.hasAccess) {
         return <CompletePaymentPrompt />;
     }
 
+    // Special view for Sellers and Brands handled by DashboardController
+    if (userProfile?.planTier === 'SELLER' || userProfile?.planTier === 'BRAND') {
+        return <DashboardController planTier={userProfile.planTier} />;
+    }
+
     // If they have paid, but the store doesn't exist yet (webhook delay), show a waiting message.
-    if (!storeData && !isLoading) {
+    if (!storeData) {
         return <ProvisioningLoader />;
     }
     

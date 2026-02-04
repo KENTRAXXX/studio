@@ -96,7 +96,6 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
   }, [isOpen, hasExistingDetails, userProfile, form]);
 
   const watchedAmount = form.watch('amount');
-  // Explicitly ensure numeric type to prevent string concatenation during fee calculation
   const requestedAmount = Number(watchedAmount) || 0;
   const withdrawalFee = requestedAmount * 0.03;
   const totalDeduction = requestedAmount + withdrawalFee;
@@ -127,13 +126,13 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
       const withdrawalRef = collection(firestore, 'withdrawal_requests');
       const newDocRef = await addDoc(withdrawalRef, {
         userId: user.uid,
-        amount: data.amount,
+        amount: Number(data.amount),
         bankDetails: {
           accountName: data.accountName,
           accountNumber: data.accountNumber,
           bankName: data.bankName,
-          iban: data.iban,
-          swiftBic: data.swiftBic,
+          iban: data.iban || '',
+          swiftBic: data.swiftBic || '',
         },
         status: status,
         confirmationToken: confirmationToken,
@@ -144,7 +143,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
           await sendPayoutConfirmationEmail({
               to: user.email,
               name: data.accountName,
-              amount: data.amount,
+              amount: Number(data.amount),
               withdrawalId: newDocRef.id,
               token: confirmationToken
           });
@@ -156,7 +155,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
       } else {
          toast({
             title: 'Request Submitted',
-            description: `Your request to withdraw $${data.amount.toFixed(2)} is pending review.`,
+            description: `Your request to withdraw $${Number(data.amount).toFixed(2)} is pending review.`,
           });
       }
 
@@ -237,7 +236,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
                     </p>
                 </div>
             ) : (
-                <>
+                <div className="space-y-4">
                     <FormField
                     control={form.control}
                     name="accountName"
@@ -305,7 +304,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
                         </FormItem>
                     )}
                     />
-                </>
+                </div>
             )}
 
             <DialogFooter className="pt-4">

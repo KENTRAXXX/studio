@@ -29,7 +29,7 @@ let firebaseApp: FirebaseApp;
 let auth: Auth;
 let firestore: Firestore;
 
-export function initializeFirebase() {
+export function initializeFirebase({ useEmulators = false } = {}) {
   if (getApps().length > 0) {
     firebaseApp = getApp();
   } else {

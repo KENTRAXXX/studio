@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -9,12 +9,10 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Settings, Loader2, Save, Eye, UploadCloud, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import SomaLogo from '@/components/logo';
-import Image from 'next/image';
 
 const settingsSchema = z.object({
   storeName: z.string().min(3, 'Store name must be at least 3 characters.'),
@@ -105,7 +103,7 @@ export default function StoreSettingsPage() {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'logoUrl' | 'faviconUrl') => {
         const file = e.target.files?.[0];
         if (file) {
-            // In this prototype, we simulate an upload by using a temporary URL.
+            // Simulated upload: generating a temp preview URL
             const previewUrl = URL.createObjectURL(file);
             form.setValue(field, previewUrl);
             toast({

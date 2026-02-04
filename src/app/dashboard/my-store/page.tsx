@@ -396,7 +396,6 @@ export default function MyStorePage() {
         const userRole = (planTier === 'SELLER' || planTier === 'BRAND') ? 'SELLER' : 'MOGUL';
 
         // 1. Update User Profile (Client Side)
-        // All mutations must be client-side to have auth context for security rules
         await updateDoc(userRef, {
             hasAccess: true,
             planTier: planTier,
@@ -467,7 +466,7 @@ export default function MyStorePage() {
             await batch.commit();
         }
 
-        // 4. Trigger Welcome Email (Server Side - non-database task)
+        // 4. Trigger Welcome Email (Server Side)
         await createClientStore({
             userId,
             email: user.email!,
@@ -539,7 +538,7 @@ export default function MyStorePage() {
       <div className="mb-12">
         <h1 className="text-3xl font-bold font-headline text-primary">SOMA Launch Wizard</h1>
         <p className="text-muted-foreground">Follow the steps to configure and launch your new luxury storefront.</p>
-        <Progress value={storeType ? (step / wizardSteps.length) * 100 : 0} className="w-full h-2 mt-4 bg-muted border border-primary/20" />
+        <Progress value={storeType ? (step / (wizardSteps.length || 1)) * 100 : 0} className="w-full h-2 mt-4 bg-muted border border-primary/20" />
       </div>
       
       <Card className="border-primary/50">

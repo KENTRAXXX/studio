@@ -98,14 +98,13 @@ export default function BackstageFinancesPage() {
     const isLoading = userLoading || payoutsLoading || withdrawalsLoading || profileLoading;
 
     return (
-        <>
-        <WithdrawalModal
-            isOpen={isModalOpen}
-            onOpenChange={setIsModalOpen}
-            availableBalance={totalEarned}
-            userProfile={userProfile}
-        />
         <div className="flex flex-col min-h-screen bg-background p-4 sm:p-6 text-foreground">
+            <WithdrawalModal
+                isOpen={isModalOpen}
+                onOpenChange={setIsModalOpen}
+                availableBalance={totalEarned}
+                userProfile={userProfile}
+            />
             <div className="text-center mb-10">
                 <SomaLogo className="h-12 w-12 mx-auto text-slate-400" />
                 <h1 className="text-4xl font-bold font-headline mt-4 text-slate-300">Seller Finances</h1>
@@ -207,6 +206,5 @@ export default function BackstageFinancesPage() {
                 </div>
             </div>
         </div>
-        </>
     );
 }
