@@ -12,6 +12,7 @@ import { CompletePaymentPrompt } from '@/components/complete-payment-prompt';
 import { ProvisioningLoader } from '@/components/store/provisioning-loader';
 import Link from 'next/link';
 import DashboardController from './dashboard-controller';
+import { OnboardingChecklist } from '@/components/dashboard/OnboardingChecklist';
 
 type Order = {
     total: number;
@@ -28,23 +29,12 @@ type Product = {
     id: string;
 }
 
-const ChecklistItem = ({ isComplete, children }: { isComplete: boolean, children: React.ReactNode }) => (
-    <li className="flex items-center gap-3">
-        <div className={cn("flex h-6 w-6 items-center justify-center rounded-full border-2", isComplete ? "border-primary bg-primary/20" : "border-border")}>
-            {isComplete && <CheckCircle2 className="h-4 w-4 text-primary" />}
-        </div>
-        <span className={cn("text-muted-foreground", isComplete && "text-foreground line-through")}>
-            {children}
-        </span>
-    </li>
-);
-
 export default function DashboardOverviewPage() {
     const { user, loading: userLoading } = useUser();
     const { userProfile, loading: profileLoading } = useUserProfile();
     const firestore = useFirestore();
 
-    // Data fetching
+    // Data fetching for overview metrics
     const storeRef = useMemoFirebase(() => user && firestore ? doc(firestore, 'stores', user.uid) : null, [user, firestore]);
     const { data: storeData, loading: storeLoading } = useDoc<StoreData>(storeRef);
 
@@ -61,12 +51,6 @@ export default function DashboardOverviewPage() {
         return orders?.reduce((acc, order) => acc + order.total, 0) || 0;
     }, [orders]);
 
-    // Checklist logic
-    const isDomainConnected = storeData?.domainStatus === 'connected';
-    const isProductSynced = !!(products && products.length > 0);
-    const isProfileComplete = !!userProfile?.planTier;
-    const isSaleMade = !!(orders && orders.length > 0);
-    
     if (isLoading) {
         return (
             <div className="flex h-96 w-full items-center justify-center">
@@ -134,19 +118,7 @@ export default function DashboardOverviewPage() {
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                 <Card className="border-primary/50">
-                    <CardHeader>
-                        <CardTitle className="font-headline">Quick Start Checklist</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ul className="space-y-4 text-lg">
-                            <ChecklistItem isComplete={isDomainConnected}>Connect Domain</ChecklistItem>
-                            <ChecklistItem isComplete={isProductSynced}>Sync First Product</ChecklistItem>
-                            <ChecklistItem isComplete={isProfileComplete}>Complete Profile</ChecklistItem>
-                            <ChecklistItem isComplete={isSaleMade}>Make First Sale</ChecklistItem>
-                        </ul>
-                    </CardContent>
-                </Card>
+                 <OnboardingChecklist />
 
                 <Card className="border-primary/50 flex flex-col items-center justify-center text-center p-8">
                     <CardTitle className="font-headline text-2xl">Ready to sell?</CardTitle>
