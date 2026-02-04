@@ -195,7 +195,7 @@ export default function ProfileSettingsPage() {
                                 <div className="space-y-2">
                                     <FormLabel className="text-xs uppercase font-bold text-muted-foreground tracking-widest">System Identity (Email)</FormLabel>
                                     <Input value={userProfile?.email || ''} disabled className="bg-muted/20 border-primary/10 font-mono text-sm" />
-                                    <FormDescription>Your registered login email cannot be changed.</FormDescription>
+                                    <FormDescription>Contact SOMA Concierge to change your registered email address.</FormDescription>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
