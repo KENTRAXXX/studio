@@ -46,7 +46,8 @@ const sendWelcomeEmailFlow = ai.defineFlow(
           from: `"SOMA Platform" <no-reply@somads.com>`,
           to: to,
           subject: 'Welcome to SOMA! Your Store is LIVE!',
-          react: <WelcomeEmail storeName={storeName} />,
+          // Using React.createElement to fix parsing error in .ts file
+          react: React.createElement(WelcomeEmail, { storeName: storeName }),
         })
       });
 

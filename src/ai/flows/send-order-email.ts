@@ -26,17 +26,18 @@ const getEmailContent = (status: 'Pending' | 'Shipped' | 'Cancelled', orderId: s
         case 'Pending':
             return {
                 subject: `Your order #${orderId} from ${storeName} is confirmed!`,
-                template: <OrderConfirmationEmail orderId={orderId} storeName={storeName} />
+                // Using React.createElement to fix parsing error in .ts file
+                template: React.createElement(OrderConfirmationEmail, { orderId, storeName })
             };
         case 'Shipped':
             return {
                 subject: `Your order #${orderId} from ${storeName} has shipped!`,
-                template: <ShippedEmail orderId={orderId} storeName={storeName} />
+                template: React.createElement(ShippedEmail, { orderId, storeName })
             };
         case 'Cancelled':
              return {
                 subject: `Your order #${orderId} from ${storeName} has been cancelled.`,
-                template: <CancelledEmail orderId={orderId} storeName={storeName} />
+                template: React.createElement(CancelledEmail, { orderId, storeName })
             };
     }
 }

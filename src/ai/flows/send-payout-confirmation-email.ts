@@ -53,7 +53,8 @@ const sendPayoutConfirmationEmailFlow = ai.defineFlow(
           from: `"SOMA Platform" <no-reply@somads.com>`,
           to: to,
           subject: 'Action Required: Confirm Your SOMA Payout Request',
-          react: <PayoutConfirmationEmail name={name} amount={amount} confirmationUrl={confirmationUrl} />,
+          // Using React.createElement to fix parsing error in .ts file
+          react: React.createElement(PayoutConfirmationEmail, { name, amount, confirmationUrl }),
         })
       });
 
