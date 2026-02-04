@@ -5,7 +5,15 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useUser, useFirestore } from '@/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { 
+    collection, 
+    serverTimestamp, 
+    runTransaction, 
+    doc, 
+    query, 
+    where, 
+    getDocs 
+} from 'firebase/firestore';
 import { sendPayoutConfirmationEmail } from '@/ai/flows/send-payout-confirmation-email';
 
 import {
@@ -119,40 +127,74 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
         return;
     }
     
+    // Disable button immediately to prevent double-submissions
     setIsSubmitting(true);
+
     try {
-      const isFirstTime = !hasExistingDetails;
-      let status: 'pending' | 'awaiting-confirmation' = 'pending';
-      let confirmationToken: string | null = null;
-      
-      if (isFirstTime) {
-          status = 'awaiting-confirmation';
-          confirmationToken = crypto.randomUUID();
+      const withdrawalFee = Number(data.amount) * 0.03;
+      const totalNeeded = Number(data.amount) + withdrawalFee;
+
+      // 1. Pre-Transaction Verification: Explicit balance check
+      const payoutsQuery = query(collection(firestore, 'payouts_pending'), where('userId', '==', user.uid));
+      const payoutsSnap = await getDocs(payoutsQuery);
+      const verifiedBalance = payoutsSnap.docs.reduce((acc, doc) => acc + (doc.data().amount || 0), 0);
+
+      if (verifiedBalance < totalNeeded) {
+          throw new Error('Insufficient balance. Your earnings may have changed.');
       }
 
-      const withdrawalRef = collection(firestore, 'withdrawal_requests');
-      const newDocRef = await addDoc(withdrawalRef, {
-        userId: user.uid,
-        amount: Number(data.amount),
-        bankDetails: {
-          accountName: data.accountName,
-          accountNumber: data.accountNumber,
-          bankName: data.bankName,
-          iban: data.iban || '',
-          swiftBic: data.swiftBic || '',
-        },
-        status: status,
-        confirmationToken: confirmationToken,
-        createdAt: serverTimestamp(),
+      // 2. Wrap creation in a transaction for atomicity
+      const result = await runTransaction(firestore, async (transaction) => {
+        // Read the user profile to lock the transaction context
+        const userRef = doc(firestore, 'users', user.uid);
+        const userSnap = await transaction.get(userRef);
+        
+        if (!userSnap.exists()) {
+            throw new Error("Account context lost. Please sign in again.");
+        }
+
+        const isFirstTime = !hasExistingDetails;
+        let status: 'pending' | 'awaiting-confirmation' = 'pending';
+        let confirmationToken: string | null = null;
+        
+        if (isFirstTime) {
+            status = 'awaiting-confirmation';
+            confirmationToken = crypto.randomUUID();
+        }
+
+        const withdrawalRef = doc(collection(firestore, 'withdrawal_requests'));
+        transaction.set(withdrawalRef, {
+          userId: user.uid,
+          amount: Number(data.amount),
+          bankDetails: {
+            accountName: data.accountName,
+            accountNumber: data.accountNumber,
+            bankName: data.bankName,
+            iban: data.iban || '',
+            swiftBic: data.swiftBic || '',
+          },
+          status: status,
+          confirmationToken: confirmationToken,
+          createdAt: serverTimestamp(),
+        });
+
+        return { 
+            status, 
+            confirmationToken, 
+            withdrawalId: withdrawalRef.id,
+            finalAmount: data.amount,
+            finalAccountName: data.accountName
+        };
       });
 
-      if (isFirstTime && confirmationToken) {
+      // 3. Handle post-payout notifications
+      if (result.status === 'awaiting-confirmation' && result.confirmationToken) {
           await sendPayoutConfirmationEmail({
               to: user.email,
-              name: data.accountName,
-              amount: Number(data.amount),
-              withdrawalId: newDocRef.id,
-              token: confirmationToken
+              name: result.finalAccountName,
+              amount: Number(result.finalAmount),
+              withdrawalId: result.withdrawalId,
+              token: result.confirmationToken
           });
           toast({
               title: 'Confirmation Required',
@@ -162,7 +204,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
       } else {
          toast({
             title: 'Request Submitted',
-            description: `Your request to withdraw $${Number(data.amount).toFixed(2)} is pending review.`,
+            description: `Your request to withdraw $${Number(result.finalAmount).toFixed(2)} is pending review.`,
           });
       }
 
@@ -214,7 +256,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
                 <FormItem>
                   <FormLabel>Amount to Withdraw ($)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" {...field} disabled={isBalanceTooLow} />
+                    <Input type="number" step="0.01" {...field} disabled={isBalanceTooLow || isSubmitting} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -260,7 +302,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
                         <FormItem>
                         <FormLabel>Account Holder Name</FormLabel>
                         <FormControl>
-                            <Input placeholder="John Doe" {...field} disabled={isBalanceTooLow} />
+                            <Input placeholder="John Doe" {...field} disabled={isBalanceTooLow || isSubmitting} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -273,7 +315,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
                         <FormItem>
                         <FormLabel>Bank Name</FormLabel>
                         <FormControl>
-                            <Input placeholder="Global Bank Inc." {...field} disabled={isBalanceTooLow} />
+                            <Input placeholder="Global Bank Inc." {...field} disabled={isBalanceTooLow || isSubmitting} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -286,7 +328,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
                         <FormItem>
                         <FormLabel>Account Number</FormLabel>
                         <FormControl>
-                            <Input placeholder="1234567890" {...field} disabled={isBalanceTooLow} />
+                            <Input placeholder="1234567890" {...field} disabled={isBalanceTooLow || isSubmitting} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -299,7 +341,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
                         <FormItem>
                         <FormLabel>IBAN</FormLabel>
                         <FormControl>
-                            <Input placeholder="International Bank Account Number" {...field} disabled={isBalanceTooLow} />
+                            <Input placeholder="International Bank Account Number" {...field} disabled={isBalanceTooLow || isSubmitting} />
                         </FormControl>
                         <FormDescription>Required for some regions.</FormDescription>
                         <FormMessage />
@@ -313,7 +355,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
                         <FormItem>
                         <FormLabel>SWIFT / BIC Code</FormLabel>
                         <FormControl>
-                            <Input placeholder="Bank's SWIFT/BIC code" {...field} disabled={isBalanceTooLow} />
+                            <Input placeholder="Bank's SWIFT/BIC code" {...field} disabled={isBalanceTooLow || isSubmitting} />
                         </FormControl>
                         <FormDescription>Required for most international transfers.</FormDescription>
                         <FormMessage />
