@@ -14,16 +14,14 @@ service cloud.firestore {
       // 1. The user must be the owner of the document.
       let isOwner = request.auth.uid == userId;
 
-      // 2. We allow the owner to update their profile. 
-      // In this MVP architecture, we trust the client-side finalization after payment.
-      // We check that sensitive administrative fields remain unchanged.
-      let protectedFieldsUnchanged =
-          request.resource.data.get('email', resource.data.email) == resource.data.email &&
-          request.resource.data.get('referralCode', resource.data.referralCode) == resource.data.referralCode &&
-          request.resource.data.get('isDisabled', resource.data.isDisabled) == resource.data.isDisabled &&
-          request.resource.data.get('referredBy', resource.data.referredBy) == resource.data.referredBy;
+      // 2. Use get() with fallbacks to avoid errors on non-existent fields.
+      // We block changes to sensitive administrative and platform fields.
+      let emailUnchanged = request.resource.data.get('email', '') == resource.data.get('email', '');
+      let referralCodeUnchanged = request.resource.data.get('referralCode', '') == resource.data.get('referralCode', '');
+      let isDisabledUnchanged = request.resource.data.get('isDisabled', false) == resource.data.get('isDisabled', false);
+      let referredByUnchanged = request.resource.data.get('referredBy', '') == resource.data.get('referredBy', '');
 
-      return isOwner && protectedFieldsUnchanged;
+      return isOwner && emailUnchanged && referralCodeUnchanged && isDisabledUnchanged && referredByUnchanged;
     }
 
     // == USERS ==
