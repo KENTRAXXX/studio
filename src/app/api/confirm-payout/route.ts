@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { initializeApp, getApps } from 'firebase/app';
 import { doc, getDoc, updateDoc, getFirestore } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { firebaseConfig } from '@/firebase/config';
 
-const { firestore } = initializeFirebase();
+const getDb = () => {
+    const apps = getApps();
+    const app = apps.length > 0 ? apps[0] : initializeApp(firebaseConfig);
+    return getFirestore(app);
+};
 
 export async function GET(request: NextRequest) {
+  const firestore = getDb();
   const { searchParams } = new URL(request.url);
   const token = searchParams.get('token');
   const id = searchParams.get('id');
@@ -32,7 +38,7 @@ export async function GET(request: NextRequest) {
 
     await updateDoc(withdrawalRef, {
       status: 'pending',
-      confirmationToken: null, // Remove token after use
+      confirmationToken: null,
     });
     
     const redirectUrl = new URL('/payout-confirmed', request.url);

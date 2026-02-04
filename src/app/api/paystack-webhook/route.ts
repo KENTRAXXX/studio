@@ -1,14 +1,19 @@
-
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClientStore } from '@/ai/flows/create-client-store';
-import { doc, getDoc, getFirestore, updateDoc, collection, addDoc, runTransaction, query, where, getDocs } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { initializeApp, getApps } from 'firebase/app';
+import { getFirestore, doc, getDoc, updateDoc, collection, addDoc, runTransaction, query, where } from 'firebase/firestore';
+import { firebaseConfig } from '@/firebase/config';
 import { sendOrderEmail } from '@/ai/flows/send-order-email';
 
-const { firestore } = initializeFirebase();
+const getDb = () => {
+    const apps = getApps();
+    const app = apps.length > 0 ? apps[0] : initializeApp(firebaseConfig);
+    return getFirestore(app);
+};
 
 async function executePaymentSplit(eventData: any) {
+    const firestore = getDb();
     const { reference, metadata, amount, customer } = eventData;
     const { cart, storeId } = metadata;
 
@@ -20,13 +25,12 @@ async function executePaymentSplit(eventData: any) {
         const orderId = `SOMA-${reference.slice(-6).toUpperCase()}`;
 
         await runTransaction(firestore, async (transaction) => {
-            // --- Idempotency Check ---
             const ordersRef = collection(firestore, `stores/${storeId}/orders`);
             const existingOrderQuery = query(ordersRef, where("paymentReference", "==", reference));
             const existingOrderSnap = await transaction.get(existingOrderQuery);
             if (!existingOrderSnap.empty) {
                 console.log(`Order with reference ${reference} has already been processed. Skipping.`);
-                return; // Exit transaction
+                return;
             }
             
             let totalWholesaleCost = 0;
@@ -34,7 +38,6 @@ async function executePaymentSplit(eventData: any) {
             const revenueDocs: any[] = [];
             const processedCart: any[] = [];
 
-            // --- Calculate splits for each item ---
             for (const item of cart) {
                 const productRef = doc(firestore, `stores/${storeId}/products/${item.id}`);
                 const productSnap = await transaction.get(productRef);
@@ -50,7 +53,6 @@ async function executePaymentSplit(eventData: any) {
 
                 totalWholesaleCost += wholesalePrice * item.quantity;
                 
-                // Add product pricing data to the cart for historical record
                 processedCart.push({
                     ...item,
                     price: retailPrice,
@@ -65,13 +67,10 @@ async function executePaymentSplit(eventData: any) {
                     }
                     const vendorData = vendorSnap.data();
 
-                    // Determine commission rate based on seller tier
                     const commissionRate = vendorData.planTier === 'BRAND' ? 0.03 : 0.09;
-
                     const platformFee = wholesalePrice * commissionRate;
                     const sellerPayout = wholesalePrice - platformFee;
 
-                    // Payout for the Seller
                     if (sellerPayout > 0) {
                         payoutDocs.push({
                             userId: vendorId,
@@ -83,7 +82,6 @@ async function executePaymentSplit(eventData: any) {
                             createdAt: new Date().toISOString()
                         });
                     }
-                    // Log SOMA's revenue
                     if(platformFee > 0) {
                         revenueDocs.push({
                             amount: platformFee * item.quantity,
@@ -96,14 +94,12 @@ async function executePaymentSplit(eventData: any) {
                 }
             }
 
-            // --- Calculate Mogul's Profit ---
             const totalPaid = amount / 100;
             const mogulProfit = totalPaid - totalWholesaleCost;
             
             if (mogulProfit > 0) {
-                // Payout for the Mogul (store owner)
                 payoutDocs.push({
-                    userId: storeId, // Mogul's ID is the storeId
+                    userId: storeId,
                     amount: mogulProfit,
                     currency: 'USD',
                     status: 'pending',
@@ -113,39 +109,32 @@ async function executePaymentSplit(eventData: any) {
                 });
             }
 
-            // --- Commit all writes to Firestore ---
-            // 1. Create the main order document
             const newOrderRef = doc(ordersRef, orderId);
             transaction.set(newOrderRef, {
                 orderId,
                 status: "Pending",
-                cart: processedCart, // Use the cart with historical pricing
+                cart: processedCart,
                 createdAt: new Date().toISOString(),
                 total: totalPaid,
                 customer: customer,
-                paymentReference: reference, // For idempotency
-                paymentStatus: 'processed' // Mark as processed
+                paymentReference: reference,
+                paymentStatus: 'processed'
             });
 
-            // 2. Create pending payouts
             const payoutsRef = collection(firestore, 'payouts_pending');
             payoutDocs.forEach(payoutData => {
                 const newPayoutRef = doc(payoutsRef);
                 transaction.set(newPayoutRef, payoutData);
             });
 
-            // 3. Log platform revenue
             const revenueRef = collection(firestore, 'revenue_logs');
             revenueDocs.forEach(revenueData => {
                 const newRevenueRef = doc(revenueRef);
                 transaction.set(newRevenueRef, revenueData);
             });
 
-        }); // End of transaction
+        });
         
-        console.log(`Successfully processed payment split for reference: ${reference}`);
-
-        // --- Send Order Confirmation Email ---
         const storeRef = doc(firestore, 'stores', storeId);
         const storeSnap = await getDoc(storeRef);
         const storeName = storeSnap.data()?.storeName || 'SOMA Store';
@@ -159,7 +148,6 @@ async function executePaymentSplit(eventData: any) {
 
     } catch (error: any) {
         console.error(`Failed to execute payment split for reference ${reference}:`, error);
-        // Optional: Log this failure to a dedicated error collection in Firestore for admin review
         const alertsRef = collection(firestore, 'admin_alerts');
         await addDoc(alertsRef, {
             flowName: 'executePaymentSplit',
@@ -172,11 +160,7 @@ async function executePaymentSplit(eventData: any) {
 
 
 export async function POST(req: Request) {
-  // NOTE: Firebase Admin SDK (for App Check) is not compatible with the Edge runtime.
-  // For production, protect this endpoint by:
-  // 1. Using a secret key in the header that you verify here.
-  // 2. Using a Cloudflare Worker to validate a JWT or other token.
-
+  const firestore = getDb();
   const secret = process.env.PAYSTACK_SECRET_KEY;
   if (!secret) {
     console.error('Paystack secret key is not set.');
@@ -185,7 +169,6 @@ export async function POST(req: Request) {
   
   const rawBody = await req.text();
   const paystackSignature = req.headers.get('x-paystack-signature');
-  
   const hash = crypto.createHmac('sha512', secret).update(rawBody).digest('hex');
   
   if (hash !== paystackSignature) {
@@ -199,18 +182,14 @@ export async function POST(req: Request) {
     const { metadata } = event.data;
 
     if (!metadata) {
-        console.warn('Webhook received for charge.success but has no metadata.', event.data);
         return NextResponse.json({ status: 'success', message: 'Event acknowledged, no metadata.' });
     }
 
-    const { userId, plan, template, cart, storeId } = metadata;
+    const { userId, plan, cart, storeId } = metadata;
 
     if (cart && storeId) {
-        console.log(`Processing product sale for store ${storeId}. Ref: ${event.data.reference}`);
         await executePaymentSplit(event.data);
-
     } else if (userId) {
-        console.log(`Payment success for ${userId}. Triggering store creation...`);
         try {
             const userRef = doc(firestore, "users", userId);
             const userSnap = await getDoc(userRef);
@@ -225,20 +204,17 @@ export async function POST(req: Request) {
                     template: 'gold-standard',
                 };
                 await createClientStore(createClientStoreInput);
-                console.log(`Store created successfully for ${userId}.`);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error(`Failed to trigger createClientStore flow for ${userId}:`, error);
             const alertsRef = collection(firestore, 'admin_alerts');
             await addDoc(alertsRef, {
                 flowName: 'paystackWebhook_createClientStore',
                 userId: userId,
-                error: (error instanceof Error ? error.message : 'An unknown error occurred during store creation post-payment.'),
+                error: error.message || 'An unknown error occurred',
                 timestamp: new Date().toISOString()
             });
         }
-    } else {
-        console.warn('Webhook received without actionable metadata.', metadata);
     }
   }
 

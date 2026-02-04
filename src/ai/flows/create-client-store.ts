@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -10,14 +9,19 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore, doc, setDoc, collection, writeBatch, updateDoc, addDoc, getDoc } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { firebaseConfig } from '@/firebase/config';
 import { randomUUID } from 'crypto';
-import { masterCatalog } from '@/lib/data'; // Assuming master catalog is here
+import { masterCatalog } from '@/lib/data';
 import { sendWelcomeEmail } from './send-welcome-email';
 
-// Initialize Firebase
-const { firestore } = initializeFirebase();
+// Idempotent Firestore getter for server-side use
+const getDb = () => {
+    const apps = getApps();
+    const app = apps.length > 0 ? apps[0] : initializeApp(firebaseConfig);
+    return getFirestore(app);
+};
 
 const CreateClientStoreInputSchema = z.object({
   userId: z.string().describe('The ID of the user for whom the store is being created.'),
@@ -55,6 +59,7 @@ const createClientStoreFlow = ai.defineFlow(
     outputSchema: CreateClientStoreOutputSchema,
   },
   async ({ userId, plan, planTier, template, logoUrl, faviconUrl }) => {
+    const firestore = getDb();
     try {
         const instanceId = randomUUID();
         const storeRef = doc(firestore, 'stores', userId);
@@ -66,7 +71,7 @@ const createClientStoreFlow = ai.defineFlow(
         await updateDoc(userRef, {
             hasAccess: true,
             plan: plan,
-            paidAt: new Date().toISOString(), // Timestamp of payment confirmation
+            paidAt: new Date().toISOString(),
             userRole: userRole,
             planTier: planTier,
         });
@@ -77,14 +82,14 @@ const createClientStoreFlow = ai.defineFlow(
             instanceId: instanceId,
             theme: template === 'gold-standard' ? 'Gold Standard' : template === 'midnight-pro' ? 'Midnight Pro' : 'The Minimalist',
             currency: 'USD',
-            createdAt: new Date().toISOString(), // Timestamp of store creation
-            storeName: "My SOMA Store", // Default name, user can change later
+            createdAt: new Date().toISOString(),
+            storeName: "My SOMA Store",
             logoUrl: logoUrl || '',
             faviconUrl: faviconUrl || '',
             heroImageUrl: '',
             heroTitle: 'Welcome to Your Store',
             heroSubtitle: 'Discover curated collections of timeless luxury.',
-            status: 'Live', // Set status to Live
+            status: 'Live',
         };
 
         await setDoc(storeRef, defaultStoreConfig);
@@ -121,19 +126,16 @@ const createClientStoreFlow = ai.defineFlow(
                 to: userData.email,
                 storeName: defaultStoreConfig.storeName,
             });
-        } else {
-            console.error(`Could not send welcome email to user ${userId}, email not found.`);
         }
         
         return {
-        storeId: userId,
-        instanceId,
-        message: 'Client store created successfully.',
+            storeId: userId,
+            instanceId,
+            message: 'Client store created successfully.',
         };
     } catch (error: any) {
         console.error('Error in createClientStoreFlow:', error);
         
-        // Log the error to a dedicated admin alerts collection
         const alertsRef = collection(firestore, 'admin_alerts');
         await addDoc(alertsRef, {
             flowName: 'createClientStoreFlow',
@@ -142,7 +144,6 @@ const createClientStoreFlow = ai.defineFlow(
             timestamp: new Date().toISOString()
         });
 
-        // Re-throw the error to ensure the calling function is aware of the failure
         throw new Error(`Failed to create store for user ${userId}: ${error.message}`);
     }
   }
