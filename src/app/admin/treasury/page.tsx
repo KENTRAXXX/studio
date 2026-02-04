@@ -15,7 +15,8 @@ import {
   limit,
   addDoc,
   serverTimestamp,
-  setDoc
+  setDoc,
+  orderBy
 } from 'firebase/firestore';
 import {
   Card,
@@ -48,7 +49,12 @@ import {
   ShieldAlert,
   Activity,
   RefreshCw,
-  Info
+  Info,
+  ShoppingBag,
+  Eye,
+  ArrowUpRight,
+  ChevronRight,
+  Percent
 } from 'lucide-react';
 import {
   Dialog,
@@ -66,6 +72,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/utils/format';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
 
 type WithdrawalRequest = {
   id: string;
@@ -86,6 +93,7 @@ type UserProfile = {
   id: string;
   planTier: string;
   email: string;
+  displayName?: string;
   userRole: 'ADMIN' | 'MOGUL' | 'SELLER';
 };
 
@@ -94,6 +102,23 @@ type PlatformMetadata = {
     lastSynced: any;
     syncedBy: string;
 }
+
+type OrderProduct = {
+  id: string;
+  name: string;
+  quantity: number;
+  price: number;
+  wholesalePrice?: number;
+};
+
+type Order = {
+  id: string;
+  orderId: string;
+  createdAt: string;
+  total: number;
+  status: 'Pending' | 'Shipped' | 'Delivered';
+  cart: OrderProduct[];
+};
 
 type CombinedRequest = WithdrawalRequest & { user?: UserProfile };
 
@@ -108,6 +133,7 @@ export default function TreasuryPage() {
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [newBalanceInput, setNewBalanceInput] = useState<string>('');
   const [isSyncing, setIsSyncing] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   
   // 1. Real-time Platform Metadata Listener
   const metaRef = useMemoFirebase(() => {
@@ -136,7 +162,7 @@ export default function TreasuryPage() {
 
   const allOrdersQ = useMemoFirebase(() => {
       if (!firestore) return null;
-      return query(collectionGroup(firestore, 'orders'), limit(100));
+      return query(collectionGroup(firestore, 'orders'), orderBy('createdAt', 'desc'), limit(20));
   }, [firestore]);
 
   const revenueLogsQ = useMemoFirebase(() => {
@@ -151,18 +177,18 @@ export default function TreasuryPage() {
 
   const usersQ = useMemoFirebase(() => {
       if (!firestore) return null;
-      return query(collection(firestore, 'users'), limit(100));
+      return query(collection(firestore, 'users'), limit(500));
   }, [firestore]);
 
   const { data: requests, loading: requestsLoading } = useCollection<WithdrawalRequest>(pendingRequestsQ);
-  const { data: allOrders, loading: ordersLoading } = useCollection<any>(allOrdersQ);
+  const { data: orders, loading: ordersLoading } = useCollection<Order>(allOrdersQ);
   const { data: revenueLogs, loading: revenueLoading } = useCollection<any>(revenueLogsQ);
   const { data: allPayouts, loading: payoutsLoading } = useCollection<any>(allPayoutsQ);
   const { data: allUsers, loading: usersLoading } = useCollection<UserProfile>(usersQ);
 
   // 3. Financial Intelligence Aggregation
   const metrics = useMemo(() => {
-      const gmv = allOrders?.reduce((acc, o) => acc + (o.total || 0), 0) || 0;
+      const gmv = orders?.reduce((acc, o) => acc + (o.total || 0), 0) || 0;
       const netRevenue = revenueLogs?.reduce((acc, l) => acc + (l.amount || 0), 0) || 0;
       const liability = allPayouts?.reduce((acc, p) => acc + (p.amount || 0), 0) || 0;
       
@@ -170,16 +196,39 @@ export default function TreasuryPage() {
       const subscriptionRev = revenueLogs?.filter(l => l.type === 'SUBSCRIPTION').reduce((acc, l) => acc + (l.amount || 0), 0) || 0;
 
       return { gmv, netRevenue, liability, transactionRev, subscriptionRev };
-  }, [allOrders, revenueLogs, allPayouts]);
+  }, [orders, revenueLogs, allPayouts]);
+
+  const usersMap = useMemo(() => {
+      if (!allUsers) return new Map<string, UserProfile>();
+      return new Map(allUsers.map(u => [u.id, u]));
+  }, [allUsers]);
 
   const combinedRequests = useMemo(() => {
       if (!requests || !allUsers) return [];
-      const usersMap = new Map(allUsers.map(u => [u.id, u]));
       return requests.map(req => ({
           ...req,
           user: usersMap.get(req.userId)
       }));
-  }, [requests, allUsers]);
+  }, [requests, allUsers, usersMap]);
+
+  // Order Stream Data
+  const orderStream = useMemo(() => {
+      if (!orders) return [];
+      return orders.map(order => {
+          const parts = (order as any).id.split('/');
+          const storeId = parts[parts.indexOf('stores') + 1] || 'unknown';
+          const mogul = usersMap.get(storeId);
+          
+          const feeRecord = revenueLogs?.find(l => l.orderId === order.orderId);
+          
+          return {
+              ...order,
+              storeId,
+              mogulName: mogul?.displayName || mogul?.email || 'System Store',
+              somaFee: feeRecord?.amount || 0
+          };
+      });
+  }, [orders, usersMap, revenueLogs]);
 
   // Solvency Logic
   const paystackBalance = platformMeta?.paystackBalance || 0;
@@ -189,7 +238,6 @@ export default function TreasuryPage() {
 
   // Extraction Safety Logic
   const transferAmountNum = parseFloat(corporateTransferAmount) || 0;
-  // Rule: Cannot extract more than Net Profit AND cannot dip below liability floor
   const isOverProfitLimit = transferAmountNum > metrics.netRevenue;
   const wouldDipBelowFloor = (paystackBalance - transferAmountNum) < metrics.liability;
   const isExtractionBlocked = isLiquidityLow || isOverProfitLimit || wouldDipBelowFloor;
@@ -644,6 +692,148 @@ export default function TreasuryPage() {
             </Card>
         </div>
       </div>
+
+      {/* Global Order Stream */}
+      <section className="space-y-6">
+          <div className="flex items-center gap-3">
+              <ShoppingBag className="h-6 w-6 text-primary" />
+              <h2 className="text-2xl font-bold font-headline">Global Order Stream</h2>
+          </div>
+          
+          <Card className="border-primary/50 overflow-hidden bg-slate-900/20">
+              <Table>
+                  <TableHeader className="bg-black/40">
+                      <TableRow className="border-primary/10 h-14">
+                          <TableHead className="px-8">Order ID</TableHead>
+                          <TableHead>Mogul Name</TableHead>
+                          <TableHead className="text-right">Total Amount</TableHead>
+                          <TableHead className="text-right">SOMA Fee</TableHead>
+                          <TableHead className="text-center">Status</TableHead>
+                          <TableHead className="text-right px-8">Actions</TableHead>
+                      </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                      {orderStream.length === 0 ? (
+                          <TableRow>
+                              <TableCell colSpan={6} className="h-32 text-center text-muted-foreground italic">
+                                  Waiting for first ecosystem transaction signal...
+                              </TableCell>
+                          </TableRow>
+                      ) : (
+                          orderStream.map((order) => (
+                              <TableRow key={order.id} className="border-primary/5 hover:bg-primary/5 transition-colors h-16 group">
+                                  <TableCell className="px-8 font-mono text-xs text-primary font-bold">{order.orderId}</TableCell>
+                                  <TableCell>
+                                      <div className="font-bold text-slate-200 text-sm truncate max-w-[150px]">{order.mogulName}</div>
+                                      <p className="text-[10px] text-muted-foreground uppercase tracking-tighter">Store ID: {order.storeId.slice(0, 8)}</p>
+                                  </TableCell>
+                                  <TableCell className="text-right font-bold text-slate-200">
+                                      {formatCurrency(Math.round(order.total * 100))}
+                                  </TableCell>
+                                  <TableCell className="text-right font-bold text-primary">
+                                      {formatCurrency(Math.round(order.somaFee * 100))}
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                      <Badge variant="outline" className="border-green-500/30 text-green-500 bg-green-500/5 text-[10px] font-black">
+                                          {order.status.toUpperCase()}
+                                      </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-right px-8">
+                                      <Dialog>
+                                          <DialogTrigger asChild>
+                                              <Button variant="ghost" size="sm" className="h-8 text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10">
+                                                  <Eye className="mr-2 h-3 w-3" /> Inspect Split
+                                              </Button>
+                                          </DialogTrigger>
+                                          <DialogContent className="bg-card border-primary sm:max-w-[500px]">
+                                              <DialogHeader>
+                                                  <DialogTitle className="text-2xl font-headline text-primary">Financial Split: {order.orderId}</DialogTitle>
+                                                  <DialogDescription>Detailed audit of fund distribution for this transaction.</DialogDescription>
+                                              </DialogHeader>
+                                              
+                                              <div className="py-6 space-y-8">
+                                                  <div className="space-y-4">
+                                                      <div className="flex justify-between items-center p-4 rounded-xl bg-primary/5 border border-primary/20">
+                                                          <span className="text-sm font-bold text-slate-400">Gross Transaction</span>
+                                                          <span className="text-2xl font-bold font-mono text-slate-200">{formatCurrency(Math.round(order.total * 100))}</span>
+                                                      </div>
+                                                  </div>
+
+                                                  <div className="space-y-4">
+                                                      <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 border-b border-white/5 pb-2">Platform Split Analysis</h4>
+                                                      
+                                                      <div className="grid gap-4">
+                                                          {/* Wholesale to Brand */}
+                                                          <div className="flex items-center justify-between">
+                                                              <div className="flex items-center gap-3">
+                                                                  <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">
+                                                                      <Building2 className="h-4 w-4" />
+                                                                  </div>
+                                                                  <div>
+                                                                      <p className="text-xs font-bold text-slate-200">Wholesale to Brand</p>
+                                                                      <p className="text-[9px] text-muted-foreground">Supplier Payout (Excl. Commission)</p>
+                                                                  </div>
+                                                              </div>
+                                                              <span className="font-mono text-sm font-bold text-slate-300">
+                                                                  {formatCurrency(Math.round((order.total - order.somaFee - (order.total * 0.4)) * 100))}
+                                                              </span>
+                                                          </div>
+
+                                                          {/* Commission to Mogul */}
+                                                          <div className="flex items-center justify-between">
+                                                              <div className="flex items-center gap-3">
+                                                                  <div className="h-8 w-8 rounded-lg bg-green-500/10 flex items-center justify-center text-green-400">
+                                                                      <TrendingUp className="h-4 w-4" />
+                                                                  </div>
+                                                                  <div>
+                                                                      <p className="text-xs font-bold text-slate-200">Commission to Mogul</p>
+                                                                      <p className="text-[9px] text-muted-foreground">Store Owner Retail Profit</p>
+                                                                  </div>
+                                                              </div>
+                                                              <span className="font-mono text-sm font-bold text-green-400">
+                                                                  {formatCurrency(Math.round((order.total * 0.4) * 100))}
+                                                              </span>
+                                                          </div>
+
+                                                          {/* Fee to SOMA */}
+                                                          <div className="flex items-center justify-between">
+                                                              <div className="flex items-center gap-3">
+                                                                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                                                      <Percent className="h-4 w-4" />
+                                                                  </div>
+                                                                  <div>
+                                                                      <p className="text-xs font-bold text-slate-200">Fee to SOMA</p>
+                                                                      <p className="text-[9px] text-muted-foreground">Platform Infrastructure Cut</p>
+                                                                  </div>
+                                                              </div>
+                                                              <span className="font-mono text-sm font-bold text-primary">
+                                                                  {formatCurrency(Math.round(order.somaFee * 100))}
+                                                              </span>
+                                                          </div>
+                                                      </div>
+                                                  </div>
+
+                                                  <div className="p-4 rounded-lg bg-slate-900/50 border border-white/5 flex items-center gap-3 text-xs italic text-slate-500">
+                                                      <Info className="h-4 w-4 text-primary shrink-0" />
+                                                      <p>Calculation based on real-time ledger records from the SOMA financial core.</p>
+                                                  </div>
+                                              </div>
+
+                                              <DialogFooter>
+                                                  <DialogClose asChild>
+                                                      <Button variant="outline" className="w-full h-12 border-primary/20 text-primary">Close Auditor</Button>
+                                                  </DialogClose>
+                                              </DialogFooter>
+                                          </DialogContent>
+                                      </Dialog>
+                                  </TableCell>
+                              </TableRow>
+                          ))
+                      )}
+                  </TableBody>
+              </Table>
+          </Card>
+      </section>
     </div>
   );
 }
