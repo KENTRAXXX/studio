@@ -180,7 +180,7 @@ export async function POST(req: Request) {
   const event = JSON.parse(rawBody);
 
   if (event.event === 'charge.success') {
-    const { metadata } = event.data;
+    const { metadata, customer } = event.data;
 
     if (!metadata) {
         console.warn('Paystack webhook: No metadata found in event.');
@@ -196,27 +196,28 @@ export async function POST(req: Request) {
             const userRef = doc(firestore, "users", userId);
             const userSnap = await getDoc(userRef);
 
-            if (userSnap.exists() && userSnap.data().hasAccess) {
-                console.log(`User ${userId} already has access. Skipping store creation.`);
-            } else {
-                 // Map the planTier, ensuring we don't pass the deprecated "MOGUL"
-                 const planTier = (rawPlanTier && rawPlanTier !== 'MOGUL') ? rawPlanTier : 'SCALER';
+            // 1. Update User Access Status
+            await updateDoc(userRef, {
+                hasAccess: true,
+                paidAt: new Date().toISOString(),
+            });
 
-                 const createClientStoreInput = {
-                    userId,
-                    plan: plan || 'monthly',
-                    planTier: planTier as any,
-                    template: 'gold-standard',
-                };
-                
-                console.log(`Paystack webhook: Provisioning store for ${userId} with tier ${planTier}`);
-                await createClientStore(createClientStoreInput);
-            }
+            console.log(`Paystack webhook: Access granted for ${userId}`);
+
+            // 2. Trigger welcome flow
+            const planTier = (rawPlanTier && rawPlanTier !== 'MOGUL') ? rawPlanTier : 'SCALER';
+            
+            await createClientStore({
+                userId,
+                email: customer.email,
+                storeName: 'Your SOMA Store', // Default placeholder until they name it
+            });
+            
         } catch (error: any) {
-            console.error(`Failed to trigger createClientStore flow for ${userId}:`, error);
+            console.error(`Failed to handle signup success for ${userId}:`, error);
             const alertsRef = collection(firestore, 'admin_alerts');
             await addDoc(alertsRef, {
-                flowName: 'paystackWebhook_createClientStore',
+                flowName: 'paystackWebhook_signupSuccess',
                 userId: userId,
                 error: error.message || 'An unknown error occurred',
                 timestamp: new Date().toISOString()

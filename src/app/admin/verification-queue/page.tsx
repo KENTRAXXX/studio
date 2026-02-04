@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -8,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ShieldCheck, ExternalLink, Check, X, FileText } from 'lucide-react';
+import { Loader2, ShieldCheck, ExternalLink, Check, X, FileText, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import SomaLogo from '@/components/logo';
 import { sendWelcomeEmail } from '@/ai/flows/send-welcome-email';
@@ -22,6 +23,10 @@ type PendingSeller = {
     warehouseAddress: string;
     governmentIdUrl: string;
     contactPhone: string;
+    structuredAddress?: {
+        city: string;
+        country: string;
+    };
   };
 };
 
@@ -136,8 +141,14 @@ export default function VerificationQueuePage() {
                       <div className="text-xs text-muted-foreground font-normal">{seller.email}</div>
                     </TableCell>
                     <TableCell className="max-w-[250px]">
-                      <div className="text-sm truncate" title={seller.verificationData?.warehouseAddress}>
-                        {seller.verificationData?.warehouseAddress || 'N/A'}
+                      <div className="flex items-center gap-1 text-sm">
+                        <MapPin className="h-3 w-3 text-primary shrink-0" />
+                        <span className="truncate" title={seller.verificationData?.warehouseAddress}>
+                            {seller.verificationData?.structuredAddress 
+                                ? `${seller.verificationData.structuredAddress.city}, ${seller.verificationData.structuredAddress.country}`
+                                : seller.verificationData?.warehouseAddress || 'N/A'
+                            }
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell className="text-sm font-mono">
