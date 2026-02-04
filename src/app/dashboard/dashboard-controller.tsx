@@ -3,11 +3,14 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Package, Warehouse, DollarSign, Landmark, ArrowRight, Loader2, Boxes, ShieldCheck, TrendingUp, BarChart3 } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Package, Warehouse, DollarSign, Landmark, ArrowRight, Loader2, Boxes, ShieldCheck, TrendingUp, BarChart3, Clock, Sparkles } from "lucide-react";
 import { ResponsiveContainer, LineChart, Line } from 'recharts';
+import { cn } from '@/lib/utils';
 
 // Mock data for sparklines to give a high-end financial feel
 const sparklineData = [
@@ -120,6 +123,18 @@ const SupplierUploadView = ({ planTier }: { planTier: string }) => {
     }, [user, firestore]);
     const { data: activeListings, loading: listingsLoading } = useCollection(activeListingsQuery);
 
+    // 4. Catalog Performance (Recent Products)
+    const recentProductsQuery = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return query(
+            collection(firestore, 'Master_Catalog'),
+            where('vendorId', '==', user.uid),
+            orderBy('submittedAt', 'desc'),
+            limit(5)
+        );
+    }, [user, firestore]);
+    const { data: recentProducts, loading: recentLoading } = useCollection<any>(recentProductsQuery);
+
     const metrics = useMemo(() => {
         const pending = pendingDocs?.reduce((acc, doc: any) => acc + (doc.amount || 0), 0) || 0;
         const completed = completedDocs?.reduce((acc, doc: any) => acc + (doc.amount || 0), 0) || 0;
@@ -129,7 +144,7 @@ const SupplierUploadView = ({ planTier }: { planTier: string }) => {
         return { pending, gross, activeCount };
     }, [pendingDocs, completedDocs, activeListings]);
 
-    const isLoading = pendingLoading || completedLoading || listingsLoading;
+    const isLoading = pendingLoading || completedLoading || listingsLoading || recentLoading;
 
     return (
      <div className="max-w-6xl mx-auto space-y-10">
@@ -191,8 +206,89 @@ const SupplierUploadView = ({ planTier }: { planTier: string }) => {
                 </CardContent>
             </Card>
         </div>
+
+        {/* Catalog Performance Section */}
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
+                    <Boxes className="h-6 w-6 text-primary" />
+                    Catalog Performance
+                </h2>
+                <Button asChild variant="link" className="text-primary hover:text-primary/80">
+                    <Link href="/backstage/add-product">View All Assets <ArrowRight className="ml-1 h-4 w-4" /></Link>
+                </Button>
+            </div>
+
+            {recentLoading ? (
+                <div className="h-48 flex items-center justify-center border rounded-lg bg-card/50">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            ) : !recentProducts || recentProducts.length === 0 ? (
+                <Card className="border-2 border-dashed border-primary/50 bg-primary/5 p-12 text-center">
+                    <CardContent className="space-y-4">
+                        <div className="bg-primary/10 rounded-full p-4 w-fit mx-auto border border-primary/20">
+                            <Sparkles className="h-10 w-10 text-primary" />
+                        </div>
+                        <h3 className="text-2xl font-bold font-headline text-primary">Your catalog is empty.</h3>
+                        <p className="text-muted-foreground max-w-md mx-auto">
+                            Start your legacy by submitting your first masterpiece to the global SOMA ecosystem.
+                        </p>
+                        <Button asChild size="lg" className="btn-gold-glow mt-4">
+                            <Link href="/backstage/add-product">Submit Your First Product</Link>
+                        </Button>
+                    </CardContent>
+                </Card>
+            ) : (
+                <Card className="border-primary/20 bg-card overflow-hidden">
+                    <Table>
+                        <TableHeader className="bg-muted/30">
+                            <TableRow>
+                                <TableHead className="w-[80px]">Asset</TableHead>
+                                <TableHead>Product Name</TableHead>
+                                <TableHead className="text-center">Stock</TableHead>
+                                <TableHead className="text-right">Status</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {recentProducts.map((product) => (
+                                <TableRow key={product.id} className="hover:bg-primary/5 transition-colors group">
+                                    <TableCell>
+                                        <div className="relative h-12 w-12 rounded-md overflow-hidden border border-border bg-muted">
+                                            <img 
+                                                src={product.imageUrl || product.imageUrls?.[0] || 'https://placehold.co/100'} 
+                                                alt={product.name}
+                                                className="h-full w-full object-cover"
+                                            />
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="font-semibold text-foreground group-hover:text-primary transition-colors">{product.name}</div>
+                                        <div className="text-[10px] text-muted-foreground font-mono uppercase">ID: {product.id.slice(0, 8)}</div>
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                        <Badge variant="outline" className="font-mono text-xs">
+                                            {product.stockLevel || 0} units
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Badge className={cn(
+                                            "capitalize",
+                                            product.status === 'active' ? "bg-green-500/10 text-green-500 border-green-500/20" : 
+                                            product.status === 'rejected' ? "bg-red-500/10 text-red-500 border-red-500/20" :
+                                            "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
+                                        )}>
+                                            {product.status === 'pending_review' ? 'Under Review' : product.status.replace('_', ' ')}
+                                        </Badge>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </Card>
+            )}
+        </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto pt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto pt-4 pb-10">
             <Button asChild size="lg" className="h-16 text-lg btn-gold-glow">
                 <Link href="/backstage/finances">Manage Finances & Payouts <Landmark className="ml-2 h-5 w-5" /></Link>
             </Button>
