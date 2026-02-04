@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, CheckCircle2, UploadCloud, X, ImageIcon, TrendingUp, Tags, Layers, Plus } from 'lucide-react';
+import { Loader2, PackagePlus, CheckCircle2, UploadCloud, X, ImageIcon, TrendingUp, Tags, Layers, Plus, AlertCircle } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import SomaLogo from '@/components/logo';
 import { cn } from '@/lib/utils';
@@ -45,12 +45,18 @@ export default function AddProductPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  const numericWholesale = parseFloat(wholesalePrice) || 0;
+  const numericRetail = parseFloat(suggestedRetailPrice) || 0;
+
+  const isPriceInvalid = useMemo(() => {
+    if (!wholesalePrice || !suggestedRetailPrice) return false;
+    return numericRetail <= numericWholesale;
+  }, [numericWholesale, numericRetail, wholesalePrice, suggestedRetailPrice]);
+
   const margin = useMemo(() => {
-    const w = parseFloat(wholesalePrice) || 0;
-    const r = parseFloat(suggestedRetailPrice) || 0;
-    if (r <= 0) return 0;
-    return ((r - w) / r) * 100;
-  }, [wholesalePrice, suggestedRetailPrice]);
+    if (numericRetail <= 0) return 0;
+    return ((numericRetail - numericWholesale) / numericRetail) * 100;
+  }, [numericWholesale, numericRetail]);
 
   useEffect(() => {
     if (!profileLoading && userProfile?.status === 'pending_review') {
@@ -109,8 +115,12 @@ export default function AddProductPage() {
         return;
     }
     
-    if (parseFloat(wholesalePrice) >= parseFloat(suggestedRetailPrice)) {
-      toast({ variant: 'destructive', title: 'Pricing Error', description: 'Suggested Retail Price must be greater than Wholesale Price.' });
+    if (isPriceInvalid) {
+      toast({ 
+        variant: 'destructive', 
+        title: 'Pricing Strategy Error', 
+        description: 'Your Suggested Retail Price must be higher than the Wholesale Price to ensure platform viability.' 
+      });
       return;
     }
 
@@ -123,8 +133,8 @@ export default function AddProductPage() {
         productName,
         description,
         imageUrl, 
-        wholesalePrice: parseFloat(wholesalePrice),
-        suggestedRetailPrice: parseFloat(suggestedRetailPrice),
+        wholesalePrice: numericWholesale,
+        suggestedRetailPrice: numericRetail,
         categories: selectedCategories,
         tags: tags,
         vendorId: user.uid,
@@ -271,12 +281,19 @@ export default function AddProductPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="retail-price">Suggested Retail Price ($)</Label>
-                                <Input id="retail-price" type="number" step="0.01" value={suggestedRetailPrice} onChange={(e) => setSuggestedRetailPrice(e.target.value)} required placeholder="650.00"/>
+                                <Input id="retail-price" type="number" step="0.01" value={suggestedRetailPrice} onChange={(e) => setSuggestedRetailPrice(e.target.value)} required placeholder="650.00" className={cn(isPriceInvalid && "border-destructive focus-visible:ring-destructive")}/>
                                 <p className="text-[10px] text-muted-foreground uppercase tracking-tight">Global listing price</p>
                             </div>
                         </div>
 
-                        {(parseFloat(wholesalePrice) > 0 && parseFloat(suggestedRetailPrice) > 0) && (
+                        {isPriceInvalid && (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2 text-destructive text-sm font-semibold bg-destructive/10 p-3 rounded-lg border border-destructive/20">
+                                <AlertCircle className="h-4 w-4" />
+                                <span>Suggested Retail must be higher than Wholesale Price.</span>
+                            </motion.div>
+                        )}
+
+                        {(numericWholesale > 0 && numericRetail > 0 && !isPriceInvalid) && (
                             <motion.div 
                                 initial={{ opacity: 0, y: 10 }} 
                                 animate={{ opacity: 1, y: 0 }}
@@ -361,7 +378,7 @@ export default function AddProductPage() {
                         <div className="flex justify-end pt-4">
                             <Button 
                                 type="submit" 
-                                disabled={isSubmitting || isUploading || !imageUrl || selectedCategories.length === 0} 
+                                disabled={isSubmitting || isUploading || !imageUrl || selectedCategories.length === 0 || isPriceInvalid} 
                                 size="lg" 
                                 className="w-full h-14 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground text-lg font-bold"
                             >
