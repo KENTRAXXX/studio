@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useUser, useUserProfile, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
     Gift, 
     Copy, 
@@ -21,10 +22,14 @@ import {
     Award, 
     Medal, 
     TrendingUp,
-    Star
+    Star,
+    ShieldAlert,
+    Clock,
+    FileText
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { formatCurrency } from '@/utils/format';
 
 type ReferredUser = {
     id: string;
@@ -38,6 +43,27 @@ const TIERS = [
     { name: 'Silver', min: 21, max: 50, rate: 15, color: 'text-slate-300', icon: Award, badge: 'Growth Leader' },
     { name: 'Gold', min: 51, max: Infinity, rate: 20, color: 'text-primary', icon: Trophy, badge: 'Founding Partner' },
 ];
+
+const ReferralAgreement = () => (
+    <div className="space-y-4 text-xs text-muted-foreground leading-relaxed">
+        <div className="space-y-1">
+            <h4 className="font-bold text-slate-200 uppercase tracking-tighter">1. Eligibility & Attribution</h4>
+            <p>Referral rewards are only granted for "Active" status users who have successfully processed their entrance fee. Retroactive attribution is not supported.</p>
+        </div>
+        <div className="space-y-1">
+            <h4 className="font-bold text-slate-200 uppercase tracking-tighter">2. Self-Referral Policy</h4>
+            <p>Creating multiple accounts to refer yourself is strictly prohibited. SOMA’s Identity Provisioning system flags duplicate IP addresses and payment methods; discovery results in immediate account suspension and forfeiture of all pending rewards.</p>
+        </div>
+        <div className="space-y-1">
+            <h4 className="font-bold text-slate-200 uppercase tracking-tighter">3. Payout Maturity (14-Day Hold)</h4>
+            <p>Referral commissions are subject to a 14-day "Maturity Period" from the date of the referee's activation. This policy accounts for potential payment reversals, chargebacks, or plan cancellations during the initial onboarding window.</p>
+        </div>
+        <div className="space-y-1">
+            <h4 className="font-bold text-slate-200 uppercase tracking-tighter">4. Anti-Spam & Brand Standards</h4>
+            <p>Referrers must not use "SOMA" in paid search advertising (e.g., Google Ads) or engage in bulk automated spamming. High-end, relationship-based growth is the SOMA standard. Violation of brand standards may result in status revocation.</p>
+        </div>
+    </div>
+);
 
 export default function ReferralsPage() {
     const { user } = useUser();
@@ -61,7 +87,6 @@ export default function ReferralsPage() {
         return referredUsers?.filter(u => u.hasAccess).length || 0;
     }, [referredUsers]);
 
-    // Tier Calculation Logic
     const currentTier = useMemo(() => {
         return TIERS.find(t => activeReferrals >= t.min && activeReferrals <= t.max) || TIERS[0];
     }, [activeReferrals]);
@@ -207,70 +232,126 @@ export default function ReferralsPage() {
                 </Card>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
-                <Card className="bg-card/50">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Total Network</CardTitle>
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                         {isLoading ? <Loader2 className="h-8 animate-spin"/> : <div className="text-3xl font-bold">{referredUsers?.length || 0}</div>}
-                         <p className="text-xs text-muted-foreground mt-1">Users attributed to your brand</p>
-                    </CardContent>
-                </Card>
-                <Card className="bg-card/50">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-green-500">Active Conversions</CardTitle>
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                    </CardHeader>
-                    <CardContent>
-                         {isLoading ? <Loader2 className="h-8 animate-spin"/> : <div className="text-3xl font-bold text-green-400">{activeReferrals}</div>}
-                         <p className="text-xs text-muted-foreground mt-1">Partners with processed plans</p>
-                    </CardContent>
-                </Card>
-            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Stats Ledger */}
+                <div className="lg:col-span-2 space-y-8">
+                    <div className="grid gap-6 md:grid-cols-2">
+                        <Card className="bg-card/50">
+                            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                <CardTitle className="text-sm font-medium">Total Referral Earnings</CardTitle>
+                                <DollarSign className="h-4 w-4 text-primary" />
+                            </CardHeader>
+                            <CardContent>
+                                {isLoading ? <Loader2 className="h-8 animate-spin"/> : <div className="text-3xl font-bold">{formatCurrency(Math.round((userProfile?.totalReferralEarnings || 0) * 100))}</div>}
+                                <p className="text-[10px] text-muted-foreground uppercase mt-1">Lifetime rewards accrued</p>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-card/50">
+                            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                <CardTitle className="text-sm font-medium text-green-500">Active Conversions</CardTitle>
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                            </CardHeader>
+                            <CardContent>
+                                {isLoading ? <Loader2 className="h-8 animate-spin"/> : <div className="text-3xl font-bold text-green-400">{activeReferrals}</div>}
+                                <p className="text-[10px] text-muted-foreground uppercase mt-1">Partners with processed plans</p>
+                            </CardContent>
+                        </Card>
+                    </div>
 
-             <Card className="border-primary/10">
-                <CardHeader>
-                    <CardTitle>Network Ledger</CardTitle>
-                    <CardDescription>Historical record of all attributed signups.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Partner Identity</TableHead>
-                                <TableHead>Empire Tier</TableHead>
-                                <TableHead className="text-right">Activation Status</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {isLoading ? (
-                                <TableRow><TableCell colSpan={3} className="text-center h-24"><Loader2 className="animate-spin text-primary"/></TableCell></TableRow>
-                            ) : referredUsers && referredUsers.length > 0 ? (
-                                referredUsers.map(refUser => (
-                                    <TableRow key={refUser.id} className="hover:bg-muted/30 transition-colors border-white/5">
-                                        <TableCell className="font-medium">{refUser.email}</TableCell>
-                                        <TableCell>
-                                            <Badge variant="outline" className="border-primary/20 text-primary uppercase text-[10px]">{refUser.planTier}</Badge>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Badge className={refUser.hasAccess ? 'bg-green-500/20 text-green-400 border-green-500/50' : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50'}>
-                                                {refUser.hasAccess ? 'Active' : 'Pending Verification'}
-                                            </Badge>
-                                        </TableCell>
+                    <Card className="border-primary/10">
+                        <CardHeader>
+                            <CardTitle>Network Ledger</CardTitle>
+                            <CardDescription>Historical record of all attributed signups.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Partner Identity</TableHead>
+                                        <TableHead>Empire Tier</TableHead>
+                                        <TableHead className="text-right">Activation Status</TableHead>
                                     </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={3} className="h-24 text-center text-muted-foreground italic">You haven't referred any partners yet.</TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+                                </TableHeader>
+                                <TableBody>
+                                    {isLoading ? (
+                                        <TableRow><TableCell colSpan={3} className="text-center h-24"><Loader2 className="animate-spin text-primary"/></TableCell></TableRow>
+                                    ) : referredUsers && referredUsers.length > 0 ? (
+                                        referredUsers.map(refUser => (
+                                            <TableRow key={refUser.id} className="hover:bg-muted/30 transition-colors border-white/5">
+                                                <TableCell className="font-medium">{refUser.email}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant="outline" className="border-primary/20 text-primary uppercase text-[10px]">{refUser.planTier}</Badge>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <Badge className={refUser.hasAccess ? 'bg-green-500/20 text-green-400 border-green-500/50' : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50'}>
+                                                        {refUser.hasAccess ? 'Active' : 'Pending Verification'}
+                                                    </Badge>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={3} className="h-24 text-center text-muted-foreground italic">You haven't referred any partners yet.</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </div>
 
+                {/* Agreement & Compliance Section */}
+                <div className="space-y-6">
+                    <Card className="border-primary/20 bg-slate-900/40">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="text-xs font-headline uppercase tracking-[0.2em] text-primary flex items-center gap-2">
+                                <ShieldAlert className="h-4 w-4" />
+                                Executive Compliance
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
+                                <div className="flex items-start gap-3">
+                                    <Clock className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase text-slate-200">Payout Maturity</p>
+                                        <p className="text-[10px] text-muted-foreground mt-1">Referral commissions are subject to a 14-day "Maturity Period" to account for payment integrity.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500 tracking-widest">
+                                    <FileText className="h-3 w-3" /> Agreement Excerpt
+                                </div>
+                                <ScrollArea className="h-64 rounded-lg border border-white/5 bg-black/20 p-4">
+                                    <ReferralAgreement />
+                                </ScrollArea>
+                            </div>
+
+                            <p className="text-[9px] text-muted-foreground italic text-center">By sharing your link, you agree to the SOMA Strategic Assets Group Referral Standards.</p>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
         </div>
+    )
+}
+
+function DollarSign({ className }: { className?: string }) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className}
+        >
+            <line x1="12" y1="1" x2="12" y2="23" />
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+        </svg>
     )
 }

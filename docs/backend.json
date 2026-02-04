@@ -248,6 +248,14 @@
                     "type": "string",
                     "description": "The contact phone number for the seller's business."
                 },
+                "activeReferralCount": {
+                    "type": "number",
+                    "description": "Number of users who have activated using this user's code."
+                },
+                "totalReferralEarnings": {
+                    "type": "number",
+                    "description": "Total gross earnings from the referral system."
+                },
                 "bankDetails": {
                     "type": "object",
                     "description": "The user's verified bank details for payouts. This should only be set after a first successful payout.",
@@ -310,7 +318,7 @@
                 "userId": { "type": "string" },
                 "amount": { "type": "number" },
                 "currency": { "type": "string" },
-                "status": { "type": "string", "enum": ["pending", "paid"] },
+                "status": { "type": "string", "enum": ["pending", "paid", "pending_maturity"] },
                 "orderId": { "type": "string" },
                 "paymentReference": { "type": "string" },
                 "createdAt": { "type": "string", "format": "date-time" }

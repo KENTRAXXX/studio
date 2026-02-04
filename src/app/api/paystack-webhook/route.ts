@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClientStore } from '@/ai/flows/create-client-store';
 import { initializeApp, getApps } from 'firebase/app';
-import { getFirestore, doc, getDoc, updateDoc, collection, addDoc, runTransaction, query, where } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, updateDoc, collection, addDoc, runTransaction, query, where, increment } from 'firebase/firestore';
 import { firebaseConfig } from '@/firebase/config';
 import { sendOrderEmail } from '@/ai/flows/send-order-email';
 import { sendReferralActivatedEmail } from '@/ai/flows/send-referral-activated-email';
@@ -36,6 +36,16 @@ async function logWebhookEvent(eventType: string, payload: any, status: 'success
     } catch (e) {
         console.error("Critical: Failed to log webhook event to Firestore", e);
     }
+}
+
+/**
+ * Calculates the referral commission percentage based on the referrer's active count.
+ * Tiers: 0-20 (10%), 21-50 (15%), 51+ (20%)
+ */
+function getCommissionRate(activeCount: number): number {
+    if (activeCount >= 51) return 0.20;
+    if (activeCount >= 21) return 0.15;
+    return 0.10;
 }
 
 async function executePaymentSplit(eventData: any) {
@@ -108,7 +118,6 @@ async function executePaymentSplit(eventData: any) {
                             orderId,
                             paymentReference: reference,
                             createdAt: new Date().toISOString(),
-                            // Analytics fields
                             productName: productData.name,
                             quantity: item.quantity,
                             shippingCity: shippingAddress?.city || 'Unknown',
@@ -139,7 +148,6 @@ async function executePaymentSplit(eventData: any) {
                     orderId,
                     paymentReference: reference,
                     createdAt: new Date().toISOString(),
-                    // Analytics for mogul profit
                     productName: 'Store Profit Aggregation',
                     quantity: 1,
                     shippingCity: shippingAddress?.city || 'Unknown',
@@ -213,8 +221,6 @@ export async function POST(req: Request) {
   const paystackSignature = req.headers.get('x-stack-signature');
   const hash = crypto.createHmac('sha512', secret).update(rawBody).digest('hex');
   
-  // NOTE: In production, hash should equal paystackSignature. 
-  // We use a lenient check here for testing if signature is missing.
   if (paystackSignature && hash !== paystackSignature) {
     console.error('Invalid Paystack signature.');
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
@@ -223,7 +229,7 @@ export async function POST(req: Request) {
   const event = JSON.parse(rawBody);
 
   if (event.event === 'charge.success') {
-    const { metadata, customer } = event.data;
+    const { metadata, customer, reference } = event.data;
 
     if (!metadata) {
         await logWebhookEvent(event.event, event.data, 'failed', 'Missing metadata in charge.success event.');
@@ -236,10 +242,8 @@ export async function POST(req: Request) {
         await executePaymentSplit(event.data);
     } else if (userId) {
         try {
-            // Data needed for referral email outside transaction
             let emailData: { to: string, referrerName: string, protegeName: string, creditAmount: string } | null = null;
 
-            // 1. Transactional Access Grant & Referral Credit
             await runTransaction(firestore, async (transaction) => {
                 const userRef = doc(firestore, "users", userId);
                 const userSnap = await transaction.get(userRef);
@@ -247,7 +251,6 @@ export async function POST(req: Request) {
                 if (!userSnap.exists()) throw new Error("User document not found during activation.");
                 const userData = userSnap.data();
 
-                // Check for Referrer
                 const referredBy = userData.referredBy;
                 if (referredBy) {
                     const referrerRef = doc(firestore, "users", referredBy);
@@ -255,57 +258,60 @@ export async function POST(req: Request) {
                     
                     if (referrerSnap.exists() && referrerSnap.data().hasAccess === true) {
                         const referrerData = referrerSnap.data();
+                        
+                        // Calculate Tiered Rate
+                        const currentActiveCount = referrerData.activeReferralCount || 0;
+                        const commissionRate = getCommissionRate(currentActiveCount);
+                        
                         const tier = userData.planTier || planTier;
                         const interval = userData.plan || plan;
-                        
                         const basePrice = basePrices[tier] || 0;
                         const totalCost = interval === 'yearly' ? basePrice * 10 : basePrice;
-                        const referralCredit = totalCost * 0.10;
+                        
+                        const referralReward = totalCost * commissionRate;
 
-                        if (referralCredit > 0) {
+                        if (referralReward > 0) {
                             const payoutRef = doc(collection(firestore, 'payouts_pending'));
                             transaction.set(payoutRef, {
                                 userId: referredBy,
-                                amount: referralCredit,
+                                amount: referralReward,
                                 currency: 'USD',
-                                status: 'pending',
-                                type: 'referral_credit',
+                                status: 'pending_maturity', // Payout requires 14-day hold
+                                type: 'referral_reward',
                                 referredUserId: userId,
                                 createdAt: new Date().toISOString(),
-                                description: `10% Referral Credit for ${userData.email || 'New User'} activation.`
+                                description: `${commissionRate * 100}% Referral Reward for ${userData.email || 'New User'} activation.`
                             });
 
-                            // Prepare email data
+                            // Update Referrer Aggregates
+                            transaction.update(referrerRef, {
+                                activeReferralCount: increment(1),
+                                totalReferralEarnings: increment(referralReward)
+                            });
+
                             emailData = {
                                 to: referrerData.email,
                                 referrerName: referrerData.displayName || referrerData.email.split('@')[0],
                                 protegeName: userData.displayName || userData.email.split('@')[0],
-                                creditAmount: formatCurrency(Math.round(referralCredit * 100))
+                                creditAmount: formatCurrency(Math.round(referralReward * 100))
                             };
                         }
                     }
                 }
 
-                // Grant Access
                 transaction.update(userRef, {
                     hasAccess: true,
                     paidAt: new Date().toISOString(),
                 });
             });
 
-            console.log(`Paystack webhook: Access granted and referral checked for ${userId}`);
-
-            // 2. Dispatch Referral Email if applicable
             if (emailData) {
                 await sendReferralActivatedEmail(emailData).catch(err => {
                     console.error("Failed to send referral activation email:", err);
                 });
             }
 
-            // 3. Trigger welcome flow ONLY for Mogul tiers. 
-            // Brand/Seller verification happens first, then they get their welcome email.
             const isSupplierTier = planTier === 'SELLER' || planTier === 'BRAND';
-            
             if (!isSupplierTier) {
                 await createClientStore({
                     userId,
