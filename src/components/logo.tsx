@@ -1,6 +1,7 @@
+
 import { cn } from "@/lib/utils";
 
-const SomaLogo = ({ className }: { className?: string }) => (
+const SomaLogo = ({ className, "aria-hidden": ariaHidden = false }: { className?: string, "aria-hidden"?: boolean }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
@@ -10,6 +11,9 @@ const SomaLogo = ({ className }: { className?: string }) => (
     strokeLinecap="round"
     strokeLinejoin="round"
     className={cn("h-6 w-6 text-primary", className)}
+    role={ariaHidden ? undefined : "img"}
+    aria-label={ariaHidden ? undefined : "SOMA Logo"}
+    aria-hidden={ariaHidden}
   >
     <path d="M12 2L2 7l10 5 10-5-10-5z" />
     <path d="M2 17l10 5 10-5" />

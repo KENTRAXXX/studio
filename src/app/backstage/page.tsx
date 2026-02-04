@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -473,9 +474,18 @@ export default function BackstagePage() {
                                             <FormControl>
                                                 <div className="flex flex-col gap-4">
                                                     <div 
+                                                        role="button"
+                                                        tabIndex={0}
                                                         onClick={() => (!uploadComplete || isActionRequired) && fileInputRef.current?.click()}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                                e.preventDefault();
+                                                                (!uploadComplete || isActionRequired) && fileInputRef.current?.click();
+                                                            }
+                                                        }}
+                                                        aria-label="Upload Government ID Document"
                                                         className={cn(
-                                                            "w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all duration-300",
+                                                            "w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                                                             (uploadComplete && !isActionRequired) ? "border-green-500 bg-green-500/5 cursor-default" : "border-primary/30 hover:border-primary bg-muted/20",
                                                             isUploading && "opacity-50 cursor-wait"
                                                         )}

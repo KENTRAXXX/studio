@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRef } from 'react';
@@ -22,7 +23,7 @@ export function HeroSection({ imageUrl, title, subtitle }: HeroSectionProps) {
       {imageUrl && (
         <Image
           src={imageUrl}
-          alt="Luxury storefront hero image"
+          alt={`Visual representation of ${title}`}
           fill
           priority
           className="object-cover"
@@ -37,7 +38,7 @@ export function HeroSection({ imageUrl, title, subtitle }: HeroSectionProps) {
         <p className="mt-4 text-lg md:text-xl max-w-2xl mx-auto">
           {subtitle}
         </p>
-        <Button size="lg" className="mt-8 h-12 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleShopNowClick}>
+        <Button size="lg" className="mt-8 h-12 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold" onClick={handleShopNowClick}>
           Shop Now
         </Button>
       </div>

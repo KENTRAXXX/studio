@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, createContext, useContext, useEffect } from 'react';
@@ -80,7 +81,7 @@ function CartSheet({storeId}: {storeId: string}) {
         <Sheet>
             <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative text-primary-foreground hover:bg-primary/20 hover:text-primary">
-                    <ShoppingCart className="h-6 w-6" />
+                    <ShoppingCart className="h-6 w-6" aria-label={`Shopping Cart, ${cart.reduce((acc, item) => acc + item.quantity, 0)} items`} />
                     {cart.length > 0 && (
                         <span className="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
                             {cart.reduce((acc, item) => acc + item.quantity, 0)}
@@ -109,7 +110,7 @@ function CartSheet({storeId}: {storeId: string}) {
                                                 <p className="text-sm text-muted-foreground">{formatCurrency(Math.round(price * 100))} x {item.quantity}</p>
                                             </div>
                                             <p className="font-semibold">{formatCurrency(Math.round(price * item.quantity * 100))}</p>
-                                            <Button variant="ghost" size="icon" onClick={() => removeFromCart(item.product.id)}>
+                                            <Button variant="ghost" size="icon" onClick={() => removeFromCart(item.product.id)} aria-label={`Remove ${item.product.name} from cart`}>
                                                 <X className="h-4 w-4" />
                                             </Button>
                                         </li>
@@ -151,7 +152,7 @@ function ContactSheet({ ownerEmail }: { ownerEmail?: string }) {
                     <SheetTitle className="text-primary font-headline text-2xl">Contact Us</SheetTitle>
                 </SheetHeader>
                 <div className="py-8 text-center space-y-6">
-                     <Mail className="h-12 w-12 text-primary mx-auto"/>
+                     <Mail className="h-12 w-12 text-primary mx-auto" aria-hidden="true" />
                      <div>
                         <h3 className="font-semibold">Have a question?</h3>
                         <p className="text-muted-foreground">Reach out to the store owner directly at:</p>
@@ -223,7 +224,7 @@ export default function StoreLayout({
                         <img src={logoUrl} alt={storeName} className="h-10 w-auto object-contain transition-transform group-hover:scale-105" />
                     </div>
                 ) : (
-                    <SomaLogo className="h-8 w-8 text-primary" />
+                    <SomaLogo className="h-8 w-8 text-primary" aria-hidden="true" />
                 )}
                 <h1 className="font-headline text-2xl font-bold text-primary tracking-tighter transition-colors group-hover:text-primary/80">
                     {storeLoading ? 'Loading...' : storeName}
@@ -231,9 +232,10 @@ export default function StoreLayout({
               </Link>
               <div className="flex items-center gap-4">
                 <div className="relative hidden md:block">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" aria-hidden="true" />
                   <input
                     placeholder="Search products..."
+                    aria-label="Search products"
                     className="h-10 w-full rounded-md border border-primary/30 bg-transparent pl-10 pr-4 text-sm placeholder:text-muted-foreground focus:ring-primary"
                   />
                 </div>
@@ -241,7 +243,7 @@ export default function StoreLayout({
               </div>
             </div>
           </header>
-          <main className="animate-in fade-in duration-700">{children}</main>
+          <main id="main-content" className="animate-in fade-in duration-700" tabIndex={-1}>{children}</main>
           <footer className="bg-card border-t border-primary/10">
             <div className="container mx-auto flex flex-col items-center justify-between gap-6 py-12 px-4 sm:flex-row sm:px-6 lg:px-8">
               <div className="space-y-4 text-center sm:text-left">
@@ -249,17 +251,17 @@ export default function StoreLayout({
                 {socials && (
                     <div className="flex items-center justify-center sm:justify-start gap-4">
                         {socials.instagram && (
-                            <Link href={`https://instagram.com/${socials.instagram}`} target="_blank" className="text-muted-foreground hover:text-primary transition-colors">
+                            <Link href={`https://instagram.com/${socials.instagram}`} target="_blank" className="text-muted-foreground hover:text-primary transition-colors" aria-label="Visit our Instagram">
                                 <Instagram className="h-5 w-5" />
                             </Link>
                         )}
                         {socials.tiktok && (
-                            <Link href={`https://tiktok.com/@${socials.tiktok}`} target="_blank" className="text-muted-foreground hover:text-primary transition-colors">
-                                <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.83 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.33 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.04-.1z"/></svg>
+                            <Link href={`https://tiktok.com/@${socials.tiktok}`} target="_blank" className="text-muted-foreground hover:text-primary transition-colors" aria-label="Visit our TikTok">
+                                <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.83 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.33 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.04-.1z"/></svg>
                             </Link>
                         )}
                         {socials.x && (
-                            <Link href={`https://x.com/${socials.x}`} target="_blank" className="text-muted-foreground hover:text-primary transition-colors">
+                            <Link href={`https://x.com/${socials.x}`} target="_blank" className="text-muted-foreground hover:text-primary transition-colors" aria-label="Visit our X (Twitter)">
                                 <Twitter className="h-5 w-5" />
                             </Link>
                         )}

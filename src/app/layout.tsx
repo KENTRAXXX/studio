@@ -1,9 +1,10 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase/client-provider';
-import Script from 'next/script';
 import { UserProfileProvider } from '@/firebase/user-profile-provider';
+import { SkipToContent } from '@/components/skip-to-content';
 
 export const metadata: Metadata = {
   title: 'SomaDS',
@@ -24,6 +25,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" crossOrigin="anonymous" />
       </head>
       <body className="font-body antialiased">
+        <SkipToContent />
         <FirebaseClientProvider>
           <UserProfileProvider>
             {children}

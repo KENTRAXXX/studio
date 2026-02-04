@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -194,7 +195,7 @@ export default function DashboardLayout({
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-2">
-            <SomaLogo />
+            <SomaLogo className="h-6 w-6 text-primary" aria-hidden="true" />
             <span className="font-headline font-bold text-xl text-primary">SomaDS</span>
           </div>
         </SidebarHeader>
@@ -204,7 +205,7 @@ export default function DashboardLayout({
               <SidebarMenuItem key={item.href}>
                 <Link href={item.href}>
                   <SidebarMenuButton tooltip={item.label}>
-                    <item.icon />
+                    <item.icon aria-hidden="true" />
                     <span>{item.label}</span>
                   </SidebarMenuButton>
                 </Link>
@@ -220,7 +221,7 @@ export default function DashboardLayout({
                   <SidebarMenuItem key={item.href}>
                     <Link href={item.href}>
                       <SidebarMenuButton tooltip={item.label}>
-                        <item.icon />
+                        <item.icon aria-hidden="true" />
                         <span>{item.label}</span>
                       </SidebarMenuButton>
                     </Link>
@@ -239,7 +240,7 @@ export default function DashboardLayout({
                   <SidebarMenuButton 
                     className="text-muted-foreground hover:text-red-400 transition-colors"
                   >
-                    <LogOut className="h-4 w-4" />
+                    <LogOut className="h-4 w-4" aria-hidden="true" />
                     <span>Sign Out</span>
                   </SidebarMenuButton>
                 </AlertDialogTrigger>
@@ -274,7 +275,9 @@ export default function DashboardLayout({
             <div className="flex-1">
             </div>
         </header>
-        <header className="flex-1 p-4 sm:p-6">{children}</header>
+        <main id="main-content" className="flex-1 p-4 sm:p-6" tabIndex={-1}>
+          {children}
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );
