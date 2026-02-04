@@ -1,4 +1,3 @@
-
 'use client';
 import { useState } from 'react';
 import { createUserWithEmailAndPassword, UserCredential } from 'firebase/auth';
@@ -81,6 +80,17 @@ export function useSignUp() {
       // If it's a free seller plan or an admin, we grant access immediately since there is no payment webhook.
       const isFreeTier = (credentials.planTier === 'SELLER' && credentials.plan === 'free') || credentials.planTier === 'ADMIN';
 
+      // Default status mapping
+      const statusMap = {
+          ADMIN: 'approved',
+          MOGUL: 'approved',
+          MERCHANT: 'approved',
+          SCALER: 'approved',
+          ENTERPRISE: 'approved',
+          SELLER: 'pending_review',
+          BRAND: 'pending_review'
+      };
+
       const newUserProfile: any = {
         email: user.email,
         hasAccess: isFreeTier,
@@ -89,6 +99,7 @@ export function useSignUp() {
         planTier: credentials.planTier,
         plan: credentials.plan,
         referralCode: generateReferralCode(6),
+        status: statusMap[credentials.planTier as keyof typeof statusMap] || 'approved'
       };
 
       if (referredBy) {

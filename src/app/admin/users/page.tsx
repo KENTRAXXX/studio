@@ -44,12 +44,14 @@ import Link from 'next/link';
 type UserProfile = {
   id: string;
   email: string;
-  planTier: 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND';
-  status: 'pending_review' | 'approved' | 'rejected';
+  planTier: 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND' | 'ADMIN';
+  status: 'pending_review' | 'approved' | 'rejected' | 'action_required';
   isDisabled?: boolean;
 };
 
-const getStatusBadgeVariant = (status: UserProfile['status'] | 'disabled') => {
+const getStatusBadgeVariant = (status?: UserProfile['status'] | 'disabled') => {
+  if (!status) return 'bg-muted text-muted-foreground';
+  
   switch (status) {
     case 'approved':
       return 'bg-green-500/20 text-green-400 border-green-500/50';
@@ -68,10 +70,12 @@ const getPlanTierBadgeVariant = (planTier: UserProfile['planTier']) => {
     switch (planTier) {
         case 'SCALER':
         case 'ENTERPRISE':
+        case 'ADMIN':
             return 'bg-primary/20 text-primary border-primary/50';
         case 'MERCHANT':
             return 'bg-slate-400/20 text-slate-300 border-slate-400/50';
         case 'SELLER':
+        case 'BRAND':
             return 'bg-orange-400/20 text-orange-300 border-orange-400/50';
         default:
             return 'bg-secondary text-secondary-foreground';
@@ -168,6 +172,8 @@ export default function UserManagementPage() {
                     <SelectItem value="SCALER">Scaler</SelectItem>
                     <SelectItem value="SELLER">Seller</SelectItem>
                     <SelectItem value="ENTERPRISE">Enterprise</SelectItem>
+                    <SelectItem value="BRAND">Brand</SelectItem>
+                    <SelectItem value="ADMIN">Admin</SelectItem>
                 </SelectContent>
             </Select>
           </div>
@@ -197,7 +203,7 @@ export default function UserManagementPage() {
                     </TableCell>
                     <TableCell>
                         <Badge variant="outline" className={cn(getStatusBadgeVariant(user.isDisabled ? 'disabled' : user.status))}>
-                            {user.isDisabled ? 'Disabled' : user.status.replace('_', ' ')}
+                            {user.isDisabled ? 'Disabled' : (user.status?.replace('_', ' ') || 'Active')}
                         </Badge>
                     </TableCell>
                     <TableCell className="text-right space-x-2">
