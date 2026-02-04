@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -24,7 +23,8 @@ import {
     Star,
     ArrowUp,
     ChevronRight,
-    Sparkles
+    Sparkles,
+    Gem
 } from 'lucide-react';
 import {
   ResponsiveContainer,
