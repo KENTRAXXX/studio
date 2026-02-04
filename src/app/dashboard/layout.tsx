@@ -111,6 +111,7 @@ const sellerNavItems = [
     { href: '/backstage/marketing-assets', icon: FolderOpen, label: 'Brand Assets' },
     { href: '/backstage/add-product', icon: Package, label: 'Add Product' },
     { href: '/backstage/concierge', icon: MessageSquare, label: 'Concierge' },
+    { href: '/backstage/settings', icon: Settings, label: 'Account Settings' },
     { href: '/backstage', icon: ShieldCheck, label: 'Onboarding Status' },
 ];
 
