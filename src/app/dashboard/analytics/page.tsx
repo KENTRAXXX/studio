@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -17,7 +16,10 @@ import {
     MousePointer2,
     Target,
     Globe,
-    BarChart3
+    BarChart3,
+    Clock,
+    CheckCircle2,
+    ShieldCheck
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -31,9 +33,40 @@ import {
   Tooltip,
   Cell
 } from 'recharts';
+import { 
+  ComposableMap, 
+  Geographies, 
+  Geography, 
+  Marker 
+} from "react-simple-maps";
 import { format } from 'date-fns';
 import { formatCurrency } from '@/utils/format';
 import { cn } from '@/lib/utils';
+
+const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+
+const CITY_COORDS: Record<string, [number, number]> = {
+    "Tokyo": [139.6917, 35.6895],
+    "New York": [-74.0060, 40.7128],
+    "London": [-0.1278, 51.5074],
+    "Paris": [2.3522, 48.8566],
+    "Singapore": [103.8198, 1.3521],
+    "Dubai": [55.2708, 25.2048],
+    "Hong Kong": [114.1694, 22.3193],
+    "Los Angeles": [-118.2437, 34.0522],
+    "Sydney": [151.2093, -33.8688],
+    "Berlin": [13.4050, 52.5200],
+    "Toronto": [-79.3832, 43.6532],
+    "Seoul": [126.9780, 37.5665],
+    "Moscow": [37.6173, 55.7558],
+    "Mumbai": [72.8777, 19.0760],
+    "Sao Paulo": [-46.6333, -23.5505],
+    "Lagos": [3.3792, 6.5244],
+    "Cairo": [31.2357, 30.0444],
+    "Buenos Aires": [-58.3816, -34.6037],
+    "Mexico City": [-99.1332, 19.4326],
+    "Istanbul": [28.9784, 41.0082]
+};
 
 type OrderProduct = {
   id: string;
@@ -48,17 +81,16 @@ type Order = {
   total: number;
   createdAt: string;
   cart: OrderProduct[];
+  shippingAddress?: {
+      city?: string;
+      country?: string;
+  };
 };
 
 type StoreData = {
     visitorCount?: number;
     productViewCount?: number;
     customDomain?: string;
-}
-
-type TrafficLog = {
-    source: string;
-    timestamp: any;
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -122,22 +154,11 @@ export default function AnalyticsPage() {
     if (!user || !firestore) return null;
     return query(
       collection(firestore, `stores/${user.uid}/orders`),
-      orderBy('createdAt', 'asc')
+      orderBy('createdAt', 'desc')
     );
   }, [user, firestore]);
 
   const { data: orders, loading: ordersLoading } = useCollection<Order>(ordersQuery);
-
-  const trafficQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return query(
-        collection(firestore, `stores/${user.uid}/traffic_logs`),
-        orderBy('timestamp', 'desc'),
-        limit(500)
-    );
-  }, [user, firestore]);
-
-  const { data: trafficLogs, loading: trafficLoading } = useCollection<TrafficLog>(trafficQuery);
 
   const stats = useMemo(() => {
     if (!orders) {
@@ -154,14 +175,14 @@ export default function AnalyticsPage() {
     const revenue = orders.reduce((acc, order) => acc + order.total, 0);
     const orderCount = orders.length;
     
-    const totalCost = orders.reduce((acc, order) => {
-        return acc + order.cart.reduce((itemAcc, item) => {
+    const profit = orders.reduce((acc, order) => {
+        const orderCost = order.cart.reduce((itemAcc, item) => {
             const cost = item.wholesalePrice ?? item.price * 0.7;
             return itemAcc + (cost * item.quantity);
         }, 0);
+        return acc + (order.total - orderCost);
     }, 0);
 
-    const profit = revenue - totalCost;
     const visitors = storeData?.visitorCount || 0;
     const convRate = visitors > 0 ? (orderCount / visitors) * 100 : 0;
     const aov = orderCount > 0 ? revenue / orderCount : 0;
@@ -186,18 +207,26 @@ export default function AnalyticsPage() {
     };
   }, [orders, storeData]);
 
-  const trafficData = useMemo(() => {
-      if (!trafficLogs) return [];
-      const sources: Record<string, number> = {};
-      trafficLogs.forEach(log => {
-          sources[log.source] = (sources[log.source] || 0) + 1;
+  const orderMarkers = useMemo(() => {
+      if (!orders) return [];
+      const markers: any[] = [];
+      const seenCities = new Set();
+
+      orders.slice(0, 50).forEach(order => {
+          const city = order.shippingAddress?.city;
+          if (city && CITY_COORDS[city] && !seenCities.has(city)) {
+              markers.push({
+                  name: city,
+                  coordinates: CITY_COORDS[city],
+                  orderId: order.id
+              });
+              seenCities.add(city);
+          }
       });
-      return Object.entries(sources)
-        .map(([name, value]) => ({ name, value }))
-        .sort((a, b) => b.value - a.value);
-  }, [trafficLogs]);
-  
-  const isLoading = userLoading || ordersLoading || storeLoading || trafficLoading;
+      return markers;
+  }, [orders]);
+
+  const isLoading = userLoading || ordersLoading || storeLoading;
 
   if (isLoading) {
       return (
@@ -215,7 +244,7 @@ export default function AnalyticsPage() {
   const clickToOrderRate = productViews > 0 ? ((ordersCount / productViews) * 100).toFixed(1) : "0";
 
   return (
-    <div className="space-y-10 max-w-6xl mx-auto pb-20">
+    <div className="space-y-10 max-w-7xl mx-auto pb-20">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
             <div className="flex items-center gap-3 mb-2">
@@ -235,6 +264,111 @@ export default function AnalyticsPage() {
             </CardContent>
         </Card>
       </div>
+
+      {/* Global War Room Section */}
+      <Card className="border-primary/30 bg-slate-900/40 overflow-hidden relative">
+          <CardHeader className="border-b border-white/5 bg-muted/30">
+              <div className="flex items-center justify-between">
+                  <div>
+                      <CardTitle className="text-2xl font-headline flex items-center gap-3">
+                          <Globe className="h-6 w-6 text-primary animate-spin-slow" />
+                          Global War Room
+                      </CardTitle>
+                      <CardDescription>Live acquisition telemetry across international markets.</CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20">
+                      <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                      <span className="text-[10px] font-black text-green-500 uppercase tracking-widest">Live Link Active</span>
+                  </div>
+              </div>
+          </CardHeader>
+          <CardContent className="p-0 grid grid-cols-1 lg:grid-cols-12">
+              <div className="lg:col-span-8 h-[500px] relative bg-slate-950/50">
+                  <ComposableMap projectionConfig={{ scale: 160 }} className="w-full h-full">
+                      <Geographies geography={geoUrl}>
+                          {({ geographies }) =>
+                              geographies.map((geo) => (
+                                  <Geography
+                                      key={geo.rsmKey}
+                                      geography={geo}
+                                      fill="hsl(var(--muted) / 0.15)"
+                                      stroke="hsl(var(--primary) / 0.1)"
+                                      strokeWidth={0.5}
+                                      style={{
+                                          default: { outline: "none" },
+                                          hover: { fill: "hsl(var(--primary) / 0.1)", outline: "none" },
+                                          pressed: { outline: "none" },
+                                      }}
+                                  />
+                              ))
+                          }
+                      </Geographies>
+                      {orderMarkers.map(({ name, coordinates, orderId }) => (
+                          <Marker key={orderId} coordinates={coordinates}>
+                              <g>
+                                  <circle r="8" fill="hsl(var(--primary) / 0.3)" className="animate-marker-pulse" />
+                                  <circle r="3" fill="hsl(var(--primary))" />
+                              </g>
+                              <text
+                                  textAnchor="middle"
+                                  y={-12}
+                                  style={{ fontFamily: "var(--font-headline)", fontSize: "8px", fill: "hsl(var(--primary))", fontWeight: "bold" }}
+                              >
+                                  {name.toUpperCase()}
+                              </text>
+                          </Marker>
+                      ))}
+                  </ComposableMap>
+                  
+                  <div className="absolute bottom-6 left-6 p-4 rounded-xl bg-black/60 backdrop-blur-md border border-white/5 space-y-2">
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Acquisition Hotspots</p>
+                      <div className="flex gap-4">
+                          <div className="flex items-center gap-2">
+                              <span className="h-2 w-2 rounded-full bg-primary" />
+                              <span className="text-[10px] text-slate-300 font-bold">Confirmed Order</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                              <span className="h-2 w-2 rounded-full bg-primary/20" />
+                              <span className="text-[10px] text-slate-300 font-bold">Historical Hit</span>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+
+              <div className="lg:col-span-4 border-l border-white/5 bg-slate-900/20 flex flex-col">
+                  <div className="p-6 border-b border-white/5 bg-black/20">
+                      <h3 className="text-xs font-black text-primary uppercase tracking-[0.3em] flex items-center gap-2">
+                          <Clock className="h-3 w-3" /> Live Transmission
+                      </h3>
+                  </div>
+                  <div className="flex-1 overflow-y-auto max-h-[430px] custom-scrollbar">
+                      {orders && orders.length > 0 ? (
+                          <div className="divide-y divide-white/5">
+                              {orders.slice(0, 10).map((order) => (
+                                  <div key={order.id} className="p-4 hover:bg-white/5 transition-colors group">
+                                      <div className="flex justify-between items-start mb-1">
+                                          <p className="text-[10px] font-mono text-primary font-bold">{order.id}</p>
+                                          <p className="text-[9px] text-slate-500 font-bold uppercase">{format(new Date(order.createdAt), 'HH:mm:ss')}</p>
+                                      </div>
+                                      <p className="text-sm font-bold text-slate-200 group-hover:text-primary transition-colors">
+                                          {order.shippingAddress?.city || 'Global Client'}
+                                      </p>
+                                      <p className="text-[10px] text-slate-500 font-medium">
+                                          {order.cart.length} Luxury Assets • {formatCurrency(Math.round(order.total * 100))}
+                                      </p>
+                                  </div>
+                              ))}
+                          </div>
+                      ) : (
+                          <div className="h-full flex flex-col items-center justify-center p-8 text-center opacity-40">
+                              <Loader2 className="h-8 w-8 animate-spin mb-4 text-primary" />
+                              <p className="text-xs font-bold uppercase tracking-widest">Awaiting First Signal...</p>
+                          </div>
+                      )}
+                  </div>
+              </div>
+          </CardContent>
+      </Card>
 
        <div className="grid gap-6 md:grid-cols-3">
         <Card className="border-primary/20 bg-card/50">
@@ -320,51 +454,8 @@ export default function AnalyticsPage() {
             </CardContent>
         </Card>
 
-        {/* Traffic Sources */}
+        {/* Sales Trajectory */}
         <Card className="lg:col-span-7 border-primary/20 bg-card/30">
-            <CardHeader>
-                <CardTitle className="text-xl font-headline flex items-center gap-2">
-                    <Globe className="h-5 w-5 text-primary" />
-                    Traffic Acquisition
-                </CardTitle>
-                <CardDescription>Where your luxury audience is discovering you.</CardDescription>
-            </CardHeader>
-            <CardContent className="h-80 w-full pt-4">
-                {trafficData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={trafficData} layout="vertical" margin={{ left: 20, right: 40 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.2)" horizontal={true} vertical={false} />
-                            <XAxis type="number" hide />
-                            <YAxis 
-                                dataKey="name" 
-                                type="category" 
-                                axisLine={false} 
-                                tickLine={false} 
-                                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-                                width={100}
-                            />
-                            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--primary) / 0.05)' }} />
-                            <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={32}>
-                                {trafficData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={`hsl(var(--primary) / ${1 - index * 0.15})`} />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
-                ) : (
-                    <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
-                        <div className="p-4 rounded-full bg-muted">
-                            <Globe className="h-10 w-10 text-muted-foreground opacity-20" />
-                        </div>
-                        <p className="text-muted-foreground italic">Acquiring discovery data... Promote your link to see sources.</p>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-      </div>
-
-      {/* Sales Trajectory */}
-      <Card className="border-primary/20 bg-card/30">
             <CardHeader>
                 <CardTitle className="text-xl font-headline flex items-center gap-2">
                     <BarChart3 className="h-5 w-5 text-primary" />
@@ -414,26 +505,7 @@ export default function AnalyticsPage() {
                 )}
             </CardContent>
         </Card>
+      </div>
     </div>
   );
-}
-
-function CheckCircle2(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <path d="m9 12 2 2 4-4" />
-    </svg>
-  )
 }

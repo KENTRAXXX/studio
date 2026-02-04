@@ -112,4 +112,12 @@
     .card-gold-pulse {
       animation: card-gold-pulse-kf 2s ease-in-out;
     }
+
+    @keyframes marker-pulse {
+      0% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(3); opacity: 0; }
+    }
+    .animate-marker-pulse {
+      animation: marker-pulse 2s ease-out infinite;
+    }
 }
