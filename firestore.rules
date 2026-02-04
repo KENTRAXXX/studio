@@ -84,5 +84,9 @@ service cloud.firestore {
         allow read: if request.auth != null && (request.auth.uid == resource.data.brandId || isRole('ADMIN'));
         allow update: if isRole('ADMIN');
     }
+
+    match /platform_metadata/{docId} {
+        allow read, write: if isRole('ADMIN');
+    }
   }
 }

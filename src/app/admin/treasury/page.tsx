@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { useFirestore, useUserProfile, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useUserProfile, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import {
   collection,
   query,
@@ -14,7 +15,8 @@ import {
   collectionGroup,
   limit,
   addDoc,
-  serverTimestamp
+  serverTimestamp,
+  setDoc
 } from 'firebase/firestore';
 import {
   Card,
@@ -46,7 +48,9 @@ import {
   Building2,
   ShieldAlert,
   Activity,
-  ArrowUpRight
+  ArrowUpRight,
+  RefreshCw,
+  Database
 } from 'lucide-react';
 import {
   Dialog,
@@ -88,10 +92,17 @@ type UserProfile = {
   userRole: 'ADMIN' | 'MOGUL' | 'SELLER';
 };
 
+type PlatformMetadata = {
+    paystackBalance: number;
+    lastSynced: any;
+    syncedBy: string;
+}
+
 type CombinedRequest = WithdrawalRequest & { user?: UserProfile };
 
 export default function TreasuryPage() {
   const firestore = useFirestore();
+  const { userProfile: adminProfile } = useUserProfile();
   const { toast } = useToast();
   
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -99,10 +110,30 @@ export default function TreasuryPage() {
   const [isTransferring, setIsTransferring] = useState(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   
-  // Simulated Paystack Gateway Balance (In a real app, this would be fetched via a secure server action)
-  const [paystackBalance, setPaystackBalance] = useState<number>(45000.00);
+  // 1. Platform Metadata & Initialization
+  const metaRef = useMemoFirebase(() => {
+      if (!firestore) return null;
+      return doc(firestore, 'platform_metadata', 'treasury');
+  }, [firestore]);
 
-  // 1. Data Fetching for Executive Metrics
+  const { data: platformMeta, loading: metaLoading } = useDoc<PlatformMetadata>(metaRef);
+
+  // Sync Gateway Balance State
+  const [newBalanceInput, setNewBalanceInput] = useState<string>('');
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  useEffect(() => {
+      // Auto-initialize if document missing
+      if (!metaLoading && !platformMeta && firestore && adminProfile) {
+          setDoc(doc(firestore, 'platform_metadata', 'treasury'), {
+              paystackBalance: 0,
+              lastSynced: serverTimestamp(),
+              syncedBy: 'System'
+          });
+      }
+  }, [metaLoading, platformMeta, firestore, adminProfile]);
+
+  // 2. Data Fetching for Executive Metrics
   const pendingRequestsQ = useMemoFirebase(() => {
       if (!firestore) return null;
       return query(collection(firestore, 'withdrawal_requests'), where('status', '==', 'pending'));
@@ -110,22 +141,22 @@ export default function TreasuryPage() {
 
   const allOrdersQ = useMemoFirebase(() => {
       if (!firestore) return null;
-      return query(collectionGroup(firestore, 'orders'), limit(1000));
+      return query(collectionGroup(firestore, 'orders'), limit(100));
   }, [firestore]);
 
   const revenueLogsQ = useMemoFirebase(() => {
       if (!firestore) return null;
-      return query(collection(firestore, 'revenue_logs'), limit(1000));
+      return query(collection(firestore, 'revenue_logs'), limit(100));
   }, [firestore]);
 
   const allPayoutsQ = useMemoFirebase(() => {
       if (!firestore) return null;
-      return query(collection(firestore, 'payouts_pending'), limit(1000));
+      return query(collection(firestore, 'payouts_pending'), limit(100));
   }, [firestore]);
 
   const usersQ = useMemoFirebase(() => {
       if (!firestore) return null;
-      return query(collection(firestore, 'users'), limit(1000));
+      return query(collection(firestore, 'users'), limit(100));
   }, [firestore]);
 
   const { data: requests, loading: requestsLoading } = useCollection<WithdrawalRequest>(pendingRequestsQ);
@@ -134,7 +165,7 @@ export default function TreasuryPage() {
   const { data: allPayouts, loading: payoutsLoading } = useCollection<any>(allPayoutsQ);
   const { data: allUsers, loading: usersLoading } = useCollection<UserProfile>(usersQ);
 
-  // 2. Intelligence Aggregation
+  // 3. Intelligence Aggregation
   const metrics = useMemo(() => {
       const gmv = allOrders?.reduce((acc, o) => acc + (o.total || 0), 0) || 0;
       const netRevenue = revenueLogs?.reduce((acc, l) => acc + (l.amount || 0), 0) || 0;
@@ -157,10 +188,33 @@ export default function TreasuryPage() {
   }, [requests, allUsers]);
 
   // Health Check Logic
+  const paystackBalance = platformMeta?.paystackBalance || 0;
   const isLiquidityLow = paystackBalance < metrics.liability;
   const coverageRatio = metrics.liability > 0 ? (paystackBalance / metrics.liability) * 100 : 100;
 
-  // 3. Operational Logic
+  // 4. Operational Logic
+  const handleSyncBalance = async () => {
+      if (!firestore || !adminProfile || !metaRef) return;
+      setIsSyncing(true);
+      try {
+          const amount = parseFloat(newBalanceInput);
+          if (isNaN(amount) || amount < 0) throw new Error("Invalid balance amount.");
+
+          await updateDoc(metaRef, {
+              paystackBalance: amount,
+              lastSynced: serverTimestamp(),
+              syncedBy: adminProfile.email
+          });
+
+          toast({ title: 'Gateway Synced', description: `Platform liquidity updated to ${formatCurrency(Math.round(amount * 100))}.` });
+          setNewBalanceInput('');
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Sync Failed', description: error.message });
+      } finally {
+          setIsSyncing(false);
+      }
+  }
+
   const handleMarkAsPaid = async (request: CombinedRequest) => {
     if (!firestore) return;
     setProcessingId(request.id);
@@ -230,7 +284,7 @@ export default function TreasuryPage() {
       }
   };
 
-  const isLoading = requestsLoading || ordersLoading || revenueLoading || payoutsLoading || usersLoading;
+  const isLoading = requestsLoading || ordersLoading || revenueLoading || payoutsLoading || usersLoading || metaLoading;
 
   if (isLoading) {
     return (
@@ -268,9 +322,52 @@ export default function TreasuryPage() {
             </h1>
             <p className="text-muted-foreground mt-1 text-lg">Strategic oversight of ecosystem liquidity and platform performance.</p>
         </div>
-        <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-primary/5 border border-primary/20 shadow-gold-glow">
-            <span className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
-            <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Ledger Synchronization Active</span>
+        <div className="flex items-center gap-4">
+            <Dialog>
+                <DialogTrigger asChild>
+                    <Button variant="outline" className="border-primary/30 text-primary hover:bg-primary/10 h-12 px-6">
+                        <RefreshCw className="mr-2 h-4 w-4" /> Sync Gateway
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-card border-primary">
+                    <DialogHeader>
+                        <DialogTitle className="font-headline text-primary">Synchronize Paystack Balance</DialogTitle>
+                        <DialogDescription>
+                            Input the exact "Available Balance" from your real Paystack dashboard to update platform health metrics.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label>Current Real-world Balance ($)</Label>
+                            <Input 
+                                type="number" 
+                                placeholder="0.00" 
+                                value={newBalanceInput}
+                                onChange={(e) => setNewBalanceInput(e.target.value)}
+                                className="h-12 text-xl font-mono border-primary/20"
+                            />
+                        </div>
+                        {platformMeta && (
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest text-center">
+                                Last synced: {platformMeta.lastSynced?.toDate ? platformMeta.lastSynced.toDate().toLocaleString() : 'Never'} by {platformMeta.syncedBy}
+                            </p>
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <Button 
+                            className="w-full btn-gold-glow bg-primary h-12 font-bold" 
+                            onClick={handleSyncBalance}
+                            disabled={isSyncing || !newBalanceInput}
+                        >
+                            {isSyncing ? <Loader2 className="animate-spin" /> : "Commit Synchronization"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-primary/5 border border-primary/20 shadow-gold-glow">
+                <span className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
+                <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Ledger Synchronization Active</span>
+            </div>
         </div>
       </header>
 

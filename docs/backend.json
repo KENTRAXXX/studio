@@ -229,17 +229,6 @@
                     "type": "string",
                     "description": "The primary shipping address for the seller."
                 },
-                "structuredAddress": {
-                    "type": "object",
-                    "description": "Verified structured address components.",
-                    "properties": {
-                        "street": { "type": "string" },
-                        "city": { "type": "string" },
-                        "state": { "type": "string" },
-                        "postalCode": { "type": "string" },
-                        "country": { "type": "string" }
-                    }
-                },
                 "taxId": {
                     "type": "string",
                     "description": "The seller's business tax identification number."
@@ -430,6 +419,27 @@
                 "createdAt": { "type": "string", "format": "date-time" }
             },
             "required": ["brandId", "subject", "message", "status", "priority", "createdAt"]
+        },
+        "platformMetadata": {
+            "title": "Platform Metadata",
+            "description": "Global platform configuration and real-time intelligence.",
+            "type": "object",
+            "properties": {
+                "paystackBalance": {
+                    "type": "number",
+                    "description": "Current balance held in the Paystack gateway."
+                },
+                "lastSynced": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "When the balance was last manually synchronized."
+                },
+                "syncedBy": {
+                    "type": "string",
+                    "description": "The email or ID of the admin who performed the sync."
+                }
+            },
+            "required": ["paystackBalance", "lastSynced"]
         }
     },
     "auth": {
@@ -483,6 +493,10 @@
         "/concierge_tickets/{ticketId}": {
             "schema": { "$ref": "#/entities/conciergeTicket" },
             "description": "Strategic messages sent to the SOMA Founder/Support."
+        },
+        "/platform_metadata/{docId}": {
+            "schema": { "$ref": "#/entities/platformMetadata" },
+            "description": "Global platform state and configuration."
         }
     }
 }
