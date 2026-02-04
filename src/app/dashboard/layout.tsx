@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -36,6 +35,7 @@ import {
   SearchCode,
   Image as ImageIcon,
   FolderOpen,
+  Warehouse,
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
@@ -87,6 +87,7 @@ const merchantNavItems = [
 
 const sellerNavItems = [
     { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
+    { href: '/backstage/inventory', icon: Warehouse, label: 'Inventory Manager' },
     { href: '/backstage/finances', icon: Landmark, label: 'Finances & Payouts' },
     { href: '/backstage/analytics', icon: BarChart2, label: 'Insights & Analytics' },
     { href: '/backstage/marketing-assets', icon: FolderOpen, label: 'Brand Assets' },
@@ -194,7 +195,7 @@ export default function DashboardLayout({
             <div className="flex-1">
             </div>
         </header>
-        <main className="flex-1 p-4 sm:p-6">{children}</main>
+        <header className="flex-1 p-4 sm:p-6">{children}</header>
       </SidebarInset>
     </SidebarProvider>
   );
