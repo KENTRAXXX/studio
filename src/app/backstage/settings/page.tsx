@@ -26,7 +26,8 @@ import {
     Bell,
     AlertTriangle,
     LogOut,
-    Trash2
+    Trash2,
+    Image as ImageIcon
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -53,11 +54,13 @@ export default function BackstageSettingsPage() {
   const router = useRouter();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   const [isSendingReset, setIsSendingReset] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingPrefs, setIsSavingPrefs] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isDeactivating, setIsDeactivating] = useState(false);
 
   // Profile Form State
@@ -65,6 +68,7 @@ export default function BackstageSettingsPage() {
   const [instagram, setInstagram] = useState('');
   const [xHandle, setXHandle] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
+  const [coverPhotoUrl, setCoverPhotoUrl] = useState('');
 
   // Preferences State
   const [emailOnNewSales, setEmailOnNewSales] = useState(true);
@@ -77,6 +81,7 @@ export default function BackstageSettingsPage() {
       setInstagram(userProfile.socialLinks?.instagram || '');
       setXHandle(userProfile.socialLinks?.x || '');
       setAvatarUrl(userProfile.avatarUrl || '');
+      setCoverPhotoUrl(userProfile.coverPhotoUrl || '');
 
       if (userProfile.preferences) {
         setEmailOnNewSales(userProfile.preferences.emailOnNewSales ?? true);
@@ -118,16 +123,36 @@ export default function BackstageSettingsPage() {
       const downloadUrl = await getDownloadURL(storageRef);
       
       setAvatarUrl(downloadUrl);
-      
-      // Also update Firestore immediately for the avatar
       const userRef = doc(firestore, 'users', user.uid);
       await updateDoc(userRef, { avatarUrl: downloadUrl });
 
-      toast({ title: 'Identity Updated', description: 'Your brand avatar has been secured.' });
+      toast({ title: 'Avatar Updated', description: 'Your brand avatar has been secured.' });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
     } finally {
       setIsUploadingAvatar(false);
+    }
+  };
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user || !storage || !firestore) return;
+
+    setIsUploadingCover(true);
+    try {
+      const storageRef = ref(storage, `profile_images/${user.uid}/cover`);
+      await uploadBytes(storageRef, file);
+      const downloadUrl = await getDownloadURL(storageRef);
+      
+      setCoverPhotoUrl(downloadUrl);
+      const userRef = doc(firestore, 'users', user.uid);
+      await updateDoc(userRef, { coverPhotoUrl: downloadUrl });
+
+      toast({ title: 'Banner Updated', description: 'Brand cover photo has been deployed.' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+    } finally {
+      setIsUploadingCover(false);
     }
   };
 
@@ -178,11 +203,9 @@ export default function BackstageSettingsPage() {
     setIsDeactivating(true);
     try {
       const userRef = doc(firestore, 'users', user.uid);
-      
-      // Mark as deactivated but preserve data for audit
       await updateDoc(userRef, {
         accountStatus: 'deactivated',
-        status: 'deactivated', // Also sync with standard status field
+        status: 'deactivated', 
         deactivatedAt: new Date().toISOString()
       });
 
@@ -191,7 +214,6 @@ export default function BackstageSettingsPage() {
         description: 'Your partnership has been paused. Exit protocols initiated.',
       });
 
-      // Secure Logout
       await auth.signOut();
       router.push('/');
       window.location.reload();
@@ -224,7 +246,7 @@ export default function BackstageSettingsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
             {/* Brand Profile Section */}
-            <Card className="border-primary/20 bg-slate-900/30">
+            <Card className="border-primary/20 bg-slate-900/30 overflow-hidden">
             <CardHeader>
                 <CardTitle className="text-xl font-headline flex items-center gap-2 text-slate-200">
                 <User className="h-5 w-5 text-primary" />
@@ -232,7 +254,31 @@ export default function BackstageSettingsPage() {
                 </CardTitle>
                 <CardDescription className="text-slate-500">How your brand appears to Moguls and elite customers.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-8">
+                {/* Cover Photo Upload */}
+                <div className="space-y-4">
+                    <Label className="text-xs uppercase tracking-widest text-slate-500 font-bold">Public Brand Banner</Label>
+                    <div 
+                        className="relative h-48 w-full rounded-2xl overflow-hidden border-2 border-dashed border-primary/20 bg-slate-950/50 group cursor-pointer hover:border-primary/50 transition-all"
+                        onClick={() => coverInputRef.current?.click()}
+                    >
+                        {coverPhotoUrl ? (
+                            <img src={coverPhotoUrl} alt="Cover" className="h-full w-full object-cover opacity-60" />
+                        ) : (
+                            <div className="h-full w-full flex flex-col items-center justify-center text-slate-600 gap-2">
+                                <ImageIcon className="h-8 w-8" />
+                                <span className="text-xs font-bold uppercase tracking-tighter">Upload High-Res Banner</span>
+                            </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                            <Button variant="ghost" size="sm" className="text-white font-bold h-10 border border-white/20">
+                                {isUploadingCover ? <Loader2 className="animate-spin h-4 w-4" /> : "Change Banner"}
+                            </Button>
+                        </div>
+                    </div>
+                    <input type="file" ref={coverInputRef} className="hidden" accept="image/*" onChange={handleCoverUpload} />
+                </div>
+
                 <div className="flex flex-col md:flex-row gap-8 items-start">
                     <div className="space-y-4 flex flex-col items-center">
                         <Avatar className="h-24 w-24 border-2 border-primary/20 bg-slate-950">
@@ -251,20 +297,14 @@ export default function BackstageSettingsPage() {
                             {isUploadingAvatar ? <Loader2 className="animate-spin h-3 w-3" /> : <Camera className="h-3 w-3 mr-1" />}
                             Change Avatar
                         </Button>
-                        <input 
-                            type="file" 
-                            ref={fileInputRef} 
-                            className="hidden" 
-                            accept="image/*" 
-                            onChange={handleAvatarUpload}
-                        />
+                        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleAvatarUpload} />
                     </div>
 
                     <div className="flex-1 w-full space-y-4">
                         <div className="space-y-2">
                             <Label className="text-xs uppercase tracking-widest text-slate-500 font-bold">Brand Biography</Label>
                             <Textarea 
-                                placeholder="Tell your brand's story..." 
+                                placeholder="Tell your brand's luxury story..." 
                                 className="min-h-[120px] bg-slate-950/50 border-primary/10 focus-visible:ring-primary text-slate-200"
                                 value={brandBio}
                                 onChange={(e) => setBrandBio(e.target.value)}
