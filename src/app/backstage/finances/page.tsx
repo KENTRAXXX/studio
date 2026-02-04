@@ -30,7 +30,8 @@ import {
     ArrowUpRight, 
     ArrowDownLeft,
     Filter,
-    AlertTriangle
+    AlertTriangle,
+    Clock
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { addDays, format, parseISO } from 'date-fns';
@@ -51,7 +52,7 @@ type Payout = {
     amount: number;
     createdAt: string;
     orderId: string;
-    status: 'pending';
+    status: 'pending' | 'pending_maturity';
     type: 'sale';
 }
 
@@ -116,13 +117,28 @@ export default function BackstageFinancesPage() {
         }
     }, [userProfile, profileLoading, router]);
 
-    // Balance Calculation Query
+    // Balance Calculation Query - ONLY MATURED FUNDS
     const pendingPayoutsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        return query(collection(firestore, 'payouts_pending'), where('userId', '==', user.uid));
+        return query(
+            collection(firestore, 'payouts_pending'), 
+            where('userId', '==', user.uid),
+            where('status', '==', 'pending')
+        );
+    }, [firestore, user]);
+
+    // Maturity Feedback Query
+    const maturityQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return query(
+            collection(firestore, 'payouts_pending'), 
+            where('userId', '==', user.uid),
+            where('status', '==', 'pending_maturity')
+        );
     }, [firestore, user]);
 
     const { data: allPendingPayouts, loading: balanceLoading } = useCollection<Payout>(pendingPayoutsQuery);
+    const { data: allMaturityPayouts, loading: maturityLoading } = useCollection<Payout>(maturityQuery);
     
     // Initial Data Fetch
     useEffect(() => {
@@ -228,16 +244,18 @@ export default function BackstageFinancesPage() {
         return !!lastPayoutVisible || !!lastWithdrawalVisible;
     }, [activeFilter, lastPayoutVisible, lastWithdrawalVisible]);
 
-    const { totalEarned, platformFees, commissionRate } = useMemo(() => {
-        if (!allPendingPayouts) return { totalEarned: 0, platformFees: 0, commissionRate: 0 };
-        const total = allPendingPayouts.reduce((acc, doc) => acc + (doc.amount || 0), 0);
+    const { totalEarned, pendingMaturity, platformFees, commissionRate } = useMemo(() => {
+        const total = allPendingPayouts?.reduce((acc, doc) => acc + (doc.amount || 0), 0) || 0;
+        const maturity = allMaturityPayouts?.reduce((acc, doc) => acc + (doc.amount || 0), 0) || 0;
+        
         const rate = userProfile?.planTier === 'BRAND' ? 0.03 : 0.09;
         const payoutPercentage = 1 - rate;
-        const fees = total > 0 ? (total / payoutPercentage) * rate : 0;
-        return { totalEarned: total, platformFees: fees, commissionRate: rate };
-    }, [allPendingPayouts, userProfile]);
+        const fees = (total + maturity) > 0 ? ((total + maturity) / payoutPercentage) * rate : 0;
+        
+        return { totalEarned: total, pendingMaturity: maturity, platformFees: fees, commissionRate: rate };
+    }, [allPendingPayouts, allMaturityPayouts, userProfile]);
 
-    const isGlobalLoading = userLoading || balanceLoading || profileLoading;
+    const isGlobalLoading = userLoading || balanceLoading || profileLoading || maturityLoading;
     const isBalanceTooLow = totalEarned < 10;
     const isUnderReview = userProfile?.walletStatus === 'under_review';
 
@@ -262,7 +280,7 @@ export default function BackstageFinancesPage() {
                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                              <Card className="border-slate-700 bg-slate-900/50">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium text-slate-400">Pending Payout (Net)</CardTitle>
+                                    <CardTitle className="text-sm font-medium text-slate-400">Available Payout</CardTitle>
                                     <DollarSign className="h-4 w-4 text-slate-400" />
                                 </CardHeader>
                                 <CardContent>
@@ -271,8 +289,17 @@ export default function BackstageFinancesPage() {
                             </Card>
                              <Card className="border-slate-700 bg-slate-900/50">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium text-slate-400">Pending Maturity</CardTitle>
+                                    <Clock className="h-4 w-4 text-slate-400" />
+                                </CardHeader>
+                                <CardContent>
+                                     {isGlobalLoading ? <Loader2 className="h-8 w-8 animate-spin text-slate-400" /> : <div className="text-3xl font-bold text-slate-200">{formatCurrency(Math.round(pendingMaturity * 100))}</div>}
+                                </CardContent>
+                            </Card>
+                             <Card className="border-slate-700 bg-slate-900/50">
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <div className="flex items-center gap-2">
-                                        <CardTitle className="text-sm font-medium text-slate-400">Platform Fees Paid (Est.)</CardTitle>
+                                        <CardTitle className="text-sm font-medium text-slate-400">Total Fees (Paid)</CardTitle>
                                         <TooltipProvider>
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
@@ -286,8 +313,8 @@ export default function BackstageFinancesPage() {
                                                             <span className="font-mono">{commissionRate * 100}%</span>
                                                         </div>
                                                         <div className="flex justify-between gap-4">
-                                                            <span>Payment Processing</span>
-                                                            <span className="font-mono">Standard Gateway Fee</span>
+                                                            <span>Gateway Processing</span>
+                                                            <span className="font-mono">Standard</span>
                                                         </div>
                                                     </div>
                                                 </TooltipContent>
@@ -297,20 +324,7 @@ export default function BackstageFinancesPage() {
                                     <Percent className="h-4 w-4 text-slate-400" />
                                 </CardHeader>
                                 <CardContent>
-                                     {isGlobalLoading ? <Loader2 className="h-8 w-8 animate-spin text-slate-400" /> : <div className="text-3xl font-bold text-slate-200">{formatCurrency(Math.round(platformFees * 100))}</div>}
-                                </CardContent>
-                            </Card>
-                             <Card className="border-slate-700 bg-slate-900/50">
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium text-slate-400">Treasury Status</CardTitle>
-                                    <Landmark className="h-4 w-4 text-slate-400" />
-                                </CardHeader>
-                                <CardContent>
-                                   <div className="text-sm font-medium text-green-400 flex items-center gap-2">
-                                       <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                                       Vault Active
-                                   </div>
-                                   <p className="text-[10px] text-slate-500 uppercase tracking-tight mt-1">Withdrawals Processed 24/7</p>
+                                   {isGlobalLoading ? <Loader2 className="h-8 w-8 animate-spin text-slate-400" /> : <div className="text-3xl font-bold text-slate-200">{formatCurrency(Math.round(platformFees * 100))}</div>}
                                 </CardContent>
                             </Card>
                         </div>
@@ -388,11 +402,12 @@ export default function BackstageFinancesPage() {
                                                                         className={cn(
                                                                             "text-[10px] uppercase tracking-tighter",
                                                                             tx.status === 'completed' || tx.status === 'pending' ? "text-yellow-400 border-yellow-400/50" : 
+                                                                            tx.status === 'pending_maturity' ? "text-orange-400 border-orange-400/50" :
                                                                             tx.status === 'rejected' ? "text-red-400 border-red-400/50" : 
                                                                             "text-slate-400 border-slate-700"
                                                                         )}
                                                                     >
-                                                                        {tx.status.replace('-', ' ')}
+                                                                        {tx.status.replace('_', ' ').replace('-', ' ')}
                                                                     </Badge>
                                                                 </TableCell>
                                                             </TableRow>

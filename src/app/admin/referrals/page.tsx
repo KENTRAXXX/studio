@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useCollection, useUserProfile, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where, orderBy, getDocs, writeBatch, doc, getDoc, Timestamp } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -17,11 +17,15 @@ import {
     DollarSign,
     ExternalLink,
     Filter,
-    ShieldCheck
+    ShieldCheck,
+    Zap
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/utils/format';
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, subDays } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import { sendFundsAvailableEmail } from '@/ai/flows/send-funds-available-email';
 
 type UserData = {
     id: string;
@@ -43,13 +47,16 @@ type PayoutRecord = {
     type: string;
     status: string;
     referredUserId?: string;
-    createdAt: string;
+    createdAt: any;
 };
 
 export default function AdminReferralAuditPage() {
     const firestore = useFirestore();
     const { userProfile, loading: profileLoading } = useUserProfile();
     const router = useRouter();
+    const { toast } = useToast();
+
+    const [isReleasing, setIsReleasing] = useState(false);
 
     // Guard: Redirect if not ADMIN
     useEffect(() => {
@@ -114,8 +121,90 @@ export default function AdminReferralAuditPage() {
         const total = auditData.length;
         const risks = auditData.filter(d => d.hasIdentityRisk).length;
         const totalPaid = auditData.reduce((acc, d) => acc + (d.reward?.amount || 0), 0);
-        return { total, risks, totalPaid };
-    }, [auditData]);
+        
+        // Count matured items
+        const fourteenDaysAgo = subDays(new Date(), 14);
+        const maturedCount = payoutRecords?.filter(p => 
+            p.status === 'pending_maturity' && 
+            (p.createdAt?.toDate ? p.createdAt.toDate() : new Date(p.createdAt)) <= fourteenDaysAgo
+        ).length || 0;
+
+        return { total, risks, totalPaid, maturedCount };
+    }, [auditData, payoutRecords]);
+
+    const handleReleaseMatured = async () => {
+        if (!firestore) return;
+        setIsReleasing(true);
+
+        try {
+            const fourteenDaysAgo = subDays(new Date(), 14);
+            const maturedQ = query(
+                collection(firestore, 'payouts_pending'),
+                where('type', '==', 'referral_reward'),
+                where('status', '==', 'pending_maturity')
+            );
+
+            const snap = await getDocs(maturedQ);
+            const maturedDocs = snap.docs.filter(d => {
+                const data = d.data();
+                const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
+                return createdAt <= fourteenDaysAgo;
+            });
+
+            if (maturedDocs.length === 0) {
+                toast({ title: 'No Rewards Matured', description: 'All pending rewards are currently within the 14-day hold window.' });
+                return;
+            }
+
+            const batch = writeBatch(firestore);
+            const userNotificationMap = new Map<string, { email: string, name: string, totalAmount: number }>();
+
+            for (const d of maturedDocs) {
+                const data = d.data();
+                batch.update(d.ref, { status: 'pending' });
+
+                // Accumulate totals for email notification
+                const userId = data.userId;
+                const existing = userNotificationMap.get(userId) || { email: '', name: '', totalAmount: 0 };
+                
+                if (!existing.email) {
+                    const userSnap = await getDoc(doc(firestore, 'users', userId));
+                    const userData = userSnap.data();
+                    existing.email = userData?.email || '';
+                    existing.name = userData?.displayName || userData?.email?.split('@')[0] || 'Partner';
+                }
+
+                existing.totalAmount += (data.amount || 0);
+                userNotificationMap.set(userId, existing);
+            }
+
+            await batch.commit();
+
+            // Trigger Notifications
+            const emailPromises = Array.from(userNotificationMap.entries()).map(([userId, info]) => {
+                if (info.email) {
+                    return sendFundsAvailableEmail({
+                        to: info.email,
+                        name: info.name,
+                        amount: formatCurrency(Math.round(info.totalAmount * 100))
+                    });
+                }
+                return Promise.resolve();
+            });
+
+            await Promise.all(emailPromises);
+
+            toast({
+                title: 'Rewards Released',
+                description: `Successfully released ${maturedDocs.length} rewards. Partners have been notified via email.`,
+            });
+
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Batch Process Failed', description: error.message });
+        } finally {
+            setIsReleasing(false);
+        }
+    };
 
     const isLoading = profileLoading || usersLoading || payoutsLoading;
 
@@ -141,7 +230,7 @@ export default function AdminReferralAuditPage() {
                 <div className="flex gap-4">
                     <Card className="border-primary/20 bg-slate-900/50 min-w-[140px]">
                         <CardContent className="pt-4 text-center">
-                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Total Conversions</p>
+                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Total Signups</p>
                             <p className="text-2xl font-bold text-slate-200">{stats.total}</p>
                         </CardContent>
                     </Card>
@@ -156,14 +245,26 @@ export default function AdminReferralAuditPage() {
 
             <Card className="border-primary/50 overflow-hidden">
                 <CardHeader className="bg-muted/30 border-b border-primary/10">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
                             <CardTitle>Commission Ledger</CardTitle>
-                            <CardDescription>Real-time oversight of all partner-attributed activations.</CardDescription>
+                            <CardDescription>Real-time oversight of all partner-attributed signups.</CardDescription>
                         </div>
-                        <Button variant="outline" size="sm" className="border-primary/20">
-                            <Filter className="h-4 w-4 mr-2" /> Filter Registry
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="border-primary/20 h-10"
+                                onClick={handleReleaseMatured}
+                                disabled={isReleasing || stats.maturedCount === 0}
+                            >
+                                {isReleasing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Zap className="h-4 w-4 mr-2 fill-primary text-primary" />}
+                                Release Matured Rewards ({stats.maturedCount})
+                            </Button>
+                            <Button variant="outline" size="sm" className="border-primary/20 h-10">
+                                <Filter className="h-4 w-4 mr-2" /> Filter
+                            </Button>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -202,7 +303,10 @@ export default function AdminReferralAuditPage() {
                                         <TableCell className="text-right">
                                             <div className="flex flex-col items-end">
                                                 <span className="font-mono font-bold text-green-400">{formatCurrency(Math.round((reward?.amount || 0) * 100))}</span>
-                                                <span className="text-[9px] text-slate-500 uppercase tracking-tighter">{reward?.status || 'No Ledger'}</span>
+                                                <span className={cn(
+                                                    "text-[9px] uppercase tracking-tighter",
+                                                    reward?.status === 'pending_maturity' ? 'text-yellow-500' : 'text-slate-500'
+                                                )}>{reward?.status?.replace('_', ' ') || 'No Ledger'}</span>
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-center font-mono text-sm text-slate-300">

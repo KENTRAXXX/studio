@@ -5,7 +5,7 @@ import { useUser, useFirestore, useCollection, useUserProfile, useMemoFirebase }
 import { collection, query, where } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Banknote, Wallet as WalletIcon, Loader2, AlertTriangle } from 'lucide-react';
+import { Banknote, Wallet as WalletIcon, Loader2, AlertTriangle, Clock } from 'lucide-react';
 import { WithdrawalModal } from '@/components/WithdrawalModal';
 import { formatCurrency } from '@/utils/format';
 
@@ -16,19 +16,40 @@ export default function SomaWalletPage() {
     const firestore = useFirestore();
     const [isModalOpen, setIsModalOpen] = useState(false);
 
+    // Only fetch records that are ready for payout
     const payoutsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        return query(collection(firestore, 'payouts_pending'), where('userId', '==', user.uid));
+        return query(
+            collection(firestore, 'payouts_pending'), 
+            where('userId', '==', user.uid),
+            where('status', '==', 'pending')
+        );
+    }, [firestore, user]);
+
+    // Also fetch maturity-pending for UX feedback
+    const pendingMaturityQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return query(
+            collection(firestore, 'payouts_pending'), 
+            where('userId', '==', user.uid),
+            where('status', '==', 'pending_maturity')
+        );
     }, [firestore, user]);
 
     const { data: payoutDocs, loading: payoutsLoading } = useCollection(payoutsQuery);
+    const { data: maturityDocs, loading: maturityLoading } = useCollection(pendingMaturityQuery);
 
     const availableBalance = useMemo(() => {
         if (!payoutDocs) return 0;
         return payoutDocs.reduce((acc, doc: any) => acc + (doc.amount || 0), 0);
     }, [payoutDocs]);
+
+    const pendingMaturityBalance = useMemo(() => {
+        if (!maturityDocs) return 0;
+        return maturityDocs.reduce((acc, doc: any) => acc + (doc.amount || 0), 0);
+    }, [maturityDocs]);
     
-    const isLoading = userLoading || payoutsLoading || profileLoading;
+    const isLoading = userLoading || payoutsLoading || profileLoading || maturityLoading;
     const isBalanceTooLow = availableBalance < 10;
     const isUnderReview = userProfile?.walletStatus === 'under_review';
 
@@ -43,7 +64,7 @@ export default function SomaWalletPage() {
         <div className="space-y-8 max-w-md mx-auto">
             <h1 className="text-3xl font-bold font-headline text-center">SOMA Wallet</h1>
 
-             <Card className="border-primary text-center">
+             <Card className="border-primary text-center bg-card relative overflow-hidden">
                 <CardHeader>
                     <WalletIcon className="h-10 w-10 text-primary mx-auto mb-4" />
                     <CardTitle className="text-muted-foreground text-lg font-medium">Available for Withdrawal</CardTitle>
@@ -59,6 +80,19 @@ export default function SomaWalletPage() {
                     )}
                 </CardContent>
             </Card>
+
+            {pendingMaturityBalance > 0 && (
+                <div className="flex items-center justify-between p-4 rounded-xl border border-white/5 bg-slate-900/50">
+                    <div className="flex items-center gap-3">
+                        <Clock className="h-5 w-5 text-yellow-500/60" />
+                        <div>
+                            <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Pending Maturity</p>
+                            <p className="text-sm font-bold text-slate-300">{formatCurrency(Math.round(pendingMaturityBalance * 100))}</p>
+                        </div>
+                    </div>
+                    <Badge variant="outline" className="text-[9px] border-yellow-500/20 text-yellow-500/60">14 DAY HOLD</Badge>
+                </div>
+            )}
 
             <div className="space-y-4">
                 <Button 
