@@ -4,7 +4,7 @@ import { useState, createContext, useContext, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { Search, ShoppingCart, X, Loader2, Mail } from 'lucide-react';
+import { Search, ShoppingCart, X, Loader2, Mail, Instagram, Twitter } from 'lucide-react';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 
@@ -205,6 +205,8 @@ export default function StoreLayout({
     '--border': `hsl(${themeColors.primary} / 0.2)`,
   } as React.CSSProperties : {};
 
+  const socials = ownerData?.socials;
+
   return (
     <CartProvider>
         <div 
@@ -241,8 +243,29 @@ export default function StoreLayout({
           </header>
           <main className="animate-in fade-in duration-700">{children}</main>
           <footer className="bg-card border-t border-primary/10">
-            <div className="container mx-auto flex flex-col items-center justify-between gap-4 py-8 px-4 sm:flex-row sm:px-6 lg:px-8">
-              <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} {storeName}. All Rights Reserved.</p>
+            <div className="container mx-auto flex flex-col items-center justify-between gap-6 py-12 px-4 sm:flex-row sm:px-6 lg:px-8">
+              <div className="space-y-4 text-center sm:text-left">
+                <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} {storeName}. All Rights Reserved.</p>
+                {socials && (
+                    <div className="flex items-center justify-center sm:justify-start gap-4">
+                        {socials.instagram && (
+                            <Link href={`https://instagram.com/${socials.instagram}`} target="_blank" className="text-muted-foreground hover:text-primary transition-colors">
+                                <Instagram className="h-5 w-5" />
+                            </Link>
+                        )}
+                        {socials.tiktok && (
+                            <Link href={`https://tiktok.com/@${socials.tiktok}`} target="_blank" className="text-muted-foreground hover:text-primary transition-colors">
+                                <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.83 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.33 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.04-.1z"/></svg>
+                            </Link>
+                        )}
+                        {socials.x && (
+                            <Link href={`https://x.com/${socials.x}`} target="_blank" className="text-muted-foreground hover:text-primary transition-colors">
+                                <Twitter className="h-5 w-5" />
+                            </Link>
+                        )}
+                    </div>
+                )}
+              </div>
               <div className="flex gap-6">
                 <Link href="/legal/terms" className="text-sm text-muted-foreground hover:text-primary">Privacy Policy</Link>
                 <ContactSheet ownerEmail={ownerData?.email}/>

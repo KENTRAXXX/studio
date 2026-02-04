@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
@@ -15,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { User, Loader2, Save, Camera, CheckCircle2, BookOpen, ShieldCheck, Clock, ExternalLink } from 'lucide-react';
+import { User, Loader2, Save, Camera, CheckCircle2, BookOpen, ShieldCheck, Clock, ExternalLink, Share2, Instagram, Twitter } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +32,9 @@ const profileSchema = z.object({
   professionalTitle: z.string().min(2, 'Professional title is required for luxury branding.').max(50, 'Keep it concise (max 50 chars).'),
   bio: z.string().max(500, 'Bio must be under 500 characters.').optional(),
   showBioOnStorefront: z.boolean().default(false),
+  instagram: z.string().optional(),
+  tiktok: z.string().optional(),
+  x: z.string().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -69,6 +71,9 @@ export default function ProfileSettingsPage() {
             professionalTitle: '',
             bio: '',
             showBioOnStorefront: false,
+            instagram: '',
+            tiktok: '',
+            x: '',
         },
     });
 
@@ -79,6 +84,9 @@ export default function ProfileSettingsPage() {
                 professionalTitle: userProfile.professionalTitle || '',
                 bio: userProfile.bio || '',
                 showBioOnStorefront: userProfile.showBioOnStorefront ?? false,
+                instagram: userProfile.socials?.instagram || '',
+                tiktok: userProfile.socials?.tiktok || '',
+                x: userProfile.socials?.x || '',
             });
         }
     }, [userProfile, form]);
@@ -126,10 +134,15 @@ export default function ProfileSettingsPage() {
                 professionalTitle: data.professionalTitle,
                 bio: data.bio || '',
                 showBioOnStorefront: data.showBioOnStorefront,
+                socials: {
+                    instagram: data.instagram || '',
+                    tiktok: data.tiktok || '',
+                    x: data.x || '',
+                }
             });
             toast({
                 title: 'Profile Synchronized',
-                description: 'Your executive credentials have been updated.',
+                description: 'Your executive credentials and social links have been updated.',
             });
         } catch (error: any) {
             toast({
@@ -211,62 +224,109 @@ export default function ProfileSettingsPage() {
                 </div>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Avatar Sidebar */}
-                <div className="space-y-6">
-                    <Card className="border-primary/50 overflow-hidden bg-slate-900/30">
-                        <CardHeader className="pb-4">
-                            <CardTitle className="text-sm font-headline uppercase tracking-widest text-primary/60">Executive Avatar</CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex flex-col items-center pt-2">
-                            <div className="group relative h-40 w-40 rounded-full border-4 border-background bg-slate-950 shadow-[0_0_30px_rgba(0,0,0,0.3)] overflow-hidden">
-                                <Avatar className="h-full w-full rounded-none">
-                                    <AvatarImage src={userProfile?.photoURL || userProfile?.avatarUrl} className="object-cover" />
-                                    <AvatarFallback className="bg-slate-800 text-primary text-4xl font-bold">
-                                        {userProfile?.displayName?.charAt(0).toUpperCase() || userProfile?.email?.charAt(0).toUpperCase()}
-                                    </AvatarFallback>
-                                </Avatar>
-                                
-                                <div 
-                                    onClick={() => !isUploading && fileInputRef.current?.click()}
-                                    className={cn(
-                                        "absolute inset-0 bg-black/60 flex flex-col items-center justify-center transition-all cursor-pointer",
-                                        isUploading ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                                    )}
-                                >
-                                    {isUploading ? (
-                                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                    ) : (
-                                        <>
-                                            <Camera className="h-8 w-8 text-white mb-2" />
-                                            <span className="text-[10px] font-black text-white uppercase tracking-tighter">Update Photo</span>
-                                        </>
-                                    )}
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleUpdate)} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Avatar Sidebar */}
+                    <div className="space-y-6">
+                        <Card className="border-primary/50 overflow-hidden bg-slate-900/30">
+                            <CardHeader className="pb-4">
+                                <CardTitle className="text-sm font-headline uppercase tracking-widest text-primary/60">Executive Avatar</CardTitle>
+                            </CardHeader>
+                            <CardContent className="flex flex-col items-center pt-2">
+                                <div className="group relative h-40 w-40 rounded-full border-4 border-background bg-slate-950 shadow-[0_0_30px_rgba(0,0,0,0.3)] overflow-hidden">
+                                    <Avatar className="h-full w-full rounded-none">
+                                        <AvatarImage src={userProfile?.photoURL || userProfile?.avatarUrl} className="object-cover" />
+                                        <AvatarFallback className="bg-slate-800 text-primary text-4xl font-bold">
+                                            {userProfile?.displayName?.charAt(0).toUpperCase() || userProfile?.email?.charAt(0).toUpperCase()}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    
+                                    <div 
+                                        onClick={() => !isUploading && fileInputRef.current?.click()}
+                                        className={cn(
+                                            "absolute inset-0 bg-black/60 flex flex-col items-center justify-center transition-all cursor-pointer",
+                                            isUploading ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                                        )}
+                                    >
+                                        {isUploading ? (
+                                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                        ) : (
+                                            <>
+                                                <Camera className="h-8 w-8 text-white mb-2" />
+                                                <span className="text-[10px] font-black text-white uppercase tracking-tighter">Update Photo</span>
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                            <input 
-                                type="file" 
-                                ref={fileInputRef} 
-                                className="hidden" 
-                                accept="image/png,image/jpeg" 
-                                onChange={handleAvatarUpload} 
-                            />
-                            <p className="text-[10px] text-muted-foreground mt-6 text-center uppercase tracking-widest font-semibold leading-relaxed">
-                                Recommended: Square JPG or PNG<br/>Min 400x400px
-                            </p>
-                        </CardContent>
-                    </Card>
-                </div>
+                                <input 
+                                    type="file" 
+                                    ref={fileInputRef} 
+                                    className="hidden" 
+                                    accept="image/png,image/jpeg" 
+                                    onChange={handleAvatarUpload} 
+                                />
+                                <p className="text-[10px] text-muted-foreground mt-6 text-center uppercase tracking-widest font-semibold leading-relaxed">
+                                    Recommended: Square JPG or PNG<br/>Min 400x400px
+                                </p>
+                            </CardContent>
+                        </Card>
 
-                {/* Form Content */}
-                <Card className="lg:col-span-2 border-primary/50">
-                    <CardHeader>
-                        <CardTitle>Professional Credentials</CardTitle>
-                        <CardDescription>These details will be featured on your live storefront.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                         <Form {...form}>
-                            <form onSubmit={form.handleSubmit(handleUpdate)} className="space-y-6">
+                        <Card className="border-primary/50 bg-slate-900/30">
+                            <CardHeader>
+                                <CardTitle className="text-sm font-headline uppercase tracking-widest text-primary/60 flex items-center gap-2">
+                                    <Share2 className="h-4 w-4" />
+                                    Social Connectivity
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <FormField control={form.control} name="instagram" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-xs uppercase font-bold text-muted-foreground">Instagram</FormLabel>
+                                        <FormControl>
+                                            <div className="relative">
+                                                <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                <Input placeholder="handle" {...field} className="pl-10 h-10 border-primary/10 bg-black/20" />
+                                            </div>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <FormField control={form.control} name="tiktok" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-xs uppercase font-bold text-muted-foreground">TikTok</FormLabel>
+                                        <FormControl>
+                                            <div className="relative">
+                                                <svg viewBox="0 0 24 24" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 fill-muted-foreground"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.83 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.33 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.04-.1z"/></svg>
+                                                <Input placeholder="handle" {...field} className="pl-10 h-10 border-primary/10 bg-black/20" />
+                                            </div>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <FormField control={form.control} name="x" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-xs uppercase font-bold text-muted-foreground">X (Twitter)</FormLabel>
+                                        <FormControl>
+                                            <div className="relative">
+                                                <Twitter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                <Input placeholder="handle" {...field} className="pl-10 h-10 border-primary/10 bg-black/20" />
+                                            </div>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Form Content */}
+                    <Card className="lg:col-span-2 border-primary/50">
+                        <CardHeader>
+                            <CardTitle>Professional Credentials</CardTitle>
+                            <CardDescription>These details will be featured on your live storefront.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-6">
                                 <div className="space-y-2">
                                     <FormLabel className="text-xs uppercase font-bold text-muted-foreground tracking-widest">System Identity (Email)</FormLabel>
                                     <Input value={userProfile?.email || ''} disabled className="bg-muted/20 border-primary/10 font-mono text-sm" />
@@ -347,11 +407,11 @@ export default function ProfileSettingsPage() {
                                         Save Credentials
                                     </Button>
                                 </div>
-                            </form>
-                         </Form>
-                    </CardContent>
-                </Card>
-            </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </form>
+            </Form>
         </div>
     )
 }
