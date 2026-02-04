@@ -71,7 +71,7 @@ export default function ConciergePage() {
       setIsSubmitted(true);
       toast({
         title: 'Message Transmitted',
-        description: 'Your request has been prioritized for our executive team.',
+        description: 'Your request has been prioritized for our support team.',
       });
     } catch (error: any) {
       toast({
@@ -113,7 +113,7 @@ export default function ConciergePage() {
                 </div>
                 <h2 className="text-3xl font-bold font-headline text-primary">Message Secured</h2>
                 <p className="text-muted-foreground max-w-md mx-auto">
-                  Your message has been delivered to Tedd V. and the SOMA executive concierge team. 
+                  Your message has been delivered to the SOMA executive concierge team. 
                   You will receive a response via email within 24 business hours.
                 </p>
                 <Button 
@@ -137,7 +137,7 @@ export default function ConciergePage() {
                   <CardHeader className="bg-muted/30 border-b border-primary/10">
                     <CardTitle className="flex items-center gap-2 text-primary font-headline">
                       <MessageSquare className="h-5 w-5" />
-                      Message Founder
+                      Message Support Team
                     </CardTitle>
                     <CardDescription>
                       Reach out directly for strategic inquiries or complex support needs.
