@@ -10,12 +10,12 @@ export function FirebaseClientProvider({
 }: React.PropsWithChildren<{}>) {
   const useEmulators = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === 'true';
 
-  const { firebaseApp, auth, firestore } = useMemo(
+  const { firebaseApp, auth, firestore, storage } = useMemo(
     () => initializeFirebase({ useEmulators }),
     [useEmulators]
   );
   return (
-    <FirebaseProvider firebaseApp={firebaseApp} auth={auth} firestore={firestore}>
+    <FirebaseProvider firebaseApp={firebaseApp} auth={auth} firestore={firestore} storage={storage}>
       {children}
     </FirebaseProvider>
   );

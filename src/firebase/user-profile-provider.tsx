@@ -1,4 +1,3 @@
-
 'use client';
 
 import { createContext, useContext, useEffect, useMemo } from 'react';
@@ -19,10 +18,19 @@ type UserProfile = {
   plan?: 'monthly' | 'yearly' | 'lifetime' | 'free';
   paidAt?: string;
   planTier?: 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND';
+  status?: 'pending_review' | 'approved' | 'rejected';
   completedLessons?: string[];
   isDisabled?: boolean;
   referralCode?: string;
   referredBy?: string;
+  verificationData?: {
+    legalBusinessName: string;
+    warehouseAddress: string;
+    taxId: string;
+    contactPhone: string;
+    governmentIdUrl: string;
+  };
+  termsAcceptedAt?: any;
   bankDetails?: {
     accountName: string;
     accountNumber: string;

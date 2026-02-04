@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserProfile } from '@/firebase/user-profile-provider';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore, useUser, useStorage } from '@/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -16,16 +17,17 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2, Send, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Loader2, Send, ShieldCheck, CheckCircle2, UploadCloud } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import SomaLogo from '@/components/logo';
+import { cn } from '@/lib/utils';
 
 const onboardingSchema = z.object({
   legalBusinessName: z.string().min(3, 'A business name is required.'),
   warehouseAddress: z.string().min(10, 'A full warehouse address is required.'),
   taxId: z.string().min(5, 'A valid Tax ID or Business Number is required.'),
   contactPhone: z.string().min(10, 'A valid contact phone number is required.'),
-  governmentIdUrl: z.string().url({ message: 'A valid ID document URL is required.' }).min(1, 'Please provide a URL to your government ID.'),
+  governmentIdUrl: z.string().url({ message: 'A valid ID document URL is required.' }).min(1, 'Please provide your government ID.'),
 });
 
 type OnboardingFormValues = z.infer<typeof onboardingSchema>;
@@ -79,11 +81,15 @@ export default function BackstagePage() {
   const { userProfile, loading: profileLoading } = useUserProfile();
   const { user, loading: userLoading } = useUser();
   const firestore = useFirestore();
+  const storage = useStorage();
   const router = useRouter();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [isSuccess, setIsSuccess] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadComplete, setUploadComplete] = useState(false);
 
   const form = useForm<OnboardingFormValues>({
     resolver: zodResolver(onboardingSchema),
@@ -112,8 +118,49 @@ export default function BackstagePage() {
         if (userProfile.status === 'pending_review') {
             setIsSuccess(true); // Show success/pending screen
         }
+        
+        if (userProfile.verificationData) {
+            form.reset({
+                legalBusinessName: userProfile.verificationData.legalBusinessName || '',
+                warehouseAddress: userProfile.verificationData.warehouseAddress || '',
+                taxId: userProfile.verificationData.taxId || '',
+                contactPhone: userProfile.verificationData.contactPhone || '',
+                governmentIdUrl: userProfile.verificationData.governmentIdUrl || '',
+            });
+            if (userProfile.verificationData.governmentIdUrl) {
+                setUploadComplete(true);
+            }
+        }
     }
-  }, [userProfile, profileLoading, userLoading, router]);
+  }, [userProfile, profileLoading, userLoading, router, form]);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user || !storage || !firestore) return;
+
+    setIsUploading(true);
+    setUploadComplete(false);
+
+    try {
+        const storageRef = ref(storage, `verifications/sellers/${user.uid}/id_document`);
+        await uploadBytes(storageRef, file);
+        const downloadUrl = await getDownloadURL(storageRef);
+
+        form.setValue('governmentIdUrl', downloadUrl, { shouldValidate: true });
+
+        const userRef = doc(firestore, 'users', user.uid);
+        await updateDoc(userRef, {
+            'verificationData.governmentIdUrl': downloadUrl
+        });
+
+        setUploadComplete(true);
+        toast({ title: 'ID Uploaded', description: 'Your identity document has been securely stored.' });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Upload Failed', description: error.message || 'Could not upload document.' });
+    } finally {
+        setIsUploading(false);
+    }
+  };
 
   const handleSubmit = async (data: OnboardingFormValues) => {
     if (!user || !firestore) {
@@ -150,7 +197,6 @@ export default function BackstagePage() {
     );
   }
   
-  // This prevents a flash of the form before redirecting
   if (!userProfile || userProfile.status === 'approved') {
       return (
         <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -205,11 +251,47 @@ export default function BackstagePage() {
                                         <FormItem><FormLabel>Contact Phone</FormLabel><FormControl><Input placeholder="+1 (555) 123-4567" {...field} /></FormControl><FormMessage /></FormItem>
                                     )} />
                                 </div>
+                                
                                 <FormField control={form.control} name="governmentIdUrl" render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Government ID URL</FormLabel>
-                                        <FormControl><Input placeholder="e.g., https://secure.link/to/my-id.pdf" {...field} /></FormControl>
-                                        <FormDescription>A secure link to a PDF or image of your government-issued ID.</FormDescription>
+                                        <FormLabel>Government ID Document</FormLabel>
+                                        <FormControl>
+                                            <div className="flex flex-col gap-4">
+                                                <div 
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                    className={cn(
+                                                        "w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all duration-300",
+                                                        uploadComplete ? "border-green-500 bg-green-500/5" : "border-primary/30 hover:border-primary bg-muted/20",
+                                                        isUploading && "opacity-50 cursor-wait"
+                                                    )}
+                                                >
+                                                    {isUploading ? (
+                                                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                                    ) : uploadComplete ? (
+                                                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                                                            <CheckCircle2 className="h-10 w-10 text-green-500 mx-auto mb-2" />
+                                                            <p className="text-sm font-medium text-green-500">ID Document Securely Stored</p>
+                                                        </motion.div>
+                                                    ) : (
+                                                        <>
+                                                            <UploadCloud className="h-8 w-8 text-muted-foreground mb-2" />
+                                                            <span className="text-sm font-medium">Click to upload ID document</span>
+                                                            <span className="text-xs text-muted-foreground mt-1">PDF, JPG, or PNG (Max 10MB)</span>
+                                                        </>
+                                                    )}
+                                                </div>
+                                                <input 
+                                                    type="file" 
+                                                    ref={fileInputRef} 
+                                                    className="hidden" 
+                                                    accept="image/*,.pdf" 
+                                                    onChange={handleFileUpload} 
+                                                    disabled={isUploading}
+                                                />
+                                                <Input type="hidden" {...field} />
+                                            </div>
+                                        </FormControl>
+                                        <FormDescription>A clear scan or photo of your passport, license, or national ID.</FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )} />
@@ -238,7 +320,7 @@ export default function BackstagePage() {
 
 
                                 <div className="flex justify-end pt-4">
-                                    <Button type="submit" disabled={isSubmitting || !agreedToTerms} size="lg" className="h-12 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50">
+                                    <Button type="submit" disabled={isSubmitting || !agreedToTerms || !uploadComplete} size="lg" className="h-12 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50">
                                         {isSubmitting ? <Loader2 className="animate-spin" /> : <><Send className="mr-2 h-5 w-5"/>Submit for Review</>}
                                     </Button>
                                 </div>
