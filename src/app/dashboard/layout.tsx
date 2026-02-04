@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -32,6 +31,7 @@ import {
   Gift,
   Gem,
   User,
+  ClipboardList,
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
@@ -85,7 +85,8 @@ const sellerNavItems = [
 ];
 
 const adminNavItems = [
-    { href: '/admin/approval-queue', icon: ShieldCheck, label: 'Approval Queue' },
+    { href: '/admin/verification-queue', icon: ClipboardList, label: 'Verification Queue' },
+    { href: '/admin/approval-queue', icon: ShieldCheck, label: 'Catalog Approvals' },
     { href: '/admin/treasury', icon: PiggyBank, label: 'Treasury' },
     { href: '/admin/users', icon: Users, label: 'User Management' },
     { href: '/admin/orders', icon: ShoppingBag, label: 'Admin Orders' },
@@ -149,7 +150,7 @@ export default function DashboardLayout({
             {isAdmin && (
               <>
                 <SidebarMenuItem>
-                    <div className="p-2 text-xs font-medium text-muted-foreground">Admin</div>
+                    <div className="p-2 text-xs font-medium text-muted-foreground uppercase tracking-wider mt-4">Platform Administration</div>
                 </SidebarMenuItem>
                 {adminNavItems.map((item) => (
                   <SidebarMenuItem key={item.href}>
