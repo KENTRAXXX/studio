@@ -11,7 +11,6 @@ import {
   getDocs,
   writeBatch,
   updateDoc,
-  getDoc,
   collectionGroup,
   limit,
   addDoc,
@@ -48,9 +47,7 @@ import {
   Building2,
   ShieldAlert,
   Activity,
-  ArrowUpRight,
-  RefreshCw,
-  Database
+  RefreshCw
 } from 'lucide-react';
 import {
   Dialog,
@@ -82,7 +79,6 @@ type WithdrawalRequest = {
   };
   status: 'pending' | 'completed' | 'declined' | 'awaiting-confirmation';
   createdAt: any;
-  reason?: string;
 };
 
 type UserProfile = {
@@ -109,18 +105,16 @@ export default function TreasuryPage() {
   const [corporateTransferAmount, setCorporateTransferAmount] = useState<string>('');
   const [isTransferring, setIsTransferring] = useState(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [newBalanceInput, setNewBalanceInput] = useState<string>('');
+  const [isSyncing, setIsSyncing] = useState(false);
   
-  // 1. Platform Metadata & Initialization
+  // 1. Real-time Platform Metadata Listener
   const metaRef = useMemoFirebase(() => {
       if (!firestore) return null;
       return doc(firestore, 'platform_metadata', 'treasury');
   }, [firestore]);
 
   const { data: platformMeta, loading: metaLoading } = useDoc<PlatformMetadata>(metaRef);
-
-  // Sync Gateway Balance State
-  const [newBalanceInput, setNewBalanceInput] = useState<string>('');
-  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
       // Auto-initialize if document missing
@@ -133,7 +127,7 @@ export default function TreasuryPage() {
       }
   }, [metaLoading, platformMeta, firestore, adminProfile]);
 
-  // 2. Data Fetching for Executive Metrics
+  // 2. Intelligence Data Fetching
   const pendingRequestsQ = useMemoFirebase(() => {
       if (!firestore) return null;
       return query(collection(firestore, 'withdrawal_requests'), where('status', '==', 'pending'));
@@ -165,18 +159,17 @@ export default function TreasuryPage() {
   const { data: allPayouts, loading: payoutsLoading } = useCollection<any>(allPayoutsQ);
   const { data: allUsers, loading: usersLoading } = useCollection<UserProfile>(usersQ);
 
-  // 3. Intelligence Aggregation
+  // 3. Financial Intelligence Aggregation
   const metrics = useMemo(() => {
       const gmv = allOrders?.reduce((acc, o) => acc + (o.total || 0), 0) || 0;
       const netRevenue = revenueLogs?.reduce((acc, l) => acc + (l.amount || 0), 0) || 0;
       const liability = allPayouts?.reduce((acc, p) => acc + (p.amount || 0), 0) || 0;
-      const totalPendingWithdrawals = requests?.reduce((acc, r) => acc + (r.amount || 0), 0) || 0;
-
+      
       const transactionRev = revenueLogs?.filter(l => l.type === 'TRANSACTION').reduce((acc, l) => acc + (l.amount || 0), 0) || 0;
       const subscriptionRev = revenueLogs?.filter(l => l.type === 'SUBSCRIPTION').reduce((acc, l) => acc + (l.amount || 0), 0) || 0;
 
-      return { gmv, netRevenue, liability, totalPendingWithdrawals, transactionRev, subscriptionRev };
-  }, [allOrders, revenueLogs, allPayouts, requests]);
+      return { gmv, netRevenue, liability, transactionRev, subscriptionRev };
+  }, [allOrders, revenueLogs, allPayouts]);
 
   const combinedRequests = useMemo(() => {
       if (!requests || !allUsers) return [];
@@ -187,12 +180,13 @@ export default function TreasuryPage() {
       }));
   }, [requests, allUsers]);
 
-  // Health Check Logic
+  // Solvency Logic
   const paystackBalance = platformMeta?.paystackBalance || 0;
   const isLiquidityLow = paystackBalance < metrics.liability;
+  const liquidityBuffer = paystackBalance - metrics.liability;
   const coverageRatio = metrics.liability > 0 ? (paystackBalance / metrics.liability) * 100 : 100;
 
-  // 4. Operational Logic
+  // 4. Operations
   const handleSyncBalance = async () => {
       if (!firestore || !adminProfile || !metaRef) return;
       setIsSyncing(true);
@@ -299,16 +293,16 @@ export default function TreasuryPage() {
 
   return (
     <div className="space-y-10 pb-24">
-      {/* Liquidity Health Check Banner */}
+      {/* Liquidity Alert Protocol */}
       {isLiquidityLow && (
         <Alert variant="destructive" className="bg-destructive/10 border-destructive border-2 animate-pulse py-6">
           <ShieldAlert className="h-8 w-8 text-destructive shrink-0" />
           <div className="ml-4">
             <AlertTitle className="text-xl font-headline font-black uppercase tracking-widest">Critical: Liquidity Alert</AlertTitle>
             <AlertDescription className="text-base font-medium mt-1">
-              Platform liability ({formatCurrency(Math.round(metrics.liability * 100))}) exceeds current Gateway Balance ({formatCurrency(Math.round(paystackBalance * 100))}). 
+              Platform liability ({formatCurrency(Math.round(metrics.liability * 100))}) exceeds Gateway Balance ({formatCurrency(Math.round(paystackBalance * 100))}). 
               <br />
-              <strong>Action Required:</strong> Halt corporate extractions and replenish gateway liquidity to ensure fulfillment.
+              <strong>Deficit:</strong> {formatCurrency(Math.round(Math.abs(liquidityBuffer) * 100))}
             </AlertDescription>
           </div>
         </Alert>
@@ -318,9 +312,9 @@ export default function TreasuryPage() {
         <div>
             <h1 className="text-4xl font-bold font-headline text-primary flex items-center gap-3">
                 <Landmark className="h-10 w-10" />
-                Global Treasury Intelligence
+                Treasury Intelligence
             </h1>
-            <p className="text-muted-foreground mt-1 text-lg">Strategic oversight of ecosystem liquidity and platform performance.</p>
+            <p className="text-muted-foreground mt-1 text-lg">Real-time audit of ecosystem liquidity and platform yield.</p>
         </div>
         <div className="flex items-center gap-4">
             <Dialog>
@@ -333,12 +327,12 @@ export default function TreasuryPage() {
                     <DialogHeader>
                         <DialogTitle className="font-headline text-primary">Synchronize Paystack Balance</DialogTitle>
                         <DialogDescription>
-                            Input the exact "Available Balance" from your real Paystack dashboard to update platform health metrics.
+                            Input the "Available Balance" from your Paystack dashboard to update solvency metrics.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label>Current Real-world Balance ($)</Label>
+                            <Label>Current Gateway Balance ($)</Label>
                             <Input 
                                 type="number" 
                                 placeholder="0.00" 
@@ -348,9 +342,12 @@ export default function TreasuryPage() {
                             />
                         </div>
                         {platformMeta && (
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest text-center">
-                                Last synced: {platformMeta.lastSynced?.toDate ? platformMeta.lastSynced.toDate().toLocaleString() : 'Never'} by {platformMeta.syncedBy}
-                            </p>
+                            <div className="text-center">
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
+                                    Last synced: {platformMeta.lastSynced?.toDate ? platformMeta.lastSynced.toDate().toLocaleString() : 'Never'}
+                                </p>
+                                <p className="text-[10px] text-primary font-bold mt-1 uppercase">Synced By: {platformMeta.syncedBy}</p>
+                            </div>
                         )}
                     </div>
                     <DialogFooter>
@@ -359,40 +356,38 @@ export default function TreasuryPage() {
                             onClick={handleSyncBalance}
                             disabled={isSyncing || !newBalanceInput}
                         >
-                            {isSyncing ? <Loader2 className="animate-spin" /> : "Commit Synchronization"}
+                            {isSyncing ? <Loader2 className="animate-spin" /> : "Confirm Synchronization"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
             <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-primary/5 border border-primary/20 shadow-gold-glow">
                 <span className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
-                <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Ledger Synchronization Active</span>
+                <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Ledger Listeners Active</span>
             </div>
         </div>
       </header>
 
-      {/* Row 1: Primary Financial Buckets */}
+      {/* Financial Bucket Grid */}
       <div className="grid gap-8 md:grid-cols-4">
         <Card className="border-primary/20 bg-slate-900/30 relative overflow-hidden group min-h-[180px] flex flex-col justify-center">
           <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
             <TrendingUp className="h-24 w-24" />
           </div>
           <CardHeader className="pb-2">
-            <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Total Ecosystem Volume (GMV)</CardTitle>
+            <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Ecosystem Volume (GMV)</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold font-mono text-white tracking-tighter">
                 {formatCurrency(Math.round(metrics.gmv * 100))}
             </div>
-            <p className="text-[10px] text-green-500 font-bold mt-3 flex items-center gap-1 uppercase tracking-widest">
-                <TrendingUp className="h-3 w-3" /> Aggregated Output
-            </p>
+            <p className="text-[10px] text-green-500 font-bold mt-3 uppercase tracking-widest">Aggregated Gross Sales</p>
           </CardContent>
         </Card>
 
         <Card className="border-primary bg-primary/5 relative overflow-hidden group min-h-[180px] flex flex-col justify-center shadow-gold-glow">
           <CardHeader className="pb-2">
-            <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">SOMA Net Platform Profit</CardTitle>
+            <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">SOMA Net Profit</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold font-mono text-primary tracking-tighter">
@@ -413,7 +408,7 @@ export default function TreasuryPage() {
             <div className="text-4xl font-bold font-mono text-red-400 tracking-tighter">
                 {formatCurrency(Math.round(metrics.liability * 100))}
             </div>
-            <p className="text-[10px] text-muted-foreground mt-3 uppercase tracking-widest">Total Partner Funds</p>
+            <p className="text-[10px] text-muted-foreground mt-3 uppercase tracking-widest">Total Partner Funds Owed</p>
           </CardContent>
         </Card>
 
@@ -451,9 +446,7 @@ export default function TreasuryPage() {
                             <Wallet className="h-6 w-6 text-primary" />
                             Partner Fulfillment Queue
                         </CardTitle>
-                        <CardDescription className="text-base">
-                            Review and authorize pending partner withdrawal requests.
-                        </CardDescription>
+                        <CardDescription className="text-base">Review and authorize pending partner withdrawal requests.</CardDescription>
                     </div>
                     <Badge className="bg-primary text-primary-foreground font-mono text-sm px-4 py-1">
                         {combinedRequests.length} PENDING
@@ -515,19 +508,19 @@ export default function TreasuryPage() {
             </Card>
         </div>
 
-        {/* Right: Operational Controls */}
+        {/* Right: Corporate Extraction Controls */}
         <div className="lg:col-span-4 space-y-8">
             <Card className="border-primary/50 bg-slate-900/40 overflow-hidden shadow-2xl">
                 <CardHeader className="bg-primary/10 border-b border-primary/20">
                     <CardTitle className="text-sm font-headline uppercase tracking-[0.2em] text-primary flex items-center gap-3">
                         <Building2 className="h-5 w-5" />
-                        Corporate Treasury
+                        Corporate Extraction
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-8 space-y-8">
                     <div className="space-y-4">
                         <div className="flex justify-between items-end">
-                            <Label className="text-xs font-black uppercase text-slate-500 tracking-widest">Available for Extraction</Label>
+                            <Label className="text-xs font-black uppercase text-slate-500 tracking-widest">Available Profit</Label>
                             <span className="text-2xl font-mono font-bold text-primary">{formatCurrency(Math.round(metrics.netRevenue * 100))}</span>
                         </div>
                         <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
@@ -565,27 +558,29 @@ export default function TreasuryPage() {
                                     </div>
                                     <DialogTitle className="text-2xl font-headline text-center text-primary">Authorize Executive Transfer</DialogTitle>
                                     <DialogDescription className="text-center pt-2 text-base text-slate-400">
-                                        You are about to transfer <span className="text-white font-bold font-mono">{formatCurrency(Math.round(parseFloat(corporateTransferAmount || '0') * 100))}</span> from the platform holdings to the SOMA corporate account.
+                                        Confirm extraction of <span className="text-white font-bold font-mono">{formatCurrency(Math.round(parseFloat(corporateTransferAmount || '0') * 100))}</span> to the SOMA corporate account.
                                     </DialogDescription>
                                 </DialogHeader>
                                 <div className="py-6 border-y border-primary/10 my-4 space-y-4">
                                     <div className="flex justify-between items-center text-sm">
                                         <span className="text-slate-500">Source:</span>
-                                        <span className="font-bold text-slate-200 uppercase tracking-widest">Platform Net Profit</span>
+                                        <span className="font-bold text-slate-200">Platform Net Profit</span>
                                     </div>
                                     <div className="flex justify-between items-center text-sm">
-                                        <span className="text-slate-500">Destination:</span>
-                                        <span className="font-bold text-slate-200 uppercase tracking-widest">Corporate Treasury</span>
+                                        <span className="text-slate-500">Status:</span>
+                                        <span className={cn("font-bold", isLiquidityLow ? "text-destructive" : "text-green-500")}>
+                                            {isLiquidityLow ? "UNSAFE (LIQUIDITY GAP)" : "LIQUIDITY SECURE"}
+                                        </span>
                                     </div>
                                 </div>
                                 <DialogFooter className="flex-col sm:flex-col gap-3">
                                     <Button 
                                         className="w-full h-14 text-lg btn-gold-glow font-bold" 
                                         onClick={handleCorporateTransfer}
-                                        disabled={isTransferring}
+                                        disabled={isTransferring || isLiquidityLow}
                                     >
                                         {isTransferring ? <Loader2 className="animate-spin mr-2" /> : <ShieldCheck className="mr-2" />}
-                                        Confirm Executive Transfer
+                                        Confirm Transfer
                                     </Button>
                                     <DialogClose asChild>
                                         <Button variant="ghost" className="text-slate-500">Cancel</Button>
@@ -594,41 +589,31 @@ export default function TreasuryPage() {
                             </DialogContent>
                         </Dialog>
                     </div>
-
-                    <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 italic text-[11px] text-slate-500 leading-relaxed">
-                        <p>Platform profits include accumulated commissions from all supplier transactions and recurring SaaS subscriptions. Extraction requests are logged for global audit compliance.</p>
-                    </div>
                 </CardContent>
             </Card>
 
-            {/* Platform Yield Distribution - Dynamic ledger audit */}
+            {/* Platform Yield distribution */}
             <Card className="border-primary/10 bg-slate-900/20">
                 <CardHeader className="pb-2">
-                    <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Platform Yield Distribution</CardTitle>
+                    <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Platform Yield Mix</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-5 pt-4">
                     <div className="space-y-2">
                         <div className="flex justify-between text-[10px] uppercase font-bold text-slate-400">
-                            <span>Transaction Commissions</span>
+                            <span>Transactional Commission</span>
                             <span>{Math.round(transactionPct)}%</span>
                         </div>
                         <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                            <div 
-                                className="h-full bg-primary transition-all duration-1000" 
-                                style={{ width: `${transactionPct}%` }} 
-                            />
+                            <div className="h-full bg-primary transition-all duration-1000" style={{ width: `${transactionPct}%` }} />
                         </div>
                     </div>
                     <div className="space-y-2">
                         <div className="flex justify-between text-[10px] uppercase font-bold text-slate-400">
-                            <span>SaaS Subscriptions</span>
+                            <span>Subscription Fees</span>
                             <span>{Math.round(subscriptionPct)}%</span>
                         </div>
                         <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                            <div 
-                                className="h-full bg-slate-600 transition-all duration-1000" 
-                                style={{ width: `${subscriptionPct}%` }} 
-                            />
+                            <div className="h-full bg-slate-600 transition-all duration-1000" style={{ width: `${subscriptionPct}%` }} />
                         </div>
                     </div>
                 </CardContent>
