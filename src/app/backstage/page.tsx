@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserProfile } from '@/firebase/user-profile-provider';
-import { useFirestore, useUser, useStorage } from '@/firebase';
+import { useFirestore, useUser, useStorage, useAuth } from '@/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from 'firebase/auth';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -17,7 +18,8 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2, Send, ShieldCheck, CheckCircle2, UploadCloud } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Loader2, Send, ShieldCheck, CheckCircle2, UploadCloud, Phone, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import SomaLogo from '@/components/logo';
 import { cn } from '@/lib/utils';
@@ -82,6 +84,7 @@ export default function BackstagePage() {
   const { user, loading: userLoading } = useUser();
   const firestore = useFirestore();
   const storage = useStorage();
+  const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -90,6 +93,14 @@ export default function BackstagePage() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadComplete, setUploadComplete] = useState(false);
+
+  // Phone Verification States
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+  const [isSendingOTP, setIsSendingOTP] = useState(false);
+  const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
+  const [isOTPModalOpen, setIsOTPModalOpen] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
   const form = useForm<OnboardingFormValues>({
     resolver: zodResolver(onboardingSchema),
@@ -113,10 +124,10 @@ export default function BackstagePage() {
         }
         if (userProfile.status === 'approved') {
             router.push('/backstage/finances');
-            return; // Redirect approved users immediately
+            return; 
         }
         if (userProfile.status === 'pending_review') {
-            setIsSuccess(true); // Show success/pending screen
+            setIsSuccess(true); 
         }
         
         if (userProfile.verificationData) {
@@ -162,6 +173,47 @@ export default function BackstagePage() {
     }
   };
 
+  const handleSendOTP = async () => {
+    if (!auth || !form.getValues('contactPhone') || isSendingOTP) return;
+    
+    setIsSendingOTP(true);
+    try {
+        const phoneNumber = form.getValues('contactPhone');
+        // Ensure phone number starts with + for Firebase
+        const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`;
+        
+        const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            size: 'invisible',
+        });
+        
+        const result = await signInWithPhoneNumber(auth, formattedPhone, verifier);
+        setConfirmationResult(result);
+        setIsOTPModalOpen(true);
+        toast({ title: 'Code Sent', description: 'A verification code has been sent to your phone.' });
+    } catch (error: any) {
+        console.error("OTP Error:", error);
+        toast({ variant: 'destructive', title: 'Error', description: error.message || 'Could not send verification code.' });
+    } finally {
+        setIsSendingOTP(false);
+    }
+  };
+
+  const handleVerifyOTP = async () => {
+    if (!confirmationResult || otpCode.length !== 6 || isVerifyingOTP) return;
+    
+    setIsVerifyingOTP(true);
+    try {
+        await confirmationResult.confirm(otpCode);
+        setIsPhoneVerified(true);
+        setIsOTPModalOpen(false);
+        toast({ title: 'Phone Verified', description: 'Your phone number has been successfully verified.' });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Verification Failed', description: 'Invalid code. Please try again.' });
+    } finally {
+        setIsVerifyingOTP(false);
+    }
+  };
+
   const handleSubmit = async (data: OnboardingFormValues) => {
     if (!user || !firestore) {
         toast({ variant: 'destructive', title: 'Error', description: 'Could not connect to services.' });
@@ -177,6 +229,7 @@ export default function BackstagePage() {
                 taxId: data.taxId,
                 contactPhone: data.contactPhone,
                 governmentIdUrl: data.governmentIdUrl,
+                isPhoneVerified: true,
             },
             status: 'pending_review',
             termsAcceptedAt: serverTimestamp(),
@@ -208,6 +261,35 @@ export default function BackstagePage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 sm:p-6">
+        <div id="recaptcha-container"></div>
+        
+        <Dialog open={isOTPModalOpen} onOpenChange={setIsOTPModalOpen}>
+            <DialogContent className="bg-card border-primary">
+                <DialogHeader>
+                    <DialogTitle className="font-headline text-primary">Verify Phone Number</DialogTitle>
+                    <DialogDescription>
+                        Enter the 6-digit code sent to your mobile device.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <Input 
+                        placeholder="123456" 
+                        value={otpCode} 
+                        onChange={(e) => setOtpCode(e.target.value)}
+                        maxLength={6}
+                        className="text-center text-2xl tracking-widest h-14 font-mono"
+                    />
+                    <Button 
+                        onClick={handleVerifyOTP} 
+                        className="w-full h-12 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
+                        disabled={otpCode.length !== 6 || isVerifyingOTP}
+                    >
+                        {isVerifyingOTP ? <Loader2 className="animate-spin" /> : "Confirm Code"}
+                    </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
+
         <div className="text-center mb-10">
             <SomaLogo className="h-12 w-12 mx-auto" />
             <h1 className="text-4xl font-bold font-headline mt-4 text-primary">SOMA Seller Hub</h1>
@@ -248,7 +330,32 @@ export default function BackstagePage() {
                                         <FormItem><FormLabel>Tax ID / Business Number</FormLabel><FormControl><Input placeholder="Your business registration number" {...field} /></FormControl><FormMessage /></FormItem>
                                     )} />
                                      <FormField control={form.control} name="contactPhone" render={({ field }) => (
-                                        <FormItem><FormLabel>Contact Phone</FormLabel><FormControl><Input placeholder="+1 (555) 123-4567" {...field} /></FormControl><FormMessage /></FormItem>
+                                        <FormItem>
+                                            <FormLabel>Contact Phone (E.164 format)</FormLabel>
+                                            <div className="flex gap-2">
+                                                <FormControl>
+                                                    <Input 
+                                                        placeholder="+15551234567" 
+                                                        {...field} 
+                                                        disabled={isPhoneVerified || isSubmitting}
+                                                    />
+                                                </FormControl>
+                                                <Button 
+                                                    type="button" 
+                                                    variant={isPhoneVerified ? "outline" : "secondary"}
+                                                    disabled={isPhoneVerified || !field.value || isSendingOTP}
+                                                    onClick={handleSendOTP}
+                                                    className={cn(
+                                                        "w-24 shrink-0 transition-all",
+                                                        isPhoneVerified && "border-green-500 text-green-500 bg-green-500/5 hover:bg-green-500/10"
+                                                    )}
+                                                >
+                                                    {isSendingOTP ? <Loader2 className="animate-spin h-4 w-4" /> : isPhoneVerified ? <><Check className="mr-1 h-4 w-4"/>Verified</> : "Verify"}
+                                                </Button>
+                                            </div>
+                                            <FormDescription>Verification code will be sent via SMS.</FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
                                     )} />
                                 </div>
                                 
@@ -258,10 +365,10 @@ export default function BackstagePage() {
                                         <FormControl>
                                             <div className="flex flex-col gap-4">
                                                 <div 
-                                                    onClick={() => fileInputRef.current?.click()}
+                                                    onClick={() => !uploadComplete && fileInputRef.current?.click()}
                                                     className={cn(
                                                         "w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all duration-300",
-                                                        uploadComplete ? "border-green-500 bg-green-500/5" : "border-primary/30 hover:border-primary bg-muted/20",
+                                                        uploadComplete ? "border-green-500 bg-green-500/5 cursor-default" : "border-primary/30 hover:border-primary bg-muted/20",
                                                         isUploading && "opacity-50 cursor-wait"
                                                     )}
                                                 >
@@ -286,7 +393,7 @@ export default function BackstagePage() {
                                                     className="hidden" 
                                                     accept="image/*,.pdf" 
                                                     onChange={handleFileUpload} 
-                                                    disabled={isUploading}
+                                                    disabled={isUploading || uploadComplete}
                                                 />
                                                 <Input type="hidden" {...field} />
                                             </div>
@@ -320,7 +427,12 @@ export default function BackstagePage() {
 
 
                                 <div className="flex justify-end pt-4">
-                                    <Button type="submit" disabled={isSubmitting || !agreedToTerms || !uploadComplete} size="lg" className="h-12 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50">
+                                    <Button 
+                                        type="submit" 
+                                        disabled={isSubmitting || !agreedToTerms || !uploadComplete || !isPhoneVerified} 
+                                        size="lg" 
+                                        className="h-12 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
                                         {isSubmitting ? <Loader2 className="animate-spin" /> : <><Send className="mr-2 h-5 w-5"/>Submit for Review</>}
                                     </Button>
                                 </div>
