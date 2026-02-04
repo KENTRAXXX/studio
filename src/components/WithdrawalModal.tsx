@@ -15,6 +15,7 @@ import {
     getDocs 
 } from 'firebase/firestore';
 import { sendPayoutConfirmationEmail } from '@/ai/flows/send-payout-confirmation-email';
+import { formatCurrency } from '@/utils/format';
 
 import {
   Dialog,
@@ -118,7 +119,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
     }
 
     if (isBalanceTooLow) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Minimum payout is $10.00.' });
+        toast({ variant: 'destructive', title: 'Error', description: `Minimum payout is ${formatCurrency(1000)}.` });
         return;
     }
 
@@ -204,7 +205,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
       } else {
          toast({
             title: 'Request Submitted',
-            description: `Your request to withdraw $${Number(result.finalAmount).toFixed(2)} is pending review.`,
+            description: `Your request to withdraw ${formatCurrency(Math.round(Number(result.finalAmount) * 100))} is pending review.`,
           });
       }
 
@@ -238,14 +239,14 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
              <div className="text-center p-3 rounded-md bg-muted/50">
                 <p className="text-sm text-muted-foreground">Available Balance</p>
-                <p className="text-2xl font-bold">${availableBalance.toFixed(2)}</p>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Minimum payout: $10.00</p>
+                <p className="text-2xl font-bold">{formatCurrency(Math.round(availableBalance * 100))}</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Minimum payout: {formatCurrency(1000)}</p>
             </div>
 
             {isBalanceTooLow && (
                 <div className="flex items-center gap-2 p-3 rounded-md bg-orange-500/10 border border-orange-500/20 text-orange-500 text-xs">
                     <AlertCircle className="h-4 w-4" />
-                    <span>Your balance must be at least $10.00 to request a withdrawal.</span>
+                    <span>Your balance must be at least {formatCurrency(1000)} to request a withdrawal.</span>
                 </div>
             )}
 
@@ -266,12 +267,12 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
             <div className="space-y-2 rounded-lg border border-border/50 p-4">
                  <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Withdrawal Fee (3%)</span>
-                    <span>${withdrawalFee.toFixed(2)}</span>
+                    <span>{formatCurrency(Math.round(withdrawalFee * 100))}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-semibold">
                     <span>Total Deduction</span>
-                    <span>${(Number(totalDeduction) || 0).toFixed(2)}</span>
+                    <span>{formatCurrency(Math.round((Number(totalDeduction) || 0) * 100))}</span>
                 </div>
                  {isAmountInvalid && <p className="text-sm font-medium text-destructive pt-2">Insufficient funds for this withdrawal amount.</p>}
             </div>

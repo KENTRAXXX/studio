@@ -13,6 +13,7 @@ import SomaLogo from '@/components/logo';
 import { PlaceHolderImages, type ImagePlaceholder } from '@/lib/placeholder-images';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
+import { formatCurrency } from '@/utils/format';
 
 type CartItem = {
   product: any; // Using 'any' as product structure might vary
@@ -105,9 +106,9 @@ function CartSheet({storeId}: {storeId: string}) {
                                             </div>
                                             <div className="flex-1">
                                                 <h3 className="font-semibold">{item.product.name}</h3>
-                                                <p className="text-sm text-muted-foreground">${price.toFixed(2)} x {item.quantity}</p>
+                                                <p className="text-sm text-muted-foreground">{formatCurrency(Math.round(price * 100))} x {item.quantity}</p>
                                             </div>
-                                            <p className="font-semibold">${(price * item.quantity).toFixed(2)}</p>
+                                            <p className="font-semibold">{formatCurrency(Math.round(price * item.quantity * 100))}</p>
                                             <Button variant="ghost" size="icon" onClick={() => removeFromCart(item.product.id)}>
                                                 <X className="h-4 w-4" />
                                             </Button>
@@ -119,7 +120,7 @@ function CartSheet({storeId}: {storeId: string}) {
                             <div className="space-y-4">
                                 <div className="flex justify-between font-bold text-lg">
                                     <span>Subtotal</span>
-                                    <span>${getCartTotal().toFixed(2)}</span>
+                                    <span>{formatCurrency(Math.round(getCartTotal() * 100))}</span>
                                 </div>
                                 <Button asChild className="w-full h-12 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
                                     <Link href={`/store/${storeId}/checkout`}>Checkout</Link>

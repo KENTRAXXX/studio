@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -50,6 +49,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { formatCurrency } from '@/utils/format';
 
 type WithdrawalRequest = {
   id: string;
@@ -168,7 +168,7 @@ const DeclineModal = ({ request, onDecline }: { request: CombinedRequest, onDecl
                     <DialogTitle>Decline Withdrawal</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
-                    <p>You are about to decline a withdrawal request for <span className="font-bold">${request.amount.toFixed(2)}</span> from user <span className="font-mono text-xs">{request.userId}</span>.</p>
+                    <p>You are about to decline a withdrawal request for <span className="font-bold">{formatCurrency(Math.round(request.amount * 100))}</span> from user <span className="font-mono text-xs">{request.userId}</span>.</p>
                     <div className="space-y-2">
                         <Label htmlFor="reason">Reason for Decline</Label>
                         <Input id="reason" value={reason} onChange={e => setReason(e.target.value)} placeholder="e.g., Incorrect bank details" />
@@ -238,7 +238,7 @@ export default function TreasuryPage() {
 
         await batch.commit();
 
-        toast({ title: 'Success', description: `Request for $${request.amount.toFixed(2)} marked as paid.` });
+        toast({ title: 'Success', description: `Request for ${formatCurrency(Math.round(request.amount * 100))} marked as paid.` });
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Error', description: error.message });
     } finally {
@@ -284,7 +284,7 @@ export default function TreasuryPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-primary">${summaryStats.totalPending.toFixed(2)}</div>
+            <div className="text-3xl font-bold text-primary">{formatCurrency(Math.round(summaryStats.totalPending * 100))}</div>
             <p className="text-xs text-muted-foreground">{combinedData.length} pending requests</p>
           </CardContent>
         </Card>
@@ -294,7 +294,7 @@ export default function TreasuryPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-400">${summaryStats.totalRevenue.toFixed(2)}</div>
+            <div className="text-3xl font-bold text-green-400">{formatCurrency(Math.round(summaryStats.totalRevenue * 100))}</div>
              <p className="text-xs text-muted-foreground">From 3% seller transaction fees</p>
           </CardContent>
         </Card>
@@ -335,7 +335,7 @@ export default function TreasuryPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                        <span className="text-lg font-bold text-primary">${req.amount.toFixed(2)}</span>
+                        <span className="text-lg font-bold text-primary">{formatCurrency(Math.round(req.amount * 100))}</span>
                     </TableCell>
                     <TableCell>
                         <div className="text-sm font-medium">{req.bankDetails.accountName}</div>

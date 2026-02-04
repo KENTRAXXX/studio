@@ -30,6 +30,7 @@ import { useUser, useFirestore, useCollection } from "@/firebase";
 import { collection, query, orderBy } from "firebase/firestore";
 import { Loader2, AlertTriangle, DollarSign, Package, TrendingUp } from "lucide-react";
 import { useMemo } from "react";
+import { formatCurrency } from "@/utils/format";
 
 const getStatusClasses = (status: string) => {
   switch (status) {
@@ -114,7 +115,7 @@ export default function MyOrdersPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">${grossRevenue.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-foreground">{formatCurrency(Math.round(grossRevenue * 100))}</div>
           </CardContent>
         </Card>
         <Card className="border-primary/50">
@@ -123,7 +124,7 @@ export default function MyOrdersPage() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">- ${wholesaleCost.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-foreground">- {formatCurrency(Math.round(wholesaleCost * 100))}</div>
           </CardContent>
         </Card>
         <Card className="border-green-500/50">
@@ -132,7 +133,7 @@ export default function MyOrdersPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-400">${netProfit.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-green-400">{formatCurrency(Math.round(netProfit * 100))}</div>
           </CardContent>
         </Card>
       </div>
@@ -165,7 +166,7 @@ export default function MyOrdersPage() {
                         <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
                         <TableCell className="font-medium">{order.orderId}</TableCell>
                         <TableCell>{order.customer.email}</TableCell>
-                        <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(Math.round(order.total * 100))}</TableCell>
                         <TableCell className="text-center">
                             <Badge className={cn("text-xs", getStatusClasses(order.status))}>
                             {order.status}

@@ -172,7 +172,7 @@ const EarningsOverview = ({ pendingDocs, completedDocs }: { pendingDocs: any[], 
                             axisLine={false} 
                             tickLine={false} 
                             tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }}
-                            tickFormatter={(val) => `$${val}`}
+                            tickFormatter={(val) => formatCurrency(val * 100)}
                         />
                         <Tooltip 
                             contentStyle={{ 

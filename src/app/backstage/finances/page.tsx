@@ -438,7 +438,7 @@ export default function BackstageFinancesPage() {
                                 ) : (
                                     <>
                                         <p className="text-5xl font-bold text-primary">{formatCurrency(Math.round(totalEarned * 100))}</p>
-                                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-2">Minimum payout: $10.00</p>
+                                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-2">Minimum payout: {formatCurrency(1000)}</p>
                                     </>
                                 )}
                             </CardContent>
@@ -450,7 +450,7 @@ export default function BackstageFinancesPage() {
                                 disabled={isBalanceTooLow || isGlobalLoading}
                             >
                                 <Landmark className="mr-2 h-6 w-6"/> 
-                                {isBalanceTooLow && !isGlobalLoading ? 'Minimum $10.00 Required' : 'Request Payout'}
+                                {isBalanceTooLow && !isGlobalLoading ? `Minimum ${formatCurrency(1000)} Required` : 'Request Payout'}
                             </Button>
                         </Card>
                     </div>

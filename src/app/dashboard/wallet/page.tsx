@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Banknote, Wallet as WalletIcon, Loader2 } from 'lucide-react';
 import { WithdrawalModal } from '@/components/WithdrawalModal';
+import { formatCurrency } from '@/utils/format';
 
 
 export default function SomaWalletPage() {
@@ -51,8 +52,8 @@ export default function SomaWalletPage() {
                         <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
                     ) : (
                         <>
-                            <p className="text-5xl font-bold text-primary">${availableBalance.toFixed(2)}</p>
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-2">Minimum payout: $10.00</p>
+                            <p className="text-5xl font-bold text-primary">{formatCurrency(Math.round(availableBalance * 100))}</p>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-2">Minimum payout: {formatCurrency(1000)}</p>
                         </>
                     )}
                 </CardContent>
@@ -65,7 +66,7 @@ export default function SomaWalletPage() {
                 disabled={isBalanceTooLow || isLoading}
             >
                 <Banknote className="mr-2 h-6 w-6"/> 
-                {isBalanceTooLow && !isLoading ? 'Minimum $10.00 Required' : 'Request Payout'}
+                {isBalanceTooLow && !isLoading ? `Minimum ${formatCurrency(1000)} Required` : 'Request Payout'}
             </Button>
             <p className="text-center text-sm text-muted-foreground">
                 This balance reflects your net profit from sales across the platform. Withdrawals are processed within 24-48 hours.

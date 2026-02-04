@@ -15,6 +15,7 @@ import {
   Tooltip,
 } from 'recharts';
 import { format } from 'date-fns';
+import { formatCurrency } from '@/utils/format';
 
 type OrderProduct = {
   id: string;
@@ -36,7 +37,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return (
       <div className="bg-background/80 backdrop-blur-sm p-2 border border-primary/50 rounded-lg shadow-lg">
         <p className="label font-bold text-primary">{`${format(new Date(label), 'PPP')}`}</p>
-        <p className="intro text-sm text-foreground">{`Sales : $${payload[0].value.toFixed(2)}`}</p>
+        <p className="intro text-sm text-foreground">{`Sales : ${formatCurrency(Math.round(payload[0].value * 100))}`}</p>
       </div>
     );
   }
@@ -125,7 +126,7 @@ export default function AnalyticsPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-primary">${totalRevenue.toFixed(2)}</div>
+            <div className="text-3xl font-bold text-primary">{formatCurrency(Math.round(totalRevenue * 100))}</div>
              <p className="text-xs text-muted-foreground">{totalOrders} total orders</p>
           </CardContent>
         </Card>
@@ -135,7 +136,7 @@ export default function AnalyticsPage() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-primary">${totalWholesaleCost.toFixed(2)}</div>
+            <div className="text-3xl font-bold text-primary">{formatCurrency(Math.round(totalWholesaleCost * 100))}</div>
              <p className="text-xs text-muted-foreground">Total wholesale cost</p>
           </CardContent>
         </Card>
@@ -145,7 +146,7 @@ export default function AnalyticsPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-400">${netProfit.toFixed(2)}</div>
+            <div className="text-3xl font-bold text-green-400">{formatCurrency(Math.round(netProfit * 100))}</div>
              <p className="text-xs text-muted-foreground">After all costs</p>
           </CardContent>
         </Card>
@@ -173,7 +174,7 @@ export default function AnalyticsPage() {
                             fontSize={12}
                             tickLine={false}
                             axisLine={false}
-                            tickFormatter={(value) => `$${value}`}
+                            tickFormatter={(value) => formatCurrency(value * 100)}
                         />
                         <Tooltip content={<CustomTooltip />} />
                         <Line type="monotone" dataKey="total" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: 'hsl(var(--primary))' }} activeDot={{ r: 8 }} />
