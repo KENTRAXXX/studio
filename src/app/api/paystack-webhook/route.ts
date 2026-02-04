@@ -197,10 +197,14 @@ export async function POST(req: Request) {
             if (userSnap.exists() && userSnap.data().hasAccess) {
                 console.log(`User ${userId} already has access. Skipping store creation.`);
             } else {
+                 // Ensure we don't pass the deprecated "MOGUL" planTier
+                 const rawPlanTier = metadata.planTier;
+                 const planTier = (rawPlanTier && rawPlanTier !== 'MOGUL') ? rawPlanTier : 'SCALER';
+
                  const createClientStoreInput = {
                     userId,
                     plan: plan || 'monthly',
-                    planTier: metadata.planTier || 'MOGUL',
+                    planTier: planTier,
                     template: 'gold-standard',
                 };
                 await createClientStore(createClientStoreInput);

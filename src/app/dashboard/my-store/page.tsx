@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -18,7 +17,7 @@ import { Progress } from '@/components/ui/progress';
 import { AnimatePresence, motion } from 'framer-motion';
 import { masterCatalog } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser, useFirestore, useUserProfile } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 
 
@@ -375,10 +374,11 @@ export default function MyStorePage() {
   const { toast } = useToast();
   const router = useRouter();
   const { user } = useUser();
+  const { userProfile } = useUserProfile();
   const firestore = useFirestore();
 
   const handleLaunch = async (firstProduct?: any) => {
-    if (!user || !firestore || !storeType) return;
+    if (!user || !firestore || !storeType || !userProfile) return;
     setIsLaunching(true);
 
     try {
@@ -387,12 +387,13 @@ export default function MyStorePage() {
         const logoUrl = logoFile ? `/uploads/${logoFile.name}` : '';
         const faviconUrl = faviconFile ? `/uploads/${faviconFile.name}` : '';
         
-        const planTier = storeType === 'MERCHANT' ? 'MERCHANT' : 'MOGUL';
+        // Use the actual tier from the user profile, falling back to a sensible default based on path if needed
+        const planTier = userProfile.planTier || (storeType === 'MERCHANT' ? 'MERCHANT' : 'SCALER');
 
         await createClientStore({
             userId,
-            plan: 'lifetime', // This should be dynamic based on actual payment
-            planTier,
+            plan: userProfile.plan || 'lifetime',
+            planTier: planTier as any,
             template: 'gold-standard',
             logoUrl,
             faviconUrl,
