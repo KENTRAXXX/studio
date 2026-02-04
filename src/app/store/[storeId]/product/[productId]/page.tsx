@@ -17,6 +17,7 @@ import { useUserProfile } from '@/firebase/user-profile-provider';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { formatCurrency } from '@/utils/format';
+import { ProductViewTracker } from '@/components/store/product-view-tracker';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -114,6 +115,7 @@ export default function ProductDetailPage() {
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16">
+      <ProductViewTracker storeId={storeId as string} productId={productId as string} />
       <Link href={`/store/${storeId}`} className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-8 transition-colors">
         <ArrowLeft className="mr-2 h-4 w-4" /> Back to Collection
       </Link>
