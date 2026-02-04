@@ -52,6 +52,7 @@ import {
   Warehouse,
   MessageSquare,
   LogOut,
+  Palette
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
@@ -61,6 +62,7 @@ import { Button } from '@/components/ui/button';
 const scalerNavItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
   { href: '/dashboard/profile-settings', icon: User, label: 'Profile' },
+  { href: '/dashboard/storefront-settings', icon: Palette, label: 'Visual Identity' },
   { href: '/dashboard/settings', icon: Settings, label: 'Store Settings' },
   { href: '/dashboard/product-catalog', icon: Boxes, label: 'Global Product Catalog' },
   { href: '/dashboard/marketing', icon: ImageIcon, label: 'Marketing Toolkit' },
@@ -76,6 +78,7 @@ const scalerNavItems = [
 const enterpriseNavItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
   { href: '/dashboard/profile-settings', icon: User, label: 'Profile' },
+  { href: '/dashboard/storefront-settings', icon: Palette, label: 'Visual Identity' },
   { href: '/dashboard/settings', icon: Settings, label: 'Store Settings' },
   { href: '/dashboard/product-catalog', icon: Boxes, label: 'Global Product Catalog' },
   { href: '/dashboard/marketing', icon: ImageIcon, label: 'Marketing Toolkit' },
@@ -92,6 +95,7 @@ const enterpriseNavItems = [
 const merchantNavItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
   { href: '/dashboard/profile-settings', icon: User, label: 'Profile' },
+  { href: '/dashboard/storefront-settings', icon: Palette, label: 'Visual Identity' },
   { href: '/dashboard/settings', icon: Settings, label: 'Store Settings' },
   { href: '/dashboard/marketing', icon: ImageIcon, label: 'Marketing Toolkit' },
   { href: '/dashboard/my-private-inventory', icon: Package, label: 'My Private Inventory' },
