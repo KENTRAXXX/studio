@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -18,8 +19,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { masterCatalog } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useUser, useFirestore, useUserProfile } from '@/firebase';
-import { collection, addDoc } from 'firebase/firestore';
-
+import { collection, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 const progressSteps = [
     { progress: 25, message: 'Securing your custom domain...' },
@@ -250,7 +252,7 @@ const ProductUploadStep = ({ onBack, onLaunch }: { onBack: () => void, onLaunch:
             description,
             imageUrl,
             isManagedBySoma: false,
-            productType: 'INTERNAL', // Or whatever is appropriate
+            productType: 'INTERNAL',
         };
         onLaunch(firstProduct);
     };
@@ -363,7 +365,7 @@ const DeploymentOverlay = ({ messages, onComplete }: { messages: string[], onCom
 
 
 export default function MyStorePage() {
-  const [step, setStep] = useState(0); // Start at step 0 for path selection
+  const [step, setStep] = useState(0); 
   const [storeType, setStoreType] = useState<'MERCHANT' | 'DROPSHIP' | null>(null);
   const [storeName, setStoreName] = useState('');
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
@@ -383,35 +385,96 @@ export default function MyStorePage() {
 
     try {
         const userId = user.uid; 
+        const storeRef = doc(firestore, 'stores', userId);
+        const userRef = doc(firestore, 'users', userId);
         
         const logoUrl = logoFile ? `/uploads/${logoFile.name}` : '';
         const faviconUrl = faviconFile ? `/uploads/${faviconFile.name}` : '';
         
-        // Use the actual tier from the user profile, falling back to a sensible default based on path if needed
         const planTier = userProfile.planTier || (storeType === 'MERCHANT' ? 'MERCHANT' : 'SCALER');
+        const userRole = (planTier === 'SELLER' || planTier === 'BRAND') ? 'SELLER' : 'MOGUL';
 
-        await createClientStore({
-            userId,
-            plan: userProfile.plan || 'lifetime',
-            planTier: planTier as any,
-            template: 'gold-standard',
-            logoUrl,
-            faviconUrl,
+        // 1. Update User Profile (Client Side)
+        updateDoc(userRef, {
+            hasAccess: true,
+            planTier: planTier,
+            userRole: userRole,
+            paidAt: new Date().toISOString(),
+        }).catch(async (err) => {
+            const permissionError = new FirestorePermissionError({
+                path: userRef.path,
+                operation: 'update',
+                requestResourceData: { hasAccess: true, planTier },
+            } satisfies SecurityRuleContext);
+            errorEmitter.emit('permission-error', permissionError);
         });
 
+        // 2. Create Store Configuration (Client Side)
+        const storeConfig = {
+            userId: userId,
+            instanceId: crypto.randomUUID(),
+            theme: 'Gold Standard',
+            currency: 'USD',
+            createdAt: new Date().toISOString(),
+            storeName: storeName || "My SOMA Store",
+            logoUrl: logoUrl,
+            faviconUrl: faviconUrl,
+            heroImageUrl: '',
+            heroTitle: 'Welcome to Your Store',
+            heroSubtitle: 'Discover curated collections of timeless luxury.',
+            status: 'Live',
+        };
+
+        setDoc(storeRef, storeConfig).catch(async (err) => {
+            const permissionError = new FirestorePermissionError({
+                path: storeRef.path,
+                operation: 'create',
+                requestResourceData: storeConfig,
+            } satisfies SecurityRuleContext);
+            errorEmitter.emit('permission-error', permissionError);
+        });
+
+        // 3. Handle Product Selection / Upload
         if (storeType === 'MERCHANT' && firstProduct) {
-            const productsRef = collection(firestore, 'stores', userId, 'products');
-            await addDoc(productsRef, {
+            const productsRef = collection(storeRef, 'products');
+            const productDocRef = doc(productsRef);
+            setDoc(productDocRef, {
                 ...firstProduct,
-                vendorId: userId, // Merchant is their own vendor
+                vendorId: userId,
             });
+        } else if (storeType === 'DROPSHIP') {
+            const productsRef = collection(storeRef, 'products');
+            const batch = writeBatch(firestore);
+            const productsToSync = masterCatalog.filter(p => selectedProducts.includes(p.id));
+            
+            productsToSync.forEach(product => {
+                const newProductRef = doc(productsRef, product.id);
+                batch.set(newProductRef, {
+                    name: product.name,
+                    suggestedRetailPrice: product.retailPrice,
+                    wholesalePrice: product.masterCost,
+                    description: `A high-quality ${product.name.toLowerCase()} from our master collection.`,
+                    imageUrl: product.imageId,
+                    productType: 'INTERNAL',
+                    vendorId: 'admin',
+                    isManagedBySoma: true,
+                });
+            });
+            batch.commit();
         }
+
+        // 4. Trigger Welcome Email (Server Side)
+        createClientStore({
+            userId,
+            email: user.email!,
+            storeName: storeConfig.storeName,
+        });
 
     } catch (error: any) {
         toast({
             variant: "destructive",
             title: 'Launch Failed',
-            description: error.message || 'An unexpected error occurred in the background.',
+            description: error.message || 'An unexpected error occurred during launch.',
         });
     }
   };
