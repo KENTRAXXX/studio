@@ -95,7 +95,8 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
     }
   }, [isOpen, hasExistingDetails, userProfile, form]);
 
-  const requestedAmount = form.watch('amount');
+  const watchedAmount = form.watch('amount');
+  const requestedAmount = typeof watchedAmount === 'number' ? watchedAmount : (parseFloat(watchedAmount) || 0);
   const withdrawalFee = requestedAmount * 0.03;
   const totalDeduction = requestedAmount + withdrawalFee;
   const isAmountInvalid = totalDeduction > availableBalance;

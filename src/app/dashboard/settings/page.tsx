@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -74,7 +73,7 @@ export default function StoreSettingsPage() {
     const logoInputRef = useRef<HTMLInputElement>(null);
     const faviconInputRef = useRef<HTMLInputElement>(null);
 
-    const storeRef = useMemoFirebase(() => user ? doc(firestore!, 'stores', user.uid) : null, [firestore, user]);
+    const storeRef = useMemoFirebase(() => user && firestore ? doc(firestore, 'stores', user.uid) : null, [firestore, user]);
     const { data: storeData, loading: storeLoading } = useDoc<StoreData>(storeRef);
 
     const form = useForm<SettingsFormValues>({
@@ -106,13 +105,13 @@ export default function StoreSettingsPage() {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'logoUrl' | 'faviconUrl') => {
         const file = e.target.files?.[0];
         if (file) {
-            // In a real app, you would upload this to Firebase Storage here
-            // For the prototype, we generate a preview URL
+            // Note: In this prototype, we simulate an upload by using a temporary URL.
+            // A production app would upload to Firebase Storage first.
             const previewUrl = URL.createObjectURL(file);
             form.setValue(field, previewUrl);
             toast({
-                title: 'File Selected',
-                description: `${file.name} has been selected. Remember to Save Changes.`,
+                title: 'Asset Selected',
+                description: `${file.name} is ready. Click "Save Changes" to apply.`,
             });
         }
     };
@@ -248,7 +247,7 @@ export default function StoreSettingsPage() {
                                                         className="w-24 h-24 rounded-lg border-2 border-dashed border-primary/30 hover:border-primary flex flex-col items-center justify-center cursor-pointer transition-colors bg-muted/20 mx-auto md:mx-0"
                                                     >
                                                         <UploadCloud className="h-6 w-6 text-muted-foreground mb-1" />
-                                                        <span className="text-[10px] text-muted-foreground font-medium text-center">Upload Favicon</span>
+                                                        <span className="text-[10px] text-muted-foreground/60 mt-1">Upload Icon</span>
                                                     </div>
                                                 )}
                                                 <input 

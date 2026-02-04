@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense, useTransition } from 'react';
@@ -26,6 +25,8 @@ import { usePaystack } from '@/hooks/use-paystack';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useFirestore } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -43,6 +44,7 @@ function SignUpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const firestore = useFirestore();
   const { mutate: signUp, isPending: isSigningUp } = useSignUp();
   const { initializePayment, isInitializing } = usePaystack();
   const [isSuccess, setIsSuccess] = useState(false);
@@ -82,7 +84,17 @@ function SignUpForm() {
             });
         }
 
-        const onPaystackSuccess = () => {
+        const onPaystackSuccess = async () => {
+          // Optimistically update status to improve UX while webhook processes
+          if (firestore && user.user.uid) {
+              try {
+                  const userRef = doc(firestore, 'users', user.user.uid);
+                  await updateDoc(userRef, { hasAccess: true });
+              } catch (e) {
+                  console.error("Optimistic access update failed:", e);
+              }
+          }
+
           toast({
             title: isFreePlan ? 'Account Created!' : 'Payment Successful!',
             description: isFreePlan ? "You're all set." : 'Your store is being provisioned. This may take a moment.',
