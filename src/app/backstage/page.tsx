@@ -90,6 +90,8 @@ export default function BackstagePage() {
   const [otpCode, setOtpCode] = useState('');
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
+  const isActionRequired = userProfile?.status === 'action_required';
+
   const form = useForm<OnboardingFormValues>({
     resolver: zodResolver(onboardingSchema),
     mode: 'onBlur',
@@ -312,7 +314,8 @@ export default function BackstagePage() {
                 termsVersion: '1.0',
             },
             status: 'pending_review',
-            hasAcceptedTerms: true, 
+            hasAcceptedTerms: true,
+            verificationFeedback: null, // Clear feedback upon resubmission
         });
         
         toast({ title: 'Application Submitted!', description: 'Your business is now under review.'});
@@ -375,13 +378,13 @@ export default function BackstagePage() {
         </div>
       
         <div className="w-full max-w-2xl space-y-6">
-            {userProfile?.status === 'action_required' && userProfile.verificationData?.feedback && (
+            {userProfile?.verificationFeedback && (
                 <Alert variant="destructive" className="bg-destructive/10 border-destructive/50">
                     <AlertTriangle className="h-5 w-5" />
                     <AlertTitle className="font-bold">Updates Required</AlertTitle>
                     <AlertDescription className="mt-2">
                         Our review team requires you to update your application:
-                        <p className="mt-1 font-semibold italic">"{userProfile.verificationData.feedback}"</p>
+                        <p className="mt-1 font-semibold italic">"{userProfile.verificationFeedback}"</p>
                     </AlertDescription>
                 </Alert>
             )}
@@ -442,20 +445,20 @@ export default function BackstagePage() {
                                                         <Input 
                                                             placeholder="+15551234567" 
                                                             {...field} 
-                                                            disabled={isPhoneVerified || isSubmitting}
+                                                            disabled={(isPhoneVerified && !isActionRequired) || isSubmitting}
                                                         />
                                                     </FormControl>
                                                     <Button 
                                                         type="button" 
-                                                        variant={isPhoneVerified ? "outline" : "secondary"}
-                                                        disabled={isPhoneVerified || !field.value || isSendingOTP}
+                                                        variant={(isPhoneVerified && !isActionRequired) ? "outline" : "secondary"}
+                                                        disabled={(isPhoneVerified && !isActionRequired) || !field.value || isSendingOTP}
                                                         onClick={handleSendOTP}
                                                         className={cn(
                                                             "w-24 shrink-0 transition-all",
-                                                            isPhoneVerified && "border-green-500 text-green-500 bg-green-500/5 hover:bg-green-500/10"
+                                                            (isPhoneVerified && !isActionRequired) && "border-green-500 text-green-500 bg-green-500/5 hover:bg-green-500/10"
                                                         )}
                                                     >
-                                                        {isSendingOTP ? <Loader2 className="animate-spin h-4 w-4" /> : isPhoneVerified ? <><Check className="mr-1 h-4 w-4"/>Verified</> : "Verify"}
+                                                        {isSendingOTP ? <Loader2 className="animate-spin h-4 w-4" /> : (isPhoneVerified && !isActionRequired) ? <><Check className="mr-1 h-4 w-4"/>Verified</> : "Verify"}
                                                     </Button>
                                                 </div>
                                                 <FormDescription>Verification code will be sent via SMS.</FormDescription>
@@ -470,16 +473,16 @@ export default function BackstagePage() {
                                             <FormControl>
                                                 <div className="flex flex-col gap-4">
                                                     <div 
-                                                        onClick={() => !uploadComplete && fileInputRef.current?.click()}
+                                                        onClick={() => (!uploadComplete || isActionRequired) && fileInputRef.current?.click()}
                                                         className={cn(
                                                             "w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all duration-300",
-                                                            uploadComplete ? "border-green-500 bg-green-500/5 cursor-default" : "border-primary/30 hover:border-primary bg-muted/20",
+                                                            (uploadComplete && !isActionRequired) ? "border-green-500 bg-green-500/5 cursor-default" : "border-primary/30 hover:border-primary bg-muted/20",
                                                             isUploading && "opacity-50 cursor-wait"
                                                         )}
                                                     >
                                                         {isUploading ? (
                                                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                                        ) : uploadComplete ? (
+                                                        ) : (uploadComplete && !isActionRequired) ? (
                                                             <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
                                                                 <CheckCircle2 className="h-10 w-10 text-green-500 mx-auto mb-2" />
                                                                 <p className="text-sm font-medium text-green-500">ID Document Securely Stored</p>
@@ -498,7 +501,7 @@ export default function BackstagePage() {
                                                         className="hidden" 
                                                         accept="image/*,.pdf" 
                                                         onChange={handleFileUpload} 
-                                                        disabled={isUploading || uploadComplete}
+                                                        disabled={isUploading || (uploadComplete && !isActionRequired)}
                                                     />
                                                     <Input type="hidden" {...field} />
                                                 </div>
@@ -515,7 +518,7 @@ export default function BackstagePage() {
                                         </ScrollArea>
                                         <div className="flex items-start space-x-3 pt-2">
                                             <Checkbox 
-                                                id="terms"
+                                                id="terms" 
                                                 checked={agreedToTerms}
                                                 onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
                                             />

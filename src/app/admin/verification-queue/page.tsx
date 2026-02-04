@@ -28,6 +28,7 @@ type PendingSeller = {
   id: string;
   email: string;
   status: 'pending_review' | 'approved' | 'rejected' | 'action_required';
+  verificationFeedback?: string;
   verificationData: {
     legalBusinessName: string;
     warehouseAddress: string;
@@ -54,7 +55,7 @@ const RequestChangesModal = ({ seller, onComplete }: { seller: PendingSeller, on
             const userRef = doc(firestore, 'users', seller.id);
             await updateDoc(userRef, {
                 status: 'action_required',
-                'verificationData.feedback': feedback.trim()
+                verificationFeedback: feedback.trim()
             });
 
             await sendActionRequiredEmail({
@@ -75,12 +76,12 @@ const RequestChangesModal = ({ seller, onComplete }: { seller: PendingSeller, on
         <Dialog>
             <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="border-primary/50 text-primary hover:bg-primary/10">
-                    <MessageSquareText className="h-4 w-4 mr-1" /> Request Changes
+                    <MessageSquareText className="h-4 w-4 mr-1" /> Reject with Feedback
                 </Button>
             </DialogTrigger>
             <DialogContent className="bg-card border-primary">
                 <DialogHeader>
-                    <DialogTitle className="text-primary font-headline">Request Changes</DialogTitle>
+                    <DialogTitle className="text-primary font-headline">Reject Application</DialogTitle>
                     <DialogDescription>
                         Explain to the seller what they need to fix (e.g., 'ID is blurry').
                     </DialogDescription>

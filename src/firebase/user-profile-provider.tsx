@@ -23,6 +23,7 @@ type UserProfile = {
   isDisabled?: boolean;
   referralCode?: string;
   referredBy?: string;
+  verificationFeedback?: string;
   verificationData?: {
     legalBusinessName: string;
     warehouseAddress: string;
