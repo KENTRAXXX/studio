@@ -31,7 +31,7 @@ async function logWebhookEvent(eventType: string, payload: any, status: 'success
 async function executePaymentSplit(eventData: any) {
     const firestore = getDb();
     const { reference, metadata, amount, customer } = eventData;
-    const { cart, storeId } = metadata;
+    const { cart, storeId, shippingAddress } = metadata;
 
     if (!cart || !storeId || !reference) {
         const error = 'Missing cart, storeId, or reference in webhook metadata for product sale.';
@@ -97,7 +97,12 @@ async function executePaymentSplit(eventData: any) {
                             status: 'pending',
                             orderId,
                             paymentReference: reference,
-                            createdAt: new Date().toISOString()
+                            createdAt: new Date().toISOString(),
+                            // Analytics fields
+                            productName: productData.name,
+                            quantity: item.quantity,
+                            shippingCity: shippingAddress?.city || 'Unknown',
+                            shippingCountry: shippingAddress?.country || 'Unknown'
                         });
                     }
                     if(platformFee > 0) {
@@ -123,7 +128,12 @@ async function executePaymentSplit(eventData: any) {
                     status: 'pending',
                     orderId,
                     paymentReference: reference,
-                    createdAt: new Date().toISOString()
+                    createdAt: new Date().toISOString(),
+                    // Analytics for mogul profit
+                    productName: 'Store Profit Aggregation',
+                    quantity: 1,
+                    shippingCity: shippingAddress?.city || 'Unknown',
+                    shippingCountry: shippingAddress?.country || 'Unknown'
                 });
             }
 
@@ -135,6 +145,7 @@ async function executePaymentSplit(eventData: any) {
                 createdAt: new Date().toISOString(),
                 total: totalPaid,
                 customer: customer,
+                shippingAddress: shippingAddress || null,
                 paymentReference: reference,
                 paymentStatus: 'processed'
             });
