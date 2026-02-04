@@ -33,6 +33,7 @@ import {
   User,
   ClipboardList,
   SearchCode,
+  Image as ImageIcon,
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
@@ -42,6 +43,7 @@ const scalerNavItems = [
   { href: '/dashboard/profile-settings', icon: User, label: 'Profile' },
   { href: '/dashboard/settings', icon: Settings, label: 'Store Settings' },
   { href: '/dashboard/product-catalog', icon: Boxes, label: 'Global Product Catalog' },
+  { href: '/dashboard/marketing', icon: ImageIcon, label: 'Marketing Toolkit' },
   { href: '/dashboard/my-orders', icon: ShoppingBag, label: 'My Orders' },
   { href: '/dashboard/training-center', icon: GraduationCap, label: 'Training Center' },
   { href: '/dashboard/domain-settings', icon: Globe, label: 'Domain Settings' },
@@ -56,6 +58,7 @@ const enterpriseNavItems = [
   { href: '/dashboard/profile-settings', icon: User, label: 'Profile' },
   { href: '/dashboard/settings', icon: Settings, label: 'Store Settings' },
   { href: '/dashboard/product-catalog', icon: Boxes, label: 'Global Product Catalog' },
+  { href: '/dashboard/marketing', icon: ImageIcon, label: 'Marketing Toolkit' },
   { href: '/dashboard/my-private-inventory', icon: Package, label: 'My Private Inventory' },
   { href: '/dashboard/my-orders', icon: ShoppingBag, label: 'My Orders' },
   { href: '/dashboard/training-center', icon: GraduationCap, label: 'Training Center' },
@@ -70,6 +73,7 @@ const merchantNavItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
   { href: '/dashboard/profile-settings', icon: User, label: 'Profile' },
   { href: '/dashboard/settings', icon: Settings, label: 'Store Settings' },
+  { href: '/dashboard/marketing', icon: ImageIcon, label: 'Marketing Toolkit' },
   { href: '/dashboard/my-private-inventory', icon: Package, label: 'My Private Inventory' },
   { href: '/dashboard/my-orders', icon: ShoppingBag, label: 'My Orders' },
   { href: '/dashboard/domain-settings', icon: Globe, label: 'Domain Settings' },
