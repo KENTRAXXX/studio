@@ -9,8 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Package, Warehouse, DollarSign, Landmark, ArrowRight, Loader2, Boxes, ShieldCheck, TrendingUp, BarChart3, Clock, Sparkles } from "lucide-react";
-import { ResponsiveContainer, LineChart, Line } from 'recharts';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { cn } from '@/lib/utils';
+import { subDays, isSameDay, format } from 'date-fns';
 
 // Mock data for sparklines to give a high-end financial feel
 const sparklineData = [
@@ -89,6 +90,111 @@ const DropshipCatalogCard = () => {
                 <Button asChild className="w-full">
                     <Link href="/dashboard/product-catalog">Browse Catalog <ArrowRight className="ml-2 h-4 w-4" /></Link>
                 </Button>
+            </CardContent>
+        </Card>
+    );
+};
+
+const EarningsOverview = ({ pendingDocs, completedDocs }: { pendingDocs: any[], completedDocs: any[] }) => {
+    const chartData = useMemo(() => {
+        const last7Days = Array.from({ length: 7 }, (_, i) => {
+            const date = subDays(new Date(), 6 - i);
+            return {
+                date: format(date, 'MMM dd'),
+                fullDate: date,
+                earnings: 0
+            };
+        });
+
+        const allDocs = [...(pendingDocs || []), ...(completedDocs || [])];
+
+        allDocs.forEach(doc => {
+            const docDate = doc.createdAt ? new Date(doc.createdAt) : null;
+            if (!docDate) return;
+
+            const dayMatch = last7Days.find(day => isSameDay(day.fullDate, docDate));
+            if (dayMatch) {
+                dayMatch.earnings += (doc.amount || 0);
+            }
+        });
+
+        return last7Days;
+    }, [pendingDocs, completedDocs]);
+
+    const hasData = chartData.some(d => d.earnings > 0);
+
+    if (!hasData) {
+        return (
+            <Card className="border-2 border-dashed border-primary/30 bg-primary/5 p-12 text-center">
+                <CardHeader>
+                    <div className="mx-auto bg-primary/10 rounded-full p-4 border border-primary/20 w-fit mb-4">
+                        <TrendingUp className="h-10 w-10 text-muted-foreground" />
+                    </div>
+                    <CardTitle className="text-2xl font-headline text-muted-foreground">Growth Chart</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground max-w-md mx-auto">
+                        Sales data will appear here once your first Mogul makes a sale. Build your collection to attract elite store owners.
+                    </p>
+                </CardContent>
+            </Card>
+        );
+    }
+
+    return (
+        <Card className="border-primary/20 bg-card overflow-hidden">
+            <CardHeader>
+                <CardTitle className="text-xl font-headline flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                    Earnings Overview
+                </CardTitle>
+                <CardDescription>Revenue trajectory across all boutiques for the last 7 days.</CardDescription>
+            </CardHeader>
+            <CardContent className="h-72 pl-0 pt-4">
+                <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData} margin={{ left: 20, right: 30, bottom: 10 }}>
+                        <defs>
+                            <filter id="goldGlow" x="-20%" y="-20%" width="140%" height="140%">
+                                <feGaussianBlur stdDeviation="4" result="blur" />
+                                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                            </filter>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.3)" vertical={false} />
+                        <XAxis 
+                            dataKey="date" 
+                            axisLine={false} 
+                            tickLine={false} 
+                            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }}
+                            dy={15}
+                        />
+                        <YAxis 
+                            axisLine={false} 
+                            tickLine={false} 
+                            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }}
+                            tickFormatter={(val) => `$${val}`}
+                        />
+                        <Tooltip 
+                            contentStyle={{ 
+                                backgroundColor: 'hsl(var(--card))', 
+                                border: '1px solid hsl(var(--primary) / 0.5)',
+                                borderRadius: '8px',
+                                boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'
+                            }}
+                            itemStyle={{ color: 'hsl(var(--primary))', fontWeight: 'bold' }}
+                            formatter={(val: number) => [`$${val.toFixed(2)}`, 'Earnings']}
+                        />
+                        <Line 
+                            type="monotone" 
+                            dataKey="earnings" 
+                            stroke="hsl(var(--primary))" 
+                            strokeWidth={4} 
+                            dot={{ r: 5, fill: 'hsl(var(--primary))', strokeWidth: 0 }} 
+                            activeDot={{ r: 7, fill: 'hsl(var(--primary))', stroke: 'white', strokeWidth: 2 }}
+                            filter="url(#goldGlow)"
+                            animationDuration={1500}
+                        />
+                    </LineChart>
+                </ResponsiveContainer>
             </CardContent>
         </Card>
     );
@@ -206,6 +312,12 @@ const SupplierUploadView = ({ planTier }: { planTier: string }) => {
                 </CardContent>
             </Card>
         </div>
+
+        {/* Earnings Overview Chart */}
+        <EarningsOverview 
+            pendingDocs={pendingDocs || []} 
+            completedDocs={completedDocs || []} 
+        />
 
         {/* Catalog Performance Section */}
         <div className="space-y-6">
