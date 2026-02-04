@@ -1,12 +1,13 @@
+
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore, useStorage } from '@/firebase';
+import { useFirestore, useStorage, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/firebase/user-profile-provider';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, collection } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,11 +15,18 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { User, Loader2, Save, Camera, CheckCircle2, BookOpen, ShieldCheck, Clock } from 'lucide-react';
+import { User, Loader2, Save, Camera, CheckCircle2, BookOpen, ShieldCheck, Clock, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const profileSchema = z.object({
   displayName: z.string().min(2, 'Display name must be at least 2 characters.'),
@@ -37,6 +45,21 @@ export default function ProfileSettingsPage() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [isUploading, setIsUploading] = useState(false);
+
+    // Fetch store data and products to check readiness for public link
+    const storeRef = useMemoFirebase(() => {
+        if (!firestore || !userProfile?.id) return null;
+        return doc(firestore, 'stores', userProfile.id);
+    }, [firestore, userProfile?.id]);
+    const { data: storeData } = useDoc<any>(storeRef);
+
+    const productsRef = useMemoFirebase(() => {
+        if (!firestore || !userProfile?.id) return null;
+        return collection(firestore, 'stores', userProfile.id, 'products');
+    }, [firestore, userProfile?.id]);
+    const { data: products } = useCollection<any>(productsRef);
+
+    const isBoutiqueReady = !!storeData?.storeName && (products?.length || 0) > 0;
 
     const form = useForm<ProfileFormValues>({
         resolver: zodResolver(profileSchema),
@@ -148,6 +171,43 @@ export default function ProfileSettingsPage() {
                         </div>
                         <p className="text-muted-foreground mt-1">Manage your public identity and brand persona.</p>
                     </div>
+                </div>
+
+                <div className="flex items-center gap-4">
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <div> {/* Wrapper for tooltip on disabled button */}
+                                    <Button 
+                                        asChild={isBoutiqueReady}
+                                        variant="outline" 
+                                        className={cn(
+                                            "border-primary text-primary hover:bg-primary/10 h-11 px-6 font-bold",
+                                            !isBoutiqueReady && "opacity-50 cursor-not-allowed pointer-events-none"
+                                        )}
+                                        disabled={!isBoutiqueReady}
+                                    >
+                                        {isBoutiqueReady ? (
+                                            <Link href={`/store/${userProfile?.id}`} target="_blank">
+                                                <ExternalLink className="mr-2 h-4 w-4" />
+                                                View My Boutique
+                                            </Link>
+                                        ) : (
+                                            <span>
+                                                <ExternalLink className="mr-2 h-4 w-4" />
+                                                Boutique Locked
+                                            </span>
+                                        )}
+                                    </Button>
+                                </div>
+                            </TooltipTrigger>
+                            {!isBoutiqueReady && (
+                                <TooltipContent className="bg-slate-800 border-primary/30 text-slate-200">
+                                    <p>Complete your checklist to activate your public link.</p>
+                                </TooltipContent>
+                            )}
+                        </Tooltip>
+                    </TooltipProvider>
                 </div>
             </div>
             
