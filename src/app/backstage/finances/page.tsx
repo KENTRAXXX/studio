@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -248,6 +249,7 @@ export default function BackstageFinancesPage() {
         const total = allPendingPayouts?.reduce((acc, doc) => acc + (doc.amount || 0), 0) || 0;
         const maturity = allMaturityPayouts?.reduce((acc, doc) => acc + (doc.amount || 0), 0) || 0;
         
+        // Tiered Fee Logic
         const rate = userProfile?.planTier === 'BRAND' ? 0.03 : 0.09;
         const payoutPercentage = 1 - rate;
         const fees = (total + maturity) > 0 ? ((total + maturity) / payoutPercentage) * rate : 0;

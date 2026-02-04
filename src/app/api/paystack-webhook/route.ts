@@ -97,6 +97,7 @@ async function executePaymentSplit(eventData: any) {
                     wholesalePrice: wholesalePrice
                 });
                 
+                // Tiered Commission Logic: 3% for BRAND, 9% for SELLER
                 if (vendorId !== 'admin' && productData.isManagedBySoma) { 
                     const vendorRef = doc(firestore, "users", vendorId);
                     const vendorSnap = await transaction.get(vendorRef);
