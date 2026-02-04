@@ -11,8 +11,10 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { User, Loader2, Save, Camera, CheckCircle2 } from 'lucide-react';
+import { User, Loader2, Save, Camera, CheckCircle2, BookOpen } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -20,6 +22,8 @@ import { cn } from '@/lib/utils';
 const profileSchema = z.object({
   displayName: z.string().min(2, 'Display name must be at least 2 characters.'),
   professionalTitle: z.string().min(2, 'Professional title is required for luxury branding.').max(50, 'Keep it concise (max 50 chars).'),
+  bio: z.string().max(500, 'Bio must be under 500 characters.').optional(),
+  showBioOnStorefront: z.boolean().default(false),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -39,6 +43,8 @@ export default function ProfileSettingsPage() {
         defaultValues: {
             displayName: '',
             professionalTitle: '',
+            bio: '',
+            showBioOnStorefront: false,
         },
     });
 
@@ -47,6 +53,8 @@ export default function ProfileSettingsPage() {
             form.reset({
                 displayName: userProfile.displayName || '',
                 professionalTitle: userProfile.professionalTitle || '',
+                bio: userProfile.bio || '',
+                showBioOnStorefront: userProfile.showBioOnStorefront ?? false,
             });
         }
     }, [userProfile, form]);
@@ -92,6 +100,8 @@ export default function ProfileSettingsPage() {
             await updateDoc(userRef, {
                 displayName: data.displayName,
                 professionalTitle: data.professionalTitle,
+                bio: data.bio || '',
+                showBioOnStorefront: data.showBioOnStorefront,
             });
             toast({
                 title: 'Profile Synchronized',
@@ -207,6 +217,55 @@ export default function ProfileSettingsPage() {
                                     )} />
                                 </div>
 
+                                <Separator className="bg-primary/10" />
+
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-2">
+                                        <BookOpen className="h-5 w-5 text-primary" />
+                                        <h3 className="font-headline font-bold text-lg">Boutique Storytelling</h3>
+                                    </div>
+
+                                    <FormField control={form.control} name="bio" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Public Bio</FormLabel>
+                                            <FormControl>
+                                                <Textarea 
+                                                    placeholder="Describe your boutique's mission and philosophy..." 
+                                                    className="min-h-[120px] border-primary/20 resize-none"
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormDescription className="flex justify-between">
+                                                <span>Share your brand's unique narrative.</span>
+                                                <span className={cn(
+                                                    "text-[10px] font-mono",
+                                                    (field.value?.length || 0) > 450 ? "text-destructive" : "text-muted-foreground"
+                                                )}>
+                                                    {field.value?.length || 0}/500
+                                                </span>
+                                            </FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+
+                                    <FormField control={form.control} name="showBioOnStorefront" render={({ field }) => (
+                                        <FormItem className="flex flex-row items-center justify-between rounded-lg border border-primary/10 p-4 bg-muted/10">
+                                            <div className="space-y-0.5">
+                                                <FormLabel className="text-base">Display Bio on Storefront</FormLabel>
+                                                <FormDescription>
+                                                    Toggle visibility of your mission statement on your public boutique.
+                                                </FormDescription>
+                                            </div>
+                                            <FormControl>
+                                                <Switch
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    )} />
+                                </div>
+
                                 <div className="flex justify-end pt-6 border-t border-primary/10">
                                     <Button type="submit" disabled={form.formState.isSubmitting} className="h-12 px-8 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
                                         {form.formState.isSubmitting ? <Loader2 className="animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
@@ -220,4 +279,8 @@ export default function ProfileSettingsPage() {
             </div>
         </div>
     )
+}
+
+function Separator({ className }: { className?: string }) {
+    return <div className={cn("h-px w-full", className)} />;
 }

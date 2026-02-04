@@ -12,6 +12,9 @@ type UserProfile = {
   id?: string;
   email: string;
   displayName?: string;
+  professionalTitle?: string;
+  bio?: string;
+  showBioOnStorefront?: boolean;
   hasAccess: boolean;
   hasAcceptedTerms?: boolean;
   userRole?: 'ADMIN' | 'MOGUL' | 'SELLER';
@@ -29,6 +32,7 @@ type UserProfile = {
   brandBio?: string;
   avatarUrl?: string;
   coverPhotoUrl?: string;
+  photoURL?: string;
   socialLinks?: {
     instagram?: string;
     x?: string;
@@ -144,9 +148,13 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
   }), [userProfile, userLoading, profileLoading, user]);
 
   return (
-    <UserProfileContext.Provider value={value}>
-      {children}
-    </UserProfileContext.Provider>
+    <div 
+        className="min-h-screen bg-background text-foreground selection:bg-primary/30"
+    >
+        <UserProfileContext.Provider value={value}>
+        {children}
+        </UserProfileContext.Provider>
+    </div>
   );
 }
 
