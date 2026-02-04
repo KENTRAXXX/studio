@@ -72,7 +72,8 @@ export default function AddProductPage() {
 
   const isPriceInvalid = useMemo(() => {
     if (!wholesalePrice || !suggestedRetailPrice) return false;
-    return numericRetail <= numericWholesale;
+    // REQUIREMENT: Retail Price must be at least 15% higher than Wholesale Price
+    return numericRetail < (numericWholesale * 1.15);
   }, [numericWholesale, numericRetail, wholesalePrice, suggestedRetailPrice]);
 
   const margin = useMemo(() => {
@@ -151,7 +152,7 @@ export default function AddProductPage() {
       toast({ 
         variant: 'destructive', 
         title: 'Pricing Strategy Error', 
-        description: 'Your Suggested Retail Price must be higher than the Wholesale Price.' 
+        description: 'Your Suggested Retail Price must be at least 15% higher than the Wholesale Price.' 
       });
       return;
     }
@@ -322,7 +323,7 @@ export default function AddProductPage() {
                         {isPriceInvalid && (
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2 text-destructive text-sm font-semibold bg-destructive/10 p-3 rounded-lg border border-destructive/20">
                                 <AlertCircle className="h-4 w-4" />
-                                <span>Suggested Retail must be higher than Wholesale Price.</span>
+                                <span>Suggested Retail must be at least 15% higher than Wholesale Price.</span>
                             </motion.div>
                         )}
 
