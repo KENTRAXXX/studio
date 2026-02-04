@@ -180,7 +180,7 @@
                 "status": {
                     "type": "string",
                     "description": "The current status of a user, often used for seller onboarding.",
-                    "enum": ["pending_review", "approved", "rejected"]
+                    "enum": ["pending_review", "approved", "rejected", "action_required"]
                 },
                 "completedLessons": {
                     "type": "array",
@@ -278,7 +278,7 @@
                 "userId": { "type": "string" },
                 "amount": { "type": "number" },
                 "currency": { "type": "string" },
-                "status": { "type": "string", "enum": ["pending", "paid"] },
+                "status": { "type": "string", enum: ["pending", "paid"] },
                 "orderId": { "type": "string" },
                 "paymentReference": { "type": "string" },
                 "createdAt": { "type": "string", "format": "date-time" }
@@ -374,6 +374,20 @@
                 "timestamp": { "type": "string", "format": "date-time" }
             },
             "required": ["eventType", "payload", "status", "timestamp"]
+        },
+        "supportTicket": {
+            "title": "Support Ticket",
+            "description": "A message from a user to the platform concierge.",
+            "type": "object",
+            "properties": {
+                "userId": { "type": "string" },
+                "brandName": { "type": "string" },
+                "userStatus": { "type": "string" },
+                "subject": { "type": "string" },
+                "message": { "type": "string" },
+                "createdAt": { "type": "string", "format": "date-time" }
+            },
+            "required": ["userId", "message", "createdAt"]
         }
     },
     "auth": {
@@ -419,6 +433,10 @@
         "/webhook_logs/{logId}": {
             "schema": { "$ref": "#/entities/webhookLog" },
             "description": "A log of all incoming Paystack webhook events."
+        },
+        "/support_tickets/{ticketId}": {
+            "schema": { "$ref": "#/entities/supportTicket" },
+            "description": "Messages sent to the SOMA Concierge."
         }
     }
 }

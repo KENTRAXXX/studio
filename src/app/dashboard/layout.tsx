@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -36,6 +37,7 @@ import {
   Image as ImageIcon,
   FolderOpen,
   Warehouse,
+  MessageSquare,
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
@@ -92,6 +94,7 @@ const sellerNavItems = [
     { href: '/backstage/analytics', icon: BarChart2, label: 'Insights & Analytics' },
     { href: '/backstage/marketing-assets', icon: FolderOpen, label: 'Brand Assets' },
     { href: '/backstage/add-product', icon: Package, label: 'Add Product' },
+    { href: '/backstage/concierge', icon: MessageSquare, label: 'Concierge' },
     { href: '/backstage', icon: ShieldCheck, label: 'Onboarding Status' },
 ];
 
@@ -136,7 +139,8 @@ export default function DashboardLayout({
                 return sellerNavItems.filter(item => 
                     item.href === '/dashboard' || 
                     item.href === '/backstage' || 
-                    item.href === '/backstage/pending-review'
+                    item.href === '/backstage/pending-review' ||
+                    item.href === '/backstage/concierge'
                 );
             }
             return sellerNavItems;

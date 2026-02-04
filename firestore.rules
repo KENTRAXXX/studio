@@ -78,5 +78,10 @@ service cloud.firestore {
         allow read: if isRole('ADMIN');
         allow create: if true; // Webhook function hits this
     }
+
+    match /support_tickets/{ticketId} {
+        allow create: if request.auth != null;
+        allow read: if isRole('ADMIN');
+    }
   }
 }

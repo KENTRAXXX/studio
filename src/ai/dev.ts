@@ -1,3 +1,4 @@
+
 import { config } from 'dotenv';
 config();
 
@@ -6,3 +7,4 @@ import '@/ai/flows/initialize-paystack-transaction.ts';
 import '@/ai/flows/send-welcome-email.ts';
 import '@/ai/flows/send-payout-confirmation-email.ts';
 import '@/ai/flows/send-action-required-email.ts';
+import '@/ai/flows/send-concierge-email.ts';
