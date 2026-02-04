@@ -8,6 +8,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { Loader2, Crown, Rocket } from 'lucide-react';
 import SomaLogo from '@/components/logo';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 export default function BackstageReturnPage() {
   const { user, loading: userLoading } = useUser();
@@ -32,54 +34,68 @@ export default function BackstageReturnPage() {
     const userRef = doc(firestore, 'users', user.uid);
     
     // Listen for real-time updates to the hasAccess field
-    const unsubscribe = onSnapshot(userRef, (snapshot) => {
-      const data = snapshot.data();
-      if (data?.hasAccess) {
-        setIsFinalizing(true);
-        setStatusMessage(`${tierLabel} access granted. Welcome to the elite.`);
-        
-        // Trigger gold confetti celebration
-        const duration = 3 * 1000;
-        const animationEnd = Date.now() + duration;
-        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+    const unsubscribe = onSnapshot(
+      userRef, 
+      (snapshot) => {
+        const data = snapshot.data();
+        if (data?.hasAccess) {
+          setIsFinalizing(true);
+          setStatusMessage(`${tierLabel} access granted. Welcome to the elite.`);
+          
+          // Trigger gold confetti celebration
+          const duration = 3 * 1000;
+          const animationEnd = Date.now() + duration;
+          const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
 
-        const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+          const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
-        const interval: any = setInterval(() => {
-          const timeLeft = animationEnd - Date.now();
+          const interval: any = setInterval(() => {
+            const timeLeft = animationEnd - Date.now();
 
-          if (timeLeft <= 0) {
-            return clearInterval(interval);
-          }
+            if (timeLeft <= 0) {
+              return clearInterval(interval);
+            }
 
-          const particleCount = 50 * (timeLeft / duration);
-          confetti({
-            ...defaults,
-            particleCount,
-            origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
-            colors: ['#DAA520', '#FFD700', '#F0E68C'],
-          });
-          confetti({
-            ...defaults,
-            particleCount,
-            origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
-            colors: ['#DAA520', '#FFD700', '#F0E68C'],
-          });
-        }, 250);
+            const particleCount = 50 * (timeLeft / duration);
+            confetti({
+              ...defaults,
+              particleCount,
+              origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+              colors: ['#DAA520', '#FFD700', '#F0E68C'],
+            });
+            confetti({
+              ...defaults,
+              particleCount,
+              origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+              colors: ['#DAA520', '#FFD700', '#F0E68C'],
+            });
+          }, 250);
 
-        // Redirect after a brief moment to allow the confetti to be seen
-        setTimeout(() => {
-          router.push('/backstage');
-        }, 3000);
-      } else {
-          // Progress simulation for better UX
-          setTimeout(() => setStatusMessage(`Finalizing your ${tierLabel} status...`), 2000);
-          setTimeout(() => setStatusMessage('Syncing Master Catalog permissions...'), 4000);
+          // Redirect to appropriate dashboard based on tier
+          const destination = (data.planTier === 'SELLER' || data.planTier === 'BRAND') 
+            ? '/backstage' 
+            : '/dashboard';
+
+          setTimeout(() => {
+            router.push(destination);
+          }, 3000);
+        } else {
+            // Progress simulation for better UX
+            setTimeout(() => setStatusMessage(`Finalizing your ${tierLabel} status...`), 2000);
+            setTimeout(() => setStatusMessage('Syncing Master Catalog permissions...'), 4000);
+        }
+      },
+      async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: userRef.path,
+          operation: 'get',
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
       }
-    });
+    );
 
     return () => unsubscribe();
-  }, [user, userLoading, firestore, router, tierLabel]);
+  }, [user, userLoading, firestore, router, tierLabel, userProfile]);
 
   const isLoading = userLoading || profileLoading;
 
@@ -143,7 +159,7 @@ export default function BackstageReturnPage() {
                 <Rocket className="h-16 w-16 text-primary" />
               </div>
               <h1 className="text-4xl font-bold font-headline text-primary drop-shadow-lg">Access Finalized</h1>
-              <p className="text-xl text-muted-foreground tracking-wide">Redirecting to the Seller Hub...</p>
+              <p className="text-xl text-muted-foreground tracking-wide">Redirecting to your Dashboard...</p>
             </motion.div>
           )}
         </AnimatePresence>
