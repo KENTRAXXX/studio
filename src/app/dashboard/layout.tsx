@@ -52,7 +52,8 @@ import {
   Warehouse,
   MessageSquare,
   LogOut,
-  Palette
+  Palette,
+  ShieldAlert
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
@@ -126,6 +127,7 @@ const adminNavItems = [
     { href: '/admin/approval-queue', icon: ShieldCheck, label: 'Catalog Approvals' },
     { href: '/admin/treasury', icon: PiggyBank, label: 'Treasury' },
     { href: '/admin/users', icon: Users, label: 'User Management' },
+    { href: '/admin/referrals', icon: ShieldAlert, label: 'Referral Audit' },
     { href: '/admin/orders', icon: ShoppingBag, label: 'Admin Orders' },
     { href: '/admin/catalog', icon: Gem, label: 'Catalog Editor' },
     { href: '/dashboard/product-catalog', icon: Boxes, label: 'View Global Catalog' },
