@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -15,6 +14,7 @@ import {
   SidebarMenuButton,
   SidebarTrigger,
   SidebarInset,
+  SidebarSeparator,
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard,
@@ -211,12 +211,13 @@ export default function DashboardLayout({
             )}
           </SidebarMenu>
         </SidebarContent>
+        <SidebarSeparator />
         <SidebarFooter>
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton 
                 onClick={handleLogout}
-                className="text-muted-foreground hover:text-destructive transition-colors"
+                className="text-muted-foreground hover:text-red-400 transition-colors"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Sign Out</span>
