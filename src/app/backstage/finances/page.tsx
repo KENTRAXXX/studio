@@ -16,7 +16,7 @@ import {
 } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/badge';
 import { DollarSign, Percent, Banknote, Loader2, Wallet, Landmark, WalletCards, ChevronDown } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { addDays, format, parseISO } from 'date-fns';
@@ -190,6 +190,7 @@ export default function BackstageFinancesPage() {
     }, [completedWithdrawals, user, withdrawalsLoading, userLoading]);
     
     const isGlobalLoading = userLoading || balanceLoading || withdrawalsLoading || profileLoading;
+    const isBalanceTooLow = totalEarned < 10;
 
     return (
         <div className="flex flex-col min-h-screen bg-background p-4 sm:p-6 text-foreground">
@@ -307,12 +308,21 @@ export default function BackstageFinancesPage() {
                                 {isGlobalLoading ? (
                                     <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
                                 ) : (
-                                    <p className="text-5xl font-bold text-primary">{formatCurrency(Math.round(totalEarned * 100))}</p>
+                                    <>
+                                        <p className="text-5xl font-bold text-primary">{formatCurrency(Math.round(totalEarned * 100))}</p>
+                                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-2">Minimum payout: $10.00</p>
+                                    </>
                                 )}
                             </CardContent>
 
-                            <Button size="lg" className="w-full h-14 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => setIsModalOpen(true)}>
-                                <Landmark className="mr-2 h-6 w-6"/> Request Payout
+                            <Button 
+                                size="lg" 
+                                className="w-full h-14 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground" 
+                                onClick={() => setIsModalOpen(true)}
+                                disabled={isBalanceTooLow || isGlobalLoading}
+                            >
+                                <Landmark className="mr-2 h-6 w-6"/> 
+                                {isBalanceTooLow && !isGlobalLoading ? 'Minimum $10.00 Required' : 'Request Payout'}
                             </Button>
                         </Card>
                     </div>

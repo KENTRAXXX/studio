@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -29,7 +28,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Landmark, Loader2, Send, Lock } from 'lucide-react';
+import { Landmark, Loader2, Send, Lock, AlertCircle } from 'lucide-react';
 import { Separator } from './ui/separator';
 
 const formSchema = z.object({
@@ -66,6 +65,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const MIN_WITHDRAWAL = 10;
   const hasExistingDetails = !!userProfile?.bankDetails?.accountNumber;
 
   const form = useForm<FormValues>({
@@ -101,11 +101,17 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
   const withdrawalFee = requestedAmount * 0.03;
   const totalDeduction = requestedAmount + withdrawalFee;
   const isAmountInvalid = totalDeduction > availableBalance;
+  const isBalanceTooLow = availableBalance < MIN_WITHDRAWAL;
 
   const handleSubmit = async (data: FormValues) => {
     if (!user || !firestore || !user.email) {
       toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to make a request.' });
       return;
+    }
+
+    if (isBalanceTooLow) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Minimum payout is $10.00.' });
+        return;
     }
 
     if (isAmountInvalid) {
@@ -191,7 +197,16 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
              <div className="text-center p-3 rounded-md bg-muted/50">
                 <p className="text-sm text-muted-foreground">Available Balance</p>
                 <p className="text-2xl font-bold">${availableBalance.toFixed(2)}</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Minimum payout: $10.00</p>
             </div>
+
+            {isBalanceTooLow && (
+                <div className="flex items-center gap-2 p-3 rounded-md bg-orange-500/10 border border-orange-500/20 text-orange-500 text-xs">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>Your balance must be at least $10.00 to request a withdrawal.</span>
+                </div>
+            )}
+
             <FormField
               control={form.control}
               name="amount"
@@ -199,7 +214,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
                 <FormItem>
                   <FormLabel>Amount to Withdraw ($)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" {...field} />
+                    <Input type="number" step="0.01" {...field} disabled={isBalanceTooLow} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -245,7 +260,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
                         <FormItem>
                         <FormLabel>Account Holder Name</FormLabel>
                         <FormControl>
-                            <Input placeholder="John Doe" {...field} />
+                            <Input placeholder="John Doe" {...field} disabled={isBalanceTooLow} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -258,7 +273,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
                         <FormItem>
                         <FormLabel>Bank Name</FormLabel>
                         <FormControl>
-                            <Input placeholder="Global Bank Inc." {...field} />
+                            <Input placeholder="Global Bank Inc." {...field} disabled={isBalanceTooLow} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -271,7 +286,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
                         <FormItem>
                         <FormLabel>Account Number</FormLabel>
                         <FormControl>
-                            <Input placeholder="1234567890" {...field} />
+                            <Input placeholder="1234567890" {...field} disabled={isBalanceTooLow} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -284,7 +299,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
                         <FormItem>
                         <FormLabel>IBAN</FormLabel>
                         <FormControl>
-                            <Input placeholder="International Bank Account Number" {...field} />
+                            <Input placeholder="International Bank Account Number" {...field} disabled={isBalanceTooLow} />
                         </FormControl>
                         <FormDescription>Required for some regions.</FormDescription>
                         <FormMessage />
@@ -298,7 +313,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
                         <FormItem>
                         <FormLabel>SWIFT / BIC Code</FormLabel>
                         <FormControl>
-                            <Input placeholder="Bank's SWIFT/BIC code" {...field} />
+                            <Input placeholder="Bank's SWIFT/BIC code" {...field} disabled={isBalanceTooLow} />
                         </FormControl>
                         <FormDescription>Required for most international transfers.</FormDescription>
                         <FormMessage />
@@ -309,7 +324,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
             )}
 
             <DialogFooter className="pt-4">
-              <Button type="submit" disabled={isSubmitting || isAmountInvalid || requestedAmount <= 0} className="w-full btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Button type="submit" disabled={isSubmitting || isAmountInvalid || requestedAmount <= 0 || isBalanceTooLow} className="w-full btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
                 {isSubmitting ? (
                   <Loader2 className="animate-spin" />
                 ) : (

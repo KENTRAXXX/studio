@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { useUser, useFirestore, useCollection, useUserProfile, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import { Banknote, Wallet as WalletIcon, Loader2 } from 'lucide-react';
 import { WithdrawalModal } from '@/components/WithdrawalModal';
 
@@ -28,6 +28,7 @@ export default function SomaWalletPage() {
     }, [payoutDocs]);
     
     const isLoading = userLoading || payoutsLoading || profileLoading;
+    const isBalanceTooLow = availableBalance < 10;
 
     return (
         <>
@@ -49,13 +50,22 @@ export default function SomaWalletPage() {
                     {isLoading ? (
                         <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
                     ) : (
-                        <p className="text-5xl font-bold text-primary">${availableBalance.toFixed(2)}</p>
+                        <>
+                            <p className="text-5xl font-bold text-primary">${availableBalance.toFixed(2)}</p>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-2">Minimum payout: $10.00</p>
+                        </>
                     )}
                 </CardContent>
             </Card>
 
-            <Button size="lg" className="w-full h-14 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => setIsModalOpen(true)}>
-                <Banknote className="mr-2 h-6 w-6"/> Request Payout
+            <Button 
+                size="lg" 
+                className="w-full h-14 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground" 
+                onClick={() => setIsModalOpen(true)}
+                disabled={isBalanceTooLow || isLoading}
+            >
+                <Banknote className="mr-2 h-6 w-6"/> 
+                {isBalanceTooLow && !isLoading ? 'Minimum $10.00 Required' : 'Request Payout'}
             </Button>
             <p className="text-center text-sm text-muted-foreground">
                 This balance reflects your net profit from sales across the platform. Withdrawals are processed within 24-48 hours.
