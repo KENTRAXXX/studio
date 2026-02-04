@@ -12,6 +12,7 @@ import { Package, Warehouse, DollarSign, Landmark, ArrowRight, Loader2, Boxes, S
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { cn } from '@/lib/utils';
 import { subDays, isSameDay, format } from 'date-fns';
+import { formatCurrency } from '@/utils/format';
 
 // Mock data for sparklines to give a high-end financial feel
 const sparklineData = [
@@ -181,7 +182,7 @@ const EarningsOverview = ({ pendingDocs, completedDocs }: { pendingDocs: any[], 
                                 boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'
                             }}
                             itemStyle={{ color: 'hsl(var(--primary))', fontWeight: 'bold' }}
-                            formatter={(val: number) => [`$${val.toFixed(2)}`, 'Earnings']}
+                            formatter={(val: number) => [formatCurrency(Math.round(val * 100)), 'Earnings']}
                         />
                         <Line 
                             type="monotone" 
@@ -272,7 +273,7 @@ const SupplierUploadView = ({ planTier }: { planTier: string }) => {
                 <CardContent>
                     <div className="flex items-end justify-between">
                         <div>
-                            {isLoading ? <Loader2 className="h-6 w-6 animate-spin text-primary" /> : <p className="text-3xl font-bold text-primary">${metrics.gross.toFixed(2)}</p>}
+                            {isLoading ? <Loader2 className="h-6 w-6 animate-spin text-primary" /> : <p className="text-3xl font-bold text-primary">{formatCurrency(Math.round(metrics.gross * 100))}</p>}
                             <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-1">+12.5% from last month</p>
                         </div>
                         <MiniSparkline />
@@ -288,7 +289,7 @@ const SupplierUploadView = ({ planTier }: { planTier: string }) => {
                 <CardContent>
                     <div className="flex items-end justify-between">
                         <div>
-                            {isLoading ? <Loader2 className="h-6 w-6 animate-spin text-primary" /> : <p className="text-3xl font-bold text-primary">${metrics.pending.toFixed(2)}</p>}
+                            {isLoading ? <Loader2 className="h-6 w-6 animate-spin text-primary" /> : <p className="text-3xl font-bold text-primary">{formatCurrency(Math.round(metrics.pending * 100))}</p>}
                             <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-1">Settling in 7 days</p>
                         </div>
                         <MiniSparkline color="hsl(var(--muted-foreground))" />

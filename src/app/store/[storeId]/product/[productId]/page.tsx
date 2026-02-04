@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { useUserProfile } from '@/firebase/user-profile-provider';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { formatCurrency } from '@/utils/format';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -97,7 +98,7 @@ export default function ProductDetailPage() {
           });
           toast({
               title: 'Price Updated',
-              description: `${product.name} is now priced at $${currentPrice.toFixed(2)}.`,
+              description: `${product.name} is now priced at ${formatCurrency(Math.round(currentPrice * 100))}.`,
           });
       } catch (error: any) {
           toast({
@@ -156,7 +157,7 @@ export default function ProductDetailPage() {
                                 <DollarSign className="h-5 w-5 text-muted-foreground"/>
                                 <span className="font-medium text-muted-foreground">Wholesale Cost</span>
                             </div>
-                            <span className="font-bold font-mono text-lg">${wholesalePrice.toFixed(2)}</span>
+                            <span className="font-bold font-mono text-lg">{formatCurrency(Math.round(wholesalePrice * 100))}</span>
                         </div>
                       )}
                       
@@ -199,17 +200,17 @@ export default function ProductDetailPage() {
                       </div>
 
                        {product.isManagedBySoma && isPriceInvalid && (
-                            <p className="text-sm text-destructive font-medium p-2 bg-destructive/10 rounded-md border border-destructive/20">Retail price cannot be lower than floor price of ${floorPrice.toFixed(2)} (Wholesale + 3% Fee).</p>
+                            <p className="text-sm text-destructive font-medium p-2 bg-destructive/10 rounded-md border border-destructive/20">Retail price cannot be lower than floor price of {formatCurrency(Math.round(floorPrice * 100))} (Wholesale + 3% Fee).</p>
                         )}
                        {product.isManagedBySoma && (
                          <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col p-3 rounded-md bg-green-600/5 border border-green-600/20">
                                 <span className="text-[10px] text-green-400 font-bold uppercase mb-1">Projected Profit</span>
-                                <span className="font-bold font-mono text-xl text-green-400">${profit.toFixed(2)}</span>
+                                <span className="font-bold font-mono text-xl text-green-400">{formatCurrency(Math.round(profit * 100))}</span>
                             </div>
                             <div className="flex flex-col p-3 rounded-md bg-red-600/5 border border-red-600/20 text-right">
                                 <span className="text-[10px] text-red-400 font-bold uppercase mb-1">SOMA Fee (3%)</span>
-                                <span className="font-bold font-mono text-xl text-red-400">-${somaFee.toFixed(2)}</span>
+                                <span className="font-bold font-mono text-xl text-red-400">-{formatCurrency(Math.round(somaFee * 100))}</span>
                             </div>
                          </div>
                        )}
@@ -228,10 +229,10 @@ export default function ProductDetailPage() {
           <div>
             <h1 className="text-4xl md:text-5xl font-bold font-headline text-primary leading-tight">{product.name}</h1>
             <div className="flex items-baseline gap-4 mt-4">
-                <p className="text-4xl font-bold">${currentPrice.toFixed(2)}</p>
+                <p className="text-4xl font-bold">{formatCurrency(Math.round(currentPrice * 100))}</p>
                 {compareAtPrice > currentPrice && (
                     <p className="text-2xl font-bold text-muted-foreground line-through opacity-50">
-                        ${compareAtPrice.toFixed(2)}
+                        {formatCurrency(Math.round(compareAtPrice * 100))}
                     </p>
                 )}
             </div>

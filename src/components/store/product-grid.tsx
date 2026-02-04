@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -10,6 +9,7 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useCart } from '@/app/store/[storeId]/layout';
 import { Loader2, Warehouse } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { formatCurrency } from '@/utils/format';
 
 type StorefrontProduct = {
     id: string;
@@ -94,10 +94,10 @@ export function ProductGrid({ products, storeId }: ProductGridProps) {
               <h3 className="text-lg font-semibold truncate group-hover:text-primary">{product.name}</h3>
             </Link>
              <div className="flex justify-center items-baseline gap-2 mt-1">
-                <p className="font-bold text-lg text-foreground">${(product.suggestedRetailPrice).toFixed(2)}</p>
+                <p className="font-bold text-lg text-foreground">{formatCurrency(Math.round(product.suggestedRetailPrice * 100))}</p>
                 {product.compareAtPrice && product.compareAtPrice > product.suggestedRetailPrice && (
                     <p className="text-md text-muted-foreground line-through">
-                        ${(product.compareAtPrice).toFixed(2)}
+                        {formatCurrency(Math.round(product.compareAtPrice * 100))}
                     </p>
                 )}
             </div>
@@ -113,5 +113,3 @@ export function ProductGrid({ products, storeId }: ProductGridProps) {
     </div>
   );
 }
-
-    

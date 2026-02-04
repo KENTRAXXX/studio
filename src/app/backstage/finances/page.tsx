@@ -23,6 +23,7 @@ import { addDays, format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { WithdrawalModal } from '@/components/WithdrawalModal';
 import { Skeleton } from '@/components/ui/skeleton';
+import { formatCurrency } from '@/utils/format';
 
 type Payout = {
     id: string;
@@ -214,7 +215,7 @@ export default function BackstageFinancesPage() {
                                     <DollarSign className="h-4 w-4 text-slate-400" />
                                 </CardHeader>
                                 <CardContent>
-                                    {isGlobalLoading ? <Loader2 className="h-8 w-8 animate-spin text-slate-400" /> : <div className="text-3xl font-bold text-slate-200">${totalEarned.toFixed(2)}</div>}
+                                    {isGlobalLoading ? <Loader2 className="h-8 w-8 animate-spin text-slate-400" /> : <div className="text-3xl font-bold text-slate-200">{formatCurrency(Math.round(totalEarned * 100))}</div>}
                                 </CardContent>
                             </Card>
                              <Card className="border-slate-700 bg-slate-900/50">
@@ -223,7 +224,7 @@ export default function BackstageFinancesPage() {
                                     <Percent className="h-4 w-4 text-slate-400" />
                                 </CardHeader>
                                 <CardContent>
-                                     {isGlobalLoading ? <Loader2 className="h-8 w-8 animate-spin text-slate-400" /> : <div className="text-3xl font-bold text-slate-200">${platformFees.toFixed(2)}</div>}
+                                     {isGlobalLoading ? <Loader2 className="h-8 w-8 animate-spin text-slate-400" /> : <div className="text-3xl font-bold text-slate-200">{formatCurrency(Math.round(platformFees * 100))}</div>}
                                 </CardContent>
                             </Card>
                              <Card className="border-slate-700 bg-slate-900/50">
@@ -260,7 +261,7 @@ export default function BackstageFinancesPage() {
                                                         <TableRow key={payout.id} className="border-slate-800 hover:bg-slate-800/50">
                                                             <TableCell className="text-slate-400">{new Date(payout.createdAt).toLocaleDateString()}</TableCell>
                                                             <TableCell className="font-mono text-xs text-slate-300">{payout.orderId}</TableCell>
-                                                            <TableCell className="text-right font-mono text-green-400">+ ${payout.amount.toFixed(2)}</TableCell>
+                                                            <TableCell className="text-right font-mono text-green-400">+ {formatCurrency(Math.round(payout.amount * 100))}</TableCell>
                                                             <TableCell className="text-center">
                                                                 <Badge variant="outline" className="text-yellow-400 border-yellow-400/50">{payout.status}</Badge>
                                                             </TableCell>
@@ -306,7 +307,7 @@ export default function BackstageFinancesPage() {
                                 {isGlobalLoading ? (
                                     <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
                                 ) : (
-                                    <p className="text-5xl font-bold text-primary">${totalEarned.toFixed(2)}</p>
+                                    <p className="text-5xl font-bold text-primary">{formatCurrency(Math.round(totalEarned * 100))}</p>
                                 )}
                             </CardContent>
 
