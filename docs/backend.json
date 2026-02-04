@@ -1,3 +1,4 @@
+
 {
     "entities": {
         "store": {
@@ -352,6 +353,19 @@
                 "videoUrl": { "type": "string", "format": "uri", "description": "URL for embedding (e.g., YouTube, Vimeo)." }
             },
             "required": ["title", "duration", "category", "difficulty", "thumbnailUrl", "videoUrl"]
+        },
+        "webhookLog": {
+            "title": "Webhook Log",
+            "description": "A record of an incoming webhook event from Paystack.",
+            "type": "object",
+            "properties": {
+                "eventType": { "type": "string" },
+                "payload": { "type": "object" },
+                "status": { "type": "string", "enum": ["success", "failed"] },
+                "errorMessage": { "type": "string" },
+                "timestamp": { "type": "string", "format": "date-time" }
+            },
+            "required": ["eventType", "payload", "status", "timestamp"]
         }
     },
     "auth": {
@@ -393,6 +407,10 @@
         "/Training_Modules/{moduleId}": {
             "schema": { "$ref": "#/entities/trainingModule" },
             "description": "Contains all available training videos for the Mogul Academy."
+        },
+        "/webhook_logs/{logId}": {
+            "schema": { "$ref": "#/entities/webhookLog" },
+            "description": "A log of all incoming Paystack webhook events."
         }
     }
 }

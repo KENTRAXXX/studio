@@ -73,5 +73,10 @@ service cloud.firestore {
         allow read: if isRole('ADMIN');
         allow write: if true; 
     }
+
+    match /webhook_logs/{logId} {
+        allow read: if isRole('ADMIN');
+        allow create: if true; // Webhook function hits this
+    }
   }
 }

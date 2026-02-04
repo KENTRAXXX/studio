@@ -214,7 +214,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
                 <Separator />
                 <div className="flex justify-between font-semibold">
                     <span>Total Deduction</span>
-                    <span>${totalDeduction.toFixed(2)}</span>
+                    <span>${(Number(totalDeduction) || 0).toFixed(2)}</span>
                 </div>
                  {isAmountInvalid && <p className="text-sm font-medium text-destructive pt-2">Insufficient funds for this withdrawal amount.</p>}
             </div>

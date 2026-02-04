@@ -13,13 +13,30 @@ const getDb = () => {
     return getFirestore(app);
 };
 
+async function logWebhookEvent(eventType: string, payload: any, status: 'success' | 'failed', errorMessage?: string) {
+    const firestore = getDb();
+    try {
+        await addDoc(collection(firestore, 'webhook_logs'), {
+            eventType,
+            payload,
+            status,
+            errorMessage: errorMessage || null,
+            timestamp: new Date().toISOString()
+        });
+    } catch (e) {
+        console.error("Critical: Failed to log webhook event to Firestore", e);
+    }
+}
+
 async function executePaymentSplit(eventData: any) {
     const firestore = getDb();
     const { reference, metadata, amount, customer } = eventData;
     const { cart, storeId } = metadata;
 
     if (!cart || !storeId || !reference) {
-        throw new Error('Missing cart, storeId, or reference in webhook metadata for product sale.');
+        const error = 'Missing cart, storeId, or reference in webhook metadata for product sale.';
+        await logWebhookEvent('charge.success', eventData, 'failed', error);
+        throw new Error(error);
     }
 
     try {
@@ -147,8 +164,11 @@ async function executePaymentSplit(eventData: any) {
             storeName: storeName
         });
 
+        await logWebhookEvent('charge.success', eventData, 'success');
+
     } catch (error: any) {
         console.error(`Failed to execute payment split for reference ${reference}:`, error);
+        await logWebhookEvent('charge.success', eventData, 'failed', error.message);
         const alertsRef = collection(firestore, 'admin_alerts');
         await addDoc(alertsRef, {
             flowName: 'executePaymentSplit',
@@ -183,7 +203,7 @@ export async function POST(req: Request) {
     const { metadata, customer } = event.data;
 
     if (!metadata) {
-        console.warn('Paystack webhook: No metadata found in event.');
+        await logWebhookEvent(event.event, event.data, 'failed', 'Missing metadata in charge.success event.');
         return NextResponse.json({ status: 'success', message: 'Event acknowledged, no metadata.' });
     }
 
@@ -213,9 +233,12 @@ export async function POST(req: Request) {
                     storeName: 'Your SOMA Store',
                 });
             }
+
+            await logWebhookEvent(event.event, event.data, 'success');
             
         } catch (error: any) {
             console.error(`Failed to handle signup success for ${userId}:`, error);
+            await logWebhookEvent(event.event, event.data, 'failed', error.message);
             const alertsRef = collection(firestore, 'admin_alerts');
             await addDoc(alertsRef, {
                 flowName: 'paystackWebhook_signupSuccess',
@@ -224,7 +247,12 @@ export async function POST(req: Request) {
                 timestamp: new Date().toISOString()
             });
         }
+    } else {
+        await logWebhookEvent(event.event, event.data, 'failed', 'Missing userId in metadata. Manual fix required.');
     }
+  } else {
+      // Log other event types for visibility
+      await logWebhookEvent(event.event, event.data, 'success');
   }
 
   return NextResponse.json({ status: 'success' });
