@@ -10,7 +10,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if request.auth != null;
       allow create: if request.auth.uid == userId;
-      // Allow authenticated owners to update their own profile fields (hasAccess, planTier, etc.)
+      // Allow authenticated owners to update their own profile fields safely
       allow update: if request.auth.uid == userId || isRole('ADMIN');
       allow delete: if isRole('ADMIN');
     }

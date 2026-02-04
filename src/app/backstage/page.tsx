@@ -31,7 +31,6 @@ const onboardingSchema = z.object({
   taxId: z.string().min(5, 'A valid Tax ID or Business Number is required.'),
   contactPhone: z.string().min(10, 'A valid contact phone number is required.'),
   governmentIdUrl: z.string().url({ message: 'A valid ID document URL is required.' }).min(1, 'Please provide your government ID.'),
-  // Structured fields populated by Autocomplete
   street: z.string().min(1, 'Verified street is missing.'),
   city: z.string().min(1, 'Verified city is missing.'),
   state: z.string().min(1, 'Verified state is missing.'),
@@ -108,9 +107,15 @@ export default function BackstagePage() {
   });
   const { isSubmitting } = form.formState;
 
+  const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const isMapsAvailable = !!mapsApiKey && mapsApiKey !== 'undefined';
+
   // Google Maps Autocomplete Initialization
   const initAutocomplete = () => {
-    if (!addressInputRef.current || !window.google) return;
+    if (!addressInputRef.current || !window.google || !window.google.maps || !window.google.maps.places) {
+        console.warn("Google Maps Places library not available.");
+        return;
+    }
     
     const autocomplete = new window.google.maps.places.Autocomplete(addressInputRef.current, {
         types: ['address'],
@@ -327,10 +332,12 @@ export default function BackstagePage() {
   
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 sm:p-6">
-        <Script 
-            src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`} 
-            onLoad={initAutocomplete}
-        />
+        {isMapsAvailable && (
+            <Script 
+                src={`https://maps.googleapis.com/maps/api/js?key=${mapsApiKey}&libraries=places`} 
+                onLoad={initAutocomplete}
+            />
+        )}
         <div id="recaptcha-container"></div>
         
         <Dialog open={isOTPModalOpen} onOpenChange={setIsOTPModalOpen}>
@@ -402,10 +409,10 @@ export default function BackstagePage() {
                                                     field.ref(e); 
                                                     addressInputRef.current = e; 
                                                 }}
-                                                placeholder="Start typing your warehouse address..." 
+                                                placeholder={isMapsAvailable ? "Start typing your warehouse address..." : "Enter your warehouse address"}
                                             />
                                         </FormControl>
-                                        <FormDescription>Select your verified location from the suggestions.</FormDescription>
+                                        <FormDescription>{isMapsAvailable ? "Select your verified location from the suggestions." : "Enter your full warehouse location."}</FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )} />
