@@ -3,11 +3,21 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useCollection, useUserProfile, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { 
+    collection, 
+    query, 
+    where, 
+    orderBy, 
+    limit, 
+    startAfter, 
+    getDocs, 
+    QueryDocumentSnapshot,
+    DocumentData
+} from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, Percent, Banknote, Loader2, Wallet, Landmark, WalletCards } from 'lucide-react';
+import { DollarSign, Percent, Banknote, Loader2, Wallet, Landmark, WalletCards, ChevronDown } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { addDays, format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -27,6 +37,8 @@ type Withdrawal = {
     status: 'pending' | 'processing' | 'completed' | 'rejected';
     paidAt?: string;
 }
+
+const PAGE_SIZE = 20;
 
 const TransactionTableSkeleton = () => (
     <Table>
@@ -58,6 +70,13 @@ export default function BackstageFinancesPage() {
     const router = useRouter();
     const [isModalOpen, setIsModalOpen] = useState(false);
 
+    // Pagination States
+    const [payoutsList, setPayoutsList] = useState<Payout[]>([]);
+    const [lastVisible, setLastVisible] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+    const [isLoadingInitial, setIsLoadingInitial] = useState(true);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+
     // Secondary layer of protection: Redirect if pending review
     useEffect(() => {
         if (!profileLoading && userProfile?.status === 'pending_review') {
@@ -65,13 +84,70 @@ export default function BackstageFinancesPage() {
         }
     }, [userProfile, profileLoading, router]);
 
+    // 1. Real-time query for BALANCE calculation (fetches all pending to ensure sum is accurate)
     const pendingPayoutsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return query(collection(firestore, 'payouts_pending'), where('userId', '==', user.uid));
     }, [firestore, user]);
 
-    const { data: pendingPayouts, loading: payoutsLoading } = useCollection<Payout>(pendingPayoutsQuery);
+    const { data: allPendingPayouts, loading: balanceLoading } = useCollection<Payout>(pendingPayoutsQuery);
     
+    // 2. Paginated fetch for Transaction History Table
+    useEffect(() => {
+        if (!firestore || !user) return;
+
+        const fetchInitialPayouts = async () => {
+            setIsLoadingInitial(true);
+            try {
+                const q = query(
+                    collection(firestore, 'payouts_pending'),
+                    where('userId', '==', user.uid),
+                    orderBy('createdAt', 'desc'),
+                    limit(PAGE_SIZE)
+                );
+                
+                const snapshot = await getDocs(q);
+                const items = snapshot.docs.map(d => ({ ...d.data(), id: d.id } as Payout));
+                
+                setPayoutsList(items);
+                setLastVisible(snapshot.docs[snapshot.docs.length - 1] || null);
+                setHasMore(snapshot.docs.length === PAGE_SIZE);
+            } catch (error) {
+                console.error("Error fetching initial payouts:", error);
+            } finally {
+                setIsLoadingInitial(false);
+            }
+        };
+
+        fetchInitialPayouts();
+    }, [firestore, user]);
+
+    const handleLoadMore = async () => {
+        if (!firestore || !user || !lastVisible || isLoadingMore) return;
+
+        setIsLoadingMore(true);
+        try {
+            const nextQ = query(
+                collection(firestore, 'payouts_pending'),
+                where('userId', '==', user.uid),
+                orderBy('createdAt', 'desc'),
+                startAfter(lastVisible),
+                limit(PAGE_SIZE)
+            );
+
+            const snapshot = await getDocs(nextQ);
+            const nextItems = snapshot.docs.map(d => ({ ...d.data(), id: d.id } as Payout));
+
+            setPayoutsList(prev => [...prev, ...nextItems]);
+            setLastVisible(snapshot.docs[snapshot.docs.length - 1] || null);
+            setHasMore(snapshot.docs.length === PAGE_SIZE);
+        } catch (error) {
+            console.error("Error loading more payouts:", error);
+        } finally {
+            setIsLoadingMore(false);
+        }
+    };
+
     const completedWithdrawalsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return query(collection(firestore, 'withdrawal_requests'), where('userId', '==', user.uid), where('status', '==', 'completed'), orderBy('paidAt', 'desc'));
@@ -80,15 +156,15 @@ export default function BackstageFinancesPage() {
     const { data: completedWithdrawals, loading: withdrawalsLoading } = useCollection<Withdrawal>(completedWithdrawalsQuery);
 
     const { totalEarned, platformFees } = useMemo(() => {
-        if (!pendingPayouts) return { totalEarned: 0, platformFees: 0 };
+        if (!allPendingPayouts) return { totalEarned: 0, platformFees: 0 };
         
-        const total = pendingPayouts.reduce((acc, doc) => acc + (doc.amount || 0), 0);
+        const total = allPendingPayouts.reduce((acc, doc) => acc + (doc.amount || 0), 0);
         const commissionRate = userProfile?.planTier === 'BRAND' ? 0.03 : 0.09;
         const payoutPercentage = 1 - commissionRate;
         const fees = total > 0 ? (total / payoutPercentage) * commissionRate : 0;
 
         return { totalEarned: total, platformFees: fees };
-    }, [pendingPayouts, userProfile]);
+    }, [allPendingPayouts, userProfile]);
 
     const nextPayoutDate = useMemo(() => {
         if (withdrawalsLoading || userLoading) return 'Calculating...';
@@ -112,7 +188,7 @@ export default function BackstageFinancesPage() {
         return getNextPayoutDate();
     }, [completedWithdrawals, user, withdrawalsLoading, userLoading]);
     
-    const isLoading = userLoading || payoutsLoading || withdrawalsLoading || profileLoading;
+    const isGlobalLoading = userLoading || balanceLoading || withdrawalsLoading || profileLoading;
 
     return (
         <div className="flex flex-col min-h-screen bg-background p-4 sm:p-6 text-foreground">
@@ -138,7 +214,7 @@ export default function BackstageFinancesPage() {
                                     <DollarSign className="h-4 w-4 text-slate-400" />
                                 </CardHeader>
                                 <CardContent>
-                                    {isLoading ? <Loader2 className="h-8 w-8 animate-spin text-slate-400" /> : <div className="text-3xl font-bold text-slate-200">${totalEarned.toFixed(2)}</div>}
+                                    {isGlobalLoading ? <Loader2 className="h-8 w-8 animate-spin text-slate-400" /> : <div className="text-3xl font-bold text-slate-200">${totalEarned.toFixed(2)}</div>}
                                 </CardContent>
                             </Card>
                              <Card className="border-slate-700 bg-slate-900/50">
@@ -147,7 +223,7 @@ export default function BackstageFinancesPage() {
                                     <Percent className="h-4 w-4 text-slate-400" />
                                 </CardHeader>
                                 <CardContent>
-                                     {isLoading ? <Loader2 className="h-8 w-8 animate-spin text-slate-400" /> : <div className="text-3xl font-bold text-slate-200">${platformFees.toFixed(2)}</div>}
+                                     {isGlobalLoading ? <Loader2 className="h-8 w-8 animate-spin text-slate-400" /> : <div className="text-3xl font-bold text-slate-200">${platformFees.toFixed(2)}</div>}
                                 </CardContent>
                             </Card>
                              <Card className="border-slate-700 bg-slate-900/50">
@@ -156,7 +232,7 @@ export default function BackstageFinancesPage() {
                                     <Banknote className="h-4 w-4 text-slate-400" />
                                 </CardHeader>
                                 <CardContent>
-                                   {isLoading ? <Loader2 className="h-8 w-8 animate-spin text-slate-400" /> : <div className="text-3xl font-bold text-slate-200">{nextPayoutDate}</div>}
+                                   {isGlobalLoading ? <Loader2 className="h-8 w-8 animate-spin text-slate-400" /> : <div className="text-3xl font-bold text-slate-200">{nextPayoutDate}</div>}
                                 </CardContent>
                             </Card>
                         </div>
@@ -166,31 +242,50 @@ export default function BackstageFinancesPage() {
                                 <CardDescription className="text-slate-500">A log of all your pending payout amounts.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                {isLoading ? (
+                                {isLoadingInitial ? (
                                     <TransactionTableSkeleton />
-                                ) : pendingPayouts && pendingPayouts.length > 0 ? (
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow className="border-slate-800 hover:bg-slate-800/50">
-                                                <TableHead className="text-slate-400">Date</TableHead>
-                                                <TableHead className="text-slate-400">Order ID</TableHead>
-                                                <TableHead className="text-slate-400 text-right">Net Payout</TableHead>
-                                                <TableHead className="text-slate-400 text-center">Status</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                                {pendingPayouts.map((payout) => (
-                                                    <TableRow key={payout.id} className="border-slate-800 hover:bg-slate-800/50">
-                                                        <TableCell className="text-slate-400">{new Date(payout.createdAt).toLocaleDateString()}</TableCell>
-                                                        <TableCell className="font-mono text-xs text-slate-300">{payout.orderId}</TableCell>
-                                                        <TableCell className="text-right font-mono text-green-400">+ ${payout.amount.toFixed(2)}</TableCell>
-                                                        <TableCell className="text-center">
-                                                            <Badge variant="outline" className="text-yellow-400 border-yellow-400/50">{payout.status}</Badge>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                        </TableBody>
-                                    </Table>
+                                ) : payoutsList.length > 0 ? (
+                                    <>
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow className="border-slate-800 hover:bg-slate-800/50">
+                                                    <TableHead className="text-slate-400">Date</TableHead>
+                                                    <TableHead className="text-slate-400">Order ID</TableHead>
+                                                    <TableHead className="text-slate-400 text-right">Net Payout</TableHead>
+                                                    <TableHead className="text-slate-400 text-center">Status</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                    {payoutsList.map((payout) => (
+                                                        <TableRow key={payout.id} className="border-slate-800 hover:bg-slate-800/50">
+                                                            <TableCell className="text-slate-400">{new Date(payout.createdAt).toLocaleDateString()}</TableCell>
+                                                            <TableCell className="font-mono text-xs text-slate-300">{payout.orderId}</TableCell>
+                                                            <TableCell className="text-right font-mono text-green-400">+ ${payout.amount.toFixed(2)}</TableCell>
+                                                            <TableCell className="text-center">
+                                                                <Badge variant="outline" className="text-yellow-400 border-yellow-400/50">{payout.status}</Badge>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                            </TableBody>
+                                        </Table>
+                                        {hasMore && (
+                                            <div className="mt-6 flex justify-center">
+                                                <Button 
+                                                    variant="ghost" 
+                                                    className="text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+                                                    onClick={handleLoadMore}
+                                                    disabled={isLoadingMore}
+                                                >
+                                                    {isLoadingMore ? (
+                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                    ) : (
+                                                        <ChevronDown className="mr-2 h-4 w-4" />
+                                                    )}
+                                                    Load More Transactions
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </>
                                 ) : (
                                     <div className="h-64 flex flex-col items-center justify-center text-center">
                                         <WalletCards className="h-16 w-16 text-primary mb-4" />
@@ -208,7 +303,7 @@ export default function BackstageFinancesPage() {
                                 <CardTitle className="text-muted-foreground text-lg font-medium">Available for Withdrawal</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                {isLoading ? (
+                                {isGlobalLoading ? (
                                     <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
                                 ) : (
                                     <p className="text-5xl font-bold text-primary">${totalEarned.toFixed(2)}</p>
