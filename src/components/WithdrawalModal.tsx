@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -8,7 +7,6 @@ import * as z from 'zod';
 import { useUser, useFirestore } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { sendPayoutConfirmationEmail } from '@/ai/flows/send-payout-confirmation-email';
-
 
 import {
   Dialog,
@@ -30,7 +28,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Bank, Loader2, Send, Lock } from 'lucide-react';
+import { Landmark, Loader2, Send, Lock } from 'lucide-react';
 import { Separator } from './ui/separator';
 
 const formSchema = z.object({
@@ -44,7 +42,6 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-// Define a simple UserProfile type for the prop
 type UserProfile = {
   bankDetails?: {
     accountName: string;
@@ -54,7 +51,6 @@ type UserProfile = {
     swiftBic?: string;
   }
 } | null;
-
 
 interface WithdrawalModalProps {
   isOpen: boolean;
@@ -74,6 +70,14 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     mode: 'onChange',
+    defaultValues: {
+      amount: 0,
+      accountName: '',
+      accountNumber: '',
+      bankName: '',
+      iban: '',
+      swiftBic: '',
+    },
   });
 
   useEffect(() => {
@@ -90,7 +94,6 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
         form.reset({ amount: 0, accountName: '', accountNumber: '', bankName: '', iban: '', swiftBic: '' });
     }
   }, [isOpen, hasExistingDetails, userProfile, form]);
-
 
   const requestedAmount = form.watch('amount');
   const withdrawalFee = requestedAmount * 0.03;
@@ -131,7 +134,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
           swiftBic: data.swiftBic,
         },
         status: status,
-        confirmationToken: confirmationToken, // Will be null for subsequent requests
+        confirmationToken: confirmationToken,
         createdAt: serverTimestamp(),
       });
 
@@ -171,10 +174,10 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-card border-primary sm:max-w-[425px] md:sm:max-w-lg">
+      <DialogContent className="bg-card border-primary sm:max-w-[425px] md:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-primary font-headline">
-            <Bank className="h-6 w-6" />
+            <Landmark className="h-6 w-6" />
             Request a Withdrawal
           </DialogTitle>
           <DialogDescription>
@@ -281,7 +284,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
                         <FormControl>
                             <Input placeholder="International Bank Account Number" {...field} />
                         </FormControl>
-                        <FormDescription>Required for Europe, UAE, and some other regions.</FormDescription>
+                        <FormDescription>Required for some regions.</FormDescription>
                         <FormMessage />
                         </FormItem>
                     )}

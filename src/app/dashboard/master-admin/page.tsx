@@ -20,7 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { DollarSign, Loader2, Bank, CheckCircle, Clock } from "lucide-react";
+import { DollarSign, Loader2, Landmark, CheckCircle, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { collection, query } from 'firebase/firestore';
 
@@ -67,7 +67,7 @@ export default function MasterAdminPage() {
     }
 
     if (!isAdmin) {
-        return null; // Or a more explicit "Access Denied" component
+        return null;
     }
 
     return (
@@ -100,7 +100,7 @@ export default function MasterAdminPage() {
             <Card className="border-destructive/50">
                 <CardHeader>
                     <CardTitle className="text-destructive flex items-center gap-2">
-                        <Bank className="h-6 w-6" />
+                        <Landmark className="h-6 w-6" />
                         Pending Withdrawal Requests
                     </CardTitle>
                     <CardDescription>

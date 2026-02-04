@@ -1,39 +1,30 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if a user has a specific role
     function isRole(role) {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userRole == role;
     }
 
-    // Helper function to check if a user is updating their own profile correctly
     function userCanUpdateProfile(userId) {
-      // 1. The user must be the owner of the document.
       let isOwner = request.auth.uid == userId;
-
-      // 2. Use get() with fallbacks to avoid errors on non-existent fields.
-      // We block changes to sensitive administrative and platform fields.
-      let emailUnchanged = request.resource.data.get('email', '') == resource.data.get('email', '');
-      let referralCodeUnchanged = request.resource.data.get('referralCode', '') == resource.data.get('referralCode', '');
-      let isDisabledUnchanged = request.resource.data.get('isDisabled', false) == resource.data.get('isDisabled', false);
-      let referredByUnchanged = request.resource.data.get('referredBy', '') == resource.data.get('referredBy', '');
+      
+      let emailUnchanged = request.resource.data.get('email', resource.data.get('email', '')) == resource.data.get('email', '');
+      let referralCodeUnchanged = request.resource.data.get('referralCode', resource.data.get('referralCode', '')) == resource.data.get('referralCode', '');
+      let isDisabledUnchanged = request.resource.data.get('isDisabled', resource.data.get('isDisabled', false)) == resource.data.get('isDisabled', false);
+      let referredByUnchanged = request.resource.data.get('referredBy', resource.data.get('referredBy', '')) == resource.data.get('referredBy', '');
 
       return isOwner && emailUnchanged && referralCodeUnchanged && isDisabledUnchanged && referredByUnchanged;
     }
 
-    // == USERS ==
     match /users/{userId} {
       allow read: if request.auth != null;
       allow create: if request.auth.uid == userId;
       allow update: if userCanUpdateProfile(userId);
-      
       allow write: if isRole('ADMIN');
     }
 
-    // == STORES ==
     match /stores/{storeId} {
       allow read;
       allow write: if request.auth.uid == storeId;
@@ -89,7 +80,7 @@ service cloud.firestore {
     
     match /admin_alerts/{alertId} {
         allow read: if isRole('ADMIN');
-        allow write: if true; // Allow client-side error logging
+        allow write: if true; 
     }
   }
 }
