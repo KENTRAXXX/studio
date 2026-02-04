@@ -11,6 +11,7 @@ import { ActionRequiredEmail } from '@/lib/emails/action-required-email';
 
 const SendActionRequiredEmailInputSchema = z.object({
   to: z.string().email().describe("The recipient's email address."),
+  name: z.string().describe("The name of the seller or business."),
   feedback: z.string().describe("The admin feedback explaining what needs to be changed."),
 });
 export type SendActionRequiredEmailInput = z.infer<typeof SendActionRequiredEmailInputSchema>;
@@ -30,7 +31,7 @@ const sendActionRequiredEmailFlow = ai.defineFlow(
     inputSchema: SendActionRequiredEmailInputSchema,
     outputSchema: SendActionRequiredEmailOutputSchema,
   },
-  async ({ to, feedback }) => {
+  async ({ to, name, feedback }) => {
     const resendApiKey = process.env.RESEND_API_KEY;
     if (!resendApiKey) {
       console.error("Resend API key is missing.");
@@ -45,10 +46,10 @@ const sendActionRequiredEmailFlow = ai.defineFlow(
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          from: `"SOMA Quality Control" <no-reply@somads.com>`,
+          from: `"SOMA Concierge" <no-reply@somads.com>`,
           to: to,
-          subject: 'Action Required: Your SOMA Seller Application',
-          react: React.createElement(ActionRequiredEmail, { feedback }),
+          subject: 'Action Required: Finalizing your SOMA Seller Hub',
+          react: React.createElement(ActionRequiredEmail, { name, feedback }),
         })
       });
 

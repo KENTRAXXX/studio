@@ -60,6 +60,7 @@ const RequestChangesModal = ({ seller, onComplete }: { seller: PendingSeller, on
 
             await sendActionRequiredEmail({
                 to: seller.email,
+                name: seller.verificationData.legalBusinessName || 'Valued Seller',
                 feedback: feedback.trim()
             });
 
