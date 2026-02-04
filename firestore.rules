@@ -4,42 +4,35 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function isRole(role) {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userRole == role;
-    }
-
-    function userCanUpdateProfile(userId) {
-      let isOwner = request.auth.uid == userId;
-      
-      // Allow authenticated owners to finalize their profile status during onboarding
-      // while protecting specific administrative fields if necessary.
-      return isOwner;
+      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userRole == role;
     }
 
     match /users/{userId} {
       allow read: if request.auth != null;
       allow create: if request.auth.uid == userId;
-      allow update: if userCanUpdateProfile(userId);
-      allow write: if isRole('ADMIN');
+      // Allow owners to update their own profile (status, plan, etc.) and admins to manage all
+      allow update: if request.auth.uid == userId || isRole('ADMIN');
+      allow delete: if isRole('ADMIN');
     }
 
     match /stores/{storeId} {
       allow read;
-      allow write: if request.auth.uid == storeId;
+      allow write: if request.auth.uid == storeId || isRole('ADMIN');
 
       match /products/{productId} {
         allow read;
-        allow write: if request.auth.uid == storeId;
+        allow write: if request.auth.uid == storeId || isRole('ADMIN');
       }
       
       match /orders/{orderId} {
-        allow read: if request.auth.uid == storeId;
-        allow create: if false; 
+        allow read: if request.auth.uid == storeId || isRole('ADMIN');
+        allow create: if true; // Allow customers to create orders
       }
     }
     
     match /Pending_Master_Catalog/{productId} {
-        allow read: if isRole('ADMIN');
-        allow create: if isRole('SELLER');
+        allow read: if isRole('ADMIN') || (request.auth != null && resource.data.vendorId == request.auth.uid);
+        allow create: if request.auth != null && (isRole('SELLER') || isRole('MOGUL'));
         allow update: if isRole('ADMIN');
     }
     
@@ -54,13 +47,13 @@ service cloud.firestore {
     }
 
     match /payouts_pending/{payoutId} {
-      allow read: if request.auth.uid == resource.data.userId || isRole('ADMIN');
+      allow read: if request.auth != null && (request.auth.uid == resource.data.userId || isRole('ADMIN'));
       allow create: if false; 
       allow update: if isRole('ADMIN');
     }
     
      match /payouts_completed/{payoutId} {
-      allow read: if request.auth.uid == resource.data.userId || isRole('ADMIN');
+      allow read: if request.auth != null && (request.auth.uid == resource.data.userId || isRole('ADMIN'));
       allow create: if false; 
     }
     
@@ -70,8 +63,8 @@ service cloud.firestore {
     }
     
     match /withdrawal_requests/{reqId} {
-        allow create: if request.auth.uid == request.resource.data.userId;
-        allow read: if request.auth.uid == request.resource.data.userId || isRole('ADMIN');
+        allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+        allow read: if request.auth != null && (request.auth.uid == resource.data.userId || isRole('ADMIN'));
         allow update: if isRole('ADMIN');
     }
     

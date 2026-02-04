@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -316,15 +315,15 @@ const DeploymentOverlay = ({ messages, onComplete }: { messages: string[], onCom
     const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 
     useEffect(() => {
+        let timeout: NodeJS.Timeout;
         if (currentMessageIndex < messages.length - 1) {
-            const timer = setTimeout(() => {
+            timeout = setTimeout(() => {
                 setCurrentMessageIndex(prev => prev + 1);
             }, 1500);
-            return () => clearTimeout(timer);
         } else {
-            const finalTimer = setTimeout(onComplete, 1500);
-            return () => clearTimeout(finalTimer);
+            timeout = setTimeout(onComplete, 1500);
         }
+        return () => clearTimeout(timeout);
     }, [currentMessageIndex, messages, onComplete]);
 
     return (
@@ -354,7 +353,7 @@ const DeploymentOverlay = ({ messages, onComplete }: { messages: string[], onCom
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.5 }}
-                    className="text-xl text-primary-foreground mt-12 font-medium"
+                    className="text-xl text-primary-foreground mt-12 font-medium text-center px-4"
                 >
                     {messages[currentMessageIndex]}
                 </motion.p>
@@ -483,6 +482,7 @@ export default function MyStorePage() {
   };
 
   const onLaunchComplete = () => {
+      setIsLaunching(false);
       toast({
           title: 'Your empire is live!',
           description: 'Congratulations! Your store has been successfully launched.',
