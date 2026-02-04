@@ -341,10 +341,10 @@ export default function Home() {
       <header className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center z-20">
         <div className="flex items-center gap-2">
           <SomaLogo />
-          <span className="font-headline font-bold text-xl text-primary">SomaDS</span>
+          <span className="font-headline font-bold text-xl text-primary tracking-tighter">SomaDS</span>
         </div>
-        <Button variant="ghost" asChild>
-          <Link href="/dashboard">Sign In</Link>
+        <Button variant="ghost" asChild className="font-headline text-primary hover:text-primary/80 hover:bg-primary/5">
+          <Link href="/login">Sign In</Link>
         </Button>
       </header>
 

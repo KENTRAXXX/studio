@@ -96,6 +96,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
     // Routes that are accessible without being logged in
     const isPublicRoute = 
       pathname === '/' || 
+      pathname === '/login' ||
       pathname.startsWith('/signup') || 
       pathname.startsWith('/plan-selection') || 
       pathname.startsWith('/store') || 
