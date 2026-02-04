@@ -118,7 +118,8 @@ export default function DashboardOverviewPage() {
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                 <OnboardingChecklist />
+                 {/* Only show checklist if the user is not officially 'live' */}
+                 {!userProfile?.live && <OnboardingChecklist />}
 
                 <Card className="border-primary/50 flex flex-col items-center justify-center text-center p-8">
                     <CardTitle className="font-headline text-2xl">Ready to sell?</CardTitle>

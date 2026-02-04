@@ -21,6 +21,7 @@ type UserProfile = {
   status?: 'pending_review' | 'approved' | 'rejected' | 'action_required';
   completedLessons?: string[];
   isDisabled?: boolean;
+  live?: boolean;
   referralCode?: string;
   referredBy?: string;
   verificationFeedback?: string;
