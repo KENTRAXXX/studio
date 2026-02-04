@@ -11,7 +11,7 @@ service cloud.firestore {
       let isOwner = request.auth.uid == userId;
       
       // Allow authenticated owners to finalize their profile status during onboarding
-      // while protecting specific fields if needed.
+      // while protecting specific administrative fields if necessary.
       return isOwner;
     }
 

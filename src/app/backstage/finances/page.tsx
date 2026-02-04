@@ -133,6 +133,7 @@ export default function BackstageFinancesPage() {
                                 <CardContent>
                                      {isLoading ? <Loader2 className="h-8 w-8 animate-spin text-slate-400" /> : <div className="text-3xl font-bold text-slate-200">${platformFees.toFixed(2)}</div>}
                                 </CardContent>
+                            </Card>
                              <Card className="border-slate-700 bg-slate-900/50">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="text-sm font-medium text-slate-400">Next Payout Date</CardTitle>
@@ -197,6 +198,7 @@ export default function BackstageFinancesPage() {
                                     <p className="text-5xl font-bold text-primary">${totalEarned.toFixed(2)}</p>
                                 )}
                             </CardContent>
+                        </Card>
 
                         <Button size="lg" className="w-full h-14 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => setIsModalOpen(true)}>
                             <Landmark className="mr-2 h-6 w-6"/> Request Payout
