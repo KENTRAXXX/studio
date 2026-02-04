@@ -99,6 +99,7 @@ const sellerNavItems = [
 ];
 
 const adminNavItems = [
+    { href: '/admin/concierge', icon: MessageSquare, label: 'Concierge Inbox' },
     { href: '/admin/curation', icon: SearchCode, label: 'Product Curation' },
     { href: '/admin/verification-queue', icon: ClipboardList, label: 'Verification Queue' },
     { href: '/admin/approval-queue', icon: ShieldCheck, label: 'Catalog Approvals' },
