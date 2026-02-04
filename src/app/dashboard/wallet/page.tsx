@@ -5,7 +5,7 @@ import { useUser, useFirestore, useCollection, useUserProfile, useMemoFirebase }
 import { collection, query, where } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Banknote, Wallet as WalletIcon, Loader2 } from 'lucide-react';
+import { Banknote, Wallet as WalletIcon, Loader2, AlertTriangle } from 'lucide-react';
 import { WithdrawalModal } from '@/components/WithdrawalModal';
 import { formatCurrency } from '@/utils/format';
 
@@ -30,6 +30,7 @@ export default function SomaWalletPage() {
     
     const isLoading = userLoading || payoutsLoading || profileLoading;
     const isBalanceTooLow = availableBalance < 10;
+    const isUnderReview = userProfile?.walletStatus === 'under_review';
 
     return (
         <>
@@ -59,15 +60,28 @@ export default function SomaWalletPage() {
                 </CardContent>
             </Card>
 
-            <Button 
-                size="lg" 
-                className="w-full h-14 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground" 
-                onClick={() => setIsModalOpen(true)}
-                disabled={isBalanceTooLow || isLoading}
-            >
-                <Banknote className="mr-2 h-6 w-6"/> 
-                {isBalanceTooLow && !isLoading ? `Minimum ${formatCurrency(1000)} Required` : 'Request Payout'}
-            </Button>
+            <div className="space-y-4">
+                <Button 
+                    size="lg" 
+                    className="w-full h-14 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50 disabled:grayscale" 
+                    onClick={() => setIsModalOpen(true)}
+                    disabled={isBalanceTooLow || isLoading || isUnderReview}
+                >
+                    <Banknote className="mr-2 h-6 w-6"/> 
+                    {isUnderReview 
+                        ? 'Wallet Under Review' 
+                        : (isBalanceTooLow && !isLoading ? `Minimum ${formatCurrency(1000)} Required` : 'Request Payout')
+                    }
+                </Button>
+
+                {isUnderReview && (
+                    <div className="flex items-start gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-xs">
+                        <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                        <p>Withdrawals are temporarily restricted while your wallet is under manual review for platform integrity. This process usually concludes within 48 hours.</p>
+                    </div>
+                )}
+            </div>
+
             <p className="text-center text-sm text-muted-foreground">
                 This balance reflects your net profit from sales across the platform. Withdrawals are processed within 24-48 hours.
             </p>

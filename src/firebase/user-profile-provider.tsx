@@ -19,6 +19,7 @@ type UserProfile = {
   paidAt?: string;
   planTier?: 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND';
   status?: 'pending_review' | 'approved' | 'rejected' | 'action_required';
+  walletStatus?: 'under_review' | 'active' | 'flagged';
   completedLessons?: string[];
   isDisabled?: boolean;
   live?: boolean;

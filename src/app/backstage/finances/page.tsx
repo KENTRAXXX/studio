@@ -29,7 +29,8 @@ import {
     Info, 
     ArrowUpRight, 
     ArrowDownLeft,
-    Filter
+    Filter,
+    AlertTriangle
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { addDays, format, parseISO } from 'date-fns';
@@ -238,6 +239,7 @@ export default function BackstageFinancesPage() {
 
     const isGlobalLoading = userLoading || balanceLoading || profileLoading;
     const isBalanceTooLow = totalEarned < 10;
+    const isUnderReview = userProfile?.walletStatus === 'under_review';
 
     return (
         <div className="flex flex-col min-h-screen bg-background p-4 sm:p-6 text-foreground">
@@ -443,15 +445,27 @@ export default function BackstageFinancesPage() {
                                 )}
                             </CardContent>
 
-                            <Button 
-                                size="lg" 
-                                className="w-full h-14 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground" 
-                                onClick={() => setIsModalOpen(true)}
-                                disabled={isBalanceTooLow || isGlobalLoading}
-                            >
-                                <Landmark className="mr-2 h-6 w-6"/> 
-                                {isBalanceTooLow && !isGlobalLoading ? `Minimum ${formatCurrency(1000)} Required` : 'Request Payout'}
-                            </Button>
+                            <div className="px-6 pb-6 space-y-4">
+                                <Button 
+                                    size="lg" 
+                                    className="w-full h-14 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50 disabled:grayscale" 
+                                    onClick={() => setIsModalOpen(true)}
+                                    disabled={isBalanceTooLow || isGlobalLoading || isUnderReview}
+                                >
+                                    <Landmark className="mr-2 h-6 w-6"/> 
+                                    {isUnderReview 
+                                        ? 'Wallet Under Review' 
+                                        : (isBalanceTooLow && !isGlobalLoading ? `Minimum ${formatCurrency(1000)} Required` : 'Request Payout')
+                                    }
+                                </Button>
+
+                                {isUnderReview && (
+                                    <div className="flex items-start gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-left text-xs">
+                                        <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                                        <p>Withdrawals are restricted while your wallet is under manual review. This process usually concludes within 48 hours.</p>
+                                    </div>
+                                )}
+                            </div>
                         </Card>
                     </div>
                 </div>

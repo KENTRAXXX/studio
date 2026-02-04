@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -27,7 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
-import { useUser, useFirestore, useCollection } from "@/firebase";
+import { useUser, useFirestore, useCollection, useUserProfile } from "@/firebase";
 import { collection, query, orderBy } from "firebase/firestore";
 import { Loader2, AlertTriangle, DollarSign, Package, TrendingUp } from "lucide-react";
 import { useMemo } from "react";
@@ -66,6 +65,7 @@ type Order = {
 
 export default function MyOrdersPage() {
   const { user } = useUser();
+  const { userProfile, loading: profileLoading } = useUserProfile();
   const firestore = useFirestore();
 
   const ordersRef = useMemo(() => {
@@ -107,20 +107,22 @@ export default function MyOrdersPage() {
         <h1 className="text-3xl font-bold font-headline">My Orders</h1>
       </div>
 
-       <Card className="border-destructive bg-destructive/10 text-destructive-foreground">
-        <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-destructive">
-                <AlertTriangle className="h-6 w-6" />
-                Your wallet is currently under review...
-            </CardTitle>
-            <CardDescription className="text-destructive/80">
-                To protect the integrity of the SOMA platform, your wallet has been flagged for a manual review by our treasury team.
-            </CardDescription>
-        </CardHeader>
-        <CardContent>
-            <p>This process typically takes 24-48 hours. You will be notified via email once the review is complete.</p>
-        </CardContent>
-      </Card>
+       {userProfile?.walletStatus === 'under_review' && (
+        <Card className="border-destructive bg-destructive/10 text-destructive-foreground animate-in fade-in slide-in-from-top-4 duration-500">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-destructive">
+                    <AlertTriangle className="h-6 w-6" />
+                    Action Required: Your wallet is currently under review
+                </CardTitle>
+                <CardDescription className="text-destructive/80">
+                    To protect the integrity of the SOMA platform, your wallet has been flagged for a manual review by our treasury team.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <p>This process typically takes 24-48 hours. You will be notified via email once the review is complete and your withdrawal functionality is restored.</p>
+            </CardContent>
+        </Card>
+       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-primary/50">
@@ -158,7 +160,7 @@ export default function MyOrdersPage() {
           <CardDescription>A list of all sales made on your custom domain.</CardDescription>
         </CardHeader>
         <CardContent>
-            {ordersLoading ? (
+            {ordersLoading || profileLoading ? (
                  <div className="flex h-64 w-full items-center justify-center">
                     <Loader2 className="h-12 w-12 animate-spin text-primary" />
                 </div>
