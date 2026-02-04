@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useActionState, useMemo } from "react";
+import { useState, useActionState, useMemo, useTransition } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -20,7 +20,7 @@ export default function CheckerForm() {
   const { userProfile } = useUserProfile();
   const firestore = useFirestore();
   const [mode, setMode] = useState<'automated' | 'manual'>('automated');
-  const [isAuditing, setIsAuditing] = useState(false);
+  const [isPendingTransition, startTransition] = useTransition();
 
   // Fetch store data for automated audit
   const storeRef = useMemoFirebase(() => {
@@ -47,11 +47,10 @@ export default function CheckerForm() {
     }
   }
 
-  const [state, dispatch] = useActionState(formAction, {});
+  const [state, dispatch, isPending] = useActionState(formAction, {});
 
-  const handleAutomatedAudit = async () => {
+  const handleAutomatedAudit = () => {
     if (!storeData) return;
-    setIsAuditing(true);
 
     // Construct a "Virtual Component" string based on their live configuration
     const virtualComponent = `
@@ -70,10 +69,13 @@ export default function CheckerForm() {
     const formData = new FormData();
     formData.append("componentCode", virtualComponent);
     
-    // We manually trigger the dispatch here
-    dispatch(formData);
-    setIsAuditing(false);
+    // Imperative calls to useActionState dispatch must be wrapped in a transition
+    startTransition(() => {
+      dispatch(formData);
+    });
   };
+
+  const isLoading = isPending || isPendingTransition;
 
   return (
     <div className="space-y-8">
@@ -119,10 +121,10 @@ export default function CheckerForm() {
                 </div>
                 <Button 
                   onClick={handleAutomatedAudit} 
-                  disabled={isAuditing || !storeData}
+                  disabled={isLoading || !storeData}
                   className="w-full h-14 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
                 >
-                  {isAuditing ? <Loader2 className="animate-spin mr-2" /> : <Sparkles className="mr-2 h-5 w-5" />}
+                  {isLoading ? <Loader2 className="animate-spin mr-2" /> : <Sparkles className="mr-2 h-5 w-5" />}
                   Run Audit on My Boutique
                 </Button>
               </CardContent>
@@ -139,9 +141,10 @@ export default function CheckerForm() {
               </div>
               <Button
                 type="submit"
+                disabled={isLoading}
                 className="w-full h-12 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
               >
-                Scan Pro Snippet
+                {isLoading ? <Loader2 className="animate-spin mr-2" /> : "Scan Pro Snippet"}
               </Button>
             </form>
           )}
@@ -170,6 +173,7 @@ export default function CheckerForm() {
               <AnimatePresence mode="wait">
                 {state.suggestions ? (
                   <motion.div
+                    key="suggestions"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="prose prose-sm prose-invert max-w-none"
@@ -185,7 +189,7 @@ export default function CheckerForm() {
                     </div>
                   </motion.div>
                 ) : state.error ? (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center h-64 text-center space-y-4">
+                  <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center h-64 text-center space-y-4">
                     <AlertCircle className="h-12 w-12 text-destructive opacity-50" />
                     <p className="text-destructive font-bold">{state.error}</p>
                   </motion.div>
