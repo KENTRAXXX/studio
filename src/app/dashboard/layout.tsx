@@ -32,6 +32,7 @@ import {
   Gem,
   User,
   ClipboardList,
+  SearchCode,
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
@@ -86,6 +87,7 @@ const sellerNavItems = [
 ];
 
 const adminNavItems = [
+    { href: '/admin/curation', icon: SearchCode, label: 'Product Curation' },
     { href: '/admin/verification-queue', icon: ClipboardList, label: 'Verification Queue' },
     { href: '/admin/approval-queue', icon: ShieldCheck, label: 'Catalog Approvals' },
     { href: '/admin/treasury', icon: PiggyBank, label: 'Treasury' },
