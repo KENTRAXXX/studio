@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -6,6 +7,7 @@ import { doc, collection, query, where, collectionGroup, setDoc } from 'firebase
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { 
     ShieldCheck, 
     Instagram, 
@@ -18,7 +20,12 @@ import {
     Zap,
     Check,
     TrendingUp,
-    Users
+    Users,
+    Star,
+    Truck,
+    CheckCircle2,
+    AlertTriangle,
+    Activity
 } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useMemo } from 'react';
@@ -29,6 +36,7 @@ import { formatCurrency } from '@/utils/format';
 /**
  * @fileOverview Dynamic Brand Profile Page
  * Viewable by logged-in Moguls and Admins to discover and vet strategic partners.
+ * Now includes Brand Health metrics and high-demand transparency alerts.
  */
 
 type MasterProduct = {
@@ -40,6 +48,22 @@ type MasterProduct = {
     imageUrl: string;
     vendorId: string;
     status: string;
+};
+
+const StarRating = ({ rating }: { rating: number }) => {
+    return (
+        <div className="flex gap-0.5">
+            {[1, 2, 3, 4, 5].map((star) => (
+                <Star 
+                    key={star} 
+                    className={cn(
+                        "h-3 w-3", 
+                        star <= rating ? "fill-primary text-primary" : "text-slate-700"
+                    )} 
+                />
+            ))}
+        </div>
+    );
 };
 
 export default function BrandProfilePage() {
@@ -81,6 +105,23 @@ export default function BrandProfilePage() {
     }, [firestore, brandUsername]);
 
     const { data: syncedInstances } = useCollection(adoptionQuery);
+
+    // Health Logic
+    const healthMetrics = useMemo(() => {
+        if (!brandProfile) return null;
+        
+        const isVerified = brandProfile.status === 'approved';
+        const syncCount = syncedInstances?.length || 0;
+        
+        // Mocked based on profile maturity and verification status
+        return {
+            authenticityScore: isVerified ? 100 : 85,
+            inventoryAccuracy: isVerified ? 99.4 : 92.0,
+            avgShippingTime: isVerified ? "1.4 Days" : "2.1 Days",
+            fulfillmentRating: isVerified ? 4.9 : 4.2,
+            isHighDemand: syncCount > 20
+        };
+    }, [brandProfile, syncedInstances]);
 
     // Permission Logic
     const isMogul = viewerProfile?.userRole === 'MOGUL';
@@ -211,15 +252,6 @@ export default function BrandProfilePage() {
                         </div>
 
                         <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2">
-                                {brandProfile.socialLinks?.instagram && (
-                                    <Button variant="outline" size="icon" className="rounded-full border-white/10 bg-white/5 hover:bg-primary/20 hover:border-primary/50 transition-all" asChild>
-                                        <a href={`https://instagram.com/${brandProfile.socialLinks.instagram}`} target="_blank" rel="noopener noreferrer">
-                                            <Instagram className="h-5 w-5" />
-                                        </a>
-                                    </Button>
-                                )}
-                            </div>
                             <Button className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-14 px-8 text-lg">
                                 <MessageSquare className="mr-2 h-5 w-5" /> Contact Brand
                             </Button>
@@ -228,125 +260,172 @@ export default function BrandProfilePage() {
                 </div>
             </div>
 
-            <div className="container py-16 px-4 sm:px-6 lg:px-8 mx-auto space-y-20">
-                {/* Stats & Insights Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <Card className="border-primary/20 bg-slate-900/30">
-                        <CardContent className="pt-6">
-                            <div className="flex items-center justify-between">
-                                <p className="text-[10px] uppercase font-black text-primary/60 tracking-widest">Mogul Partners</p>
-                                <Users className="h-4 w-4 text-primary/40" />
-                            </div>
-                            <p className="text-3xl font-bold font-mono mt-2">{syncedInstances?.length || 0}</p>
-                            <p className="text-[10px] text-slate-500 mt-1">Active Boutique Syncs</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-primary/20 bg-slate-900/30">
-                        <CardContent className="pt-6">
-                            <div className="flex items-center justify-between">
-                                <p className="text-[10px] uppercase font-black text-primary/60 tracking-widest">Active Masterworks</p>
-                                <Box className="h-4 w-4 text-primary/40" />
-                            </div>
-                            <p className="text-3xl font-bold font-mono mt-2">{brandProducts?.length || 0}</p>
-                            <p className="text-[10px] text-slate-500 mt-1">Curated in Master Catalog</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-primary/20 bg-slate-900/30">
-                        <CardContent className="pt-6">
-                            <div className="flex items-center justify-between">
-                                <p className="text-[10px] uppercase font-black text-primary/60 tracking-widest">Trust Score</p>
-                                <ShieldCheck className="h-4 w-4 text-primary/40" />
-                            </div>
-                            <p className="text-3xl font-bold font-mono mt-2 text-green-500">99.8%</p>
-                            <p className="text-[10px] text-slate-500 mt-1">Authenticity Audit Passed</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-primary/20 bg-slate-900/30">
-                        <CardContent className="pt-6">
-                            <div className="flex items-center justify-between">
-                                <p className="text-[10px] uppercase font-black text-primary/60 tracking-widest">Sales Density</p>
-                                <TrendingUp className="h-4 w-4 text-primary/40" />
-                            </div>
-                            <p className="text-3xl font-bold font-mono mt-2 text-primary">ELITE</p>
-                            <p className="text-[10px] text-slate-500 mt-1">Top 5% Global Suppliers</p>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Collection Feed */}
-                <section className="space-y-10">
-                    <div className="flex items-end justify-between border-b border-primary/10 pb-6">
-                        <div>
-                            <h2 className="text-3xl font-bold font-headline text-slate-200">The Current Collection</h2>
-                            <p className="text-slate-500 mt-1">Elite masterworks available for immediate boutique cloning.</p>
-                        </div>
-                        <Badge variant="outline" className="h-8 border-primary/20 text-primary font-bold">
-                            {brandProducts?.length || 0} Assets Found
-                        </Badge>
-                    </div>
-
-                    {!brandProducts || brandProducts.length === 0 ? (
-                        <div className="h-96 flex flex-col items-center justify-center text-center border-2 border-dashed border-primary/10 rounded-3xl bg-slate-900/10">
-                            <Box className="h-16 w-16 text-slate-800 mb-4" />
-                            <h3 className="text-xl font-bold text-slate-400">Inventory Syncing...</h3>
-                            <p className="text-slate-600 max-w-xs mt-2">This brand is currently updating its Master Catalog entries.</p>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                            {brandProducts.map((product) => (
-                                <Card key={product.id} className="group overflow-hidden rounded-3xl border-primary/10 bg-slate-900/40 hover:border-primary/40 transition-all duration-500 flex flex-col">
-                                    <div className="relative aspect-square w-full overflow-hidden">
-                                        <Image 
-                                            src={product.imageUrl} 
-                                            alt={product.name} 
-                                            fill 
-                                            className="object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700" 
-                                        />
-                                        <div className="absolute top-4 left-4">
-                                            <Badge className="bg-black/60 backdrop-blur-md border-white/10 text-white font-mono text-[10px]">
-                                                SKU: {product.id.slice(0, 6)}
-                                            </Badge>
+            <div className="container py-16 px-4 sm:px-6 lg:px-8 mx-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    {/* Left: Stats & Integrity Widget */}
+                    <div className="lg:col-span-4 space-y-6">
+                        {healthMetrics?.isHighDemand && (
+                            <AlertTriangle className="h-full w-full">
+                                <Card className="border-orange-500/50 bg-orange-500/5 overflow-hidden">
+                                    <CardContent className="p-4 flex items-center gap-4">
+                                        <div className="bg-orange-500/20 p-3 rounded-full animate-pulse">
+                                            <AlertTriangle className="h-6 w-6 text-orange-500" />
                                         </div>
-                                    </div>
-                                    <CardContent className="p-6 flex-1 flex flex-col justify-between space-y-4">
                                         <div>
-                                            <h3 className="text-lg font-bold text-slate-200 line-clamp-1 group-hover:text-primary transition-colors">{product.name}</h3>
-                                            <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">{product.description}</p>
-                                        </div>
-                                        
-                                        <div className="space-y-4">
-                                            <div className="flex items-center justify-between border-y border-white/5 py-3">
-                                                <div className="space-y-0.5">
-                                                    <p className="text-[9px] uppercase font-black text-slate-500 tracking-tighter">Mogul Cost</p>
-                                                    <p className="font-mono font-bold text-slate-200">{formatCurrency(Math.round(product.masterCost * 100))}</p>
-                                                </div>
-                                                <div className="text-right space-y-0.5">
-                                                    <p className="text-[9px] uppercase font-black text-primary tracking-tighter">Rec. Retail</p>
-                                                    <p className="font-mono font-bold text-primary">{formatCurrency(Math.round(product.retailPrice * 100))}</p>
-                                                </div>
-                                            </div>
-
-                                            <Button 
-                                                className="w-full btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-black h-12 rounded-xl"
-                                                onClick={() => handleQuickSync(product)}
-                                                disabled={syncingIds.has(product.id)}
-                                            >
-                                                {syncingIds.has(product.id) ? (
-                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                ) : (
-                                                    <>
-                                                        <Zap className="mr-2 h-4 w-4 fill-current" />
-                                                        QUICK SYNC
-                                                    </>
-                                                )}
-                                            </Button>
+                                            <p className="text-sm font-bold text-orange-500 uppercase tracking-widest">High Demand Partner</p>
+                                            <p className="text-xs text-orange-400/80 leading-tight mt-0.5">This brand is currently synced with {syncedInstances?.length} boutiques. Fulfillment times may be slightly elevated.</p>
                                         </div>
                                     </CardContent>
                                 </Card>
-                            ))}
+                            </AlertTriangle>
+                        )}
+
+                        <Card className="border-primary/20 bg-slate-900/30">
+                            <CardHeader className="pb-4">
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-xs font-headline uppercase tracking-[0.2em] text-primary/60">Brand Health Index</CardTitle>
+                                    <Activity className="h-4 w-4 text-primary/40" />
+                                </div>
+                            </CardHeader>
+                            <CardContent className="space-y-8">
+                                {/* Accuracy Score */}
+                                <div className="space-y-3">
+                                    <div className="flex justify-between items-end">
+                                        <div className="space-y-0.5">
+                                            <p className="text-sm font-bold text-slate-200">Inventory Accuracy</p>
+                                            <p className="text-[10px] text-slate-500 uppercase tracking-tighter">Stock reliability rating</p>
+                                        </div>
+                                        <span className="font-mono text-lg font-bold text-primary">{healthMetrics?.inventoryAccuracy}%</span>
+                                    </div>
+                                    <Progress value={healthMetrics?.inventoryAccuracy} className="h-1.5 bg-slate-800" />
+                                </div>
+
+                                {/* Authenticity Score */}
+                                <div className="space-y-3">
+                                    <div className="flex justify-between items-end">
+                                        <div className="space-y-0.5">
+                                            <p className="text-sm font-bold text-slate-200">Authenticity Score</p>
+                                            <p className="text-[10px] text-slate-500 uppercase tracking-tighter">Verified provenance audit</p>
+                                        </div>
+                                        <span className="font-mono text-lg font-bold text-green-500">{healthMetrics?.authenticityScore}%</span>
+                                    </div>
+                                    <Progress value={healthMetrics?.authenticityScore} className="h-1.5 bg-slate-800" />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-primary/5">
+                                    <div className="p-3 rounded-xl bg-slate-950/50 border border-white/5">
+                                        <p className="text-[9px] uppercase font-black text-slate-500 tracking-widest mb-1 flex items-center gap-1.5">
+                                            <Truck className="h-3 w-3" /> Shipping
+                                        </p>
+                                        <p className="text-sm font-bold text-slate-200">{healthMetrics?.avgShippingTime}</p>
+                                    </div>
+                                    <div className="p-3 rounded-xl bg-slate-950/50 border border-white/5">
+                                        <p className="text-[9px] uppercase font-black text-slate-500 tracking-widest mb-1 flex items-center gap-1.5">
+                                            <CheckCircle2 className="h-3 w-3" /> Rating
+                                        </p>
+                                        <div className="flex flex-col gap-1">
+                                            <p className="text-sm font-bold text-slate-200">{healthMetrics?.fulfillmentRating}</p>
+                                            <StarRating rating={Math.round(healthMetrics?.fulfillmentRating || 0)} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Network Stats */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <Card className="border-primary/10 bg-slate-900/20">
+                                <CardContent className="pt-6">
+                                    <p className="text-[10px] uppercase font-black text-slate-500 tracking-widest">Mogul Partners</p>
+                                    <p className="text-2xl font-bold font-mono mt-1">{syncedInstances?.length || 0}</p>
+                                </CardContent>
+                            </Card>
+                            <Card className="border-primary/10 bg-slate-900/20">
+                                <CardContent className="pt-6">
+                                    <p className="text-[10px] uppercase font-black text-slate-500 tracking-widest">Catalog Depth</p>
+                                    <p className="text-2xl font-bold font-mono mt-1">{brandProducts?.length || 0}</p>
+                                </CardContent>
+                            </Card>
                         </div>
-                    )}
-                </section>
+                    </div>
+
+                    {/* Right: Collection Feed */}
+                    <div className="lg:col-span-8 space-y-10">
+                        <section className="space-y-10">
+                            <div className="flex items-end justify-between border-b border-primary/10 pb-6">
+                                <div>
+                                    <h2 className="text-3xl font-bold font-headline text-slate-200">The Current Collection</h2>
+                                    <p className="text-slate-500 mt-1">Elite masterworks available for immediate boutique cloning.</p>
+                                </div>
+                                <Badge variant="outline" className="h-8 border-primary/20 text-primary font-bold">
+                                    {brandProducts?.length || 0} Assets Found
+                                </Badge>
+                            </div>
+
+                            {!brandProducts || brandProducts.length === 0 ? (
+                                <div className="h-96 flex flex-col items-center justify-center text-center border-2 border-dashed border-primary/10 rounded-3xl bg-slate-900/10">
+                                    <Box className="h-16 w-16 text-slate-800 mb-4" />
+                                    <h3 className="text-xl font-bold text-slate-400">Inventory Syncing...</h3>
+                                    <p className="text-slate-600 max-w-xs mt-2">This brand is currently updating its Master Catalog entries.</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                                    {brandProducts.map((product) => (
+                                        <Card key={product.id} className="group overflow-hidden rounded-3xl border-primary/10 bg-slate-900/40 hover:border-primary/40 transition-all duration-500 flex flex-col">
+                                            <div className="relative aspect-square w-full overflow-hidden">
+                                                <Image 
+                                                    src={product.imageUrl} 
+                                                    alt={product.name} 
+                                                    fill 
+                                                    className="object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700" 
+                                                />
+                                                <div className="absolute top-4 left-4">
+                                                    <Badge className="bg-black/60 backdrop-blur-md border-white/10 text-white font-mono text-[10px]">
+                                                        SKU: {product.id.slice(0, 6)}
+                                                    </Badge>
+                                                </div>
+                                            </div>
+                                            <CardContent className="p-6 flex-1 flex flex-col justify-between space-y-4">
+                                                <div>
+                                                    <h3 className="text-lg font-bold text-slate-200 line-clamp-1 group-hover:text-primary transition-colors">{product.name}</h3>
+                                                    <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">{product.description}</p>
+                                                </div>
+                                                
+                                                <div className="space-y-4">
+                                                    <div className="flex items-center justify-between border-y border-white/5 py-3">
+                                                        <div className="space-y-0.5">
+                                                            <p className="text-[9px] uppercase font-black text-slate-500 tracking-tighter">Mogul Cost</p>
+                                                            <p className="font-mono font-bold text-slate-200">{formatCurrency(Math.round(product.masterCost * 100))}</p>
+                                                        </div>
+                                                        <div className="text-right space-y-0.5">
+                                                            <p className="text-[9px] uppercase font-black text-primary tracking-tighter">Rec. Retail</p>
+                                                            <p className="font-mono font-bold text-primary">{formatCurrency(Math.round(product.retailPrice * 100))}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <Button 
+                                                        className="w-full btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-black h-12 rounded-xl"
+                                                        onClick={() => handleQuickSync(product)}
+                                                        disabled={syncingIds.has(product.id)}
+                                                    >
+                                                        {syncingIds.has(product.id) ? (
+                                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                                        ) : (
+                                                            <>
+                                                                <Zap className="mr-2 h-4 w-4 fill-current" />
+                                                                QUICK SYNC
+                                                            </>
+                                                        )}
+                                                    </Button>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            )}
+                        </section>
+                    </div>
+                </div>
             </div>
         </div>
     );
