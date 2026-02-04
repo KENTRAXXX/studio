@@ -79,6 +79,7 @@ const merchantNavItems = [
 ];
 
 const sellerNavItems = [
+    { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
     { href: '/backstage/finances', icon: Landmark, label: 'Finances & Payouts' },
     { href: '/backstage/add-product', icon: Package, label: 'Add Product' },
     { href: '/backstage', icon: ShieldCheck, label: 'Onboarding Status' },

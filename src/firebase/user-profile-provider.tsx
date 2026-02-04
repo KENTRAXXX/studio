@@ -99,6 +99,12 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
          router.push('/legal/terms');
          return;
        }
+
+       // 3. Status Guard: If pending review, lock to the status page
+       if (userProfile.status === 'pending_review' && !isPendingReviewPage && !isPublicRoute && !isLegalPage && !isReturnPage) {
+          router.push('/backstage/pending-review');
+          return;
+       }
     }
 
   }, [userProfile, profileLoading, pathname, router]);

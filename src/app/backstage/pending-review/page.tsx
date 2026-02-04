@@ -8,6 +8,44 @@ import SomaLogo from '@/components/logo';
 import { motion } from 'framer-motion';
 
 export default function PendingReviewPage() {
+    
+    const handleDownloadGuide = () => {
+        const content = `
+SOMA STRATEGIC ASSETS GROUP
+OFFICIAL ONBOARDING GUIDE FOR ELITE SUPPLIERS
+
+Welcome to the SOMA Ecosystem. Your application is currently being reviewed by our Concierge Team.
+
+To prepare for your launch, please review these key operational standards:
+
+1. BRAND PRESENTATION
+Your products will be displayed in high-end boutiques. Ensure your product descriptions are evocative and your image URLs point to professional, high-resolution photography.
+
+2. LOGISTICS & FULFILLMENT
+Reliability is our hallmark. Orders must be acknowledged within 24 hours and shipped within 3 business days using tracked courier services.
+
+3. FINANCES & PAYOUTS
+SOMA handles all payment processing. Payouts are logged to your ledger immediately and become available for withdrawal after the 7-day return window.
+
+4. THE SOMA SHIELD
+We maintain a zero-tolerance policy for replicas. Authenticity is non-negotiable.
+
+Your dedicated concierge will notify you via email once your luxury hub is activated.
+
+SOMA - The Ultimate Design System for E-commerce.
+        `;
+        
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'SOMA_Supplier_Onboarding_Guide.txt';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-background text-center p-4">
             <div className="flex items-center gap-2 mb-12">
@@ -49,14 +87,12 @@ export default function PendingReviewPage() {
                     
                     <div className="flex flex-col gap-4 px-6">
                         <Button 
-                            asChild 
+                            onClick={handleDownloadGuide}
                             size="lg" 
                             className="h-14 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold transition-all duration-300"
                         >
-                            <a href="#" onClick={(e) => { e.preventDefault(); alert('Onboarding Guide downloading...'); }}>
-                                <FileText className="mr-2 h-5 w-5" />
-                                Download Onboarding Guide
-                            </a>
+                            <FileText className="mr-2 h-5 w-5" />
+                            Download Onboarding Guide
                         </Button>
                         
                         <Button asChild variant="ghost" className="text-muted-foreground hover:text-primary transition-colors h-12">
