@@ -6,6 +6,8 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore, doc, getDoc, updateDoc, collection, addDoc, runTransaction, query, where } from 'firebase/firestore';
 import { firebaseConfig } from '@/firebase/config';
 import { sendOrderEmail } from '@/ai/flows/send-order-email';
+import { sendReferralActivatedEmail } from '@/ai/flows/send-referral-activated-email';
+import { formatCurrency } from '@/utils/format';
 
 const basePrices: Record<string, number> = {
     MERCHANT: 19.99,
@@ -234,6 +236,9 @@ export async function POST(req: Request) {
         await executePaymentSplit(event.data);
     } else if (userId) {
         try {
+            // Data needed for referral email outside transaction
+            let emailData: { to: string, referrerName: string, protegeName: string, creditAmount: string } | null = null;
+
             // 1. Transactional Access Grant & Referral Credit
             await runTransaction(firestore, async (transaction) => {
                 const userRef = doc(firestore, "users", userId);
@@ -249,6 +254,7 @@ export async function POST(req: Request) {
                     const referrerSnap = await transaction.get(referrerRef);
                     
                     if (referrerSnap.exists() && referrerSnap.data().hasAccess === true) {
+                        const referrerData = referrerSnap.data();
                         const tier = userData.planTier || planTier;
                         const interval = userData.plan || plan;
                         
@@ -268,6 +274,14 @@ export async function POST(req: Request) {
                                 createdAt: new Date().toISOString(),
                                 description: `10% Referral Credit for ${userData.email || 'New User'} activation.`
                             });
+
+                            // Prepare email data
+                            emailData = {
+                                to: referrerData.email,
+                                referrerName: referrerData.displayName || referrerData.email.split('@')[0],
+                                protegeName: userData.displayName || userData.email.split('@')[0],
+                                creditAmount: formatCurrency(Math.round(referralCredit * 100))
+                            };
                         }
                     }
                 }
@@ -281,7 +295,14 @@ export async function POST(req: Request) {
 
             console.log(`Paystack webhook: Access granted and referral checked for ${userId}`);
 
-            // 2. Trigger welcome flow ONLY for Mogul tiers. 
+            // 2. Dispatch Referral Email if applicable
+            if (emailData) {
+                await sendReferralActivatedEmail(emailData).catch(err => {
+                    console.error("Failed to send referral activation email:", err);
+                });
+            }
+
+            // 3. Trigger welcome flow ONLY for Mogul tiers. 
             // Brand/Seller verification happens first, then they get their welcome email.
             const isSupplierTier = planTier === 'SELLER' || planTier === 'BRAND';
             
