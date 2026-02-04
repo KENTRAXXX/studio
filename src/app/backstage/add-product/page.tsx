@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useUserProfile, useStorage } from '@/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,8 @@ const AVAILABLE_CATEGORIES = [
     "Watches", "Leather Goods", "Jewelry", "Fragrance", "Apparel", "Accessories", "Home Decor", "Electronics"
 ];
 
+const MAX_IMAGES = 5;
+
 export default function AddProductPage() {
   const { user, loading: userLoading } = useUser();
   const { userProfile, loading: profileLoading } = useUserProfile();
@@ -34,7 +36,7 @@ export default function AddProductPage() {
 
   const [productName, setProductName] = useState('');
   const [description, setDescription] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [wholesalePrice, setWholesalePrice] = useState('');
   const [suggestedRetailPrice, setSuggestedRetailPrice] = useState('');
   
@@ -44,6 +46,9 @@ export default function AddProductPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  // Pre-generate an ID for structured storage path
+  const [tempId] = useState(() => crypto.randomUUID());
 
   const numericWholesale = parseFloat(wholesalePrice) || 0;
   const numericRetail = parseFloat(suggestedRetailPrice) || 0;
@@ -65,36 +70,45 @@ export default function AddProductPage() {
   }, [userProfile, profileLoading, router]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user || !storage) return;
+    const files = e.target.files;
+    if (!files || files.length === 0 || !user || !storage) return;
 
-    if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
+    const remainingSlots = MAX_IMAGES - imageUrls.length;
+    const filesToUpload = Array.from(files).slice(0, remainingSlots);
+
+    if (filesToUpload.length === 0) {
         toast({
             variant: 'destructive',
-            title: 'Invalid File Type',
-            description: 'Please upload a high-resolution JPG or PNG image.',
+            title: 'Limit Reached',
+            description: `You can only upload up to ${MAX_IMAGES} images.`,
         });
         return;
     }
 
     setIsUploading(true);
     try {
-        const storageRef = ref(storage, `products/${user.uid}/${Date.now()}_${file.name}`);
-        const snapshot = await uploadBytes(storageRef, file);
-        const downloadUrl = await getDownloadURL(snapshot.ref);
-        
-        setImageUrl(downloadUrl);
-        toast({ title: 'Image Uploaded', description: 'Product asset secured successfully.' });
+        const uploadPromises = filesToUpload.map(async (file, index) => {
+            if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
+                throw new Error(`File ${file.name} is not a supported format.`);
+            }
+            const storageRef = ref(storage, `master_catalog/${tempId}/${Date.now()}_${index}_${file.name}`);
+            const snapshot = await uploadBytes(storageRef, file);
+            return getDownloadURL(snapshot.ref);
+        });
+
+        const urls = await Promise.all(uploadPromises);
+        setImageUrls(prev => [...prev, ...urls]);
+        toast({ title: 'Upload Complete', description: `${urls.length} asset(s) secured successfully.` });
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Upload Failed', description: error.message || 'Could not upload image.' });
+        toast({ variant: 'destructive', title: 'Upload Failed', description: error.message || 'Could not upload images.' });
     } finally {
         setIsUploading(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  const removeImage = () => {
-      setImageUrl('');
-      if (fileInputRef.current) fileInputRef.current.value = '';
+  const removeImage = (indexToRemove: number) => {
+      setImageUrls(prev => prev.filter((_, i) => i !== indexToRemove));
   };
 
   const toggleCategory = (category: string) => {
@@ -110,8 +124,8 @@ export default function AddProductPage() {
       return;
     }
 
-    if (!imageUrl) {
-        toast({ variant: 'destructive', title: 'Image Required', description: 'Please upload a product image to proceed.' });
+    if (imageUrls.length === 0) {
+        toast({ variant: 'destructive', title: 'Image Required', description: 'Please upload at least one product image to proceed.' });
         return;
     }
     
@@ -119,7 +133,7 @@ export default function AddProductPage() {
       toast({ 
         variant: 'destructive', 
         title: 'Pricing Strategy Error', 
-        description: 'Your Suggested Retail Price must be higher than the Wholesale Price to ensure platform viability.' 
+        description: 'Your Suggested Retail Price must be higher than the Wholesale Price.' 
       });
       return;
     }
@@ -128,11 +142,12 @@ export default function AddProductPage() {
 
     setIsSubmitting(true);
     try {
-      const pendingCatalogRef = collection(firestore, 'Pending_Master_Catalog');
-      await addDoc(pendingCatalogRef, {
+      const pendingDocRef = doc(collection(firestore, 'Pending_Master_Catalog'), tempId);
+      await setDoc(pendingDocRef, {
         productName,
         description,
-        imageUrl, 
+        imageUrl: imageUrls[0], // primary image
+        imageUrls: imageUrls,
         wholesalePrice: numericWholesale,
         suggestedRetailPrice: numericRetail,
         categories: selectedCategories,
@@ -185,7 +200,7 @@ export default function AddProductPage() {
                     setIsSuccess(false);
                     setProductName('');
                     setDescription('');
-                    setImageUrl('');
+                    setImageUrls([]);
                     setWholesalePrice('');
                     setSuggestedRetailPrice('');
                     setSelectedCategories([]);
@@ -314,71 +329,75 @@ export default function AddProductPage() {
                     </div>
 
                     <div className="space-y-6">
-                        <div className="space-y-2">
+                        <div className="space-y-4">
                             <Label className="flex items-center gap-2">
                                 <ImageIcon className="h-4 w-4 text-primary" />
-                                Product Photography (1:1 Aspect Ratio)
+                                Product Photography (Max 5, 1:1 Aspect Ratio)
                             </Label>
                             
-                            <div className="relative">
-                                <div 
-                                    onClick={() => !imageUrl && fileInputRef.current?.click()}
-                                    className={cn(
-                                        "relative w-full aspect-square border-2 border-dashed rounded-xl flex flex-col items-center justify-center transition-all duration-300 overflow-hidden",
-                                        !imageUrl ? "border-primary/30 hover:border-primary bg-muted/20 cursor-pointer" : "border-primary/50 bg-background",
-                                        isUploading && "animate-pulse"
-                                    )}
-                                >
-                                    {isUploading ? (
-                                        <div className="flex flex-col items-center gap-2">
-                                            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                                            <p className="text-xs font-bold text-primary uppercase tracking-widest">Uploading...</p>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                {imageUrls.map((url, index) => (
+                                    <div key={index} className="relative aspect-square rounded-xl overflow-hidden border border-primary/50 group">
+                                        <Image 
+                                            src={url} 
+                                            alt={`Product ${index + 1}`} 
+                                            fill 
+                                            className="object-cover"
+                                        />
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <Button 
+                                                type="button" 
+                                                variant="destructive" 
+                                                size="icon" 
+                                                onClick={() => removeImage(index)}
+                                                className="rounded-full h-8 w-8"
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </Button>
                                         </div>
-                                    ) : imageUrl ? (
-                                        <div className="relative w-full h-full group">
-                                            <Image 
-                                                src={imageUrl} 
-                                                alt="Preview" 
-                                                fill 
-                                                className="object-cover"
-                                                sizes="(max-width: 768px) 100vw, 400px"
-                                            />
-                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                <Button 
-                                                    type="button" 
-                                                    variant="destructive" 
-                                                    size="icon" 
-                                                    onClick={(e) => { e.stopPropagation(); removeImage(); }}
-                                                    className="rounded-full h-12 w-12"
-                                                >
-                                                    <X className="h-6 w-6" />
-                                                </Button>
+                                        {index === 0 && (
+                                            <Badge className="absolute top-2 left-2 bg-primary text-primary-foreground">Primary</Badge>
+                                        )}
+                                    </div>
+                                ))}
+                                
+                                {imageUrls.length < MAX_IMAGES && (
+                                    <div 
+                                        onClick={() => !isUploading && fileInputRef.current?.click()}
+                                        className={cn(
+                                            "relative aspect-square border-2 border-dashed rounded-xl flex flex-col items-center justify-center transition-all duration-300 overflow-hidden cursor-pointer",
+                                            "border-primary/30 hover:border-primary bg-muted/20",
+                                            isUploading && "animate-pulse"
+                                        )}
+                                    >
+                                        {isUploading ? (
+                                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center p-4 text-center">
+                                                <UploadCloud className="h-8 w-8 text-muted-foreground mb-2" />
+                                                <span className="text-[10px] font-semibold">Upload</span>
                                             </div>
-                                        </div>
-                                    ) : (
-                                        <div className="flex flex-col items-center justify-center p-6 text-center">
-                                            <UploadCloud className="h-12 w-12 text-muted-foreground mb-4" />
-                                            <span className="text-sm font-semibold">Click to upload square image</span>
-                                            <span className="text-[10px] text-muted-foreground mt-2 uppercase tracking-tighter">JPG, PNG (Max 10MB)</span>
-                                        </div>
-                                    )}
-                                </div>
-                                <input 
-                                    type="file" 
-                                    ref={fileInputRef} 
-                                    className="hidden" 
-                                    accept="image/png,image/jpeg" 
-                                    onChange={handleFileUpload} 
-                                    disabled={isUploading || !!imageUrl}
-                                />
+                                        )}
+                                    </div>
+                                )}
                             </div>
+                            
+                            <input 
+                                type="file" 
+                                ref={fileInputRef} 
+                                className="hidden" 
+                                accept="image/png,image/jpeg" 
+                                multiple
+                                onChange={handleFileUpload} 
+                                disabled={isUploading || imageUrls.length >= MAX_IMAGES}
+                            />
                             <p className="text-xs text-muted-foreground italic">Tip: Luxury products perform best with minimalist, high-contrast backgrounds.</p>
                         </div>
 
                         <div className="flex justify-end pt-4">
                             <Button 
                                 type="submit" 
-                                disabled={isSubmitting || isUploading || !imageUrl || selectedCategories.length === 0 || isPriceInvalid} 
+                                disabled={isSubmitting || isUploading || imageUrls.length === 0 || selectedCategories.length === 0 || isPriceInvalid} 
                                 size="lg" 
                                 className="w-full h-14 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground text-lg font-bold"
                             >
@@ -400,3 +419,5 @@ export default function AddProductPage() {
     </div>
   );
 }
+
+    
