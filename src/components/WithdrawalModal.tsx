@@ -256,7 +256,7 @@ export function WithdrawalModal({ isOpen, onOpenChange, availableBalance, userPr
                             <Input placeholder="Global Bank Inc." {...field} />
                         </FormControl>
                         <FormMessage />
-                        </Item>
+                        </FormItem>
                     )}
                     />
                     <FormField
