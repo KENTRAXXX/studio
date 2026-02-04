@@ -3,11 +3,13 @@
 
 import Link from 'next/link';
 import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   SidebarProvider,
   Sidebar,
   SidebarHeader,
   SidebarContent,
+  SidebarFooter,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
@@ -38,9 +40,11 @@ import {
   FolderOpen,
   Warehouse,
   MessageSquare,
+  LogOut,
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
+import { useAuth } from '@/firebase';
 
 const scalerNavItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
@@ -116,6 +120,20 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { userProfile } = useUserProfile();
+  const auth = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    if (!auth) return;
+    try {
+      await auth.signOut();
+      router.push('/');
+      // Ensuring a clean state for the next user
+      window.location.reload();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   const currentNavItems = useMemo(() => {
     if (!userProfile) return [];
@@ -193,6 +211,19 @@ export default function DashboardLayout({
             )}
           </SidebarMenu>
         </SidebarContent>
+        <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton 
+                onClick={handleLogout}
+                className="text-muted-foreground hover:text-destructive transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Sign Out</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
       </Sidebar>
       <SidebarInset className="bg-background">
         <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
