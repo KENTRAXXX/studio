@@ -1,8 +1,20 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, collectionGroup, orderBy, limit } from 'firebase/firestore';
+import { 
+    collection, 
+    query, 
+    where, 
+    collectionGroup, 
+    orderBy, 
+    limit, 
+    writeBatch, 
+    doc, 
+    setDoc, 
+    getDoc,
+    updateDoc
+} from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { 
@@ -17,20 +29,29 @@ import {
     ArrowRight,
     Loader2,
     Zap,
-    AlertCircle,
     Activity,
-    ShieldCheck
+    ShieldCheck,
+    Check,
+    X,
+    UserCheck,
+    PackagePlus
 } from "lucide-react";
 import Link from 'next/link';
 import { formatCurrency } from '@/utils/format';
 import { LiveFeedTicker } from '@/components/ui/live-feed-ticker';
 import { differenceInDays } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { sendWelcomeEmail } from '@/ai/flows/send-welcome-email';
 
 export default function AdminOverviewPage() {
     const firestore = useFirestore();
+    const { toast } = useToast();
+    const [processingId, setProcessingId] = useState<string | null>(null);
 
-    // 1. Command Action Data
-    const pendingSellersQ = useMemoFirebase(() => firestore ? query(collection(firestore, 'users'), where('status', '==', 'pending_review')) : null, [firestore]);
+    // 1. Metrics Data
+    const pendingSellersQ = useMemoFirebase(() => firestore ? query(collection(firestore, 'users'), where('status', '==', 'pending_review'), orderBy('email', 'asc')) : null, [firestore]);
     const openTicketsQ = useMemoFirebase(() => firestore ? query(collection(firestore, 'concierge_tickets'), where('status', '==', 'open')) : null, [firestore]);
     const maturedRewardsQ = useMemoFirebase(() => firestore ? query(collection(firestore, 'payouts_pending'), where('status', '==', 'pending_maturity')) : null, [firestore]);
 
@@ -43,14 +64,14 @@ export default function AdminOverviewPage() {
     const activeUsersQ = useMemoFirebase(() => firestore ? query(collection(firestore, 'users'), where('hasAccess', '==', true)) : null, [firestore]);
     const pendingItemsQ = useMemoFirebase(() => firestore ? query(collection(firestore, 'Pending_Master_Catalog'), where('isApproved', '==', false)) : null, [firestore]);
 
-    const { data: pendingSellers, loading: sellersLoading } = useCollection(pendingSellersQ);
-    const { data: openTickets, loading: ticketsLoading } = useCollection(openTicketsQ);
+    const { data: pendingSellers, loading: sellersLoading } = useCollection<any>(pendingSellersQ);
+    const { data: openTickets, loading: ticketsLoading } = useCollection<any>(openTicketsQ);
     const { data: maturedRewardsRaw, loading: rewardsLoading } = useCollection<any>(maturedRewardsQ);
     const { data: allOrders, loading: ordersLoading } = useCollection<any>(allOrdersQ);
     const { data: revenueLogs, loading: revenueLoading } = useCollection<any>(revenueLogsQ);
     const { data: allPayouts, loading: payoutsLoading } = useCollection<any>(allPendingPayoutsQ);
     const { data: activeUsers, loading: activeUsersLoading } = useCollection(activeUsersQ);
-    const { data: pendingItems, loading: itemsLoading } = useCollection(pendingItemsQ);
+    const { data: pendingItems, loading: itemsLoading } = useCollection<any>(pendingItemsQ);
 
     const metrics = useMemo(() => {
         const gmv = allOrders?.reduce((acc, o) => acc + (o.total || 0), 0) || 0;
@@ -64,6 +85,75 @@ export default function AdminOverviewPage() {
 
         return { gmv, netRevenue, liability, maturedCount };
     }, [allOrders, revenueLogs, allPayouts, maturedRewardsRaw]);
+
+    // Workspaces Logic
+    const recentPendingSellers = useMemo(() => pendingSellers?.slice(0, 5) || [], [pendingSellers]);
+    const recentPendingProducts = useMemo(() => pendingItems?.slice(0, 5) || [], [pendingItems]);
+
+    const handleApproveBrand = async (seller: any) => {
+        if (!firestore) return;
+        setProcessingId(seller.id);
+        try {
+            const userRef = doc(firestore, 'users', seller.id);
+            await updateDoc(userRef, { status: 'approved' });
+
+            const storeRef = doc(firestore, 'stores', seller.id);
+            const storeSnap = await getDoc(storeRef);
+            if (!storeSnap.exists()) {
+                await setDoc(storeRef, {
+                    userId: seller.id,
+                    storeName: seller.verificationData?.legalBusinessName || 'SOMA Supplier',
+                    status: 'Live',
+                    createdAt: new Date().toISOString(),
+                    theme: 'Minimalist',
+                    currency: 'USD'
+                });
+            }
+
+            await sendWelcomeEmail({
+                to: seller.email,
+                storeName: seller.verificationData?.legalBusinessName || 'Your SOMA Store',
+            });
+
+            toast({ title: 'Brand Approved', description: `${seller.email} is now verified.` });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error', description: error.message });
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
+    const handleApproveProduct = async (product: any) => {
+        if (!firestore) return;
+        setProcessingId(product.id);
+        try {
+            const batch = writeBatch(firestore);
+            const masterCatalogRef = doc(collection(firestore, 'Master_Catalog'));
+            const pendingDocRef = doc(firestore, 'Pending_Master_Catalog', product.id);
+
+            batch.set(masterCatalogRef, {
+                name: product.productName,
+                description: product.description,
+                masterCost: product.wholesalePrice,
+                retailPrice: product.suggestedRetailPrice,
+                stockLevel: product.stockLevel || 0,
+                imageId: product.imageUrl,
+                vendorId: product.vendorId,
+                productType: 'EXTERNAL',
+                status: 'active',
+                createdAt: new Date().toISOString()
+            });
+
+            batch.update(pendingDocRef, { isApproved: 'approved' });
+            await batch.commit();
+
+            toast({ title: 'Product Synced', description: `${product.productName} is now in the Master Catalog.` });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error', description: error.message });
+        } finally {
+            setProcessingId(null);
+        }
+    };
 
     const isLoading = sellersLoading || ticketsLoading || rewardsLoading || ordersLoading || revenueLoading || payoutsLoading || activeUsersLoading || itemsLoading;
 
@@ -152,6 +242,113 @@ export default function AdminOverviewPage() {
                         </Link>
                     </Card>
                 </div>
+            </section>
+
+            {/* New Row: Workspaces */}
+            <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Brand Approval Queue */}
+                <Card className="border-primary/20 bg-slate-900/20 overflow-hidden">
+                    <CardHeader className="bg-muted/30 border-b border-primary/10 flex flex-row items-center justify-between py-4">
+                        <div>
+                            <CardTitle className="text-sm font-headline uppercase tracking-widest flex items-center gap-2">
+                                <UserCheck className="h-4 w-4 text-primary" />
+                                Pending Brand Partners
+                            </CardTitle>
+                        </div>
+                        <Button asChild variant="ghost" size="sm" className="h-7 text-[10px] uppercase font-bold text-primary">
+                            <Link href="/admin/verification-queue">View All <ArrowRight className="ml-1 h-3 w-3" /></Link>
+                        </Button>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                        <Table>
+                            <TableBody>
+                                {recentPendingSellers.length > 0 ? recentPendingSellers.map((seller) => (
+                                    <TableRow key={seller.id} className="border-primary/5 hover:bg-primary/5 transition-colors">
+                                        <TableCell>
+                                            <div className="font-bold text-slate-200 text-xs">{seller.email}</div>
+                                            <div className="text-[10px] text-muted-foreground truncate max-w-[150px]">{seller.verificationData?.legalBusinessName || 'N/A'}</div>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex justify-end gap-2">
+                                                <Button 
+                                                    size="icon" 
+                                                    variant="ghost" 
+                                                    className="h-8 w-8 text-green-500 hover:bg-green-500/10"
+                                                    onClick={() => handleApproveBrand(seller)}
+                                                    disabled={processingId === seller.id}
+                                                >
+                                                    {processingId === seller.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-4 w-4" />}
+                                                </Button>
+                                                <Button 
+                                                    size="icon" 
+                                                    variant="ghost" 
+                                                    className="h-8 w-8 text-red-500 hover:bg-red-500/10"
+                                                    disabled={processingId === seller.id}
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                )) : (
+                                    <TableRow><TableCell className="h-32 text-center text-xs text-muted-foreground italic">No brands awaiting review.</TableCell></TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+
+                {/* Product Approval Queue */}
+                <Card className="border-primary/20 bg-slate-900/20 overflow-hidden">
+                    <CardHeader className="bg-muted/30 border-b border-primary/10 flex flex-row items-center justify-between py-4">
+                        <div>
+                            <CardTitle className="text-sm font-headline uppercase tracking-widest flex items-center gap-2">
+                                <PackagePlus className="h-4 w-4 text-primary" />
+                                Master Catalog Submissions
+                            </CardTitle>
+                        </div>
+                        <Button asChild variant="ghost" size="sm" className="h-7 text-[10px] uppercase font-bold text-primary">
+                            <Link href="/admin/approval-queue">View All <ArrowRight className="ml-1 h-3 w-3" /></Link>
+                        </Button>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                        <Table>
+                            <TableBody>
+                                {recentPendingProducts.length > 0 ? recentPendingProducts.map((product) => (
+                                    <TableRow key={product.id} className="border-primary/5 hover:bg-primary/5 transition-colors">
+                                        <TableCell>
+                                            <div className="font-bold text-slate-200 text-xs">{product.productName}</div>
+                                            <div className="text-[10px] text-muted-foreground">{formatCurrency(Math.round(product.wholesalePrice * 100))} wholesale</div>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex justify-end gap-2">
+                                                <Button 
+                                                    size="icon" 
+                                                    variant="ghost" 
+                                                    className="h-8 w-8 text-green-500 hover:bg-green-500/10"
+                                                    onClick={() => handleApproveProduct(product)}
+                                                    disabled={processingId === product.id}
+                                                >
+                                                    {processingId === product.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-4 w-4" />}
+                                                </Button>
+                                                <Button 
+                                                    size="icon" 
+                                                    variant="ghost" 
+                                                    className="h-8 w-8 text-red-500 hover:bg-red-500/10"
+                                                    disabled={processingId === product.id}
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                )) : (
+                                    <TableRow><TableCell className="h-32 text-center text-xs text-muted-foreground italic">Catalog queue is clear.</TableCell></TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
             </section>
 
             {/* Row 2: Financial Growth (The Treasury) */}
