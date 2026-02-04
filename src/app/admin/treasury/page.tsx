@@ -44,7 +44,9 @@ import {
   AlertTriangle,
   ArrowRightLeft,
   Building2,
-  ShieldAlert
+  ShieldAlert,
+  Activity,
+  ArrowUpRight
 } from 'lucide-react';
 import {
   Dialog,
@@ -61,6 +63,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/utils/format';
 import { cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 type WithdrawalRequest = {
   id: string;
@@ -95,6 +98,9 @@ export default function TreasuryPage() {
   const [corporateTransferAmount, setCorporateTransferAmount] = useState<string>('');
   const [isTransferring, setIsTransferring] = useState(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  
+  // Simulated Paystack Gateway Balance (In a real app, this would be fetched via a secure server action)
+  const [paystackBalance, setPaystackBalance] = useState<number>(45000.00);
 
   // 1. Data Fetching for Executive Metrics
   const pendingRequestsQ = useMemoFirebase(() => {
@@ -135,7 +141,6 @@ export default function TreasuryPage() {
       const liability = allPayouts?.reduce((acc, p) => acc + (p.amount || 0), 0) || 0;
       const totalPendingWithdrawals = requests?.reduce((acc, r) => acc + (r.amount || 0), 0) || 0;
 
-      // Breakdown by Type (TRANSACTION vs SUBSCRIPTION)
       const transactionRev = revenueLogs?.filter(l => l.type === 'TRANSACTION').reduce((acc, l) => acc + (l.amount || 0), 0) || 0;
       const subscriptionRev = revenueLogs?.filter(l => l.type === 'SUBSCRIPTION').reduce((acc, l) => acc + (l.amount || 0), 0) || 0;
 
@@ -151,6 +156,10 @@ export default function TreasuryPage() {
       }));
   }, [requests, allUsers]);
 
+  // Health Check Logic
+  const isLiquidityLow = paystackBalance < metrics.liability;
+  const coverageRatio = metrics.liability > 0 ? (paystackBalance / metrics.liability) * 100 : 100;
+
   // 3. Operational Logic
   const handleMarkAsPaid = async (request: CombinedRequest) => {
     if (!firestore) return;
@@ -160,7 +169,6 @@ export default function TreasuryPage() {
         const batch = writeBatch(firestore);
         const requestRef = doc(firestore, 'withdrawal_requests', request.id);
 
-        // Move partner's pending payouts to completed
         const pendingPayoutsQuery = query(
             collection(firestore, 'payouts_pending'), 
             where('userId', '==', request.userId), 
@@ -201,7 +209,6 @@ export default function TreasuryPage() {
           if (isNaN(amount) || amount <= 0) throw new Error("Invalid transfer amount.");
           if (amount > metrics.netRevenue) throw new Error("Transfer amount exceeds platform net profit.");
 
-          // Log the corporate transfer
           await addDoc(collection(firestore, 'corporate_transfers'), {
               amount,
               type: 'WITHDRAWAL',
@@ -233,12 +240,26 @@ export default function TreasuryPage() {
     );
   }
 
-  // Calculate percentages for the breakdown bars
   const transactionPct = metrics.netRevenue > 0 ? (metrics.transactionRev / metrics.netRevenue) * 100 : 0;
   const subscriptionPct = metrics.netRevenue > 0 ? (metrics.subscriptionRev / metrics.netRevenue) * 100 : 0;
 
   return (
     <div className="space-y-10 pb-24">
+      {/* Liquidity Health Check Banner */}
+      {isLiquidityLow && (
+        <Alert variant="destructive" className="bg-destructive/10 border-destructive border-2 animate-pulse py-6">
+          <ShieldAlert className="h-8 w-8 text-destructive shrink-0" />
+          <div className="ml-4">
+            <AlertTitle className="text-xl font-headline font-black uppercase tracking-widest">Critical: Liquidity Alert</AlertTitle>
+            <AlertDescription className="text-base font-medium mt-1">
+              Platform liability ({formatCurrency(Math.round(metrics.liability * 100))}) exceeds current Gateway Balance ({formatCurrency(Math.round(paystackBalance * 100))}). 
+              <br />
+              <strong>Action Required:</strong> Halt corporate extractions and replenish gateway liquidity to ensure fulfillment.
+            </AlertDescription>
+          </div>
+        </Alert>
+      )}
+
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
             <h1 className="text-4xl font-bold font-headline text-primary flex items-center gap-3">
@@ -254,7 +275,7 @@ export default function TreasuryPage() {
       </header>
 
       {/* Row 1: Primary Financial Buckets */}
-      <div className="grid gap-8 md:grid-cols-3">
+      <div className="grid gap-8 md:grid-cols-4">
         <Card className="border-primary/20 bg-slate-900/30 relative overflow-hidden group min-h-[180px] flex flex-col justify-center">
           <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
             <TrendingUp className="h-24 w-24" />
@@ -263,37 +284,62 @@ export default function TreasuryPage() {
             <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Total Ecosystem Volume (GMV)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-5xl font-bold font-mono text-white tracking-tighter">
+            <div className="text-4xl font-bold font-mono text-white tracking-tighter">
                 {formatCurrency(Math.round(metrics.gmv * 100))}
             </div>
             <p className="text-[10px] text-green-500 font-bold mt-3 flex items-center gap-1 uppercase tracking-widest">
-                <TrendingUp className="h-3 w-3" /> Aggregated Network Output
+                <TrendingUp className="h-3 w-3" /> Aggregated Output
             </p>
           </CardContent>
         </Card>
 
         <Card className="border-primary bg-primary/5 relative overflow-hidden group min-h-[180px] flex flex-col justify-center shadow-gold-glow">
-          <div className="absolute inset-0 bg-primary/[0.02] animate-pulse pointer-events-none" />
           <CardHeader className="pb-2">
             <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">SOMA Net Platform Profit</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-5xl font-bold font-mono text-primary tracking-tighter">
+            <div className="text-4xl font-bold font-mono text-primary tracking-tighter">
                 {formatCurrency(Math.round(metrics.netRevenue * 100))}
             </div>
             <p className="text-[10px] text-primary/60 mt-3 uppercase tracking-widest font-black">Fees + Plan Subscriptions</p>
           </CardContent>
         </Card>
 
-        <Card className="border-red-500/30 bg-red-500/5 relative overflow-hidden group min-h-[180px] flex flex-col justify-center">
+        <Card className={cn(
+            "relative overflow-hidden group min-h-[180px] flex flex-col justify-center border-2",
+            isLiquidityLow ? "border-destructive bg-destructive/5" : "border-red-500/30 bg-red-500/5"
+        )}>
           <CardHeader className="pb-2">
             <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-red-400/60">System Payout Liability</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-5xl font-bold font-mono text-red-400 tracking-tighter">
+            <div className="text-4xl font-bold font-mono text-red-400 tracking-tighter">
                 {formatCurrency(Math.round(metrics.liability * 100))}
             </div>
-            <p className="text-[10px] text-muted-foreground mt-3 uppercase tracking-widest">Total Partner Funds in Transit</p>
+            <p className="text-[10px] text-muted-foreground mt-3 uppercase tracking-widest">Total Partner Funds</p>
+          </CardContent>
+        </Card>
+
+        <Card className={cn(
+            "relative overflow-hidden group min-h-[180px] flex flex-col justify-center border-2",
+            isLiquidityLow ? "border-destructive bg-destructive/10" : "border-green-500/30 bg-green-500/5"
+        )}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Gateway Liquidity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className={cn(
+                "text-4xl font-bold font-mono tracking-tighter",
+                isLiquidityLow ? "text-destructive" : "text-green-400"
+            )}>
+                {formatCurrency(Math.round(paystackBalance * 100))}
+            </div>
+            <p className={cn(
+                "text-[10px] font-bold mt-3 uppercase tracking-widest",
+                isLiquidityLow ? "text-destructive" : "text-green-500"
+            )}>
+                {isLiquidityLow ? "DEFICIT DETECTED" : "FULLY PROTECTED"} ({coverageRatio.toFixed(1)}%)
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -409,10 +455,10 @@ export default function TreasuryPage() {
                             <DialogTrigger asChild>
                                 <Button 
                                     className="w-full h-16 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest group"
-                                    disabled={!corporateTransferAmount || parseFloat(corporateTransferAmount) <= 0 || parseFloat(corporateTransferAmount) > metrics.netRevenue}
+                                    disabled={!corporateTransferAmount || parseFloat(corporateTransferAmount) <= 0 || parseFloat(corporateTransferAmount) > metrics.netRevenue || isLiquidityLow}
                                 >
                                     <ArrowRightLeft className="mr-3 h-6 w-6 group-hover:rotate-180 transition-transform duration-500" />
-                                    Transfer to Corporate
+                                    {isLiquidityLow ? "Extraction Frozen" : "Transfer to Corporate"}
                                 </Button>
                             </DialogTrigger>
                             <DialogContent className="bg-card border-primary p-8">
