@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -45,6 +46,14 @@ const getStatusClasses = (status: string) => {
   }
 };
 
+type OrderProduct = {
+  id: string;
+  name: string;
+  quantity: number;
+  price: number;
+  wholesalePrice?: number;
+};
+
 type Order = {
   id: string;
   orderId: string;
@@ -52,7 +61,7 @@ type Order = {
   customer: { email: string };
   total: number;
   status: 'Pending' | 'Shipped' | 'Delivered';
-  cart: Array<{id: string, name: string, quantity: number, price: number}>;
+  cart: OrderProduct[];
 };
 
 export default function MyOrdersPage() {
@@ -72,16 +81,21 @@ export default function MyOrdersPage() {
   const { grossRevenue, wholesaleCost, netProfit } = useMemo(() => {
     if (!orders) return { grossRevenue: 0, wholesaleCost: 0, netProfit: 0 };
     
-    // Note: wholesaleCost and netProfit are simplified here.
-    // A real calculation would require fetching each product in each order.
-    // For now, we'll base it on total revenue.
     const revenue = orders.reduce((acc, order) => acc + order.total, 0);
-    const cost = revenue * 0.4; // Simplified assumption
+    
+    const totalCost = orders.reduce((acc, order) => {
+        const orderCost = order.cart.reduce((itemAcc, item) => {
+            // Use saved wholesale price, or fallback to 70% of retail if missing (for legacy or manual entries)
+            const itemWholesale = item.wholesalePrice ?? (item.price * 0.7);
+            return itemAcc + (itemWholesale * item.quantity);
+        }, 0);
+        return acc + orderCost;
+    }, 0);
     
     return {
       grossRevenue: revenue,
-      wholesaleCost: cost,
-      netProfit: revenue - cost,
+      wholesaleCost: totalCost,
+      netProfit: revenue - totalCost,
     };
 
   }, [orders]);
@@ -120,7 +134,7 @@ export default function MyOrdersPage() {
         </Card>
         <Card className="border-primary/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">SOMA Wholesale Cost (Est.)</CardTitle>
+            <CardTitle className="text-sm font-medium">SOMA Wholesale Cost</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -129,7 +143,7 @@ export default function MyOrdersPage() {
         </Card>
         <Card className="border-green-500/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Net Profit (Est.)</CardTitle>
+            <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -162,7 +176,7 @@ export default function MyOrdersPage() {
                     </TableHeader>
                     <TableBody>
                     {orders && orders.length > 0 ? orders.map((order) => (
-                        <TableRow key={order.orderId}>
+                        <TableRow key={order.id}>
                         <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
                         <TableCell className="font-medium">{order.orderId}</TableCell>
                         <TableCell>{order.customer.email}</TableCell>
@@ -188,6 +202,7 @@ export default function MyOrdersPage() {
                                   {order.cart.map(item => (
                                     <li key={item.id} className="flex justify-between">
                                       <span>{item.name} x {item.quantity}</span>
+                                      <span>{formatCurrency(Math.round(item.price * 100))}</span>
                                     </li>
                                   ))}
                                 </ul>
