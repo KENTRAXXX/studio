@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Loader2, X, Tags, Layers } from 'lucide-react';
+import { Check, Loader2, X, Tags, Layers, Package } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import type { PendingProduct } from '@/lib/types';
@@ -55,7 +55,7 @@ export default function ApprovalQueuePage() {
         description: product.description,
         masterCost: product.wholesalePrice,
         retailPrice: product.suggestedRetailPrice,
-        stockLevel: 100, 
+        stockLevel: product.stockLevel || 0, 
         imageId: product.imageUrl, 
         vendorId: product.vendorId,
         productType: 'EXTERNAL',
@@ -133,6 +133,7 @@ export default function ApprovalQueuePage() {
                                 <TableHead className="w-[100px]">Image</TableHead>
                                 <TableHead>Product Details</TableHead>
                                 <TableHead>Categories & Tags</TableHead>
+                                <TableHead className="text-right">Stock</TableHead>
                                 <TableHead className="text-right">Wholesale</TableHead>
                                 <TableHead className="text-right">Retail</TableHead>
                                 <TableHead className="text-center">Actions</TableHead>
@@ -172,6 +173,12 @@ export default function ApprovalQueuePage() {
                                                 </Badge>
                                             ))}
                                         </div>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Badge variant="outline" className="font-mono">
+                                            <Package className="h-3 w-3 mr-1" />
+                                            {product.stockLevel || 0}
+                                        </Badge>
                                     </TableCell>
                                     <TableCell className="text-right font-mono font-bold">${product.wholesalePrice.toFixed(2)}</TableCell>
                                     <TableCell className="text-right font-mono font-bold text-primary">${product.suggestedRetailPrice.toFixed(2)}</TableCell>

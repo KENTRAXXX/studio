@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, CheckCircle2, UploadCloud, X, ImageIcon, TrendingUp, Tags, Layers, Plus, AlertCircle } from 'lucide-react';
+import { Loader2, PackagePlus, CheckCircle2, UploadCloud, X, ImageIcon, TrendingUp, Tags, Layers, Plus, AlertCircle, Package } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import SomaLogo from '@/components/logo';
 import { cn } from '@/lib/utils';
@@ -56,6 +56,7 @@ export default function AddProductPage() {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [wholesalePrice, setWholesalePrice] = useState('');
   const [suggestedRetailPrice, setSuggestedRetailPrice] = useState('');
+  const [quantityAvailable, setQuantityAvailable] = useState('100');
   
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [tagsInput, setTagsInput] = useState('');
@@ -169,6 +170,7 @@ export default function AddProductPage() {
         imageUrls: imageUrls,
         wholesalePrice: numericWholesale,
         suggestedRetailPrice: numericRetail,
+        stockLevel: parseInt(quantityAvailable, 10) || 0,
         categories: selectedCategories,
         tags: tags,
         vendorId: user.uid,
@@ -222,6 +224,7 @@ export default function AddProductPage() {
                     setImageUrls([]);
                     setWholesalePrice('');
                     setSuggestedRetailPrice('');
+                    setQuantityAvailable('100');
                     setSelectedCategories([]);
                     setTagsInput('');
                 }} variant="outline" className="mt-8">Submit Another Product</Button>
@@ -307,16 +310,23 @@ export default function AddProductPage() {
                                 className="min-h-[150px] resize-none"
                             />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="space-y-2">
-                                <Label htmlFor="wholesale-price">Your Wholesale Price ($)</Label>
+                                <Label htmlFor="wholesale-price">Wholesale ($)</Label>
                                 <Input id="wholesale-price" type="number" step="0.01" value={wholesalePrice} onChange={(e) => setWholesalePrice(e.target.value)} required placeholder="250.00"/>
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-tight">Amount you receive per sale</p>
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-tight">Your payout</p>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="retail-price">Suggested Retail Price ($)</Label>
+                                <Label htmlFor="retail-price">Retail ($)</Label>
                                 <Input id="retail-price" type="number" step="0.01" value={suggestedRetailPrice} onChange={(e) => setSuggestedRetailPrice(e.target.value)} required placeholder="650.00" className={cn(isPriceInvalid && "border-destructive focus-visible:ring-destructive")}/>
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-tight">Global listing price</p>
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-tight">Listing price</p>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="quantity-available" className="flex items-center gap-1">
+                                    <Package className="h-3 w-3 text-primary" /> Qty
+                                </Label>
+                                <Input id="quantity-available" type="number" value={quantityAvailable} onChange={(e) => setQuantityAvailable(e.target.value)} required placeholder="100"/>
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-tight">Stock level</p>
                             </div>
                         </div>
 

@@ -6,6 +6,7 @@ export type PendingProduct = {
   imageUrl: string;
   wholesalePrice: number;
   suggestedRetailPrice: number;
+  stockLevel: number;
   vendorId: string;
   isApproved: boolean | 'approved' | 'rejected';
   submittedAt: any; // Firestore Timestamp
