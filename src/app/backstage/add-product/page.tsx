@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { useUser, useFirestore } from '@/firebase';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useUser, useFirestore, useUserProfile } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,13 +10,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, CheckCircle2, UploadCloud } from 'lucide-react';
+import { Loader2, PackagePlus, CheckCircle2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import SomaLogo from '@/components/logo';
 
 export default function AddProductPage() {
   const { user, loading: userLoading } = useUser();
+  const { userProfile, loading: profileLoading } = useUserProfile();
   const firestore = useFirestore();
+  const router = useRouter();
   const { toast } = useToast();
 
   const [productName, setProductName] = useState('');
@@ -26,6 +29,13 @@ export default function AddProductPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  // Secondary layer of protection: Redirect if pending review
+  useEffect(() => {
+    if (!profileLoading && userProfile?.status === 'pending_review') {
+        router.push('/backstage/pending-review');
+    }
+  }, [userProfile, profileLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +70,9 @@ export default function AddProductPage() {
     }
   };
   
-  if (userLoading) {
+  const isLoading = userLoading || profileLoading;
+
+  if (isLoading) {
       return (
         <div className="flex h-screen w-full items-center justify-center bg-background">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />

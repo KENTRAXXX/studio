@@ -1,7 +1,7 @@
-
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useCollection, useUserProfile } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,7 +55,15 @@ export default function BackstageFinancesPage() {
     const { user, loading: userLoading } = useUser();
     const { userProfile, loading: profileLoading } = useUserProfile();
     const firestore = useFirestore();
+    const router = useRouter();
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // Secondary layer of protection: Redirect if pending review
+    useEffect(() => {
+        if (!profileLoading && userProfile?.status === 'pending_review') {
+            router.push('/backstage/pending-review');
+        }
+    }, [userProfile, profileLoading, router]);
 
     const pendingPayoutsRef = firestore && user ? query(collection(firestore, 'payouts_pending'), where('userId', '==', user.uid)) : null;
     const { data: pendingPayouts, loading: payoutsLoading } = useCollection<Payout>(pendingPayoutsRef);
@@ -198,11 +206,11 @@ export default function BackstageFinancesPage() {
                                     <p className="text-5xl font-bold text-primary">${totalEarned.toFixed(2)}</p>
                                 )}
                             </CardContent>
-                        </Card>
 
-                        <Button size="lg" className="w-full h-14 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => setIsModalOpen(true)}>
-                            <Landmark className="mr-2 h-6 w-6"/> Request Payout
-                        </Button>
+                            <Button size="lg" className="w-full h-14 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => setIsModalOpen(true)}>
+                                <Landmark className="mr-2 h-6 w-6"/> Request Payout
+                            </Button>
+                        </Card>
                     </div>
                 </div>
             </div>

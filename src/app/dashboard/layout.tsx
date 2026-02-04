@@ -109,6 +109,8 @@ export default function DashboardLayout({
         return enterpriseNavItems; // Admins see everything
     }
 
+    const isPendingReview = userProfile.status === 'pending_review';
+
     switch (userProfile.planTier) {
         case 'MERCHANT':
             return merchantNavItems;
@@ -118,6 +120,14 @@ export default function DashboardLayout({
             return enterpriseNavItems;
         case 'SELLER':
         case 'BRAND':
+            // If pending review, only show the non-financial/non-product tools
+            if (isPendingReview) {
+                return sellerNavItems.filter(item => 
+                    item.href === '/dashboard' || 
+                    item.href === '/backstage' || 
+                    item.href === '/backstage/pending-review'
+                );
+            }
             return sellerNavItems;
         default:
             return [];

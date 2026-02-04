@@ -101,7 +101,9 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
        }
 
        // 3. Status Guard: If pending review, lock to the status page
-       if (userProfile.status === 'pending_review' && !isPendingReviewPage && !isPublicRoute && !isLegalPage && !isReturnPage) {
+       // This restricts users from accessing dashboard tools or product upload until approved
+       const isDashboardOrBackstage = pathname.startsWith('/dashboard') || pathname.startsWith('/backstage');
+       if (userProfile.status === 'pending_review' && isDashboardOrBackstage && !isPendingReviewPage && !isPublicRoute && !isLegalPage && !isReturnPage) {
           router.push('/backstage/pending-review');
           return;
        }
