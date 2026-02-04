@@ -43,7 +43,8 @@ import {
   Accessibility,
   LogOut,
   ClipboardList,
-  Loader2
+  Loader2,
+  AlertTriangle
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
@@ -81,7 +82,8 @@ export default function AdminLayout({
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
   useEffect(() => {
-    if (!profileLoading && userProfile?.userRole !== 'ADMIN') {
+    // Only redirect if loading is finished AND we have a profile AND it's not an admin
+    if (!profileLoading && userProfile && userProfile.userRole !== 'ADMIN') {
       router.push('/access-denied');
     }
   }, [userProfile, profileLoading, router]);
@@ -105,7 +107,19 @@ export default function AdminLayout({
     );
   }
 
-  if (userProfile?.userRole !== 'ADMIN') {
+  // If loading is done but profile is missing entirely (auth exists but no doc)
+  if (!userProfile) {
+    return (
+        <div className="flex flex-col items-center justify-center h-screen bg-background p-4 text-center">
+            <AlertTriangle className="h-12 w-12 text-primary mb-4" />
+            <h1 className="text-2xl font-bold font-headline text-primary">Identity Not Found</h1>
+            <p className="text-muted-foreground mt-2 mb-6">Your executive profile could not be synchronized. Please re-authenticate.</p>
+            <Button onClick={handleLogout} variant="outline" className="border-primary/50 text-primary">Return to Sign In</Button>
+        </div>
+    );
+  }
+
+  if (userProfile.userRole !== 'ADMIN') {
     return null;
   }
 

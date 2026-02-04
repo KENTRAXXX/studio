@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import Image from 'next/image';
 import {
   collection,
@@ -57,7 +56,6 @@ export default function ProductCurationPage() {
   const firestore = useFirestore();
   const { userProfile, loading: profileLoading } = useUserProfile();
   const { toast } = useToast();
-  const router = useRouter();
 
   // State
   const [selectedProduct, setSelectedProduct] = useState<CurationProduct | null>(null);
@@ -65,15 +63,6 @@ export default function ProductCurationPage() {
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [processingId, setProcessingId] = useState<string | null>(null);
-
-  // Auth Guard
-  useEffect(() => {
-    if (!profileLoading) {
-      if (!userProfile || userProfile.userRole !== 'ADMIN') {
-        router.push('/access-denied');
-      }
-    }
-  }, [userProfile, profileLoading, router]);
 
   // Data Fetching
   const curationQuery = useMemoFirebase(() => {

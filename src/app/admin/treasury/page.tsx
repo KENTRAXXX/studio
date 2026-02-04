@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useFirestore, useCollection, useUserProfile } from '@/firebase';
+import { useFirestore, useUserProfile } from '@/firebase';
 import {
   collection,
   query,
@@ -48,7 +48,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
 import { formatCurrency } from '@/utils/format';
 
 type WithdrawalRequest = {
@@ -84,25 +83,13 @@ type CombinedRequest = WithdrawalRequest & { user?: UserProfile };
 const useTreasuryData = () => {
     const firestore = useFirestore();
     const { userProfile, loading: profileLoading } = useUserProfile();
-    const router = useRouter();
 
     const [combinedData, setCombinedData] = useState<CombinedRequest[]>([]);
     const [summaryStats, setSummaryStats] = useState({ totalPending: 0, totalRevenue: 0 });
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (profileLoading) return;
-        if (!userProfile) {
-            router.push('/dashboard');
-            return;
-        }
-        if (userProfile.userRole !== 'ADMIN') {
-            router.push('/access-denied');
-        }
-    }, [userProfile, profileLoading, router]);
-
-    useEffect(() => {
-        if (!firestore || userProfile?.userRole !== 'ADMIN') return;
+        if (!firestore || profileLoading || userProfile?.userRole !== 'ADMIN') return;
 
         const fetchData = async () => {
             setLoading(true);
@@ -141,7 +128,7 @@ const useTreasuryData = () => {
         };
 
         fetchData();
-    }, [firestore, userProfile]);
+    }, [firestore, userProfile, profileLoading]);
     
     return { combinedData, summaryStats, loading: loading || profileLoading, firestore };
 };

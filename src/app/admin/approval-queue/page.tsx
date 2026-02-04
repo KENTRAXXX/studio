@@ -17,14 +17,12 @@ import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import type { PendingProduct } from '@/lib/types';
 import SomaLogo from '@/components/logo';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function ApprovalQueuePage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const { userProfile, loading: profileLoading } = useUserProfile();
-  const router = useRouter();
   
   const pendingProductsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -32,14 +30,6 @@ export default function ApprovalQueuePage() {
   }, [firestore]);
 
   const { data: pendingProducts, loading: productsLoading } = useCollection<PendingProduct>(pendingProductsQuery);
-
-  useEffect(() => {
-    if (!profileLoading) {
-      if (!userProfile || userProfile.userRole !== 'ADMIN') {
-        router.push('/access-denied');
-      }
-    }
-  }, [userProfile, profileLoading, router]);
 
   const handleDecision = async (product: PendingProduct, decision: 'approve' | 'reject') => {
     if (!firestore) return;
