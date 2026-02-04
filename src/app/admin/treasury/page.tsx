@@ -135,7 +135,11 @@ export default function TreasuryPage() {
       const liability = allPayouts?.reduce((acc, p) => acc + (p.amount || 0), 0) || 0;
       const totalPendingWithdrawals = requests?.reduce((acc, r) => acc + (r.amount || 0), 0) || 0;
 
-      return { gmv, netRevenue, liability, totalPendingWithdrawals };
+      // Breakdown by Type (TRANSACTION vs SUBSCRIPTION)
+      const transactionRev = revenueLogs?.filter(l => l.type === 'TRANSACTION').reduce((acc, l) => acc + (l.amount || 0), 0) || 0;
+      const subscriptionRev = revenueLogs?.filter(l => l.type === 'SUBSCRIPTION').reduce((acc, l) => acc + (l.amount || 0), 0) || 0;
+
+      return { gmv, netRevenue, liability, totalPendingWithdrawals, transactionRev, subscriptionRev };
   }, [allOrders, revenueLogs, allPayouts, requests]);
 
   const combinedRequests = useMemo(() => {
@@ -206,8 +210,6 @@ export default function TreasuryPage() {
               createdAt: serverTimestamp()
           });
 
-          // In a real scenario, you'd also deduct this from a platform_balance document
-          
           toast({
               title: 'Corporate Transfer Logged',
               description: `${formatCurrency(Math.round(amount * 100))} has been allocated to the corporate treasury.`,
@@ -230,6 +232,10 @@ export default function TreasuryPage() {
       </div>
     );
   }
+
+  // Calculate percentages for the breakdown bars
+  const transactionPct = metrics.netRevenue > 0 ? (metrics.transactionRev / metrics.netRevenue) * 100 : 0;
+  const subscriptionPct = metrics.netRevenue > 0 ? (metrics.subscriptionRev / metrics.netRevenue) * 100 : 0;
 
   return (
     <div className="space-y-10 pb-24">
@@ -452,6 +458,7 @@ export default function TreasuryPage() {
                 </CardContent>
             </Card>
 
+            {/* Platform Yield Distribution - Dynamic ledger audit */}
             <Card className="border-primary/10 bg-slate-900/20">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Platform Yield Distribution</CardTitle>
@@ -460,19 +467,25 @@ export default function TreasuryPage() {
                     <div className="space-y-2">
                         <div className="flex justify-between text-[10px] uppercase font-bold text-slate-400">
                             <span>Transaction Commissions</span>
-                            <span>{Math.round((metrics.netRevenue * 0.82) / (metrics.netRevenue || 1) * 100)}%</span>
+                            <span>{Math.round(transactionPct)}%</span>
                         </div>
                         <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                            <div className="h-full bg-primary" style={{ width: '82%' }} />
+                            <div 
+                                className="h-full bg-primary transition-all duration-1000" 
+                                style={{ width: `${transactionPct}%` }} 
+                            />
                         </div>
                     </div>
                     <div className="space-y-2">
                         <div className="flex justify-between text-[10px] uppercase font-bold text-slate-400">
                             <span>SaaS Subscriptions</span>
-                            <span>{Math.round((metrics.netRevenue * 0.18) / (metrics.netRevenue || 1) * 100)}%</span>
+                            <span>{Math.round(subscriptionPct)}%</span>
                         </div>
                         <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                            <div className="h-full bg-slate-600" style={{ width: '18%' }} />
+                            <div 
+                                className="h-full bg-slate-600 transition-all duration-1000" 
+                                style={{ width: `${subscriptionPct}%` }} 
+                            />
                         </div>
                     </div>
                 </CardContent>
