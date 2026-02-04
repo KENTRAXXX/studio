@@ -1,25 +1,30 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useUserProfile } from '@/firebase';
+import { useUser, useFirestore, useUserProfile, useStorage } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, CheckCircle2 } from 'lucide-react';
+import { Loader2, PackagePlus, CheckCircle2, UploadCloud, X, ImageIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import SomaLogo from '@/components/logo';
+import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 export default function AddProductPage() {
   const { user, loading: userLoading } = useUser();
   const { userProfile, loading: profileLoading } = useUserProfile();
   const firestore = useFirestore();
+  const storage = useStorage();
   const router = useRouter();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [productName, setProductName] = useState('');
   const [description, setDescription] = useState('');
@@ -28,6 +33,7 @@ export default function AddProductPage() {
   const [suggestedRetailPrice, setSuggestedRetailPrice] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
   // Secondary layer of protection: Redirect if pending review
@@ -37,11 +43,50 @@ export default function AddProductPage() {
     }
   }, [userProfile, profileLoading, router]);
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user || !storage) return;
+
+    // Validate File Type
+    if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
+        toast({
+            variant: 'destructive',
+            title: 'Invalid File Type',
+            description: 'Please upload a high-resolution JPG or PNG image.',
+        });
+        return;
+    }
+
+    setIsUploading(true);
+    try {
+        const storageRef = ref(storage, `products/${user.uid}/${Date.now()}_${file.name}`);
+        const snapshot = await uploadBytes(storageRef, file);
+        const downloadUrl = await getDownloadURL(snapshot.ref);
+        
+        setImageUrl(downloadUrl);
+        toast({ title: 'Image Uploaded', description: 'Product asset secured successfully.' });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Upload Failed', description: error.message || 'Could not upload image.' });
+    } finally {
+        setIsUploading(false);
+    }
+  };
+
+  const removeImage = () => {
+      setImageUrl('');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !firestore) {
       toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to submit a product.' });
       return;
+    }
+
+    if (!imageUrl) {
+        toast({ variant: 'destructive', title: 'Image Required', description: 'Please upload a product image to proceed.' });
+        return;
     }
     
     if (parseFloat(wholesalePrice) >= parseFloat(suggestedRetailPrice)) {
@@ -55,7 +100,7 @@ export default function AddProductPage() {
       await addDoc(pendingCatalogRef, {
         productName,
         description,
-        imageUrl,
+        imageUrl, // Now storing the Firebase Storage URL
         wholesalePrice: parseFloat(wholesalePrice),
         suggestedRetailPrice: parseFloat(suggestedRetailPrice),
         vendorId: user.uid,
@@ -88,7 +133,7 @@ export default function AddProductPage() {
         <p className="mt-2 text-lg text-muted-foreground">Add a new product to the SOMA Master Catalog.</p>
       </div>
 
-      <Card className="w-full max-w-3xl border-primary/50">
+      <Card className="w-full max-w-4xl border-primary/50 overflow-hidden">
         <AnimatePresence mode="wait">
           {isSuccess ? (
             <motion.div
@@ -102,7 +147,14 @@ export default function AddProductPage() {
                 <p className="mt-2 text-muted-foreground max-w-md mx-auto">
                     Product submitted for luxury review. Our team will notify you once it is live in the Master Catalog.
                 </p>
-                <Button onClick={() => setIsSuccess(false)} variant="outline" className="mt-8">Submit Another Product</Button>
+                <Button onClick={() => {
+                    setIsSuccess(false);
+                    setProductName('');
+                    setDescription('');
+                    setImageUrl('');
+                    setWholesalePrice('');
+                    setSuggestedRetailPrice('');
+                }} variant="outline" className="mt-8">Submit Another Product</Button>
             </motion.div>
           ) : (
             <motion.div
@@ -112,8 +164,8 @@ export default function AddProductPage() {
               exit={{ opacity: 0 }}
             >
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <PackagePlus className="h-6 w-6"/>
+                <CardTitle className="flex items-center gap-2 text-2xl">
+                    <PackagePlus className="h-6 w-6 text-primary"/>
                     New Product Details
                 </CardTitle>
                 <CardDescription>
@@ -121,35 +173,121 @@ export default function AddProductPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="space-y-2">
-                        <Label htmlFor="product-name">Product Name</Label>
-                        <Input id="product-name" value={productName} onChange={(e) => setProductName(e.target.value)} required placeholder="e.g., 'The Olympian Chronograph'"/>
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="description">Product Description</Label>
-                        <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} required placeholder="Describe the key features and luxury appeal of your product."/>
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="image-url">Product Image URL</Label>
-                        <Input id="image-url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} required placeholder="https://your-cdn.com/path/to/high-quality-image.jpg"/>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                    <div className="space-y-6">
                         <div className="space-y-2">
-                            <Label htmlFor="wholesale-price">Your Wholesale Price ($)</Label>
-                            <Input id="wholesale-price" type="number" step="0.01" value={wholesalePrice} onChange={(e) => setWholesalePrice(e.target.value)} required placeholder="250.00"/>
-                             <p className="text-xs text-muted-foreground">The amount you receive per sale.</p>
+                            <Label htmlFor="product-name">Product Name</Label>
+                            <Input 
+                                id="product-name" 
+                                value={productName} 
+                                onChange={(e) => setProductName(e.target.value)} 
+                                required 
+                                placeholder="e.g., 'The Olympian Chronograph'"
+                                className="h-12"
+                            />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="retail-price">Suggested Retail Price ($)</Label>
-                            <Input id="retail-price" type="number" step="0.01" value={suggestedRetailPrice} onChange={(e) => setSuggestedRetailPrice(e.target.value)} required placeholder="650.00"/>
-                            <p className="text-xs text-muted-foreground">The price store owners will list it for.</p>
+                            <Label htmlFor="description">Product Description</Label>
+                            <Textarea 
+                                id="description" 
+                                value={description} 
+                                onChange={(e) => setDescription(e.target.value)} 
+                                required 
+                                placeholder="Describe the key features and luxury appeal of your product."
+                                className="min-h-[150px] resize-none"
+                            />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="wholesale-price">Your Wholesale Price ($)</Label>
+                                <Input id="wholesale-price" type="number" step="0.01" value={wholesalePrice} onChange={(e) => setWholesalePrice(e.target.value)} required placeholder="250.00"/>
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-tight">Amount you receive per sale</p>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="retail-price">Suggested Retail Price ($)</Label>
+                                <Input id="retail-price" type="number" step="0.01" value={suggestedRetailPrice} onChange={(e) => setSuggestedRetailPrice(e.target.value)} required placeholder="650.00"/>
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-tight">Global listing price</p>
+                            </div>
                         </div>
                     </div>
-                    <div className="flex justify-end pt-4">
-                        <Button type="submit" disabled={isSubmitting} size="lg" className="h-12 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
-                            {isSubmitting ? <Loader2 className="animate-spin" /> : 'Submit for Review'}
-                        </Button>
+
+                    <div className="space-y-6">
+                        <div className="space-y-2">
+                            <Label className="flex items-center gap-2">
+                                <ImageIcon className="h-4 w-4 text-primary" />
+                                Product Photography (1:1 Aspect Ratio)
+                            </Label>
+                            
+                            <div className="relative">
+                                <div 
+                                    onClick={() => !imageUrl && fileInputRef.current?.click()}
+                                    className={cn(
+                                        "relative w-full aspect-square border-2 border-dashed rounded-xl flex flex-col items-center justify-center transition-all duration-300 overflow-hidden",
+                                        !imageUrl ? "border-primary/30 hover:border-primary bg-muted/20 cursor-pointer" : "border-primary/50 bg-background",
+                                        isUploading && "animate-pulse"
+                                    )}
+                                >
+                                    {isUploading ? (
+                                        <div className="flex flex-col items-center gap-2">
+                                            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                                            <p className="text-xs font-bold text-primary uppercase tracking-widest">Uploading...</p>
+                                        </div>
+                                    ) : imageUrl ? (
+                                        <div className="relative w-full h-full group">
+                                            <Image 
+                                                src={imageUrl} 
+                                                alt="Preview" 
+                                                fill 
+                                                className="object-cover"
+                                                sizes="(max-width: 768px) 100vw, 400px"
+                                            />
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                <Button 
+                                                    type="button" 
+                                                    variant="destructive" 
+                                                    size="icon" 
+                                                    onClick={(e) => { e.stopPropagation(); removeImage(); }}
+                                                    className="rounded-full h-12 w-12"
+                                                >
+                                                    <X className="h-6 w-6" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center p-6 text-center">
+                                            <UploadCloud className="h-12 w-12 text-muted-foreground mb-4" />
+                                            <span className="text-sm font-semibold">Click to upload square image</span>
+                                            <span className="text-[10px] text-muted-foreground mt-2 uppercase tracking-tighter">JPG, PNG (Max 10MB)</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <input 
+                                    type="file" 
+                                    ref={fileInputRef} 
+                                    className="hidden" 
+                                    accept="image/png,image/jpeg" 
+                                    onChange={handleFileUpload} 
+                                    disabled={isUploading || !!imageUrl}
+                                />
+                            </div>
+                            <p className="text-xs text-muted-foreground italic">Tip: Luxury products perform best with minimalist, high-contrast backgrounds.</p>
+                        </div>
+
+                        <div className="flex justify-end pt-4">
+                            <Button 
+                                type="submit" 
+                                disabled={isSubmitting || isUploading || !imageUrl} 
+                                size="lg" 
+                                className="w-full h-14 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground text-lg font-bold"
+                            >
+                                {isSubmitting ? (
+                                    <>
+                                        <Loader2 className="animate-spin mr-2" />
+                                        Finalizing Submission...
+                                    </>
+                                ) : 'Submit for Review'}
+                            </Button>
+                        </div>
                     </div>
                 </form>
               </CardContent>
