@@ -26,6 +26,13 @@ type UserProfile = {
   verificationData?: {
     legalBusinessName: string;
     warehouseAddress: string;
+    structuredAddress?: {
+        street: string;
+        city: string;
+        state: string;
+        postalCode: string;
+        country: string;
+    };
     taxId: string;
     contactPhone: string;
     governmentIdUrl: string;

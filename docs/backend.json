@@ -1,4 +1,3 @@
-
 {
     "entities": {
         "store": {
@@ -188,6 +187,17 @@
                 "warehouseAddress": {
                     "type": "string",
                     "description": "The primary shipping address for the seller."
+                },
+                "structuredAddress": {
+                    "type": "object",
+                    "description": "Verified structured address components.",
+                    "properties": {
+                        "street": { "type": "string" },
+                        "city": { "type": "string" },
+                        "state": { "type": "string" },
+                        "postalCode": { "type": "string" },
+                        "country": { "type": "string" }
+                    }
                 },
                 "taxId": {
                     "type": "string",

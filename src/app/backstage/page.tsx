@@ -11,6 +11,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { AnimatePresence, motion } from 'framer-motion';
+import Script from 'next/script';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,17 +20,23 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Send, ShieldCheck, CheckCircle2, UploadCloud, Phone, Check } from 'lucide-react';
+import { Loader2, Send, ShieldCheck, CheckCircle2, UploadCloud, Phone, Check, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import SomaLogo from '@/components/logo';
 import { cn } from '@/lib/utils';
 
 const onboardingSchema = z.object({
   legalBusinessName: z.string().min(3, 'A business name is required.'),
-  warehouseAddress: z.string().min(10, 'A full warehouse address is required.'),
+  warehouseAddress: z.string().min(5, 'Please select a verified address from the suggestions.'),
   taxId: z.string().min(5, 'A valid Tax ID or Business Number is required.'),
   contactPhone: z.string().min(10, 'A valid contact phone number is required.'),
   governmentIdUrl: z.string().url({ message: 'A valid ID document URL is required.' }).min(1, 'Please provide your government ID.'),
+  // Structured fields populated by Autocomplete
+  street: z.string().min(1, 'Verified street is missing.'),
+  city: z.string().min(1, 'Verified city is missing.'),
+  state: z.string().min(1, 'Verified state is missing.'),
+  postalCode: z.string().min(1, 'Verified postal code is missing.'),
+  country: z.string().min(1, 'Verified country is missing.'),
 });
 
 type OnboardingFormValues = z.infer<typeof onboardingSchema>;
@@ -67,7 +74,9 @@ export default function BackstagePage() {
   const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const addressInputRef = useRef<HTMLInputElement | null>(null);
   
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -87,12 +96,78 @@ export default function BackstagePage() {
     defaultValues: {
         legalBusinessName: '',
         warehouseAddress: '',
+        street: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        country: '',
         taxId: '',
         contactPhone: '',
         governmentIdUrl: '',
     },
   });
   const { isSubmitting } = form.formState;
+
+  // Google Maps Autocomplete Initialization
+  const initAutocomplete = () => {
+    if (!addressInputRef.current || !window.google) return;
+    
+    const autocomplete = new window.google.maps.places.Autocomplete(addressInputRef.current, {
+        types: ['address'],
+        fields: ['address_components', 'formatted_address'],
+    });
+
+    autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+        if (!place.address_components) return;
+
+        let streetNumber = '';
+        let route = '';
+        let city = '';
+        let state = '';
+        let postalCode = '';
+        let country = '';
+
+        for (const component of place.address_components) {
+            const componentType = component.types[0];
+            switch (componentType) {
+                case 'street_number':
+                    streetNumber = component.long_name;
+                    break;
+                case 'route':
+                    route = component.long_name;
+                    break;
+                case 'locality':
+                    city = component.long_name;
+                    break;
+                case 'administrative_area_level_1':
+                    state = component.short_name;
+                    break;
+                case 'postal_code':
+                    postalCode = component.long_name;
+                    break;
+                case 'country':
+                    country = component.long_name;
+                    break;
+            }
+        }
+
+        form.setValue('warehouseAddress', place.formatted_address || '', { shouldValidate: true });
+        form.setValue('street', `${streetNumber} ${route}`.trim(), { shouldValidate: true });
+        form.setValue('city', city, { shouldValidate: true });
+        form.setValue('state', state, { shouldValidate: true });
+        form.setValue('postalCode', postalCode, { shouldValidate: true });
+        form.setValue('country', country, { shouldValidate: true });
+        
+        form.trigger(['warehouseAddress', 'street', 'city', 'state', 'postalCode', 'country']);
+    });
+  };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.google && addressInputRef.current) {
+        initAutocomplete();
+    }
+  }, []);
 
   useEffect(() => {
     const isLoading = profileLoading || userLoading;
@@ -114,6 +189,11 @@ export default function BackstagePage() {
             form.reset({
                 legalBusinessName: userProfile.verificationData.legalBusinessName || '',
                 warehouseAddress: userProfile.verificationData.warehouseAddress || '',
+                street: userProfile.verificationData.structuredAddress?.street || '',
+                city: userProfile.verificationData.structuredAddress?.city || '',
+                state: userProfile.verificationData.structuredAddress?.state || '',
+                postalCode: userProfile.verificationData.structuredAddress?.postalCode || '',
+                country: userProfile.verificationData.structuredAddress?.country || '',
                 taxId: userProfile.verificationData.taxId || '',
                 contactPhone: userProfile.verificationData.contactPhone || '',
                 governmentIdUrl: userProfile.verificationData.governmentIdUrl || '',
@@ -208,6 +288,13 @@ export default function BackstagePage() {
             verificationData: {
                 legalBusinessName: data.legalBusinessName,
                 warehouseAddress: data.warehouseAddress,
+                structuredAddress: {
+                    street: data.street,
+                    city: data.city,
+                    state: data.state,
+                    postalCode: data.postalCode,
+                    country: data.country,
+                },
                 taxId: data.taxId,
                 contactPhone: data.contactPhone,
                 governmentIdUrl: data.governmentIdUrl,
@@ -219,7 +306,7 @@ export default function BackstagePage() {
                 termsVersion: '1.0',
             },
             status: 'pending_review',
-            hasAcceptedTerms: true, // Also set this for platform consistency
+            hasAcceptedTerms: true, 
         });
         
         toast({ title: 'Application Submitted!', description: 'Your business is now under review.'});
@@ -238,16 +325,12 @@ export default function BackstagePage() {
     );
   }
   
-  if (!userProfile || userProfile.status === 'approved') {
-      return (
-        <div className="flex h-screen w-full items-center justify-center bg-background">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-      );
-  }
-
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 sm:p-6">
+        <Script 
+            src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`} 
+            onLoad={initAutocomplete}
+        />
         <div id="recaptcha-container"></div>
         
         <Dialog open={isOTPModalOpen} onOpenChange={setIsOTPModalOpen}>
@@ -305,9 +388,28 @@ export default function BackstagePage() {
                                 <FormField control={form.control} name="legalBusinessName" render={({ field }) => (
                                     <FormItem><FormLabel>Business Legal Name</FormLabel><FormControl><Input placeholder="e.g., Luxe Imports Inc." {...field} /></FormControl><FormMessage /></FormItem>
                                 )} />
-                                 <FormField control={form.control} name="warehouseAddress" render={({ field }) => (
-                                    <FormItem><FormLabel>Primary Warehouse Address</FormLabel><FormControl><Input placeholder="123 Supply Chain Ave, Industrial City, Country" {...field} /></FormControl><FormMessage /></FormItem>
+                                
+                                <FormField control={form.control} name="warehouseAddress" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="flex items-center gap-2">
+                                            <MapPin className="h-4 w-4 text-primary"/>
+                                            Primary Warehouse Address
+                                        </FormLabel>
+                                        <FormControl>
+                                            <Input 
+                                                {...field} 
+                                                ref={(e) => {
+                                                    field.ref(e); 
+                                                    addressInputRef.current = e; 
+                                                }}
+                                                placeholder="Start typing your warehouse address..." 
+                                            />
+                                        </FormControl>
+                                        <FormDescription>Select your verified location from the suggestions.</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
                                 )} />
+
                                 <div className="grid md:grid-cols-2 gap-6">
                                     <FormField control={form.control} name="taxId" render={({ field }) => (
                                         <FormItem><FormLabel>Tax ID / Business Number</FormLabel><FormControl><Input placeholder="Your business registration number" {...field} /></FormControl><FormMessage /></FormItem>
