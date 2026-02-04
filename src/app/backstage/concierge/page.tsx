@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -23,9 +22,7 @@ import {
     ShieldCheck, 
     History, 
     Clock, 
-    CheckCircle2, 
-    AlertCircle,
-    ChevronRight
+    AlertCircle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import SomaLogo from '@/components/logo';
@@ -110,7 +107,7 @@ export default function ConciergePage() {
       setView('success');
       toast({
         title: 'Mission Dispatched',
-        description: 'Your request is being routed to the SOMA executive team.',
+        description: 'Your request is being routed to the SOMA support team.',
       });
     } catch (error: any) {
       toast({
@@ -134,7 +131,7 @@ export default function ConciergePage() {
       <div className="text-center">
         <SomaLogo className="h-12 w-12 mx-auto text-primary" />
         <h1 className="text-4xl font-bold font-headline mt-4 text-primary tracking-tight">Executive Concierge</h1>
-        <p className="mt-2 text-lg text-muted-foreground">Direct-to-founder strategic support for elite partners.</p>
+        <p className="mt-2 text-lg text-muted-foreground">Direct strategic support for elite partners.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -196,10 +193,10 @@ export default function ConciergePage() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="text-[11px] text-muted-foreground space-y-3 leading-relaxed">
-                    <p>Executive requests are prioritized by the founder's office.</p>
+                    <p>Executive requests are prioritized by the support team.</p>
                     <div className="space-y-1">
                         <p><span className="text-slate-300 font-bold">Standard:</span> 24 Business Hours</p>
-                        <p><span className="text-red-400 font-bold">Urgent:</span> < 4 Business Hours</p>
+                        <p><span className="text-red-400 font-bold">Urgent:</span> &lt; 4 Business Hours</p>
                     </div>
                 </CardContent>
             </Card>
@@ -245,7 +242,7 @@ export default function ConciergePage() {
 
                                 <div className="flex items-center gap-4 p-4 rounded-lg bg-primary/5 border border-primary/20 italic text-sm text-slate-400">
                                     <Clock className="h-5 w-5 text-primary shrink-0" />
-                                    <p>Our founder is reviewing this request. You will receive a response via email and here in the concierge portal once resolved.</p>
+                                    <p>Our team is reviewing this request. You will receive a response via email and here in the concierge portal once resolved.</p>
                                 </div>
                             </CardContent>
                         </Card>
@@ -265,7 +262,7 @@ export default function ConciergePage() {
                                 <h2 className="text-3xl font-bold font-headline text-primary">Message Secured</h2>
                                 <p className="text-muted-foreground max-w-md mx-auto">
                                     Your executive request has been transmitted directly to SOMA HQ. 
-                                    Our founder or a senior account manager will respond shortly.
+                                    Our support team will respond shortly.
                                 </p>
                                 <Button 
                                     onClick={() => {
@@ -289,7 +286,7 @@ export default function ConciergePage() {
                             <CardHeader className="bg-muted/30 border-b border-primary/10">
                                 <CardTitle className="flex items-center gap-2 text-primary font-headline">
                                     <MessageSquare className="h-5 w-5" />
-                                    New Executive Request
+                                    Message Support Team
                                 </CardTitle>
                                 <CardDescription>
                                     Submit strategic inquiries or high-priority operational needs.
@@ -362,12 +359,12 @@ export default function ConciergePage() {
                                             {form.formState.isSubmitting ? (
                                                 <>
                                                     <Loader2 className="animate-spin mr-3 h-6 w-6" />
-                                                    Transmitting to Executive HQ...
+                                                    Transmitting to Support Team...
                                                 </>
                                             ) : (
                                                 <>
                                                     <Send className="mr-3 h-6 w-6" />
-                                                    Dispatched to Founder
+                                                    Dispatched to SOMA HQ
                                                 </>
                                             )}
                                         </Button>
@@ -384,12 +381,12 @@ export default function ConciergePage() {
   );
 }
 
-// Minimal Badge Component since it was missing in some imports
+// Minimal Badge Component
 function Badge({ children, variant = 'default', className }: { children: React.ReactNode, variant?: 'default' | 'outline', className?: string }) {
     return (
         <div className={cn(
-            "px-2 py-0.5 rounded-full font-bold",
-            variant === 'default' ? "bg-primary text-primary-foreground" : "border",
+            "px-2 py-0.5 rounded-full font-bold inline-flex items-center",
+            variant === 'default' ? "bg-primary text-primary-foreground" : "border border-border",
             className
         )}>
             {children}
