@@ -141,8 +141,8 @@ export default function ProfileSettingsPage() {
                 }
             });
             toast({
-                title: 'Profile Synchronized',
-                description: 'Your executive credentials and social links have been updated.',
+                title: 'Profile Elegance Updated Successfully.',
+                description: 'Your executive credentials and social links have been synchronized.',
             });
         } catch (error: any) {
             toast({
@@ -402,9 +402,22 @@ export default function ProfileSettingsPage() {
                                 </div>
 
                                 <div className="flex justify-end pt-6 border-t border-primary/10">
-                                    <Button type="submit" disabled={form.formState.isSubmitting} className="h-12 px-8 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
-                                        {form.formState.isSubmitting ? <Loader2 className="animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
-                                        Save Credentials
+                                    <Button 
+                                        type="submit" 
+                                        disabled={form.formState.isSubmitting} 
+                                        className="h-12 px-8 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
+                                    >
+                                        {form.formState.isSubmitting ? (
+                                            <>
+                                                <Loader2 className="animate-spin mr-2 h-5 w-5" />
+                                                Processing...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Save className="mr-2 h-5 w-5" />
+                                                Save Credentials
+                                            </>
+                                        )}
                                     </Button>
                                 </div>
                             </div>
