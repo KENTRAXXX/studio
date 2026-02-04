@@ -23,10 +23,25 @@ import {
     Instagram, 
     Camera, 
     Save,
-    Bell
+    Bell,
+    AlertTriangle,
+    LogOut,
+    Trash2
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useRouter } from 'next/navigation';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function BackstageSettingsPage() {
   const auth = useAuth();
@@ -35,6 +50,7 @@ export default function BackstageSettingsPage() {
   const firestore = useFirestore();
   const storage = useStorage();
   const { toast } = useToast();
+  const router = useRouter();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -42,6 +58,7 @@ export default function BackstageSettingsPage() {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingPrefs, setIsSavingPrefs] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isDeactivating, setIsDeactivating] = useState(false);
 
   // Profile Form State
   const [brandBio, setBrandBio] = useState('');
@@ -152,6 +169,39 @@ export default function BackstageSettingsPage() {
       toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
     } finally {
       setIsSavingPrefs(false);
+    }
+  };
+
+  const handleDeactivateAccount = async () => {
+    if (!user || !firestore || !auth) return;
+
+    setIsDeactivating(true);
+    try {
+      const userRef = doc(firestore, 'users', user.uid);
+      
+      // Mark as deactivated but preserve data for audit
+      await updateDoc(userRef, {
+        accountStatus: 'deactivated',
+        status: 'deactivated', // Also sync with standard status field
+        deactivatedAt: new Date().toISOString()
+      });
+
+      toast({
+        title: 'Account Deactivated',
+        description: 'Your partnership has been paused. Exit protocols initiated.',
+      });
+
+      // Secure Logout
+      await auth.signOut();
+      router.push('/');
+      window.location.reload();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Deactivation Failed',
+        description: error.message || 'Could not process deactivation request.',
+      });
+      setIsDeactivating(false);
     }
   };
 
@@ -373,6 +423,62 @@ export default function BackstageSettingsPage() {
                     <div>
                         <h4 className="text-xs font-bold text-slate-400 font-headline">Biometrics</h4>
                         <p className="text-[8px] text-slate-600 uppercase tracking-widest font-black">Coming v2.0</p>
+                    </div>
+                </div>
+            </CardContent>
+            </Card>
+
+            {/* Danger Zone Section */}
+            <Card className="border-destructive/50 bg-destructive/5">
+            <CardHeader>
+                <CardTitle className="text-xl font-headline flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-5 w-5" />
+                Danger Zone
+                </CardTitle>
+                <CardDescription className="text-destructive/60">Destructive actions for your brand partnership.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="space-y-4">
+                    <div className="flex flex-col gap-4">
+                        <div className="space-y-1">
+                            <Label className="text-sm font-bold text-slate-200">Deactivate Account</Label>
+                            <p className="text-[10px] text-muted-foreground leading-relaxed">
+                                Deactivating your account will hide your products from all Mogul stores and halt your global operations. Financial records will be preserved for audit.
+                            </p>
+                        </div>
+                        
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button 
+                                    variant="destructive" 
+                                    className="w-full font-bold h-11"
+                                    disabled={isDeactivating}
+                                >
+                                    {isDeactivating ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                                    Deactivate Account
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="bg-card border-destructive/50">
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle className="text-destructive font-headline text-2xl flex items-center gap-2">
+                                        <AlertTriangle className="h-6 w-6" />
+                                        Final Warning
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription className="text-slate-400 pt-2 text-base">
+                                        Are you absolutely sure you wish to deactivate your brand? This will immediately remove your catalog from all global boutiques.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter className="pt-6">
+                                    <AlertDialogCancel className="border-slate-700">Cancel</AlertDialogCancel>
+                                    <AlertDialogAction 
+                                        onClick={handleDeactivateAccount}
+                                        className="bg-destructive hover:bg-destructive/90 text-white"
+                                    >
+                                        Deactivate Brand
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </div>
                 </div>
             </CardContent>
