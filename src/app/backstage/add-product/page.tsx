@@ -20,7 +20,24 @@ import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 
 const AVAILABLE_CATEGORIES = [
-    "Watches", "Leather Goods", "Jewelry", "Fragrance", "Apparel", "Accessories", "Home Decor", "Electronics"
+    "Watches", 
+    "Leather Goods", 
+    "Jewelry", 
+    "Fragrance", 
+    "Apparel", 
+    "Accessories", 
+    "Home Decor", 
+    "Electronics",
+    "Fine Art",
+    "Spirits & Wine",
+    "Travel Gear",
+    "Beauty & Skincare",
+    "Wellness",
+    "Collectibles",
+    "Automotive",
+    "Gourmet Food",
+    "Furniture",
+    "Digital Assets"
 ];
 
 const MAX_IMAGES = 5;
