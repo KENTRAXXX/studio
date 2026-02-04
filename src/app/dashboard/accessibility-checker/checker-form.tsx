@@ -53,12 +53,13 @@ export default function CheckerForm() {
     if (!storeData) return;
 
     // Construct a semantic Virtual Component string based on their live configuration
+    // Removed redundant aria-label as the h2 provides sufficient context
     const virtualComponent = `
       <header>
         <h1>${storeData.storeName}</h1>
         <p>${storeData.heroTitle}</p>
       </header>
-      <section aria-label="Boutique Biography">
+      <section>
         <h2>About Our Brand</h2>
         <p>${userProfile?.bio || 'No brand narrative established yet. Complete your profile to share your luxury vision with the world.'}</p>
       </section>
