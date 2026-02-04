@@ -327,16 +327,17 @@
         },
         "revenueRecord": {
             "title": "Revenue Record",
-            "description": "A log of platform revenue from a transaction.",
+            "description": "A log of platform revenue from a transaction or subscription.",
             "type": "object",
             "properties": {
                 "amount": { "type": "number" },
                 "currency": { "type": "string" },
                 "orderId": { "type": "string" },
                 "paymentReference": { "type": "string" },
+                "type": { "type": "string", "enum": ["TRANSACTION", "SUBSCRIPTION"] },
                 "createdAt": { "type": "string", "format": "date-time" }
             },
-            "required": ["amount", "currency", "orderId", "paymentReference", "createdAt"]
+            "required": ["amount", "currency", "paymentReference", "type", "createdAt"]
         },
         "withdrawalRequest": {
             "title": "Withdrawal Request",

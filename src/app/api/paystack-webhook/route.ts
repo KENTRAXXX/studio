@@ -129,6 +129,7 @@ async function executePaymentSplit(eventData: any) {
                         revenueDocs.push({
                             amount: platformFee * item.quantity,
                             currency: 'USD',
+                            type: 'TRANSACTION',
                             orderId,
                             paymentReference: reference,
                             createdAt: new Date().toISOString()
@@ -230,7 +231,7 @@ export async function POST(req: Request) {
   const event = JSON.parse(rawBody);
 
   if (event.event === 'charge.success') {
-    const { metadata, customer, reference } = event.data;
+    const { metadata, customer, reference, amount } = event.data;
 
     if (!metadata) {
         await logWebhookEvent(event.event, event.data, 'failed', 'Missing metadata in charge.success event.');
@@ -303,6 +304,17 @@ export async function POST(req: Request) {
                 transaction.update(userRef, {
                     hasAccess: true,
                     paidAt: new Date().toISOString(),
+                });
+
+                // Log Subscription Revenue
+                const revenueRef = doc(collection(firestore, 'revenue_logs'));
+                transaction.set(revenueRef, {
+                    amount: amount / 100, // Convert cents to dollars
+                    currency: 'USD',
+                    type: 'SUBSCRIPTION',
+                    userId: userId,
+                    paymentReference: reference,
+                    createdAt: new Date().toISOString()
                 });
             });
 
