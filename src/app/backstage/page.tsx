@@ -59,26 +59,6 @@ const SomaShieldTerms = () => (
     </div>
 );
 
-
-const OnboardingSuccess = ({ onAcknowledge }: { onAcknowledge: () => void }) => {
-    return (
-        <motion.div
-            key="success"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center p-8"
-        >
-            <CheckCircle2 className="h-16 w-16 text-primary mx-auto mb-6 animate-pulse" />
-            <h2 className="text-2xl font-bold font-headline text-primary">Application Submitted</h2>
-            <p className="mt-2 text-muted-foreground max-w-md mx-auto">
-                The SOMA Quality Control team will review your warehouse details within 48 hours. You will be notified via email upon approval.
-            </p>
-            <Button onClick={onAcknowledge} className="mt-8">Go to Finances</Button>
-        </motion.div>
-    );
-};
-
-
 export default function BackstagePage() {
   const { userProfile, loading: profileLoading } = useUserProfile();
   const { user, loading: userLoading } = useUser();
@@ -89,7 +69,6 @@ export default function BackstagePage() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const [isSuccess, setIsSuccess] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadComplete, setUploadComplete] = useState(false);
@@ -127,7 +106,8 @@ export default function BackstagePage() {
             return; 
         }
         if (userProfile.status === 'pending_review') {
-            setIsSuccess(true); 
+            router.push('/backstage/pending-review');
+            return;
         }
         
         if (userProfile.verificationData) {
@@ -140,6 +120,9 @@ export default function BackstagePage() {
             });
             if (userProfile.verificationData.governmentIdUrl) {
                 setUploadComplete(true);
+            }
+            if (userProfile.verificationData.isPhoneVerified) {
+                setIsPhoneVerified(true);
             }
         }
     }
@@ -159,11 +142,6 @@ export default function BackstagePage() {
 
         form.setValue('governmentIdUrl', downloadUrl, { shouldValidate: true });
 
-        const userRef = doc(firestore, 'users', user.uid);
-        await updateDoc(userRef, {
-            'verificationData.governmentIdUrl': downloadUrl
-        });
-
         setUploadComplete(true);
         toast({ title: 'ID Uploaded', description: 'Your identity document has been securely stored.' });
     } catch (error: any) {
@@ -179,7 +157,6 @@ export default function BackstagePage() {
     setIsSendingOTP(true);
     try {
         const phoneNumber = form.getValues('contactPhone');
-        // Ensure phone number starts with + for Firebase
         const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`;
         
         const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
@@ -219,6 +196,11 @@ export default function BackstagePage() {
         toast({ variant: 'destructive', title: 'Error', description: 'Could not connect to services.' });
         return;
     }
+
+    if (!agreedToTerms) {
+        toast({ variant: 'destructive', title: 'Agreement Required', description: 'Please read and agree to the SOMA Shield Terms.' });
+        return;
+    }
     
     try {
         const userRef = doc(firestore, 'users', user.uid);
@@ -231,11 +213,17 @@ export default function BackstagePage() {
                 governmentIdUrl: data.governmentIdUrl,
                 isPhoneVerified: true,
             },
+            legalAgreements: {
+                termsAccepted: true,
+                acceptedAt: serverTimestamp(),
+                termsVersion: '1.0',
+            },
             status: 'pending_review',
-            termsAcceptedAt: serverTimestamp(),
+            hasAcceptedTerms: true, // Also set this for platform consistency
         });
-        toast({ title: 'Application Submitted!', description: 'We will review your information and get back to you shortly.'});
-        setIsSuccess(true);
+        
+        toast({ title: 'Application Submitted!', description: 'Your business is now under review.'});
+        router.push('/backstage/pending-review');
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Submission Failed', description: error.message || 'An unexpected error occurred.' });
     }
@@ -257,7 +245,6 @@ export default function BackstagePage() {
         </div>
       );
   }
-
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 sm:p-6">
@@ -297,15 +284,11 @@ export default function BackstagePage() {
         </div>
       
         <Card className="w-full max-w-2xl border-primary/50">
-            <AnimatePresence mode="wait">
-            {isSuccess ? (
-                <OnboardingSuccess onAcknowledge={() => router.push('/backstage/finances')} />
-            ) : (
+            <div className="p-0">
                 <motion.div
                     key="form"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
                 >
                      <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -440,8 +423,7 @@ export default function BackstagePage() {
                         </Form>
                     </CardContent>
                 </motion.div>
-            )}
-            </AnimatePresence>
+            </div>
         </Card>
     </div>
   );

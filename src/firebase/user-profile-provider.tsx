@@ -29,6 +29,12 @@ type UserProfile = {
     taxId: string;
     contactPhone: string;
     governmentIdUrl: string;
+    isPhoneVerified: boolean;
+  };
+  legalAgreements?: {
+    termsAccepted: boolean;
+    acceptedAt: any;
+    termsVersion: string;
   };
   termsAcceptedAt?: any;
   bankDetails?: {
@@ -70,6 +76,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
     const isPublicRoute = pathname.startsWith('/signup') || pathname.startsWith('/plan-selection') || pathname === '/' || pathname.startsWith('/store');
     const isLegalPage = pathname.startsWith('/legal');
     const isAccessDeniedPage = pathname === '/access-denied';
+    const isPendingReviewPage = pathname === '/backstage/pending-review';
 
     if (userProfile) {
        // 1. Check if account is disabled
@@ -79,7 +86,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
        }
       
        // 2. Check if terms have been accepted (bypass for Admins)
-       if (userProfile.userRole !== 'ADMIN' && userProfile.hasAcceptedTerms === false && !isLegalPage && !isPublicRoute) {
+       if (userProfile.userRole !== 'ADMIN' && userProfile.hasAcceptedTerms === false && !isLegalPage && !isPublicRoute && !isPendingReviewPage) {
          router.push('/legal/terms');
          return;
        }
