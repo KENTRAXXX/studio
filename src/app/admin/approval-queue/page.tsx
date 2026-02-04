@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Loader2, X } from 'lucide-react';
+import { Check, Loader2, X, Tags, Layers } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import type { PendingProduct } from '@/lib/types';
@@ -48,17 +48,21 @@ export default function ApprovalQueuePage() {
 
     if (decision === 'approve') {
       const masterCatalogRef = collection(firestore, 'Master_Catalog');
-      
-      // We create a new doc in Master_Catalog
       const newMasterProductRef = doc(masterCatalogRef); 
+      
       batch.set(newMasterProductRef, {
         name: product.productName,
+        description: product.description,
         masterCost: product.wholesalePrice,
         retailPrice: product.suggestedRetailPrice,
-        stockLevel: 100, // Default stock level
-        imageId: product.imageUrl, // Assuming imageId can be derived from imageUrl or stored directly
+        stockLevel: 100, 
+        imageId: product.imageUrl, 
         vendorId: product.vendorId,
         productType: 'EXTERNAL',
+        categories: product.categories || [],
+        tags: product.tags || [],
+        isActive: true,
+        createdAt: new Date().toISOString()
       });
       
       batch.update(pendingDocRef, { isApproved: 'approved' });
@@ -68,7 +72,7 @@ export default function ApprovalQueuePage() {
         description: `${product.productName} has been synced to the Master Catalog.`,
       });
 
-    } else { // Reject
+    } else { 
       batch.update(pendingDocRef, { isApproved: 'rejected' });
        toast({
         variant: 'destructive',
@@ -79,7 +83,6 @@ export default function ApprovalQueuePage() {
 
     try {
       await batch.commit();
-      // The onSnapshot listener in useCollection will auto-update the UI
     } catch (error: any) {
        toast({
         variant: 'destructive',
@@ -128,8 +131,8 @@ export default function ApprovalQueuePage() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-[100px]">Image</TableHead>
-                                <TableHead>Product Name</TableHead>
-                                <TableHead>Seller ID</TableHead>
+                                <TableHead>Product Details</TableHead>
+                                <TableHead>Categories & Tags</TableHead>
                                 <TableHead className="text-right">Wholesale</TableHead>
                                 <TableHead className="text-right">Retail</TableHead>
                                 <TableHead className="text-center">Actions</TableHead>
@@ -149,10 +152,29 @@ export default function ApprovalQueuePage() {
                                             />
                                         </div>
                                     </TableCell>
-                                    <TableCell className="font-medium">{product.productName}</TableCell>
-                                    <TableCell className="font-mono text-xs">{product.vendorId}</TableCell>
-                                    <TableCell className="text-right font-mono">${product.wholesalePrice.toFixed(2)}</TableCell>
-                                    <TableCell className="text-right font-mono">${product.suggestedRetailPrice.toFixed(2)}</TableCell>
+                                    <TableCell>
+                                        <div className="font-bold text-lg">{product.productName}</div>
+                                        <div className="text-xs text-muted-foreground font-mono mt-1">Vendor: {product.vendorId}</div>
+                                        <p className="text-sm text-muted-foreground line-clamp-1 mt-1">{product.description}</p>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex flex-wrap gap-1 mb-2">
+                                            {product.categories?.map(cat => (
+                                                <Badge key={cat} variant="secondary" className="text-[10px] h-5 bg-primary/10 text-primary border-primary/20">
+                                                    <Layers className="h-3 w-3 mr-1" /> {cat}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                        <div className="flex flex-wrap gap-1">
+                                            {product.tags?.map(tag => (
+                                                <Badge key={tag} variant="outline" className="text-[10px] h-5">
+                                                    <Tags className="h-3 w-3 mr-1" /> {tag}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-right font-mono font-bold">${product.wholesalePrice.toFixed(2)}</TableCell>
+                                    <TableCell className="text-right font-mono font-bold text-primary">${product.suggestedRetailPrice.toFixed(2)}</TableCell>
                                     <TableCell className="text-center space-x-2">
                                         <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleDecision(product, 'approve')}>
                                             <Check className="mr-2 h-4 w-4"/> Approve

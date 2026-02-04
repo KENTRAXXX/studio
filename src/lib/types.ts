@@ -1,3 +1,4 @@
+
 export type PendingProduct = {
   id: string;
   productName: string;
@@ -8,4 +9,6 @@ export type PendingProduct = {
   vendorId: string;
   isApproved: boolean | 'approved' | 'rejected';
   submittedAt: any; // Firestore Timestamp
+  categories: string[];
+  tags: string[];
 };

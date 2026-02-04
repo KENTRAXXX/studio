@@ -119,6 +119,14 @@
                  "isManagedBySoma": {
                     "type": "boolean",
                     "description": "True if the product is a dropshipped item from the SOMA catalog."
+                },
+                "categories": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                },
+                "tags": {
+                    "type": "array",
+                    "items": { "type": "string" }
                 }
             },
             "required": ["name", "suggestedRetailPrice", "imageUrl", "productType", "vendorId"]

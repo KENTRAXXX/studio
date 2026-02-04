@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -11,11 +12,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, CheckCircle2, UploadCloud, X, ImageIcon, TrendingUp } from 'lucide-react';
+import { Loader2, PackagePlus, CheckCircle2, UploadCloud, X, ImageIcon, TrendingUp, Tags, Layers, Plus } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import SomaLogo from '@/components/logo';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { Badge } from '@/components/ui/badge';
+
+const AVAILABLE_CATEGORIES = [
+    "Watches", "Leather Goods", "Jewelry", "Fragrance", "Apparel", "Accessories", "Home Decor", "Electronics"
+];
 
 export default function AddProductPage() {
   const { user, loading: userLoading } = useUser();
@@ -31,12 +37,14 @@ export default function AddProductPage() {
   const [imageUrl, setImageUrl] = useState('');
   const [wholesalePrice, setWholesalePrice] = useState('');
   const [suggestedRetailPrice, setSuggestedRetailPrice] = useState('');
+  
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [tagsInput, setTagsInput] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  // Dynamic Margin Calculation
   const margin = useMemo(() => {
     const w = parseFloat(wholesalePrice) || 0;
     const r = parseFloat(suggestedRetailPrice) || 0;
@@ -44,7 +52,6 @@ export default function AddProductPage() {
     return ((r - w) / r) * 100;
   }, [wholesalePrice, suggestedRetailPrice]);
 
-  // Secondary layer of protection: Redirect if pending review
   useEffect(() => {
     if (!profileLoading && userProfile?.status === 'pending_review') {
         router.push('/backstage/pending-review');
@@ -55,7 +62,6 @@ export default function AddProductPage() {
     const file = e.target.files?.[0];
     if (!file || !user || !storage) return;
 
-    // Validate File Type
     if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
         toast({
             variant: 'destructive',
@@ -85,6 +91,12 @@ export default function AddProductPage() {
       if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const toggleCategory = (category: string) => {
+      setSelectedCategories(prev => 
+        prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]
+      );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !firestore) {
@@ -102,6 +114,8 @@ export default function AddProductPage() {
       return;
     }
 
+    const tags = tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
+
     setIsSubmitting(true);
     try {
       const pendingCatalogRef = collection(firestore, 'Pending_Master_Catalog');
@@ -111,6 +125,8 @@ export default function AddProductPage() {
         imageUrl, 
         wholesalePrice: parseFloat(wholesalePrice),
         suggestedRetailPrice: parseFloat(suggestedRetailPrice),
+        categories: selectedCategories,
+        tags: tags,
         vendorId: user.uid,
         isApproved: false,
         submittedAt: serverTimestamp(),
@@ -141,7 +157,7 @@ export default function AddProductPage() {
         <p className="mt-2 text-lg text-muted-foreground">Add a new product to the SOMA Master Catalog.</p>
       </div>
 
-      <Card className="w-full max-w-4xl border-primary/50 overflow-hidden">
+      <Card className="w-full max-w-5xl border-primary/50 overflow-hidden">
         <AnimatePresence mode="wait">
           {isSuccess ? (
             <motion.div
@@ -162,6 +178,8 @@ export default function AddProductPage() {
                     setImageUrl('');
                     setWholesalePrice('');
                     setSuggestedRetailPrice('');
+                    setSelectedCategories([]);
+                    setTagsInput('');
                 }} variant="outline" className="mt-8">Submit Another Product</Button>
             </motion.div>
           ) : (
@@ -177,7 +195,7 @@ export default function AddProductPage() {
                     New Product Details
                 </CardTitle>
                 <CardDescription>
-                  Your product will be reviewed by our curation team before being added to the global catalog.
+                  Categorize and detail your luxury item for the global catalog.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -194,6 +212,46 @@ export default function AddProductPage() {
                                 className="h-12"
                             />
                         </div>
+                        
+                        <div className="space-y-2">
+                            <Label className="flex items-center gap-2">
+                                <Layers className="h-4 w-4 text-primary" />
+                                Product Categories
+                            </Label>
+                            <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-border bg-muted/10">
+                                {AVAILABLE_CATEGORIES.map(cat => (
+                                    <button
+                                        key={cat}
+                                        type="button"
+                                        onClick={() => toggleCategory(cat)}
+                                        className={cn(
+                                            "px-3 py-1.5 rounded-full text-xs font-semibold transition-all border",
+                                            selectedCategories.includes(cat) 
+                                                ? "bg-primary text-primary-foreground border-primary" 
+                                                : "bg-background text-muted-foreground border-border hover:border-primary/50"
+                                        )}
+                                    >
+                                        {cat}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="tags" className="flex items-center gap-2">
+                                <Tags className="h-4 w-4 text-primary" />
+                                Custom Tags
+                            </Label>
+                            <Input 
+                                id="tags" 
+                                value={tagsInput} 
+                                onChange={(e) => setTagsInput(e.target.value)} 
+                                placeholder="e.g., Limited Edition, Sustainable, Handmade"
+                                className="h-12"
+                            />
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-tight">Separate tags with commas</p>
+                        </div>
+
                         <div className="space-y-2">
                             <Label htmlFor="description">Product Description</Label>
                             <Textarea 
@@ -218,7 +276,6 @@ export default function AddProductPage() {
                             </div>
                         </div>
 
-                        {/* Calculated Margin Display */}
                         {(parseFloat(wholesalePrice) > 0 && parseFloat(suggestedRetailPrice) > 0) && (
                             <motion.div 
                                 initial={{ opacity: 0, y: 10 }} 
@@ -304,7 +361,7 @@ export default function AddProductPage() {
                         <div className="flex justify-end pt-4">
                             <Button 
                                 type="submit" 
-                                disabled={isSubmitting || isUploading || !imageUrl} 
+                                disabled={isSubmitting || isUploading || !imageUrl || selectedCategories.length === 0} 
                                 size="lg" 
                                 className="w-full h-14 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground text-lg font-bold"
                             >
