@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
+import { collection, doc, query, orderBy, limit, updateDoc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
     BarChart2, 
@@ -19,7 +20,11 @@ import {
     BarChart3,
     Clock,
     CheckCircle2,
-    ShieldCheck
+    ShieldCheck,
+    Star,
+    ArrowUp,
+    ChevronRight,
+    Sparkles
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -42,6 +47,19 @@ import {
 import { format } from 'date-fns';
 import { formatCurrency } from '@/utils/format';
 import { cn } from '@/lib/utils';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import Image from 'next/image';
+import { useToast } from '@/hooks/use-toast';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
@@ -85,6 +103,15 @@ type Order = {
       city?: string;
       country?: string;
   };
+};
+
+type StorefrontProduct = {
+    id: string;
+    name: string;
+    imageUrl: string;
+    viewCount?: number;
+    lastWeekViewCount?: number;
+    isFeatured?: boolean;
 };
 
 type StoreData = {
@@ -146,6 +173,7 @@ const FunnelStage = ({
 export default function AnalyticsPage() {
   const { user, loading: userLoading } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
 
   const storeRef = useMemoFirebase(() => user && firestore ? doc(firestore, 'stores', user.uid) : null, [user, firestore]);
   const { data: storeData, loading: storeLoading } = useDoc<StoreData>(storeRef);
@@ -159,6 +187,15 @@ export default function AnalyticsPage() {
   }, [user, firestore]);
 
   const { data: orders, loading: ordersLoading } = useCollection<Order>(ordersQuery);
+
+  const productsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(collection(firestore, `stores/${user.uid}/products`));
+  }, [user, firestore]);
+
+  const { data: products, loading: productsLoading } = useCollection<StorefrontProduct>(productsQuery);
+
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   const stats = useMemo(() => {
     if (!orders) {
@@ -226,7 +263,58 @@ export default function AnalyticsPage() {
       return markers;
   }, [orders]);
 
-  const isLoading = userLoading || ordersLoading || storeLoading;
+  const productPerformance = useMemo(() => {
+    if (!products || !orders) return [];
+
+    const salesMap: Record<string, number> = {};
+    orders.forEach(order => {
+        order.cart.forEach(item => {
+            salesMap[item.id] = (salesMap[item.id] || 0) + item.quantity;
+        });
+    });
+
+    return products.map(product => {
+        const views = product.viewCount || 0;
+        const lastWeekViews = product.lastWeekViewCount || 0;
+        const trend = lastWeekViews > 0 ? (views - lastWeekViews) / lastWeekViews : 0;
+        
+        return {
+            ...product,
+            sales: salesMap[product.id] || 0,
+            hasTrend: trend > 0.1,
+        };
+    }).sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0)).slice(0, 5);
+  }, [products, orders]);
+
+  const handleFeatureToggle = async (productId: string, currentFeatured: boolean) => {
+    if (!user || !firestore) return;
+    setProcessingId(productId);
+    try {
+        const productRef = doc(firestore, `stores/${user.uid}/products`, productId);
+        await updateDoc(productRef, {
+            isFeatured: !currentFeatured
+        });
+        toast({
+            title: currentFeatured ? 'Removed from Signature Collection' : 'Featured on Storefront',
+            description: `Visual update successful.`,
+        });
+    } catch (e: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Action Failed',
+            description: e.message
+        });
+    } finally {
+        setProcessingId(null);
+    }
+  };
+
+  const getProductImage = (imageId: string) => {
+    if (imageId?.startsWith('http')) return imageId;
+    return PlaceHolderImages.find((img) => img.id === imageId)?.imageUrl || `https://picsum.photos/seed/${imageId}/100/100`;
+  };
+
+  const isLoading = userLoading || ordersLoading || storeLoading || productsLoading;
 
   if (isLoading) {
       return (
@@ -506,6 +594,102 @@ export default function AnalyticsPage() {
             </CardContent>
         </Card>
       </div>
+
+      {/* Product Intelligence Table */}
+      <Card className="border-primary/50 overflow-hidden">
+          <CardHeader className="bg-muted/30 border-b border-primary/10">
+              <div className="flex items-center justify-between">
+                  <div>
+                      <CardTitle className="text-xl font-headline flex items-center gap-2">
+                          <Gem className="h-5 w-5 text-primary" />
+                          Most Viewed Products
+                      </CardTitle>
+                      <CardDescription>Engagement and sales performance for your luxury assets.</CardDescription>
+                  </div>
+                  <Badge variant="outline" className="border-primary/20 text-primary">Live Optimization</Badge>
+              </div>
+          </CardHeader>
+          <CardContent className="p-0">
+              <Table>
+                  <TableHeader>
+                      <TableRow className="bg-black/20 border-primary/10">
+                          <TableHead className="w-[100px]">Asset</TableHead>
+                          <TableHead>Product Name</TableHead>
+                          <TableHead className="text-center">Views</TableHead>
+                          <TableHead className="text-center">Sales</TableHead>
+                          <TableHead className="text-center">Trend</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                      {productPerformance.length > 0 ? (
+                          productPerformance.map((product) => (
+                              <TableRow key={product.id} className="border-primary/5 hover:bg-primary/5 transition-colors">
+                                  <TableCell>
+                                      <div className="relative h-14 w-14 rounded-lg overflow-hidden border border-primary/20">
+                                          <Image 
+                                            src={getProductImage(product.imageUrl)} 
+                                            alt={product.name} 
+                                            fill 
+                                            className="object-cover" 
+                                          />
+                                      </div>
+                                  </TableCell>
+                                  <TableCell>
+                                      <div className="font-bold text-slate-200">{product.name}</div>
+                                      <code className="text-[10px] text-slate-500 uppercase tracking-tighter">SKU: {product.id.slice(0, 8)}</code>
+                                  </TableCell>
+                                  <TableCell className="text-center font-mono font-bold text-slate-300">
+                                      {product.viewCount || 0}
+                                  </TableCell>
+                                  <TableCell className="text-center font-mono font-bold text-primary">
+                                      {product.sales}
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                      {product.hasTrend ? (
+                                          <div className="inline-flex items-center gap-1 text-green-500 bg-green-500/10 px-2 py-0.5 rounded-full border border-green-500/20">
+                                              <ArrowUp className="h-3 w-3" />
+                                              <span className="text-[10px] font-black">HIGH MOMENTUM</span>
+                                          </div>
+                                      ) : (
+                                          <span className="text-slate-600 font-mono text-xs">--</span>
+                                      )}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        className={cn(
+                                            "h-8 px-4 font-bold transition-all",
+                                            product.isFeatured 
+                                                ? "bg-primary text-primary-foreground border-primary" 
+                                                : "border-primary/30 text-primary hover:bg-primary/10"
+                                        )}
+                                        onClick={() => handleFeatureToggle(product.id, !!product.isFeatured)}
+                                        disabled={processingId === product.id}
+                                      >
+                                          {processingId === product.id ? (
+                                              <Loader2 className="h-3 w-3 animate-spin" />
+                                          ) : product.isFeatured ? (
+                                              <><Star className="h-3 w-3 mr-1 fill-current" /> Featured</>
+                                          ) : (
+                                              <><Sparkles className="h-3 w-3 mr-1" /> Feature Item</>
+                                          )}
+                                      </Button>
+                                  </TableCell>
+                              </TableRow>
+                          ))
+                      ) : (
+                          <TableRow>
+                              <TableCell colSpan={6} className="h-32 text-center text-slate-500 italic">
+                                  Waiting for engagement data to populate intelligence table...
+                              </TableCell>
+                          </TableRow>
+                      )}
+                  </TableBody>
+              </Table>
+          </CardContent>
+      </Card>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -16,9 +17,16 @@ export function ProductViewTracker({ storeId, productId }: { storeId: string; pr
     const hasViewed = sessionStorage.getItem(sessionKey);
 
     if (!hasViewed) {
+      // 1. Update Global Store Metric
       const storeRef = doc(firestore, 'stores', storeId);
       updateDoc(storeRef, {
         productViewCount: increment(1)
+      }).catch(console.error);
+
+      // 2. Update Specific Product Metric
+      const productRef = doc(firestore, 'stores', storeId, 'products', productId);
+      updateDoc(productRef, {
+        viewCount: increment(1)
       }).catch(console.error);
 
       sessionStorage.setItem(sessionKey, 'true');

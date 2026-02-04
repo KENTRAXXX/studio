@@ -78,6 +78,10 @@
                 "visitorCount": {
                     "type": "number",
                     "description": "The number of visitors to the store."
+                },
+                "productViewCount": {
+                    "type": "number",
+                    "description": "Total views across all products."
                 }
             },
             "required": ["userId", "instanceId", "theme", "currency", "createdAt", "storeName"]
@@ -127,6 +131,18 @@
                 "tags": {
                     "type": "array",
                     "items": { "type": "string" }
+                },
+                "viewCount": {
+                    "type": "number",
+                    "description": "Total views for this specific product."
+                },
+                "lastWeekViewCount": {
+                    "type": "number",
+                    "description": "Views for this product 7 days ago, used for trend calculation."
+                },
+                "isFeatured": {
+                    "type": "boolean",
+                    "description": "Indicates if the product is featured on the boutique homepage."
                 }
             },
             "required": ["name", "suggestedRetailPrice", "imageUrl", "productType", "vendorId"]
@@ -294,7 +310,7 @@
                 "userId": { "type": "string" },
                 "amount": { "type": "number" },
                 "currency": { "type": "string" },
-                "status": { "type": "string", enum: ["pending", "paid"] },
+                "status": { "type": "string", "enum": ["pending", "paid"] },
                 "orderId": { "type": "string" },
                 "paymentReference": { "type": "string" },
                 "createdAt": { "type": "string", "format": "date-time" }
@@ -372,7 +388,7 @@
                 "title": { "type": "string" },
                 "duration": { "type": "number", "description": "Duration in minutes." },
                 "category": { "type": "string" },
-                "difficulty": { "type": "string", enum: ["Beginner", "Intermediate", "Advanced", "Masterclass"] },
+                "difficulty": { "type": "string", "enum": ["Beginner", "Intermediate", "Advanced", "Masterclass"] },
                 "thumbnailUrl": { "type": "string", "format": "uri" },
                 "videoUrl": { "type": "string", "format": "uri", "description": "URL for embedding (e.g., YouTube, Vimeo)." }
             },
@@ -385,7 +401,7 @@
             "properties": {
                 "eventType": { "type": "string" },
                 "payload": { "type": "object" },
-                "status": { "type": "string", enum: ["success", "failed"] },
+                "status": { "type": "string", "enum": ["success", "failed"] },
                 "errorMessage": { "type": "string" },
                 "timestamp": { "type": "string", "format": "date-time" }
             },
@@ -400,8 +416,8 @@
                 "brandName": { "type": "string" },
                 "subject": { "type": "string" },
                 "message": { "type": "string" },
-                "status": { "type": "string", enum: ["open", "resolved"] },
-                "priority": { "type": "string", enum: ["standard", "urgent"] },
+                "status": { "type": "string", "enum": ["open", "resolved"] },
+                "priority": { "type": "string", "enum": ["standard", "urgent"] },
                 "createdAt": { "type": "string", "format": "date-time" }
             },
             "required": ["brandId", "subject", "message", "status", "priority", "createdAt"]
