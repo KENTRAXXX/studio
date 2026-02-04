@@ -54,7 +54,7 @@ export default function MyPrivateInventoryPage() {
 
   useEffect(() => {
     if (!isLoading) {
-      if (!userProfile || (userProfile.planTier !== 'MERCHANT' && userProfile.planTier !== 'SCALER' && userProfile.planTier !== 'ENTERPRISE')) {
+      if (!userProfile || (userProfile.planTier !== 'MERCHANT' && userProfile.planTier !== 'ENTERPRISE')) {
         router.push('/access-denied');
       }
     }

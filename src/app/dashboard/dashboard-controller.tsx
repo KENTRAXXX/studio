@@ -123,6 +123,7 @@ export default function DashboardController({ planTier }: { planTier?: string, i
         case 'MERCHANT':
             return <div className="max-w-lg mx-auto"><PrivateInventoryCard /></div>;
         case 'SCALER':
+            return <div className="max-w-lg mx-auto"><DropshipCatalogCard /></div>;
         case 'ENTERPRISE':
             return <HybridDashboardView />;
         case 'SELLER':

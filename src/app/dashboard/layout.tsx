@@ -41,6 +41,20 @@ const scalerNavItems = [
   { href: '/dashboard/profile-settings', icon: User, label: 'Profile' },
   { href: '/dashboard/settings', icon: Settings, label: 'Store Settings' },
   { href: '/dashboard/product-catalog', icon: Boxes, label: 'Global Product Catalog' },
+  { href: '/dashboard/my-orders', icon: ShoppingBag, label: 'My Orders' },
+  { href: '/dashboard/training-center', icon: GraduationCap, label: 'Training Center' },
+  { href: '/dashboard/domain-settings', icon: Globe, label: 'Domain Settings' },
+  { href: '/dashboard/analytics', icon: BarChart2, label: 'Analytics' },
+  { href: '/dashboard/wallet', icon: Wallet, label: 'SOMA Wallet' },
+  { href: '/dashboard/referrals', icon: Gift, label: 'Referrals' },
+  { href: '/dashboard/accessibility-checker', icon: Accessibility, label: 'A11y Checker' },
+];
+
+const enterpriseNavItems = [
+  { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
+  { href: '/dashboard/profile-settings', icon: User, label: 'Profile' },
+  { href: '/dashboard/settings', icon: Settings, label: 'Store Settings' },
+  { href: '/dashboard/product-catalog', icon: Boxes, label: 'Global Product Catalog' },
   { href: '/dashboard/my-private-inventory', icon: Package, label: 'My Private Inventory' },
   { href: '/dashboard/my-orders', icon: ShoppingBag, label: 'My Orders' },
   { href: '/dashboard/training-center', icon: GraduationCap, label: 'Training Center' },
@@ -90,15 +104,16 @@ export default function DashboardLayout({
     if (!userProfile) return [];
 
     if (userProfile.userRole === 'ADMIN') {
-        return scalerNavItems;
+        return enterpriseNavItems; // Admins see everything
     }
 
     switch (userProfile.planTier) {
         case 'MERCHANT':
             return merchantNavItems;
         case 'SCALER':
-        case 'ENTERPRISE':
             return scalerNavItems;
+        case 'ENTERPRISE':
+            return enterpriseNavItems;
         case 'SELLER':
         case 'BRAND':
             return sellerNavItems;
