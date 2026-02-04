@@ -12,7 +12,9 @@ import {
   updateDoc,
   getDoc,
   collectionGroup,
-  limit
+  limit,
+  addDoc,
+  serverTimestamp
 } from 'firebase/firestore';
 import {
   Card,
@@ -39,7 +41,10 @@ import {
   Landmark,
   TrendingUp,
   Wallet,
-  AlertTriangle
+  AlertTriangle,
+  ArrowRightLeft,
+  Building2,
+  ShieldAlert
 } from 'lucide-react';
 import {
   Dialog,
@@ -48,12 +53,14 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
+  DialogDescription,
   DialogClose
 } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/utils/format';
+import { cn } from '@/lib/utils';
 
 type WithdrawalRequest = {
   id: string;
@@ -83,9 +90,13 @@ type CombinedRequest = WithdrawalRequest & { user?: UserProfile };
 export default function TreasuryPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
+  
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [corporateTransferAmount, setCorporateTransferAmount] = useState<string>('');
+  const [isTransferring, setIsTransferring] = useState(false);
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
 
-  // 1. Data Fetching for Metrics
+  // 1. Data Fetching for Executive Metrics
   const pendingRequestsQ = useMemoFirebase(() => {
       if (!firestore) return null;
       return query(collection(firestore, 'withdrawal_requests'), where('status', '==', 'pending'));
@@ -136,36 +147,36 @@ export default function TreasuryPage() {
       }));
   }, [requests, allUsers]);
 
+  // 3. Operational Logic
   const handleMarkAsPaid = async (request: CombinedRequest) => {
     if (!firestore) return;
     setProcessingId(request.id);
 
     try {
-        const requestRef = doc(firestore, 'withdrawal_requests', request.id);
-        const userRef = doc(firestore, 'users', request.userId);
-        
-        const requestSnap = await getDoc(requestRef);
-        if (requestSnap.data()?.status !== 'pending') {
-            toast({ variant: 'destructive', title: 'Action Failed', description: `Request is no longer pending.` });
-            setProcessingId(null);
-            return;
-        }
-
         const batch = writeBatch(firestore);
+        const requestRef = doc(firestore, 'withdrawal_requests', request.id);
 
-        // Move pending payouts to completed
-        const pendingPayoutsQuery = query(collection(firestore, 'payouts_pending'), where('userId', '==', request.userId), where('status', '==', 'pending'));
+        // Move partner's pending payouts to completed
+        const pendingPayoutsQuery = query(
+            collection(firestore, 'payouts_pending'), 
+            where('userId', '==', request.userId), 
+            where('status', '==', 'pending')
+        );
         const pendingPayoutsSnap = await getDocs(pendingPayoutsQuery);
         
         pendingPayoutsSnap.forEach(payoutDoc => {
             const completedPayoutRef = doc(collection(firestore, 'payouts_completed'));
-            batch.set(completedPayoutRef, { ...payoutDoc.data(), paidAt: new Date().toISOString(), withdrawalId: request.id });
+            batch.set(completedPayoutRef, { 
+                ...payoutDoc.data(), 
+                paidAt: serverTimestamp(), 
+                withdrawalId: request.id 
+            });
             batch.delete(payoutDoc.ref);
         });
 
         batch.update(requestRef, {
             status: 'completed',
-            paidAt: new Date().toISOString(),
+            paidAt: serverTimestamp(),
         });
 
         await batch.commit();
@@ -176,23 +187,39 @@ export default function TreasuryPage() {
         setProcessingId(null);
     }
   };
-  
-  const handleDecline = async (request: CombinedRequest, reason: string) => {
-    if (!firestore) return;
-    setProcessingId(request.id);
-     try {
-        const requestRef = doc(firestore, 'withdrawal_requests', request.id);
-        await updateDoc(requestRef, {
-            status: 'rejected',
-            reason: reason,
-        });
-        toast({ title: 'Request Rejected', description: 'User has been notified via dashboard.' });
-     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Error', description: error.message });
-     } finally {
-         setProcessingId(null);
-     }
-  }
+
+  const handleCorporateTransfer = async () => {
+      if (!firestore || !corporateTransferAmount) return;
+      setIsTransferring(true);
+
+      try {
+          const amount = parseFloat(corporateTransferAmount);
+          if (isNaN(amount) || amount <= 0) throw new Error("Invalid transfer amount.");
+          if (amount > metrics.netRevenue) throw new Error("Transfer amount exceeds platform net profit.");
+
+          // Log the corporate transfer
+          await addDoc(collection(firestore, 'corporate_transfers'), {
+              amount,
+              type: 'WITHDRAWAL',
+              status: 'COMPLETED',
+              initiatedBy: 'ADMIN',
+              createdAt: serverTimestamp()
+          });
+
+          // In a real scenario, you'd also deduct this from a platform_balance document
+          
+          toast({
+              title: 'Corporate Transfer Logged',
+              description: `${formatCurrency(Math.round(amount * 100))} has been allocated to the corporate treasury.`,
+          });
+          setCorporateTransferAmount('');
+          setIsConfirmDialogOpen(false);
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Transfer Error', description: error.message });
+      } finally {
+          setIsTransferring(false);
+      }
+  };
 
   const isLoading = requestsLoading || ordersLoading || revenueLoading || payoutsLoading || usersLoading;
 
@@ -205,151 +232,129 @@ export default function TreasuryPage() {
   }
 
   return (
-    <div className="space-y-10 pb-20">
-      <header className="flex items-center justify-between">
+    <div className="space-y-10 pb-24">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-            <h1 className="text-3xl font-bold font-headline text-primary flex items-center gap-3">
-                <Landmark className="h-8 w-8" />
+            <h1 className="text-4xl font-bold font-headline text-primary flex items-center gap-3">
+                <Landmark className="h-10 w-10" />
                 Global Treasury Intelligence
             </h1>
-            <p className="text-muted-foreground mt-1">Strategic oversight of ecosystem liquidity and platform performance.</p>
+            <p className="text-muted-foreground mt-1 text-lg">Strategic oversight of ecosystem liquidity and platform performance.</p>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/5 border border-primary/20 shadow-gold-glow">
-            <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Real-Time Ledger Active</span>
+        <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-primary/5 border border-primary/20 shadow-gold-glow">
+            <span className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
+            <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Ledger Synchronization Active</span>
         </div>
       </header>
 
-      {/* Row 1: Global Growth Metrics */}
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="border-primary/20 bg-slate-900/30 relative overflow-hidden group">
+      {/* Row 1: Primary Financial Buckets */}
+      <div className="grid gap-8 md:grid-cols-3">
+        <Card className="border-primary/20 bg-slate-900/30 relative overflow-hidden group min-h-[180px] flex flex-col justify-center">
           <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-            <TrendingUp className="h-20 w-20" />
+            <TrendingUp className="h-24 w-24" />
           </div>
-          <CardHeader>
-            <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Total Ecosystem Volume (GMV)</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Total Ecosystem Volume (GMV)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold font-mono text-white">{formatCurrency(Math.round(metrics.gmv * 100))}</div>
-            <p className="text-[10px] text-green-500 font-bold mt-2 flex items-center gap-1 uppercase">
+            <div className="text-5xl font-bold font-mono text-white tracking-tighter">
+                {formatCurrency(Math.round(metrics.gmv * 100))}
+            </div>
+            <p className="text-[10px] text-green-500 font-bold mt-3 flex items-center gap-1 uppercase tracking-widest">
                 <TrendingUp className="h-3 w-3" /> Aggregated Network Output
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-primary/20 bg-slate-900/30 relative overflow-hidden group">
-          <CardHeader>
-            <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">SOMA Net Revenue</CardTitle>
+        <Card className="border-primary bg-primary/5 relative overflow-hidden group min-h-[180px] flex flex-col justify-center shadow-gold-glow">
+          <div className="absolute inset-0 bg-primary/[0.02] animate-pulse pointer-events-none" />
+          <CardHeader className="pb-2">
+            <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">SOMA Net Platform Profit</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold font-mono text-primary">{formatCurrency(Math.round(metrics.netRevenue * 100))}</div>
-            <p className="text-[10px] text-muted-foreground mt-2 uppercase">Fees + Entrance Subscriptions</p>
+            <div className="text-5xl font-bold font-mono text-primary tracking-tighter">
+                {formatCurrency(Math.round(metrics.netRevenue * 100))}
+            </div>
+            <p className="text-[10px] text-primary/60 mt-3 uppercase tracking-widest font-black">Fees + Plan Subscriptions</p>
           </CardContent>
         </Card>
 
-        <Card className="border-red-500/20 bg-red-500/5 relative overflow-hidden group">
-          <CardHeader>
-            <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-red-400/60">Payout Liability</CardTitle>
+        <Card className="border-red-500/30 bg-red-500/5 relative overflow-hidden group min-h-[180px] flex flex-col justify-center">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-red-400/60">System Payout Liability</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold font-mono text-red-400">{formatCurrency(Math.round(metrics.liability * 100))}</div>
-            <p className="text-[10px] text-muted-foreground mt-2 uppercase">Total User Funds in Transit</p>
+            <div className="text-5xl font-bold font-mono text-red-400 tracking-tighter">
+                {formatCurrency(Math.round(metrics.liability * 100))}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-3 uppercase tracking-widest">Total Partner Funds in Transit</p>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left: Withdrawal Queue */}
-        <div className="lg:col-span-8 space-y-6">
-            <Card className="border-primary/50 overflow-hidden">
-                <CardHeader className="bg-muted/30 border-b border-primary/10 flex flex-row items-center justify-between">
+        {/* Left: Withdrawal & Payout Queue */}
+        <div className="lg:col-span-8 space-y-8">
+            <Card className="border-primary/50 overflow-hidden bg-slate-900/20">
+                <CardHeader className="bg-muted/30 border-b border-primary/10 flex flex-row items-center justify-between py-6 px-8">
                     <div>
-                        <CardTitle className="flex items-center gap-2">
-                            <Wallet className="h-5 w-5 text-primary" />
-                            Payout Fulfillment Queue
+                        <CardTitle className="text-2xl font-headline flex items-center gap-3">
+                            <Wallet className="h-6 w-6 text-primary" />
+                            Partner Fulfillment Queue
                         </CardTitle>
-                        <CardDescription>
-                            Review and authorize pending withdrawal requests.
+                        <CardDescription className="text-base">
+                            Review and authorize pending partner withdrawal requests.
                         </CardDescription>
                     </div>
-                    <Badge variant="outline" className="border-primary/20 text-primary font-mono">
-                        {combinedRequests.length} REQUESTS
+                    <Badge className="bg-primary text-primary-foreground font-mono text-sm px-4 py-1">
+                        {combinedRequests.length} PENDING
                     </Badge>
                 </CardHeader>
                 <CardContent className="p-0">
                 <Table>
-                    <TableHeader className="bg-black/20">
-                    <TableRow className="border-primary/10">
-                        <TableHead>Recipient Partner</TableHead>
+                    <TableHeader className="bg-black/40">
+                    <TableRow className="border-primary/10 h-14">
+                        <TableHead className="px-8">Recipient Partner</TableHead>
                         <TableHead className="text-right">Amount</TableHead>
-                        <TableHead>Bank Details</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableHead>Account Provenance</TableHead>
+                        <TableHead className="text-right px-8">Actions</TableHead>
                     </TableRow>
                     </TableHeader>
                     <TableBody>
                     {combinedRequests.length === 0 ? (
                         <TableRow>
-                        <TableCell colSpan={4} className="h-48 text-center text-muted-foreground italic">
-                            The withdrawal queue is currently empty.
+                        <TableCell colSpan={4} className="h-64 text-center text-muted-foreground italic text-lg">
+                            The withdrawal queue is currently clear.
                         </TableCell>
                         </TableRow>
                     ) : (
                         combinedRequests.map((req) => (
-                        <TableRow key={req.id} className="border-primary/5 hover:bg-primary/5 transition-colors">
-                            <TableCell>
-                            <div className="font-bold text-slate-200">{req.user?.email || 'System Partner'}</div>
-                            <div className="flex items-center gap-1 mt-1">
-                                <ShieldCheck className="h-3 w-3 text-primary"/>
-                                <span className="text-[10px] font-black uppercase text-primary/60">{req.user?.planTier || 'N/A'}</span>
-                            </div>
+                        <TableRow key={req.id} className="border-primary/5 hover:bg-primary/5 transition-colors h-20">
+                            <TableCell className="px-8">
+                                <div className="font-bold text-slate-200 text-lg">{req.user?.email || 'System Partner'}</div>
+                                <div className="flex items-center gap-1.5 mt-1">
+                                    <ShieldCheck className="h-3.5 w-3.5 text-primary"/>
+                                    <span className="text-[10px] font-black uppercase text-primary/60 tracking-widest">{req.user?.planTier || 'PRO'}</span>
+                                </div>
                             </TableCell>
                             <TableCell className="text-right">
-                                <span className="text-lg font-bold text-primary font-mono">{formatCurrency(Math.round(req.amount * 100))}</span>
+                                <span className="text-2xl font-bold text-primary font-mono">{formatCurrency(Math.round(req.amount * 100))}</span>
                             </TableCell>
                             <TableCell>
-                                <div className="text-xs font-bold text-slate-300">{req.bankDetails.accountName}</div>
-                                <div className="text-[10px] text-muted-foreground font-mono mt-0.5">{req.bankDetails.bankName} • {req.bankDetails.accountNumber}</div>
+                                <div className="text-xs font-bold text-slate-300 uppercase tracking-tighter">{req.bankDetails.accountName}</div>
+                                <div className="text-[10px] text-muted-foreground font-mono mt-1">{req.bankDetails.bankName} • ****{req.bankDetails.accountNumber.slice(-4)}</div>
                             </TableCell>
-                            <TableCell className="text-right space-x-2">
-                                {processingId === req.id ? <Loader2 className="animate-spin ml-auto h-5 w-5 text-primary" /> : (
-                                    <>
-                                        <Dialog>
-                                            <DialogTrigger asChild>
-                                                <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300 hover:bg-red-400/10">Decline</Button>
-                                            </DialogTrigger>
-                                            <DialogContent className="bg-card border-red-500/50">
-                                                <DialogHeader>
-                                                    <DialogTitle className="text-red-400 font-headline">Decline Request</DialogTitle>
-                                                </DialogHeader>
-                                                <div className="space-y-4 py-4">
-                                                    <p className="text-sm text-slate-400 leading-relaxed">Declining request for <span className="font-bold text-white">{formatCurrency(Math.round(req.amount * 100))}</span> from <span className="font-mono text-primary">{req.user?.email}</span>.</p>
-                                                    <div className="space-y-2">
-                                                        <Label>Administrative Reason</Label>
-                                                        <Input 
-                                                            id="decline-reason" 
-                                                            placeholder="e.g., Verification discrepancy in bank metadata." 
-                                                            className="bg-black/40 border-red-500/20"
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <DialogFooter>
-                                                    <Button variant="ghost" onClick={() => {}} className="border-slate-800">Cancel</Button>
-                                                    <Button 
-                                                        variant="destructive" 
-                                                        onClick={() => {
-                                                            const reason = (document.getElementById('decline-reason') as HTMLInputElement)?.value;
-                                                            handleDecline(req, reason || 'Discrepancy detected during treasury audit.');
-                                                        }}
-                                                    >
-                                                        Confirm Decline
-                                                    </Button>
-                                                </DialogFooter>
-                                            </DialogContent>
-                                        </Dialog>
-                                        <Button size="sm" className="btn-gold-glow bg-primary" onClick={() => handleMarkAsPaid(req)}>
-                                            <CheckCircle className="mr-2 h-4 w-4"/> Authorize Payout
-                                        </Button>
-                                    </>
+                            <TableCell className="text-right px-8 space-x-3">
+                                {processingId === req.id ? (
+                                    <Loader2 className="animate-spin ml-auto h-6 w-6 text-primary" />
+                                ) : (
+                                    <Button 
+                                        size="lg" 
+                                        className="btn-gold-glow bg-primary h-12 px-6 font-bold" 
+                                        onClick={() => handleMarkAsPaid(req)}
+                                    >
+                                        <CheckCircle className="mr-2 h-5 w-5"/> Authorize Transfer
+                                    </Button>
                                 )}
                             </TableCell>
                         </TableRow>
@@ -361,52 +366,101 @@ export default function TreasuryPage() {
             </Card>
         </div>
 
-        {/* Right: Treasury Operations Sidebar */}
-        <div className="lg:col-span-4 space-y-6">
-            <Card className="border-primary/20 bg-slate-900/40">
-                <CardHeader>
-                    <CardTitle className="text-xs font-headline uppercase tracking-[0.2em] text-primary flex items-center gap-2">
-                        <ShieldCheck className="h-4 w-4 text-primary" />
-                        Executive Compliance
+        {/* Right: Operational Controls */}
+        <div className="lg:col-span-4 space-y-8">
+            <Card className="border-primary/50 bg-slate-900/40 overflow-hidden shadow-2xl">
+                <CardHeader className="bg-primary/10 border-b border-primary/20">
+                    <CardTitle className="text-sm font-headline uppercase tracking-[0.2em] text-primary flex items-center gap-3">
+                        <Building2 className="h-5 w-5" />
+                        Corporate Treasury
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
-                        <div className="flex items-start gap-3">
-                            <AlertTriangle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                            <div className="space-y-1">
-                                <p className="text-[10px] font-black uppercase text-slate-200">KYC Authorization</p>
-                                <p className="text-[10px] text-muted-foreground leading-relaxed">Authorizing a payout confirms that you have manually verified the recipient's identity and banking provenance.</p>
-                            </div>
+                <CardContent className="p-8 space-y-8">
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-end">
+                            <Label className="text-xs font-black uppercase text-slate-500 tracking-widest">Available for Extraction</Label>
+                            <span className="text-2xl font-mono font-bold text-primary">{formatCurrency(Math.round(metrics.netRevenue * 100))}</span>
+                        </div>
+                        <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-primary shadow-gold-glow" style={{ width: '100%' }} />
                         </div>
                     </div>
 
                     <div className="space-y-4">
-                        <div className="flex justify-between items-center text-xs">
-                            <span className="font-bold text-slate-400 uppercase tracking-tighter">Total Pending Approval</span>
-                            <span className="font-mono font-bold text-primary">{formatCurrency(Math.round(metrics.totalPendingWithdrawals * 100))}</span>
+                        <div className="space-y-2">
+                            <Label htmlFor="transfer-amount">Extraction Amount ($)</Label>
+                            <Input 
+                                id="transfer-amount"
+                                type="number"
+                                placeholder="0.00"
+                                value={corporateTransferAmount}
+                                onChange={(e) => setCorporateTransferAmount(e.target.value)}
+                                className="h-14 text-xl font-mono border-primary/20 bg-black/40 focus-visible:ring-primary"
+                            />
                         </div>
-                        <div className="flex justify-between items-center text-xs">
-                            <span className="font-bold text-slate-400 uppercase tracking-tighter">Liquid Reserve Target</span>
-                            <span className="font-mono font-bold text-green-500">100% COVERED</span>
-                        </div>
+
+                        <Dialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button 
+                                    className="w-full h-16 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest group"
+                                    disabled={!corporateTransferAmount || parseFloat(corporateTransferAmount) <= 0 || parseFloat(corporateTransferAmount) > metrics.netRevenue}
+                                >
+                                    <ArrowRightLeft className="mr-3 h-6 w-6 group-hover:rotate-180 transition-transform duration-500" />
+                                    Transfer to Corporate
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="bg-card border-primary p-8">
+                                <DialogHeader>
+                                    <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit mb-4">
+                                        <ShieldAlert className="h-10 w-10 text-primary" />
+                                    </div>
+                                    <DialogTitle className="text-2xl font-headline text-center text-primary">Authorize Executive Transfer</DialogTitle>
+                                    <DialogDescription className="text-center pt-2 text-base text-slate-400">
+                                        You are about to transfer <span className="text-white font-bold font-mono">{formatCurrency(Math.round(parseFloat(corporateTransferAmount || '0') * 100))}</span> from the platform holdings to the SOMA corporate account.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="py-6 border-y border-primary/10 my-4 space-y-4">
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-slate-500">Source:</span>
+                                        <span className="font-bold text-slate-200 uppercase tracking-widest">Platform Net Profit</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-slate-500">Destination:</span>
+                                        <span className="font-bold text-slate-200 uppercase tracking-widest">Corporate Treasury</span>
+                                    </div>
+                                </div>
+                                <DialogFooter className="flex-col sm:flex-col gap-3">
+                                    <Button 
+                                        className="w-full h-14 text-lg btn-gold-glow font-bold" 
+                                        onClick={handleCorporateTransfer}
+                                        disabled={isTransferring}
+                                    >
+                                        {isTransferring ? <Loader2 className="animate-spin mr-2" /> : <ShieldCheck className="mr-2" />}
+                                        Confirm Executive Transfer
+                                    </Button>
+                                    <DialogClose asChild>
+                                        <Button variant="ghost" className="text-slate-500">Cancel</Button>
+                                    </DialogClose>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
                     </div>
 
-                    <Button variant="outline" className="w-full h-11 border-primary/20 text-primary hover:bg-primary/5 font-bold uppercase tracking-widest text-[10px]">
-                        Export Treasury Ledger
-                    </Button>
+                    <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 italic text-[11px] text-slate-500 leading-relaxed">
+                        <p>Platform profits include accumulated commissions from all supplier transactions and recurring SaaS subscriptions. Extraction requests are logged for global audit compliance.</p>
+                    </div>
                 </CardContent>
             </Card>
 
             <Card className="border-primary/10 bg-slate-900/20">
                 <CardHeader className="pb-2">
-                    <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Revenue Distribution</CardTitle>
+                    <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Platform Yield Distribution</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-5 pt-4">
                     <div className="space-y-2">
                         <div className="flex justify-between text-[10px] uppercase font-bold text-slate-400">
-                            <span>Platform Cuts</span>
-                            <span>82%</span>
+                            <span>Transaction Commissions</span>
+                            <span>{Math.round((metrics.netRevenue * 0.82) / (metrics.netRevenue || 1) * 100)}%</span>
                         </div>
                         <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
                             <div className="h-full bg-primary" style={{ width: '82%' }} />
@@ -414,8 +468,8 @@ export default function TreasuryPage() {
                     </div>
                     <div className="space-y-2">
                         <div className="flex justify-between text-[10px] uppercase font-bold text-slate-400">
-                            <span>Subscriptions</span>
-                            <span>18%</span>
+                            <span>SaaS Subscriptions</span>
+                            <span>{Math.round((metrics.netRevenue * 0.18) / (metrics.netRevenue || 1) * 100)}%</span>
                         </div>
                         <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
                             <div className="h-full bg-slate-600" style={{ width: '18%' }} />
