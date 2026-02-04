@@ -17,13 +17,19 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, Percent, Banknote, Loader2, Wallet, Landmark, WalletCards, ChevronDown } from 'lucide-react';
+import { DollarSign, Percent, Banknote, Loader2, Wallet, Landmark, WalletCards, ChevronDown, Info } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { addDays, format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { WithdrawalModal } from '@/components/WithdrawalModal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/utils/format';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type Payout = {
     id: string;
@@ -156,15 +162,15 @@ export default function BackstageFinancesPage() {
 
     const { data: completedWithdrawals, loading: withdrawalsLoading } = useCollection<Withdrawal>(completedWithdrawalsQuery);
 
-    const { totalEarned, platformFees } = useMemo(() => {
-        if (!allPendingPayouts) return { totalEarned: 0, platformFees: 0 };
+    const { totalEarned, platformFees, commissionRate } = useMemo(() => {
+        if (!allPendingPayouts) return { totalEarned: 0, platformFees: 0, commissionRate: 0 };
         
         const total = allPendingPayouts.reduce((acc, doc) => acc + (doc.amount || 0), 0);
-        const commissionRate = userProfile?.planTier === 'BRAND' ? 0.03 : 0.09;
-        const payoutPercentage = 1 - commissionRate;
-        const fees = total > 0 ? (total / payoutPercentage) * commissionRate : 0;
+        const rate = userProfile?.planTier === 'BRAND' ? 0.03 : 0.09;
+        const payoutPercentage = 1 - rate;
+        const fees = total > 0 ? (total / payoutPercentage) * rate : 0;
 
-        return { totalEarned: total, platformFees: fees };
+        return { totalEarned: total, platformFees: fees, commissionRate: rate };
     }, [allPendingPayouts, userProfile]);
 
     const nextPayoutDate = useMemo(() => {
@@ -221,7 +227,29 @@ export default function BackstageFinancesPage() {
                             </Card>
                              <Card className="border-slate-700 bg-slate-900/50">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium text-slate-400">Platform Fees Paid (Est.)</CardTitle>
+                                    <div className="flex items-center gap-2">
+                                        <CardTitle className="text-sm font-medium text-slate-400">Platform Fees Paid (Est.)</CardTitle>
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Info className="h-3.5 w-3.5 text-slate-500 cursor-help hover:text-primary transition-colors" />
+                                                </TooltipTrigger>
+                                                <TooltipContent className="bg-slate-800 border-slate-700 text-slate-200 p-3 space-y-1">
+                                                    <p className="text-xs font-bold uppercase tracking-wider text-primary">Fee Breakdown</p>
+                                                    <div className="text-[11px] space-y-1">
+                                                        <div className="flex justify-between gap-4">
+                                                            <span>SOMA Platform Fee</span>
+                                                            <span className="font-mono">{commissionRate * 100}%</span>
+                                                        </div>
+                                                        <div className="flex justify-between gap-4">
+                                                            <span>Payment Processing</span>
+                                                            <span className="font-mono">Standard Gateway Fee</span>
+                                                        </div>
+                                                    </div>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    </div>
                                     <Percent className="h-4 w-4 text-slate-400" />
                                 </CardHeader>
                                 <CardContent>
