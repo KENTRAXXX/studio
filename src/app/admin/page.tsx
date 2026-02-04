@@ -55,7 +55,6 @@ export default function AdminOverviewPage() {
     const [processingId, setProcessingId] = useState<string | null>(null);
 
     // 1. Sector Logic: Stable Query Definitions
-    // We remove the un-indexed orderBy('email') to prevent Firestore SDK internal assertion failures.
     const pendingSellersQ = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(collection(firestore, 'users'), where('status', '==', 'pending_review'));
@@ -72,7 +71,6 @@ export default function AdminOverviewPage() {
     }, [firestore]);
 
     // 2. Financial Growth Data (Treasury)
-    // Pulling all orders for GMV calculation (Limited to 500 for client-side performance stability)
     const allOrdersQ = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(collectionGroup(firestore, 'orders'), limit(500));
@@ -281,15 +279,12 @@ export default function AdminOverviewPage() {
 
             {/* Workspaces Row */}
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Brand Approval Queue */}
                 <Card className="border-primary/20 bg-slate-900/20 overflow-hidden">
                     <CardHeader className="bg-muted/30 border-b border-primary/10 flex flex-row items-center justify-between py-4">
-                        <div>
-                            <CardTitle className="text-sm font-headline uppercase tracking-widest flex items-center gap-2">
-                                <UserCheck className="h-4 w-4 text-primary" />
-                                Pending Brand Partners
-                            </CardTitle>
-                        </div>
+                        <CardTitle className="text-sm font-headline uppercase tracking-widest flex items-center gap-2">
+                            <UserCheck className="h-4 w-4 text-primary" />
+                            Pending Brand Partners
+                        </CardTitle>
                         <Button asChild variant="ghost" size="sm" className="h-7 text-[10px] uppercase font-bold text-primary">
                             <Link href="/admin/verification-queue">View All <ArrowRight className="ml-1 h-3 w-3" /></Link>
                         </Button>
@@ -333,15 +328,12 @@ export default function AdminOverviewPage() {
                     </CardContent>
                 </Card>
 
-                {/* Product Approval Queue */}
                 <Card className="border-primary/20 bg-slate-900/20 overflow-hidden">
                     <CardHeader className="bg-muted/30 border-b border-primary/10 flex flex-row items-center justify-between py-4">
-                        <div>
-                            <CardTitle className="text-sm font-headline uppercase tracking-widest flex items-center gap-2">
-                                <PackagePlus className="h-4 w-4 text-primary" />
-                                Master Catalog Submissions
-                            </CardTitle>
-                        </div>
+                        <CardTitle className="text-sm font-headline uppercase tracking-widest flex items-center gap-2">
+                            <PackagePlus className="h-4 w-4 text-primary" />
+                            Master Catalog Submissions
+                        </CardTitle>
                         <Button asChild variant="ghost" size="sm" className="h-7 text-[10px] uppercase font-bold text-primary">
                             <Link href="/admin/approval-queue">View All <ArrowRight className="ml-1 h-3 w-3" /></Link>
                         </Button>
@@ -386,7 +378,7 @@ export default function AdminOverviewPage() {
                 </Card>
             </section>
 
-            {/* Financial Treasury Row */}
+            {/* Row 2: Financial Treasury Row */}
             <section className="space-y-6">
                 <h2 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500 flex items-center gap-2">
                     <Landmark className="h-4 w-4" /> Global Treasury
@@ -429,7 +421,7 @@ export default function AdminOverviewPage() {
                 </div>
             </section>
 
-            {/* Live Ecosystem Ticker */}
+            {/* Row 3: Live Ecosystem Ticker */}
             <section className="space-y-6">
                 <h2 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500 flex items-center gap-2">
                     <Activity className="h-4 w-4" /> Live Network Transmission
