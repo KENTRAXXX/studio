@@ -31,16 +31,22 @@ let auth: Auth;
 let firestore: Firestore;
 let storage: FirebaseStorage;
 
+/**
+ * Initializes Firebase services as singletons to prevent "Unexpected state" errors
+ * caused by multiple service instances competing for local state.
+ */
 export function initializeFirebase({ useEmulators = false } = {}) {
-  if (getApps().length > 0) {
-    firebaseApp = getApp();
-  } else {
-    firebaseApp = initializeApp(firebaseConfig);
+  if (!firebaseApp) {
+    if (getApps().length > 0) {
+      firebaseApp = getApp();
+    } else {
+      firebaseApp = initializeApp(firebaseConfig);
+    }
   }
   
-  auth = getAuth(firebaseApp);
-  firestore = getFirestore(firebaseApp);
-  storage = getStorage(firebaseApp);
+  if (!auth) auth = getAuth(firebaseApp);
+  if (!firestore) firestore = getFirestore(firebaseApp);
+  if (!storage) storage = getStorage(firebaseApp);
 
   return { firebaseApp, auth, firestore, storage };
 }

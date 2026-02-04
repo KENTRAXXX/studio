@@ -45,24 +45,59 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { sendWelcomeEmail } from '@/ai/flows/send-welcome-email';
 
+/**
+ * @fileOverview Administrative Executive Pulse Dashboard
+ * Orchestrates platform-wide telemetry across mission-critical sectors.
+ */
 export default function AdminOverviewPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
     const [processingId, setProcessingId] = useState<string | null>(null);
 
-    // 1. Metrics Data
-    const pendingSellersQ = useMemoFirebase(() => firestore ? query(collection(firestore, 'users'), where('status', '==', 'pending_review'), orderBy('email', 'asc')) : null, [firestore]);
-    const openTicketsQ = useMemoFirebase(() => firestore ? query(collection(firestore, 'concierge_tickets'), where('status', '==', 'open')) : null, [firestore]);
-    const maturedRewardsQ = useMemoFirebase(() => firestore ? query(collection(firestore, 'payouts_pending'), where('status', '==', 'pending_maturity')) : null, [firestore]);
+    // 1. Sector Logic: Stable Query Definitions
+    // We remove the un-indexed orderBy('email') to prevent Firestore SDK internal assertion failures.
+    const pendingSellersQ = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'users'), where('status', '==', 'pending_review'));
+    }, [firestore]);
+
+    const openTicketsQ = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'concierge_tickets'), where('status', '==', 'open'));
+    }, [firestore]);
+
+    const maturedRewardsQ = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'payouts_pending'), where('status', '==', 'pending_maturity'));
+    }, [firestore]);
 
     // 2. Financial Growth Data (Treasury)
-    const allOrdersQ = useMemoFirebase(() => firestore ? collectionGroup(firestore, 'orders') : null, [firestore]);
-    const revenueLogsQ = useMemoFirebase(() => firestore ? collection(firestore, 'revenue_logs') : null, [firestore]);
-    const allPendingPayoutsQ = useMemoFirebase(() => firestore ? collection(firestore, 'payouts_pending') : null, [firestore]);
+    // Pulling all orders for GMV calculation (Limited to 500 for client-side performance stability)
+    const allOrdersQ = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collectionGroup(firestore, 'orders'), limit(500));
+    }, [firestore]);
+
+    const revenueLogsQ = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'revenue_logs'), limit(500));
+    }, [firestore]);
+
+    const allPendingPayoutsQ = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'payouts_pending'), limit(500));
+    }, [firestore]);
 
     // 3. System KPI Aggregates
-    const activeUsersQ = useMemoFirebase(() => firestore ? query(collection(firestore, 'users'), where('hasAccess', '==', true)) : null, [firestore]);
-    const pendingItemsQ = useMemoFirebase(() => firestore ? query(collection(firestore, 'Pending_Master_Catalog'), where('isApproved', '==', false)) : null, [firestore]);
+    const activeUsersQ = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'users'), where('hasAccess', '==', true));
+    }, [firestore]);
+
+    const pendingItemsQ = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'Pending_Master_Catalog'), where('isApproved', '==', false));
+    }, [firestore]);
 
     const { data: pendingSellers, loading: sellersLoading } = useCollection<any>(pendingSellersQ);
     const { data: openTickets, loading: ticketsLoading } = useCollection<any>(openTicketsQ);
@@ -244,7 +279,7 @@ export default function AdminOverviewPage() {
                 </div>
             </section>
 
-            {/* New Row: Workspaces */}
+            {/* Workspaces Row */}
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Brand Approval Queue */}
                 <Card className="border-primary/20 bg-slate-900/20 overflow-hidden">
@@ -351,7 +386,7 @@ export default function AdminOverviewPage() {
                 </Card>
             </section>
 
-            {/* Row 2: Financial Growth (The Treasury) */}
+            {/* Financial Treasury Row */}
             <section className="space-y-6">
                 <h2 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500 flex items-center gap-2">
                     <Landmark className="h-4 w-4" /> Global Treasury
@@ -394,7 +429,7 @@ export default function AdminOverviewPage() {
                 </div>
             </section>
 
-            {/* Row 3: Live Ecosystem Feed */}
+            {/* Live Ecosystem Ticker */}
             <section className="space-y-6">
                 <h2 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500 flex items-center gap-2">
                     <Activity className="h-4 w-4" /> Live Network Transmission
