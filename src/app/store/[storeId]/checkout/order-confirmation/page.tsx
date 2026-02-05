@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 'use client';
 
 import { useSearchParams, notFound, useParams } from 'next/navigation';
@@ -6,8 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle2 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
-
-export const runtime = 'edge';
 
 export default function OrderConfirmationPage() {
     const searchParams = useSearchParams();

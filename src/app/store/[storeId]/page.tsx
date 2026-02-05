@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { notFound } from 'next/navigation';
 import { getFirestore, doc, getDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import type { Metadata, ResolvingMetadata } from 'next';
@@ -9,8 +11,6 @@ import { demoProducts } from '@/lib/demo-data';
 import { HeroSection } from '@/components/store/hero-section';
 import { ProductGrid } from '@/components/store/product-grid';
 import { StoreVisitorTracker } from '@/components/store/visitor-tracker';
-
-export const runtime = 'edge';
 
 const getFirestoreInstance = () => {
     const apps = getApps();

@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClientStore } from '@/ai/flows/create-client-store';
@@ -7,8 +9,6 @@ import { firebaseConfig } from '@/firebase/config';
 import { sendOrderEmail } from '@/ai/flows/send-order-email';
 import { sendReferralActivatedEmail } from '@/ai/flows/send-referral-activated-email';
 import { formatCurrency } from '@/utils/format';
-
-export const runtime = 'edge';
 
 const basePrices: Record<string, number> = {
     MERCHANT: 19.99,

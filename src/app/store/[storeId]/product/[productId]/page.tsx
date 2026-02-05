@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 'use client';
 
 import Image from 'next/image';
@@ -26,13 +28,6 @@ import {
   CarouselPrevious,
   type CarouselApi
 } from "@/components/ui/carousel";
-
-export const runtime = 'edge';
-
-type ColorOption = {
-    name: string;
-    imageUrl: string;
-};
 
 export default function ProductDetailPage() {
   const params = useParams();

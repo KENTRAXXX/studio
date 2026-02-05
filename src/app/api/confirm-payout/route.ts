@@ -1,9 +1,9 @@
+export const runtime = 'edge';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { initializeApp, getApps } from 'firebase/app';
 import { doc, getDoc, updateDoc, getFirestore } from 'firebase/firestore';
 import { firebaseConfig } from '@/firebase/config';
-
-export const runtime = 'edge';
 
 const getDb = () => {
     const apps = getApps();

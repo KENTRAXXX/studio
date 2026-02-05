@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -26,8 +28,6 @@ import { useState, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/utils/format';
-
-export const runtime = 'edge';
 
 const StarRating = ({ rating }: { rating: number }) => {
     return (
@@ -320,7 +320,7 @@ export default function BrandProfilePage() {
                                     <p className="text-[10px] uppercase font-black text-slate-500 tracking-widest">Catalog Depth</p>
                                     <p className="text-2xl font-bold font-mono mt-1">{brandProducts?.length || 0}</p>
                                 </CardContent>
-                            </div>
+                            </Card>
                         </div>
                     </div>
 
