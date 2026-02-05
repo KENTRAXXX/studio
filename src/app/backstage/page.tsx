@@ -10,7 +10,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { AnimatePresence, motion } from 'framer-motion';
-import Script from 'next/script';
+import dynamic from 'next/dynamic';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,12 +19,23 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Send, ShieldCheck, CheckCircle2, UploadCloud, Phone, Check, MapPin, AlertTriangle } from 'lucide-react';
+import { Loader2, Send, ShieldCheck, CheckCircle2, UploadCloud, Phone, Check, MapPin, AlertTriangle, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import SomaLogo from '@/components/logo';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { uploadToCloudinary } from '@/lib/utils/upload-image';
+import { AddressSearch, type AddressResult } from '@/components/ui/address-search';
+
+// Lazy load the map component to ensure edge compatibility and prevent SSR errors
+const SomaMap = dynamic(() => import('@/components/ui/soma-map'), { 
+  ssr: false,
+  loading: () => (
+    <div className="h-48 w-full rounded-xl bg-slate-900/50 border border-primary/10 flex items-center justify-center">
+      <Loader2 className="h-6 w-6 animate-spin text-primary opacity-20" />
+    </div>
+  )
+});
 
 const onboardingSchema = z.object({
   legalBusinessName: z.string().min(3, 'A business name is required.'),
@@ -32,11 +43,10 @@ const onboardingSchema = z.object({
   taxId: z.string().min(5, 'A valid Tax ID or Business Number is required.'),
   contactPhone: z.string().min(10, 'A valid contact phone number is required.'),
   governmentIdUrl: z.string().url({ message: 'A valid ID document URL is required.' }).min(1, 'Please provide your government ID.'),
-  street: z.string().min(1, 'Verified street is missing.'),
   city: z.string().min(1, 'Verified city is missing.'),
-  state: z.string().min(1, 'Verified state is missing.'),
-  postalCode: z.string().min(1, 'Verified postal code is missing.'),
   country: z.string().min(1, 'Verified country is missing.'),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
 });
 
 type OnboardingFormValues = z.infer<typeof onboardingSchema>;
@@ -75,11 +85,11 @@ export default function BackstagePage() {
   const { toast } = useToast();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const addressInputRef = useRef<HTMLInputElement | null>(null);
   
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadComplete, setUploadComplete] = useState(false);
+  const [mapCoords, setMapCoords] = useState<[number, number] | null>(null);
 
   // Phone Verification States
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
@@ -97,10 +107,7 @@ export default function BackstagePage() {
     defaultValues: {
         legalBusinessName: '',
         warehouseAddress: '',
-        street: '',
         city: '',
-        state: '',
-        postalCode: '',
         country: '',
         taxId: '',
         contactPhone: '',
@@ -108,73 +115,6 @@ export default function BackstagePage() {
     },
   });
   const { isSubmitting } = form.formState;
-
-  const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  const isMapsAvailable = !!mapsApiKey && mapsApiKey !== 'undefined';
-
-  // Google Maps Autocomplete Initialization
-  const initAutocomplete = () => {
-    if (!addressInputRef.current || !window.google || !window.google.maps || !window.google.maps.places) {
-        console.warn("Google Maps Places library not available.");
-        return;
-    }
-    
-    const autocomplete = new window.google.maps.places.Autocomplete(addressInputRef.current, {
-        types: ['address'],
-        fields: ['address_components', 'formatted_address'],
-    });
-
-    autocomplete.addListener('place_changed', () => {
-        const place = autocomplete.getPlace();
-        if (!place.address_components) return;
-
-        let streetNumber = '';
-        let route = '';
-        let city = '';
-        let state = '';
-        let postalCode = '';
-        let country = '';
-
-        for (const component of place.address_components) {
-            const componentType = component.types[0];
-            switch (componentType) {
-                case 'street_number':
-                    streetNumber = component.long_name;
-                    break;
-                case 'route':
-                    route = component.long_name;
-                    break;
-                case 'locality':
-                    city = component.long_name;
-                    break;
-                case 'administrative_area_level_1':
-                    state = component.short_name;
-                    break;
-                case 'postal_code':
-                    postalCode = component.long_name;
-                    break;
-                case 'country':
-                    country = component.long_name;
-                    break;
-            }
-        }
-
-        form.setValue('warehouseAddress', place.formatted_address || '', { shouldValidate: true });
-        form.setValue('street', `${streetNumber} ${route}`.trim(), { shouldValidate: true });
-        form.setValue('city', city, { shouldValidate: true });
-        form.setValue('state', state, { shouldValidate: true });
-        form.setValue('postalCode', postalCode, { shouldValidate: true });
-        form.setValue('country', country, { shouldValidate: true });
-        
-        form.trigger(['warehouseAddress', 'street', 'city', 'state', 'postalCode', 'country']);
-    });
-  };
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.google && addressInputRef.current) {
-        initAutocomplete();
-    }
-  }, []);
 
   useEffect(() => {
     const isLoading = profileLoading || userLoading;
@@ -196,14 +136,13 @@ export default function BackstagePage() {
             form.reset({
                 legalBusinessName: userProfile.verificationData.legalBusinessName || '',
                 warehouseAddress: userProfile.verificationData.warehouseAddress || '',
-                street: userProfile.verificationData.structuredAddress?.street || '',
                 city: userProfile.verificationData.structuredAddress?.city || '',
-                state: userProfile.verificationData.structuredAddress?.state || '',
-                postalCode: userProfile.verificationData.structuredAddress?.postalCode || '',
                 country: userProfile.verificationData.structuredAddress?.country || '',
                 taxId: userProfile.verificationData.taxId || '',
                 contactPhone: userProfile.verificationData.contactPhone || '',
                 governmentIdUrl: userProfile.verificationData.governmentIdUrl || '',
+                latitude: userProfile.verificationData.latitude,
+                longitude: userProfile.verificationData.longitude,
             });
             if (userProfile.verificationData.governmentIdUrl) {
                 setUploadComplete(true);
@@ -211,9 +150,26 @@ export default function BackstagePage() {
             if (userProfile.verificationData.isPhoneVerified) {
                 setIsPhoneVerified(true);
             }
+            if (userProfile.verificationData.latitude && userProfile.verificationData.longitude) {
+                setMapCoords([userProfile.verificationData.latitude, userProfile.verificationData.longitude]);
+            }
         }
     }
   }, [userProfile, profileLoading, userLoading, router, form]);
+
+  const handleAddressSelect = (result: AddressResult) => {
+    const lat = parseFloat(result.lat);
+    const lon = parseFloat(result.lon);
+    
+    form.setValue('warehouseAddress', result.display_name, { shouldValidate: true });
+    form.setValue('city', result.address.city || result.address.town || result.address.village || '', { shouldValidate: true });
+    form.setValue('country', result.address.country || '', { shouldValidate: true });
+    form.setValue('latitude', lat);
+    form.setValue('longitude', lon);
+    
+    setMapCoords([lat, lon]);
+    toast({ title: 'Location Verified', description: 'Address provenance synchronized with OSM registry.' });
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -292,16 +248,15 @@ export default function BackstagePage() {
                 legalBusinessName: data.legalBusinessName,
                 warehouseAddress: data.warehouseAddress,
                 structuredAddress: {
-                    street: data.street,
                     city: data.city,
-                    state: data.state,
-                    postalCode: data.postalCode,
                     country: data.country,
                 },
                 taxId: data.taxId,
                 contactPhone: data.contactPhone,
                 governmentIdUrl: data.governmentIdUrl,
                 isPhoneVerified: true,
+                latitude: data.latitude,
+                longitude: data.longitude,
             },
             legalAgreements: {
                 termsAccepted: true,
@@ -331,12 +286,6 @@ export default function BackstagePage() {
   
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 sm:p-6">
-        {isMapsAvailable && (
-            <Script 
-                src={`https://maps.googleapis.com/maps/api/js?key=${mapsApiKey}&libraries=places`} 
-                onLoad={initAutocomplete}
-            />
-        )}
         <div id="recaptcha-container"></div>
         
         <Dialog open={isOTPModalOpen} onOpenChange={setIsOTPModalOpen}>
@@ -407,26 +356,26 @@ export default function BackstagePage() {
                                         <FormItem><FormLabel>Business Legal Name</FormLabel><FormControl><Input placeholder="e.g., Luxe Imports Inc." {...field} /></FormControl><FormMessage /></FormItem>
                                     )} />
                                     
-                                    <FormField control={form.control} name="warehouseAddress" render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="flex items-center gap-2">
-                                                <MapPin className="h-4 w-4 text-primary"/>
-                                                Primary Warehouse Address
-                                            </FormLabel>
-                                            <FormControl>
-                                                <Input 
-                                                    {...field} 
-                                                    ref={(e) => {
-                                                        field.ref(e); 
-                                                        addressInputRef.current = e; 
-                                                    }}
-                                                    placeholder={isMapsAvailable ? "Start typing your warehouse address..." : "Enter your warehouse address"}
+                                    <div className="space-y-4">
+                                        <FormLabel className="flex items-center gap-2">
+                                            <Globe className="h-4 w-4 text-primary"/>
+                                            Warehouse Provenance (OSM Verified)
+                                        </FormLabel>
+                                        <AddressSearch 
+                                            onSelect={handleAddressSelect}
+                                            defaultValue={form.getValues('warehouseAddress')}
+                                        />
+                                        
+                                        {mapCoords && (
+                                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+                                                <SomaMap 
+                                                    center={mapCoords} 
+                                                    className="h-48 w-full mt-2 grayscale-[0.5] rounded-xl overflow-hidden border border-primary/20"
                                                 />
-                                            </FormControl>
-                                            <FormDescription>{isMapsAvailable ? "Select your verified location from the suggestions." : "Enter your full warehouse location."}</FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )} />
+                                            </motion.div>
+                                        )}
+                                        <FormMessage>{form.formState.errors.warehouseAddress?.message}</FormMessage>
+                                    </div>
 
                                     <div className="grid md:grid-cols-2 gap-6">
                                         <FormField control={form.control} name="taxId" render={({ field }) => (
