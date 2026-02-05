@@ -1,6 +1,5 @@
-export const runtime = 'edge';
-
 'use client';
+export const runtime = 'edge';
 
 import { useParams, useRouter } from 'next/navigation';
 import { useDoc, useFirestore, useUserProfile, useCollection, useUser, useMemoFirebase } from '@/firebase';
