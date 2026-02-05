@@ -13,27 +13,28 @@ import Image from 'next/image';
 import { useToastWithRandomCity } from '@/hooks/use-toast-with-random-city';
 import { LiveFeedTicker } from '@/components/ui/live-feed-ticker';
 
+/**
+ * Constants for deterministic growth calculation.
+ * Using a fixed launch date: July 1, 2024.
+ */
+const LAUNCH_DATE = new Date('2024-07-01T00:00:00Z');
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 function LiveCounter() {
   const [count, setCount] = useState<number | null>(null);
 
   useEffect(() => {
-    const getInitialStoreCount = () => {
-      const launchDate = new Date('2024-07-01T00:00:00Z');
+    const calculateStoreCount = () => {
       const now = new Date();
-      const daysSinceLaunch = Math.max(0, Math.floor((now.getTime() - launchDate.getTime()) / (1000 * 60 * 60 * 24)));
-      const initialStores = 184;
+      const daysSinceLaunch = Math.max(0, (now.getTime() - LAUNCH_DATE.getTime()) / MS_PER_DAY);
       
-      let dynamicStores = 0;
-      for (let i = 0; i < daysSinceLaunch; i++) {
-          dynamicStores += Math.floor(Math.random() * (25 - 5 + 1)) + 5;
-      }
-  
-      return initialStores + dynamicStores;
+      const initialStores = 184;
+      const growthPerDay = 12.4; // Stable average growth
+      
+      return Math.floor(initialStores + (daysSinceLaunch * growthPerDay));
     };
     
-    const initialCount = getInitialStoreCount();
-    setCount(initialCount);
+    setCount(calculateStoreCount());
 
     const updateCount = () => {
         setCount((prev) => (prev || 0) + 1);
@@ -86,33 +87,28 @@ function PlatformPulse() {
 
 
     useEffect(() => {
-        const getInitialValuesClient = () => {
-            const launchDate = new Date('2024-07-01T00:00:00Z');
+        const getDeterministicValues = () => {
             const now = new Date();
-            const daysSinceLaunch = Math.max(0, Math.floor((now.getTime() - launchDate.getTime()) / (1000 * 60 * 60 * 24)));
+            const daysSinceLaunch = Math.max(0, (now.getTime() - LAUNCH_DATE.getTime()) / MS_PER_DAY);
 
+            // Baseline figures from July 1, 2024
             const initialSales = 4455321.98;
             const initialSellers = 127;
             const initialBrands = 89;
 
-            let dynamicSales = 0;
-            let dynamicSellers = 0;
-            let dynamicBrands = 0;
+            // Stable growth rates
+            const salesGrowthPerDay = 32450.50;
+            const sellersGrowthPerDay = 8.2;
+            const brandsGrowthPerDay = 2.1;
 
-            for (let i = 0; i < daysSinceLaunch; i++) {
-                dynamicSales += Math.random() * (50000 - 11000) + 11000;
-                dynamicSellers += Math.floor(Math.random() * (17 - 3 + 1)) + 3;
-                dynamicBrands += Math.floor(Math.random() * (7 - 1 + 1)) + 1;
-            }
-
-            const currentSales = initialSales + dynamicSales;
-            const currentSellers = initialSellers + dynamicSellers;
-            const currentBrands = initialBrands + dynamicBrands;
+            const currentSales = initialSales + (daysSinceLaunch * salesGrowthPerDay);
+            const currentSellers = Math.floor(initialSellers + (daysSinceLaunch * sellersGrowthPerDay));
+            const currentBrands = Math.floor(initialBrands + (daysSinceLaunch * brandsGrowthPerDay));
             
             return { currentSales, currentSellers, currentBrands };
         };
 
-        const values = getInitialValuesClient();
+        const values = getDeterministicValues();
         setInitialValues(values);
         setGlobalSalesSum(values.currentSales);
     }, []);
@@ -133,7 +129,7 @@ function PlatformPulse() {
             setTimeout(updateSales, randomInterval);
         };
         
-        const timeoutId = setTimeout(updateSales, Math.random() * (5000 - 2000) + 2000);
+        const timeoutId = setTimeout(updateSales, Math.random() * (15000 - 5000) + 5000);
         
         return () => clearTimeout(timeoutId);
 
