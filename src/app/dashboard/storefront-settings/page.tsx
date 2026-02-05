@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -14,7 +14,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { 
     Palette, 
-    UploadCloud, 
     Check, 
     Loader2, 
     Search, 
@@ -29,7 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import SomaLogo from '@/components/logo';
-import { uploadToCloudinary } from '@/lib/utils/upload-image';
+import { ImageUploader } from '@/components/ui/image-uploader';
 
 const storefrontSchema = z.object({
   storeName: z.string().min(3, 'Store name must be at least 3 characters.'),
@@ -142,9 +141,7 @@ export default function StorefrontSettingsPage() {
     const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const [isUploading, setIsUploading] = useState(false);
     const [selectedTheme, setSelectedTheme] = useState('onyx');
     
     const storeRef = useMemoFirebase(() => user && firestore ? doc(firestore, 'stores', user.uid) : null, [firestore, user]);
@@ -178,20 +175,9 @@ export default function StorefrontSettingsPage() {
         }
     }, [storeData, form]);
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file || !user) return;
-
-        setIsUploading(true);
-        try {
-            const downloadUrl = await uploadToCloudinary(file);
-            form.setValue('logoUrl', downloadUrl);
-            toast({ title: 'Branding Secured', description: 'Your boutique logo has been hosted on Cloudinary.' });
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
-        } finally {
-            setIsUploading(false);
-        }
+    const handleLogoSuccess = (secureUrl: string) => {
+        form.setValue('logoUrl', secureUrl);
+        toast({ title: 'Branding Secured', description: 'Your boutique logo has been hosted on Cloudinary.' });
     };
 
     const onSubmit = async (data: StorefrontFormValues) => {
@@ -267,23 +253,30 @@ export default function StorefrontSettingsPage() {
 
                                 <div className="space-y-4">
                                     <Label>Boutique Logo</Label>
-                                    <div 
-                                        className="relative h-32 w-full rounded-xl border-2 border-dashed border-primary/20 bg-slate-950/50 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-all group"
-                                        onClick={() => fileInputRef.current?.click()}
-                                    >
+                                    <div className="grid md:grid-cols-2 gap-6 items-center">
                                         {watchedLogoUrl ? (
-                                            <img src={watchedLogoUrl} alt="Logo" className="h-20 object-contain" />
+                                            <div className="relative h-32 w-full rounded-xl border border-primary/20 bg-slate-950/50 flex items-center justify-center p-4">
+                                                <img src={watchedLogoUrl} alt="Logo" className="h-20 object-contain" />
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => form.setValue('logoUrl', '')}
+                                                    className="absolute top-2 right-2 p-1 rounded-full bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                                                >
+                                                    <Check className="h-3 w-3" />
+                                                </button>
+                                            </div>
                                         ) : (
-                                            <>
-                                                <UploadCloud className="h-8 w-8 text-slate-600 mb-2" />
-                                                <span className="text-[10px] uppercase font-bold text-slate-500">Upload Vector or Transparent PNG</span>
-                                            </>
+                                            <div className="h-32 w-full rounded-xl border-2 border-dashed border-slate-800 bg-slate-950/20 flex items-center justify-center">
+                                                <p className="text-[10px] uppercase font-bold text-slate-600 tracking-widest">No Logo Set</p>
+                                            </div>
                                         )}
-                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-xl">
-                                            <span className="text-xs font-bold text-white uppercase">{isUploading ? <Loader2 className="animate-spin h-4 w-4" /> : 'Change Logo'}</span>
-                                        </div>
+                                        
+                                        <ImageUploader 
+                                            onSuccess={handleLogoSuccess}
+                                            label="Change Boutique Logo"
+                                            aspectRatio="aspect-video"
+                                        />
                                     </div>
-                                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
                                 </div>
                             </CardContent>
                         </Card>

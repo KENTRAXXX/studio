@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { User, Loader2, Save, Camera, CheckCircle2, BookOpen, ShieldCheck, Clock, ExternalLink, Share2, Instagram, Twitter } from 'lucide-react';
+import { User, Loader2, Save, CheckCircle2, BookOpen, ShieldCheck, Clock, ExternalLink, Share2, Instagram, Twitter } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -25,7 +25,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { uploadToCloudinary } from '@/lib/utils/upload-image';
+import { ImageUploader } from '@/components/ui/image-uploader';
 
 const profileSchema = z.object({
   displayName: z.string().min(2, 'Display name must be at least 2 characters.'),
@@ -43,9 +43,6 @@ export default function ProfileSettingsPage() {
     const { userProfile, loading: profileLoading } = useUserProfile();
     const firestore = useFirestore();
     const { toast } = useToast();
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const [isUploading, setIsUploading] = useState(false);
 
     // Fetch store data and products to check readiness for public link
     const storeRef = useMemoFirebase(() => {
@@ -90,17 +87,14 @@ export default function ProfileSettingsPage() {
         }
     }, [userProfile, form]);
 
-    const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file || !userProfile?.id || !firestore) return;
+    const handleAvatarSuccess = async (secureUrl: string) => {
+        if (!userProfile?.id || !firestore) return;
 
-        setIsUploading(true);
         try {
-            const downloadUrl = await uploadToCloudinary(file);
             const userRef = doc(firestore, 'users', userProfile.id);
             await updateDoc(userRef, { 
-                photoURL: downloadUrl,
-                avatarUrl: downloadUrl 
+                photoURL: secureUrl,
+                avatarUrl: secureUrl 
             });
 
             toast({ 
@@ -111,11 +105,9 @@ export default function ProfileSettingsPage() {
         } catch (error: any) {
             toast({ 
                 variant: 'destructive', 
-                title: 'Upload Failed', 
-                description: error.message || 'Could not upload identity asset.' 
+                title: 'Sync Failed', 
+                description: 'Identity asset uploaded but Firestore sync failed.' 
             });
-        } finally {
-            setIsUploading(false);
         }
     };
 
@@ -228,38 +220,22 @@ export default function ProfileSettingsPage() {
                                 <CardTitle className="text-sm font-headline uppercase tracking-widest text-primary/60">Executive Avatar</CardTitle>
                             </CardHeader>
                             <CardContent className="flex flex-col items-center pt-2">
-                                <div className="group relative h-40 w-40 rounded-full border-4 border-background bg-slate-950 shadow-[0_0_30px_rgba(0,0,0,0.3)] overflow-hidden">
+                                <div className="group relative h-40 w-40 rounded-full border-4 border-background bg-slate-950 shadow-[0_0_30px_rgba(0,0,0,0.3)] overflow-hidden mb-6">
                                     <Avatar className="h-full w-full rounded-none">
                                         <AvatarImage src={userProfile?.photoURL || userProfile?.avatarUrl} className="object-cover" />
                                         <AvatarFallback className="bg-slate-800 text-primary text-4xl font-bold">
                                             {userProfile?.displayName?.charAt(0).toUpperCase() || userProfile?.email?.charAt(0).toUpperCase()}
                                         </AvatarFallback>
                                     </Avatar>
-                                    
-                                    <div 
-                                        onClick={() => !isUploading && fileInputRef.current?.click()}
-                                        className={cn(
-                                            "absolute inset-0 bg-black/60 flex flex-col items-center justify-center transition-all cursor-pointer",
-                                            isUploading ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                                        )}
-                                    >
-                                        {isUploading ? (
-                                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                        ) : (
-                                            <>
-                                                <Camera className="h-8 w-8 text-white mb-2" />
-                                                <span className="text-[10px] font-black text-white uppercase tracking-tighter">Update Photo</span>
-                                            </>
-                                        )}
-                                    </div>
                                 </div>
-                                <input 
-                                    type="file" 
-                                    ref={fileInputRef} 
-                                    className="hidden" 
-                                    accept="image/png,image/jpeg" 
-                                    onChange={handleAvatarUpload} 
+                                
+                                <ImageUploader 
+                                    onSuccess={handleAvatarSuccess}
+                                    label="Update Identity Photo"
+                                    aspectRatio="aspect-video"
+                                    className="w-full"
                                 />
+
                                 <p className="text-[10px] text-muted-foreground mt-6 text-center uppercase tracking-widest font-semibold leading-relaxed">
                                     Recommended: Square JPG or PNG<br/>Min 400x400px
                                 </p>
