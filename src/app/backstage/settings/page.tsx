@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -43,7 +42,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { uploadImage } from '@/lib/utils/upload-image';
+import { uploadToCloudinary } from '@/lib/utils/upload-image';
 
 export default function BackstageSettingsPage() {
   const auth = useAuth();
@@ -118,7 +117,7 @@ export default function BackstageSettingsPage() {
 
     setIsUploadingAvatar(true);
     try {
-      const downloadUrl = await uploadImage(file);
+      const downloadUrl = await uploadToCloudinary(file);
       setAvatarUrl(downloadUrl);
       const userRef = doc(firestore, 'users', user.uid);
       await updateDoc(userRef, { avatarUrl: downloadUrl });
@@ -137,7 +136,7 @@ export default function BackstageSettingsPage() {
 
     setIsUploadingCover(true);
     try {
-      const downloadUrl = await uploadImage(file);
+      const downloadUrl = await uploadToCloudinary(file);
       setCoverPhotoUrl(downloadUrl);
       const userRef = doc(firestore, 'users', user.uid);
       await updateDoc(userRef, { coverPhotoUrl: downloadUrl });

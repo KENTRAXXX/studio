@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -37,7 +36,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { uploadImage } from '@/lib/utils/upload-image';
+import { uploadToCloudinary } from '@/lib/utils/upload-image';
 
 const AVAILABLE_CATEGORIES = [
     "Watches", 
@@ -128,7 +127,7 @@ export default function AddProductPage() {
             if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
                 throw new Error(`File ${file.name} is not a supported format.`);
             }
-            return uploadImage(file);
+            return uploadToCloudinary(file);
         });
 
         const urls = await Promise.all(uploadPromises);

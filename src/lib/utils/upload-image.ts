@@ -8,12 +8,12 @@
  * @param file The image file to upload.
  * @returns The secure URL of the uploaded image.
  */
-export async function uploadImage(file: File): Promise<string> {
+export async function uploadToCloudinary(file: File): Promise<string> {
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'SomaDS';
 
-  if (!cloudName || !uploadPreset) {
-    throw new Error('Cloudinary configuration is missing. Please set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET in your environment.');
+  if (!cloudName) {
+    throw new Error('Cloudinary configuration is missing. Please set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME in your environment.');
   }
 
   const formData = new FormData();

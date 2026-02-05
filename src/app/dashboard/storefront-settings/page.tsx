@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -30,7 +29,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import SomaLogo from '@/components/logo';
-import { uploadImage } from '@/lib/utils/upload-image';
+import { uploadToCloudinary } from '@/lib/utils/upload-image';
 
 const storefrontSchema = z.object({
   storeName: z.string().min(3, 'Store name must be at least 3 characters.'),
@@ -185,7 +184,7 @@ export default function StorefrontSettingsPage() {
 
         setIsUploading(true);
         try {
-            const downloadUrl = await uploadImage(file);
+            const downloadUrl = await uploadToCloudinary(file);
             form.setValue('logoUrl', downloadUrl);
             toast({ title: 'Branding Secured', description: 'Your boutique logo has been hosted on Cloudinary.' });
         } catch (error: any) {

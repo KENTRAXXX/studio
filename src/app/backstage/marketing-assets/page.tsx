@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef } from 'react';
@@ -25,7 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import SomaLogo from '@/components/logo';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { uploadImage } from '@/lib/utils/upload-image';
+import { uploadToCloudinary } from '@/lib/utils/upload-image';
 
 type MarketingAsset = {
     id: string;
@@ -73,7 +72,7 @@ export default function MarketingAssetsPage() {
         const uploadPromises = Array.from(files).map(async (file) => {
             const assetId = crypto.randomUUID();
             try {
-                const downloadUrl = await uploadImage(file);
+                const downloadUrl = await uploadToCloudinary(file);
 
                 await setDoc(doc(firestore, 'marketing_assets', assetId), {
                     fileName: file.name,

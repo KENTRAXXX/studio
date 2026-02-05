@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
@@ -26,7 +25,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { uploadImage } from '@/lib/utils/upload-image';
+import { uploadToCloudinary } from '@/lib/utils/upload-image';
 
 const profileSchema = z.object({
   displayName: z.string().min(2, 'Display name must be at least 2 characters.'),
@@ -97,7 +96,7 @@ export default function ProfileSettingsPage() {
 
         setIsUploading(true);
         try {
-            const downloadUrl = await uploadImage(file);
+            const downloadUrl = await uploadToCloudinary(file);
             const userRef = doc(firestore, 'users', userProfile.id);
             await updateDoc(userRef, { 
                 photoURL: downloadUrl,

@@ -13,6 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Settings, Loader2, Save, Eye, UploadCloud, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import SomaLogo from '@/components/logo';
+import { uploadToCloudinary } from '@/lib/utils/upload-image';
 
 const settingsSchema = z.object({
   storeName: z.string().min(3, 'Store name must be at least 3 characters.'),
@@ -100,16 +101,29 @@ export default function StoreSettingsPage() {
         }
     }, [storeData, form]);
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'logoUrl' | 'faviconUrl') => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, field: 'logoUrl' | 'faviconUrl') => {
         const file = e.target.files?.[0];
         if (file) {
-            // Simulated upload: generating a temp preview URL
-            const previewUrl = URL.createObjectURL(file);
-            form.setValue(field, previewUrl);
-            toast({
-                title: 'Asset Selected',
-                description: `${file.name} is ready. Click "Save Changes" to apply.`,
+            const uploadToast = toast({
+                title: 'Uploading Asset...',
+                description: 'Securing your branding in Cloudinary.',
             });
+            try {
+                const secureUrl = await uploadToCloudinary(file);
+                form.setValue(field, secureUrl);
+                uploadToast.update({
+                    id: uploadToast.id,
+                    title: 'Asset Secured',
+                    description: 'Your branding has been uploaded. Click "Save Changes" to finalize.',
+                });
+            } catch (error: any) {
+                uploadToast.update({
+                    id: uploadToast.id,
+                    variant: 'destructive',
+                    title: 'Upload Failed',
+                    description: error.message || 'Could not upload asset.',
+                });
+            }
         }
     };
 

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -25,7 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import SomaLogo from '@/components/logo';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { uploadImage } from '@/lib/utils/upload-image';
+import { uploadToCloudinary } from '@/lib/utils/upload-image';
 
 const onboardingSchema = z.object({
   legalBusinessName: z.string().min(3, 'A business name is required.'),
@@ -224,7 +223,7 @@ export default function BackstagePage() {
     setUploadComplete(false);
 
     try {
-        const downloadUrl = await uploadImage(file);
+        const downloadUrl = await uploadToCloudinary(file);
         form.setValue('governmentIdUrl', downloadUrl, { shouldValidate: true });
         setUploadComplete(true);
         toast({ title: 'ID Secured', description: 'Your identity document has been uploaded to Cloudinary.' });
