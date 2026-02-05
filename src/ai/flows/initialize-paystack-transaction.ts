@@ -2,15 +2,12 @@
 
 /**
  * @fileOverview Initializes a Paystack transaction.
- * Supports both recurring subscriptions (via Plan Codes) and one-time payments.
- * Optimized for strict integer 'amount' handling to prevent API errors.
+ * Regular Server Action (Decoupled from Genkit to support Edge Runtime).
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'zod';
 import { convertToCents } from '@/lib/currency';
+import { z } from 'zod';
 
-// Base prices for fallback/one-time calculations
 const basePrices: Record<string, number> = {
     MERCHANT: 19.99,
     SCALER: 29.00,
@@ -19,10 +16,6 @@ const basePrices: Record<string, number> = {
     BRAND: 21.00,
 };
 
-/**
- * Retrieves the Paystack Plan Code from environment variables.
- * Format: PAYSTACK_TIER_INTERVAL_PLAN_CODE (e.g., PAYSTACK_SCALER_MONTHLY_PLAN_CODE)
- */
 function getPlanCode(tier: string, interval: string): string | undefined {
     const key = `PAYSTACK_${tier}_${interval.toUpperCase()}_PLAN_CODE`;
     return process.env[key];
@@ -30,7 +23,7 @@ function getPlanCode(tier: string, interval: string): string | undefined {
 
 const SignupPaymentSchema = z.object({
     type: z.literal('signup'),
-    planTier: z.enum(['MERCHANT', 'SCALER', 'SELLER', 'ENTERPRISE', 'BRAND']),
+    planTier: z.enum(['MERCHANT', 'SCALER', 'SELLER', 'ENTERPRISE', 'BRAND', 'ADMIN']),
     interval: z.enum(['monthly', 'yearly', 'free', 'lifetime']),
 });
 
@@ -40,38 +33,30 @@ const CartPaymentSchema = z.object({
 });
 
 const InitializePaystackTransactionInputSchema = z.object({
-  email: z.string().email().describe('The email of the customer.'),
+  email: z.string().email(),
   payment: z.union([SignupPaymentSchema, CartPaymentSchema]),
-  metadata: z.any().optional().describe('Extra data to pass to Paystack.'),
+  metadata: z.any().optional(),
 });
+
 export type InitializePaystackTransactionInput = z.infer<typeof InitializePaystackTransactionInputSchema>;
 
-const InitializePaystackTransactionOutputSchema = z.object({
-  authorization_url: z.string().url(),
-  access_code: z.string(),
-  reference: z.string(),
-});
-export type InitializePaystackTransactionOutput = z.infer<typeof InitializePaystackTransactionOutputSchema>;
+export type InitializePaystackTransactionOutput = {
+  authorization_url: string;
+  access_code: string;
+  reference: string;
+};
 
+/**
+ * Decoupled from Genkit to avoid pulling gRPC/Telemetry into the Edge Runtime bundle.
+ */
 export async function initializePaystackTransaction(
   input: InitializePaystackTransactionInput
 ): Promise<InitializePaystackTransactionOutput> {
-  return initializePaystackTransactionFlow(input);
-}
-
-const initializePaystackTransactionFlow = ai.defineFlow(
-  {
-    name: 'initializePaystackTransactionFlow',
-    inputSchema: InitializePaystackTransactionInputSchema,
-    outputSchema: InitializePaystackTransactionOutputSchema,
-  },
-  async (input) => {
     const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
     if (!paystackSecretKey) {
       throw new Error('Paystack secret key is not configured.');
     }
 
-    // Initialize clean payload
     const finalPayload: any = {
         email: input.email,
         metadata: {
@@ -80,40 +65,27 @@ const initializePaystackTransactionFlow = ai.defineFlow(
         },
     };
 
-    /**
-     * LOGIC GATE: 
-     * 1. Subscriptions (signup): Use 'plan' code if available for recurring billing.
-     * 2. One-time (cart/no-plan): Use validated integer 'amount'.
-     */
     if (input.payment.type === 'signup') {
         const { planTier, interval } = input.payment;
         
-        if (planTier === 'SELLER' && interval === 'free') {
+        if ((planTier === 'SELLER' && interval === 'free') || planTier === 'ADMIN') {
             throw new Error("Free plans do not require payment initialization.");
         }
 
         const planCode = getPlanCode(planTier, interval);
 
         if (planCode) {
-            console.log(`DEBUG: Initializing RECURRING plan: ${planCode}`);
             finalPayload.plan = planCode;
-            // IMPORTANT: For plans, we do NOT send 'amount'. Paystack uses the plan's defined price.
         } else {
-            console.log(`DEBUG: No Plan Code found for ${planTier}. Falling back to ONE-TIME charge.`);
             const basePrice = basePrices[planTier] || 0;
             const dollarAmount = interval === 'yearly' ? basePrice * 10 : basePrice;
-            
-            // convertToCents guarantees a strict integer Number
             finalPayload.amount = convertToCents(dollarAmount);
             finalPayload.currency = 'USD';
         }
     } else {
-        // Cart transactions are always one-time validated charges
         finalPayload.amount = convertToCents(input.payment.amountInUSD);
         finalPayload.currency = 'USD';
     }
-
-    console.log('DEBUG: Final Payload to Paystack:', JSON.stringify(finalPayload));
 
     const response = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',
@@ -127,7 +99,6 @@ const initializePaystackTransactionFlow = ai.defineFlow(
     const responseData = await response.json();
 
     if (!response.ok) {
-      console.error('PAYSTACK API ERROR:', responseData);
       throw new Error(`Paystack API Error: ${responseData.message || 'Unknown error'}`);
     }
 
@@ -136,5 +107,4 @@ const initializePaystackTransactionFlow = ai.defineFlow(
     }
 
     return responseData.data;
-  }
-);
+}

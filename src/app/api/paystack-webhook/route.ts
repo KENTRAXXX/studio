@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClientStore } from '@/ai/flows/create-client-store';
 import { initializeApp, getApps } from 'firebase/app';
-import { getFirestore, doc, getDoc, updateDoc, collection, addDoc, runTransaction, query, where, increment } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, collection, addDoc, runTransaction, query, where, increment } from 'firebase/firestore';
 import { firebaseConfig } from '@/firebase/config';
 import { sendOrderEmail } from '@/ai/flows/send-order-email';
 import { sendReferralActivatedEmail } from '@/ai/flows/send-referral-activated-email';
@@ -208,10 +208,8 @@ async function executePaymentSplit(eventData: any) {
 
 
 export async function POST(req: Request) {
-  const firestore = getDb();
   const secret = process.env.PAYSTACK_SECRET_KEY;
   if (!secret) {
-    console.error('Paystack secret key is not set.');
     return NextResponse.json({ error: 'Internal Server Error: Paystack secret not configured.' }, { status: 500 });
   }
   
@@ -220,7 +218,6 @@ export async function POST(req: Request) {
   const hash = crypto.createHmac('sha512', secret).update(rawBody).digest('hex');
   
   if (paystackSignature && hash !== paystackSignature) {
-    console.error('Invalid Paystack signature.');
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
 
@@ -239,6 +236,7 @@ export async function POST(req: Request) {
     if (cart && storeId) {
         await executePaymentSplit(event.data);
     } else if (userId) {
+        const firestore = getDb();
         try {
             let emailData: { to: string, referrerName: string, protegeName: string, creditAmount: string } | null = null;
 

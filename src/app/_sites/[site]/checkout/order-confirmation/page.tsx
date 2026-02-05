@@ -1,6 +1,6 @@
 'use client';
 
-import { useSearchParams, notFound, useParams } from 'next/navigation';
+import { useSearchParams, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

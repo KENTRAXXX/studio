@@ -246,9 +246,9 @@ export default function CheckoutPage() {
             <Separator className="my-4 bg-primary/20"/>
              <ul className="space-y-4">
                 {cart.map(item => (
-                    <li key={item.product.id} className="flex justify-between items-center text-sm">
+                    <li key={item.product.id} className="flex items-center gap-4 text-sm">
                         <span>{item.product.name} x {item.quantity}</span>
-                        <span className="font-medium">${((item.product.suggestedRetailPrice || item.product.price) * item.quantity).toFixed(2)}</span>
+                        <span className="font-medium ml-auto">${((item.product.suggestedRetailPrice || item.product.price) * item.quantity).toFixed(2)}</span>
                     </li>
                 ))}
             </ul>
