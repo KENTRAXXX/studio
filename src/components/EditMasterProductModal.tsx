@@ -36,7 +36,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -162,7 +161,6 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
       setTagsInput(product.tags?.join(', ') || '');
       setImageGallery(product.imageGallery || [product.imageId]);
       
-      // Initialize existing images into uploads state for visualization
       const initialUploads: Record<string, UploadState> = {};
       (product.imageGallery || [product.imageId]).forEach(url => {
           const id = crypto.randomUUID();
@@ -328,9 +326,9 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="bg-card border-primary sm:max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="flex flex-row items-center justify-between pr-8">
-          <div>
-            <DialogTitle className="flex items-center gap-2 text-primary font-headline text-2xl">
+        <DialogHeader className="flex flex-col sm:flex-row items-center justify-between gap-4 pr-8">
+          <div className="text-center sm:text-left">
+            <DialogTitle className="flex items-center justify-center sm:justify-start gap-2 text-primary font-headline text-2xl">
                 <Gem className="h-6 w-6" />
                 Registry Editor
             </DialogTitle>
@@ -341,7 +339,7 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
           <Button 
             onClick={handleAIMagic} 
             disabled={isAnalyzing}
-            className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-black hidden sm:flex h-12"
+            className="w-full sm:w-auto btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-black h-12"
           >
             {isAnalyzing ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
             AI REFRESH
@@ -498,7 +496,7 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
                                     onClick={() => !isUploading && fileInputRef.current?.click()}
                                     className="aspect-square rounded-lg border-2 border-dashed border-primary/20 hover:border-primary/50 bg-primary/5 cursor-pointer flex flex-col items-center justify-center transition-all"
                                 >
-                                    <Plus className="h-5 w-5 text-primary/40" />
+                                    {isUploading ? <Loader2 className="h-5 w-5 animate-spin text-primary/40" /> : <Plus className="h-5 w-5 text-primary/40" />}
                                     <span className="text-[8px] font-black uppercase text-primary/40 mt-1">Upload</span>
                                 </div>
                             )}
@@ -508,10 +506,10 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
                 </div>
             </div>
             
-            <DialogFooter className="pt-6 border-t border-primary/10 flex justify-between w-full">
+            <DialogFooter className="pt-6 border-t border-primary/10 flex flex-col sm:flex-row justify-between w-full gap-4">
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
-                        <Button variant="destructive" type="button" className="h-12 px-6">
+                        <Button variant="destructive" type="button" className="h-12 px-6 w-full sm:w-auto">
                             <Trash2 className="mr-2 h-4 w-4"/> Liquidate Asset
                         </Button>
                     </AlertDialogTrigger>
@@ -531,7 +529,7 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
                     </AlertDialogContent>
                 </AlertDialog>
 
-                <Button type="submit" disabled={isSubmitting || isUploading} className="btn-gold-glow bg-primary h-12 font-bold px-8">
+                <Button type="submit" disabled={isSubmitting || isUploading} className="w-full sm:w-auto btn-gold-glow bg-primary h-12 font-bold px-8">
                     {isSubmitting ? <Loader2 className="animate-spin" /> : 'Synchronize Registry'}
                 </Button>
             </DialogFooter>
