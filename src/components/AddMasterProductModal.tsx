@@ -22,6 +22,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,7 +34,8 @@ const formSchema = z.object({
   masterCost: z.coerce.number().positive({ message: 'Cost must be a positive number.' }),
   retailPrice: z.coerce.number().positive({ message: 'Price must be a positive number.' }),
   stockLevel: z.coerce.number().int().min(0, { message: 'Stock cannot be negative.' }),
-  imageId: z.string().min(1, { message: 'Please enter a valid image ID.' }),
+  imageId: z.string().min(1, { message: 'Primary image ID is required.' }),
+  imageGallery: z.string().optional().describe('Comma-separated list of additional image URLs or IDs.'),
   vendorId: z.string().min(1, { message: 'Vendor ID is required.'}),
 });
 
@@ -58,6 +60,7 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
       retailPrice: 0,
       stockLevel: 100,
       imageId: '',
+      imageGallery: '',
       vendorId: 'admin',
     },
   });
@@ -67,10 +70,17 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
     
     setIsSubmitting(true);
     try {
+      const gallery = data.imageGallery 
+        ? data.imageGallery.split(',').map(s => s.trim()).filter(s => !!s)
+        : [];
+
       const catalogRef = collection(firestore, 'Master_Catalog');
       await addDoc(catalogRef, {
         ...data,
+        imageGallery: [data.imageId, ...gallery],
         productType: 'INTERNAL',
+        status: 'active',
+        createdAt: new Date().toISOString()
       });
 
       toast({
@@ -121,15 +131,23 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
                     <FormItem><FormLabel>Stock Level</FormLabel><FormControl><Input type="number" placeholder="100" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="imageId" render={({ field }) => (
-                    <FormItem><FormLabel>Image ID</FormLabel><FormControl><Input placeholder="e.g. product-1" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Primary Image ID/URL</FormLabel><FormControl><Input placeholder="e.g. product-1" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
              </div>
+             <FormField control={form.control} name="imageGallery" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Additional Gallery Images</FormLabel>
+                    <FormControl><Input placeholder="URL1, URL2, URL3" {...field} /></FormControl>
+                    <FormDescription>Comma-separated URLs or IDs.</FormDescription>
+                    <FormMessage />
+                </FormItem>
+            )} />
              <FormField control={form.control} name="vendorId" render={({ field }) => (
                 <FormItem><FormLabel>Vendor ID</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
             )} />
             
             <DialogFooter className="pt-4">
-              <Button type="submit" disabled={isSubmitting} className="w-full btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Button type="submit" disabled={isSubmitting} className="w-full btn-gold-glow bg-primary h-12 font-bold">
                 {isSubmitting ? <Loader2 className="animate-spin" /> : 'Add to Catalog'}
               </Button>
             </DialogFooter>

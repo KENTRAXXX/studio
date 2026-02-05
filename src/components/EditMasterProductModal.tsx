@@ -34,6 +34,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,6 +47,7 @@ const formSchema = z.object({
   retailPrice: z.coerce.number().positive({ message: 'Price must be a positive number.' }),
   stockLevel: z.coerce.number().int().min(0, { message: 'Stock cannot be negative.' }),
   imageId: z.string().min(1, { message: 'Please enter a valid image ID.' }),
+  imageGallery: z.string().optional(),
   vendorId: z.string().min(1, { message: 'Vendor ID is required.'}),
 });
 
@@ -61,6 +63,7 @@ interface EditMasterProductModalProps {
     retailPrice: number;
     stockLevel: number;
     imageId: string;
+    imageGallery?: string[];
     vendorId: string;
   };
 }
@@ -84,6 +87,7 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
         retailPrice: product.retailPrice,
         stockLevel: product.stockLevel,
         imageId: product.imageId,
+        imageGallery: product.imageGallery?.join(', ') || '',
         vendorId: product.vendorId,
       });
     }
@@ -94,8 +98,15 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
     
     setIsSubmitting(true);
     try {
+      const gallery = data.imageGallery 
+        ? data.imageGallery.split(',').map(s => s.trim()).filter(s => !!s)
+        : [];
+
       const productRef = doc(firestore, 'Master_Catalog', product.id);
-      await updateDoc(productRef, data);
+      await updateDoc(productRef, {
+          ...data,
+          imageGallery: gallery
+      });
 
       toast({
         title: 'Product Updated!',
@@ -165,9 +176,17 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
                     <FormItem><FormLabel>Stock Level</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="imageId" render={({ field }) => (
-                    <FormItem><FormLabel>Image ID</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Primary Image ID/URL</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
              </div>
+             <FormField control={form.control} name="imageGallery" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Gallery Images</FormLabel>
+                    <FormControl><Input placeholder="URL1, URL2, URL3" {...field} /></FormControl>
+                    <FormDescription>Comma-separated list of asset identifiers.</FormDescription>
+                    <FormMessage />
+                </FormItem>
+            )} />
              <FormField control={form.control} name="vendorId" render={({ field }) => (
                 <FormItem><FormLabel>Vendor ID</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
             )} />
@@ -179,10 +198,10 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
                             <Trash2 className="mr-2 h-4 w-4"/> Delete
                         </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent>
+                    <AlertDialogContent className="bg-card border-destructive">
                         <AlertDialogHeader>
                             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
+                            <AlertDialogDescription className="text-slate-400">
                                 This action cannot be undone. This will permanently delete the product from the Master Catalog.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
@@ -195,7 +214,7 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
                     </AlertDialogContent>
                 </AlertDialog>
 
-                <Button type="submit" disabled={isSubmitting} className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Button type="submit" disabled={isSubmitting} className="btn-gold-glow bg-primary h-12 font-bold px-8">
                     {isSubmitting ? <Loader2 className="animate-spin" /> : 'Save Changes'}
                 </Button>
             </DialogFooter>

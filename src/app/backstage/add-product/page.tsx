@@ -124,7 +124,7 @@ export default function AddProductPage() {
     setIsUploading(true);
     try {
         const uploadPromises = filesToUpload.map(async (file) => {
-            if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
+            if (!['image/jpeg', 'image/png', 'image/jpg', 'image/webp'].includes(file.type)) {
                 throw new Error(`File ${file.name} is not a supported format.`);
             }
             return uploadToCloudinary(file);
@@ -143,12 +143,6 @@ export default function AddProductPage() {
 
   const removeImage = (indexToRemove: number) => {
       setImageUrls(prev => prev.filter((_, i) => i !== indexToRemove));
-  };
-
-  const toggleCategory = (category: string) => {
-      setSelectedCategories(prev => 
-        prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]
-      );
   };
 
   const resetForm = () => {
@@ -194,7 +188,7 @@ export default function AddProductPage() {
         productName,
         description,
         imageUrl: imageUrls[0], 
-        imageUrls: imageUrls,
+        imageGallery: imageUrls,
         wholesalePrice: numericWholesale,
         suggestedRetailPrice: numericRetail,
         stockLevel: parseInt(quantityAvailable, 10) || 0,
@@ -436,7 +430,7 @@ export default function AddProductPage() {
                             type="file" 
                             ref={fileInputRef} 
                             className="hidden" 
-                            accept="image/png,image/jpeg" 
+                            accept="image/png,image/jpeg,image/webp" 
                             multiple
                             onChange={handleFileUpload} 
                             disabled={isUploading || imageUrls.length >= MAX_IMAGES}

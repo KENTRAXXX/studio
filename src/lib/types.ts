@@ -1,9 +1,9 @@
-
 export type PendingProduct = {
   id: string;
   productName: string;
   description: string;
   imageUrl: string;
+  imageGallery?: string[];
   wholesalePrice: number;
   suggestedRetailPrice: number;
   stockLevel: number;

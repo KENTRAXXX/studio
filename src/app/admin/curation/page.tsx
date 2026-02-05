@@ -45,7 +45,7 @@ type CurationProduct = {
   masterCost: number;
   retailPrice: number;
   status: 'pending_review' | 'active' | 'rejected';
-  imageUrls?: string[];
+  imageGallery?: string[];
   imageUrl?: string;
   vendorId: string;
   submittedAt: any;
@@ -218,7 +218,7 @@ export default function ProductCurationPage() {
                       <TableCell>
                         <div className="relative h-14 w-14 rounded-md overflow-hidden border border-border">
                           <Image 
-                            src={product.imageUrl || (product.imageUrls && product.imageUrls[0]) || ''} 
+                            src={product.imageUrl || (product.imageGallery && product.imageGallery[0]) || ''} 
                             alt={product.name} 
                             fill 
                             className="object-cover" 
@@ -269,14 +269,14 @@ export default function ProductCurationPage() {
               <div className="bg-muted/30 p-6 space-y-4 border-r border-border">
                 <div className="relative aspect-square rounded-lg overflow-hidden border-2 border-primary/20">
                   <Image 
-                    src={selectedProduct.imageUrl || (selectedProduct.imageUrls && selectedProduct.imageUrls[0]) || ''} 
+                    src={selectedProduct.imageUrl || (selectedProduct.imageGallery && selectedProduct.imageGallery[0]) || ''} 
                     alt="Primary asset" 
                     fill 
                     className="object-cover" 
                   />
                 </div>
                 <div className="grid grid-cols-4 gap-2">
-                  {selectedProduct.imageUrls?.map((url, i) => (
+                  {selectedProduct.imageGallery?.map((url, i) => (
                     <div key={i} className="relative aspect-square rounded-md overflow-hidden border border-border">
                       <Image src={url} alt={`View ${i+1}`} fill className="object-cover" />
                     </div>

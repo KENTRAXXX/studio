@@ -31,6 +31,7 @@ type MasterProduct = {
   retailPrice: number;
   stockLevel: number;
   imageId: string;
+  imageGallery?: string[];
   vendorId: string;
 }
 

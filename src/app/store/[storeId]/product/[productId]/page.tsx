@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { notFound, useParams, useRouter } from 'next/navigation';
-import { ShoppingBag, Check, Loader2, DollarSign, TrendingUp, Percent, ArrowLeft } from 'lucide-react';
+import { ShoppingBag, Check, Loader2, DollarSign, TrendingUp, ArrowLeft } from 'lucide-react';
 import { useCart } from '../../layout';
 import { useDoc, useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -18,6 +18,13 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { formatCurrency } from '@/utils/format';
 import { ProductViewTracker } from '@/components/store/product-view-tracker';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -29,7 +36,7 @@ export default function ProductDetailPage() {
   const { userProfile, loading: profileLoading } = useUserProfile();
 
   const productRef = firestore ? doc(firestore, `stores/${storeId}/products/${productId}`) : null;
-  const { data: product, loading: productLoading } = useDoc(productRef);
+  const { data: product, loading: productLoading } = useDoc<any>(productRef);
   
   const [currentPrice, setCurrentPrice] = useState(0);
   const [compareAtPrice, setCompareAtPrice] = useState(0);
@@ -70,7 +77,12 @@ export default function ProductDetailPage() {
   const profit = currentPrice - wholesalePrice;
   const isPriceInvalid = currentPrice < floorPrice;
 
-  const productImage = PlaceHolderImages.find(img => img.id === product.imageUrl);
+  const getProductAssetUrl = (assetId: string) => {
+    if (assetId?.startsWith('http')) return assetId;
+    return PlaceHolderImages.find(img => img.id === assetId)?.imageUrl || `https://picsum.photos/seed/${assetId}/800/800`;
+  };
+
+  const gallery = product.imageGallery || (product.imageUrl ? [product.imageUrl] : []);
 
   const handleAddToCart = () => {
     const productWithCurrentPrice = { ...product, suggestedRetailPrice: currentPrice };
@@ -121,26 +133,38 @@ export default function ProductDetailPage() {
       </Link>
 
       <div className="grid md:grid-cols-2 gap-12 items-start">
-        {/* Image Gallery */}
+        {/* Gallery Carousel */}
         <div className="space-y-8">
-            <div className="relative aspect-square rounded-lg overflow-hidden border border-primary/20 bg-muted/20">
-            {productImage ? (
-                <Image
-                src={productImage.imageUrl}
-                alt={product.name}
-                fill
-                className="object-cover"
-                data-ai-hint={productImage.imageHint}
-                />
-            ) : product.imageUrl ? (
-                <Image
-                src={product.imageUrl}
-                alt={product.name}
-                fill
-                className="object-cover"
-                data-ai-hint="luxury product"
-                />
-            ) : null}
+            <div className="relative w-full rounded-3xl overflow-hidden border-2 border-primary/10 bg-slate-950 shadow-2xl group">
+                {gallery.length > 0 ? (
+                    <Carousel className="w-full">
+                        <CarouselContent>
+                            {gallery.map((asset, index) => (
+                                <CarouselItem key={index}>
+                                    <div className="relative aspect-square">
+                                        <Image
+                                            src={getProductAssetUrl(asset)}
+                                            alt={`${product.name} View ${index + 1}`}
+                                            fill
+                                            className="object-cover"
+                                            priority={index === 0}
+                                        />
+                                    </div>
+                                </CarouselItem>
+                            ))}
+                        </CarouselContent>
+                        {gallery.length > 1 && (
+                            <>
+                                <CarouselPrevious className="left-4 bg-black/40 border-white/10 text-white hover:bg-black/60" />
+                                <CarouselNext className="right-4 bg-black/40 border-white/10 text-white hover:bg-black/60" />
+                            </>
+                        )}
+                    </Carousel>
+                ) : (
+                    <div className="aspect-square flex items-center justify-center text-slate-700">
+                        <ShoppingBag className="h-20 w-20 opacity-20" />
+                    </div>
+                )}
             </div>
             
             {/* Store Owner Pricing Box */}

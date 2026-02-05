@@ -48,6 +48,7 @@ export default function ApprovalQueuePage() {
         retailPrice: product.suggestedRetailPrice,
         stockLevel: product.stockLevel || 0, 
         imageId: product.imageUrl, 
+        imageGallery: product.imageGallery || [product.imageUrl],
         vendorId: product.vendorId,
         productType: 'EXTERNAL',
         categories: product.categories || [],
