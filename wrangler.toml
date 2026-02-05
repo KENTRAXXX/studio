@@ -1,2 +1,2 @@
+# Updated to favor wrangler.jsonc configuration
 name = "studio"
-pages_build_output_dir = ".next"
