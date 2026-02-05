@@ -1,7 +1,6 @@
 export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
-import crypto from 'crypto';
 import { createClientStore } from '@/ai/flows/create-client-store';
 import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore, doc, getDoc, collection, addDoc, runTransaction, query, where, increment } from 'firebase/firestore';
@@ -43,6 +42,30 @@ function getCommissionRate(activeCount: number): number {
     if (activeCount >= 51) return 0.20;
     if (activeCount >= 21) return 0.15;
     return 0.10;
+}
+
+/**
+ * Verifies the Paystack signature using the Web Crypto API (Edge Runtime compatible).
+ */
+async function verifyPaystackSignature(payload: string, signature: string, secret: string): Promise<boolean> {
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(secret);
+    const bodyData = encoder.encode(payload);
+
+    const cryptoKey = await crypto.subtle.importKey(
+        'raw',
+        keyData,
+        { name: 'HMAC', hash: 'SHA-512' },
+        false,
+        ['sign']
+    );
+
+    const signatureBuffer = await crypto.subtle.sign('HMAC', cryptoKey, bodyData);
+    const generatedHash = Array.from(new Uint8Array(signatureBuffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+
+    return generatedHash === signature;
 }
 
 async function executePaymentSplit(eventData: any) {
@@ -214,11 +237,14 @@ export async function POST(req: Request) {
   }
   
   const rawBody = await req.text();
-  const paystackSignature = req.headers.get('x-stack-signature');
-  const hash = crypto.createHmac('sha512', secret).update(rawBody).digest('hex');
+  // Paystack standard header is x-paystack-signature
+  const paystackSignature = req.headers.get('x-paystack-signature') || req.headers.get('x-stack-signature');
   
-  if (paystackSignature && hash !== paystackSignature) {
-    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+  if (paystackSignature) {
+    const isValid = await verifyPaystackSignature(rawBody, paystackSignature, secret);
+    if (!isValid) {
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+    }
   }
 
   const event = JSON.parse(rawBody);
