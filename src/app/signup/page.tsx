@@ -18,13 +18,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import SomaLogo from '@/components/logo';
 import { useSignUp } from '@/hooks/use-signup';
 import { usePaystack } from '@/hooks/use-paystack';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, ShieldCheck, Lock } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ShieldCheck, Lock } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -53,6 +54,8 @@ function SignUpForm() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isPendingTransition, startTransition] = useTransition();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showAdminCode, setShowAdminCode] = useState(false);
 
   const planTier = (searchParams.get('planTier') || 'SCALER') as PlanTier;
   const interval = (searchParams.get('interval') as PlanInterval) || 'monthly';
@@ -215,7 +218,21 @@ function SignUpForm() {
                                         <FormItem>
                                             <FormLabel>Password</FormLabel>
                                             <FormControl>
-                                            <Input type="password" placeholder="••••••••" {...field} />
+                                              <div className="relative">
+                                                <Input 
+                                                  type={showPassword ? "text" : "password"} 
+                                                  placeholder="••••••••" 
+                                                  {...field} 
+                                                  className="pr-10"
+                                                />
+                                                <button
+                                                  type="button"
+                                                  onClick={() => setShowPassword(!showPassword)}
+                                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors focus:outline-none"
+                                                >
+                                                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                                </button>
+                                              </div>
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -232,12 +249,21 @@ function SignUpForm() {
                                                     <Lock className="h-3 w-3" /> Executive Access Code
                                                 </FormLabel>
                                                 <FormControl>
-                                                <Input 
-                                                    type="password"
-                                                    placeholder="Enter System Secret" 
-                                                    {...field} 
-                                                    className="bg-primary/5 border-primary/20"
-                                                />
+                                                  <div className="relative">
+                                                    <Input 
+                                                        type={showAdminCode ? "text" : "password"}
+                                                        placeholder="Enter System Secret" 
+                                                        {...field} 
+                                                        className="bg-primary/5 border-primary/20 pr-10"
+                                                    />
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => setShowAdminCode(!showAdminCode)}
+                                                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors focus:outline-none"
+                                                    >
+                                                      {showAdminCode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                                    </button>
+                                                  </div>
                                                 </FormControl>
                                                 <FormDescription>Administrator registration requires system-level authorization.</FormDescription>
                                                 <FormMessage />
