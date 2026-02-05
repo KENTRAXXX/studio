@@ -1,11 +1,13 @@
+
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useFirestore } from '@/firebase';
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { AnimatePresence, motion } from 'framer-motion';
 
 import {
   Dialog,
@@ -34,6 +36,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,7 +50,10 @@ import {
     Sparkles, 
     TrendingUp, 
     Layers, 
-    Tags 
+    Tags,
+    X,
+    Plus,
+    ImageIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { analyzeProductImage } from '@/ai/flows/analyze-product-image';
@@ -85,6 +91,13 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+interface UploadState {
+    id: string;
+    progress: number;
+    url?: string;
+    isError?: boolean;
+}
+
 interface EditMasterProductModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
@@ -106,10 +119,13 @@ interface EditMasterProductModalProps {
 export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMasterProductModalProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  
+  const [uploads, setUploads] = useState<Record<string, UploadState>>({});
+  const [imageGallery, setImageGallery] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [tagsInput, setTagsInput] = useState('');
 
@@ -126,6 +142,11 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
     return ((watchedRetail - watchedWholesale) / watchedRetail) * 100;
   }, [watchedWholesale, watchedRetail]);
 
+  const isUploading = useMemo(() => 
+    Object.values(uploads).some(u => u.progress < 100 && !u.isError),
+    [uploads]
+  );
+
   useEffect(() => {
     if (product) {
       form.reset({
@@ -139,19 +160,28 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
       });
       setSelectedCategories(product.categories || []);
       setTagsInput(product.tags?.join(', ') || '');
+      setImageGallery(product.imageGallery || [product.imageId]);
+      
+      // Initialize existing images into uploads state for visualization
+      const initialUploads: Record<string, UploadState> = {};
+      (product.imageGallery || [product.imageId]).forEach(url => {
+          const id = crypto.randomUUID();
+          initialUploads[id] = { id, url, progress: 100 };
+      });
+      setUploads(initialUploads);
     }
   }, [product, form]);
 
   const handleAIMagic = async () => {
-    const currentImage = form.getValues('imageId');
-    if (!currentImage) {
+    const primaryImage = imageGallery[0] || form.getValues('imageId');
+    if (!primaryImage) {
         toast({ variant: 'destructive', title: 'Asset Missing', description: 'Cannot analyze a product without a primary image.' });
         return;
     }
 
     setIsAnalyzing(true);
     try {
-        const result = await analyzeProductImage({ imageUrl: currentImage });
+        const result = await analyzeProductImage({ imageUrl: primaryImage });
         
         form.setValue('name', result.suggestedName, { shouldValidate: true });
         form.setValue('description', result.description, { shouldValidate: true });
@@ -168,6 +198,75 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
     } finally {
         setIsAnalyzing(false);
     }
+  };
+
+  const uploadToCloudinaryWithProgress = (file: File, id: string) => {
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'SomaDS';
+
+    const xhr = new XMLHttpRequest();
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', uploadPreset);
+
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, true);
+
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const progress = Math.round((event.loaded / event.total) * 100);
+        setUploads(prev => ({
+            ...prev,
+            [id]: { ...prev[id], progress }
+        }));
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        const response = JSON.parse(xhr.responseText);
+        const secureUrl = response.secure_url;
+        setUploads(prev => ({
+            ...prev,
+            [id]: { ...prev[id], url: secureUrl, progress: 100 }
+        }));
+        setImageGallery(prev => [...prev, secureUrl]);
+      } else {
+        setUploads(prev => ({ ...prev, [id]: { ...prev[id], isError: true } }));
+      }
+    };
+
+    xhr.onerror = () => {
+        setUploads(prev => ({ ...prev, [id]: { ...prev[id], isError: true } }));
+    };
+
+    xhr.send(formData);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const remainingSlots = 5 - Object.keys(uploads).length;
+    const filesToUpload = Array.from(files).slice(0, remainingSlots);
+
+    filesToUpload.forEach(file => {
+        const id = crypto.randomUUID();
+        setUploads(prev => ({ ...prev, [id]: { id, progress: 0 } }));
+        uploadToCloudinaryWithProgress(file, id);
+    });
+
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeUpload = (id: string, url?: string) => {
+      setUploads(prev => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+      });
+      if (url) {
+          setImageGallery(prev => prev.filter(u => u !== url));
+      }
   };
 
   const toggleCategory = (cat: string) => {
@@ -188,6 +287,8 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
           ...data,
           categories: selectedCategories,
           tags: tags,
+          imageGallery: imageGallery,
+          imageId: imageGallery[0] || data.imageId
       });
 
       toast({
@@ -250,7 +351,6 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Left: Metadata */}
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField control={form.control} name="name" render={({ field }) => (
@@ -314,7 +414,6 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
                     </div>
                 </div>
 
-                {/* Right: Technicals */}
                 <div className="space-y-6">
                     <div className="grid grid-cols-3 gap-4">
                         <FormField control={form.control} name="masterCost" render={({ field }) => (
@@ -355,14 +454,57 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
                         </div>
                     )}
 
-                    <FormField control={form.control} name="imageId" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Primary Image ID/URL</FormLabel>
-                            <FormControl><Input {...field} /></FormControl>
-                            <FormDescription className="text-[10px]">Updating this URL will refresh the AI analysis source.</FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
+                    <div className="space-y-4">
+                        <Label className="flex items-center gap-2 text-primary/80">
+                            <ImageIcon className="h-4 w-4" />
+                            Asset Gallery (Max 5)
+                        </Label>
+                        
+                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+                            <AnimatePresence>
+                                {Object.entries(uploads).map(([id, upload]) => (
+                                    <motion.div 
+                                        key={id}
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.8 }}
+                                        className="relative aspect-square rounded-lg overflow-hidden border border-primary/20 bg-slate-900/50 group"
+                                    >
+                                        {upload.url ? (
+                                            <>
+                                                <img src={upload.url} alt="Upload" className="h-full w-full object-cover" />
+                                                <button 
+                                                    type="button" 
+                                                    onClick={() => removeUpload(id, upload.url)}
+                                                    className="absolute top-1 right-1 p-0.5 bg-black/60 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    <X className="h-2 w-2" />
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <div className="h-full w-full flex items-center justify-center p-1">
+                                                <Loader2 className="h-4 w-4 animate-spin text-primary opacity-40" />
+                                                <span className="absolute inset-0 flex items-center justify-center text-[8px] font-mono font-bold text-primary">
+                                                    {upload.progress}%
+                                                </span>
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+
+                            {Object.keys(uploads).length < 5 && (
+                                <div 
+                                    onClick={() => !isUploading && fileInputRef.current?.click()}
+                                    className="aspect-square rounded-lg border-2 border-dashed border-primary/20 hover:border-primary/50 bg-primary/5 cursor-pointer flex flex-col items-center justify-center transition-all"
+                                >
+                                    <Plus className="h-5 w-5 text-primary/40" />
+                                    <span className="text-[8px] font-black uppercase text-primary/40 mt-1">Upload</span>
+                                </div>
+                            )}
+                        </div>
+                        <input type="file" ref={fileInputRef} className="hidden" multiple accept="image/*" onChange={handleFileChange} />
+                    </div>
                 </div>
             </div>
             
@@ -389,7 +531,7 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
                     </AlertDialogContent>
                 </AlertDialog>
 
-                <Button type="submit" disabled={isSubmitting} className="btn-gold-glow bg-primary h-12 font-bold px-8">
+                <Button type="submit" disabled={isSubmitting || isUploading} className="btn-gold-glow bg-primary h-12 font-bold px-8">
                     {isSubmitting ? <Loader2 className="animate-spin" /> : 'Synchronize Registry'}
                 </Button>
             </DialogFooter>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useMemo } from 'react';
@@ -28,21 +29,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { 
     Loader2, 
     Gem, 
     UploadCloud, 
     X, 
-    CheckCircle2, 
     ImageIcon, 
     Sparkles, 
     Plus,
     Tags,
     Layers,
-    TrendingUp,
-    Package
+    TrendingUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { analyzeProductImage } from '@/ai/flows/analyze-product-image';
@@ -123,6 +121,11 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
     if (!watchedRetail || watchedRetail <= 0) return 0;
     return ((watchedRetail - watchedWholesale) / watchedRetail) * 100;
   }, [watchedWholesale, watchedRetail]);
+
+  const isUploading = useMemo(() => 
+    Object.values(uploads).some(u => u.progress < 100 && !u.isError),
+    [uploads]
+  );
 
   const handleAIMagic = async () => {
     if (imageGallery.length === 0) {
