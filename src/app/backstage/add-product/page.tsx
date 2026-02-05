@@ -21,7 +21,8 @@ import {
     Tags, 
     Layers, 
     AlertCircle, 
-    Package 
+    Package,
+    Sparkles
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import SomaLogo from '@/components/logo';
@@ -37,6 +38,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { uploadToCloudinary } from '@/lib/utils/upload-image';
+import { analyzeProductImage } from '@/ai/flows/analyze-product-image';
 
 const AVAILABLE_CATEGORIES = [
     "Watches", 
@@ -81,6 +83,7 @@ export default function AddProductPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Pre-generate an ID
@@ -143,6 +146,43 @@ export default function AddProductPage() {
 
   const removeImage = (indexToRemove: number) => {
       setImageUrls(prev => prev.filter((_, i) => i !== indexToRemove));
+  };
+
+  const handleAIMagic = async () => {
+    if (imageUrls.length === 0) {
+        toast({ variant: 'destructive', title: 'Image Required', description: 'Upload a primary image first to use AI curation.' });
+        return;
+    }
+
+    setIsAnalyzing(true);
+    try {
+        const result = await analyzeProductImage({ imageUrl: imageUrls[0] });
+        
+        setProductName(result.suggestedName);
+        setDescription(result.description);
+        setSelectedCategories(result.suggestedCategories);
+        setTagsInput(result.suggestedTags.join(', '));
+
+        toast({
+            title: 'Curation Intelligence Applied',
+            description: 'Luxury metadata has been auto-generated for your masterpiece.',
+            action: <Sparkles className="h-4 w-4 text-primary" />
+        });
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'AI Analysis Failed',
+            description: error.message || 'The curation team is currently offline.'
+        });
+    } finally {
+        setIsAnalyzing(false);
+    }
+  };
+
+  const toggleCategory = (cat: string) => {
+    setSelectedCategories(prev => 
+        prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
+    );
   };
 
   const resetForm = () => {
@@ -251,14 +291,24 @@ export default function AddProductPage() {
       </div>
 
       <Card className="w-full max-w-5xl border-primary/50 overflow-hidden">
-        <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-2xl">
-                <PackagePlus className="h-6 w-6 text-primary"/>
-                New Product Details
-            </CardTitle>
-            <CardDescription>
-                Categorize and detail your luxury item for the global catalog.
-            </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+                <CardTitle className="flex items-center gap-2 text-2xl">
+                    <PackagePlus className="h-6 w-6 text-primary"/>
+                    New Product Details
+                </CardTitle>
+                <CardDescription>
+                    Categorize and detail your luxury item for the global catalog.
+                </CardDescription>
+            </div>
+            <Button 
+                onClick={handleAIMagic} 
+                disabled={imageUrls.length === 0 || isAnalyzing}
+                className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-black hidden md:flex h-12"
+            >
+                {isAnalyzing ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                AI CURATION MAGIC
+            </Button>
         </CardHeader>
         <CardContent>
             <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -438,7 +488,17 @@ export default function AddProductPage() {
                         <p className="text-xs text-muted-foreground italic">Tip: Luxury products perform best with minimalist, high-contrast backgrounds.</p>
                     </div>
 
-                    <div className="flex justify-end pt-4">
+                    <div className="flex flex-col gap-4">
+                        <Button 
+                            onClick={handleAIMagic} 
+                            disabled={imageUrls.length === 0 || isAnalyzing}
+                            variant="outline"
+                            className="md:hidden h-14 border-primary text-primary font-black"
+                        >
+                            {isAnalyzing ? <Loader2 className="animate-spin mr-2" /> : <Sparkles className="mr-2" />}
+                            AI MAGIC CURATION
+                        </Button>
+
                         <Button 
                             type="submit" 
                             disabled={isSubmitting || isUploading || imageUrls.length === 0 || selectedCategories.length === 0 || isPriceInvalid} 

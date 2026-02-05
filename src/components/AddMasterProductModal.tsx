@@ -46,6 +46,7 @@ import {
     Package
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { analyzeProductImage } from '@/ai/flows/analyze-product-image';
 
 const AVAILABLE_CATEGORIES = [
     "Watches", 
@@ -97,6 +98,7 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [uploads, setUploads] = useState<Record<string, UploadState>>({});
   const [imageGallery, setImageGallery] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -122,6 +124,37 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
     if (!watchedRetail || watchedRetail <= 0) return 0;
     return ((watchedRetail - watchedWholesale) / watchedRetail) * 100;
   }, [watchedWholesale, watchedRetail]);
+
+  const handleAIMagic = async () => {
+    if (imageGallery.length === 0) {
+        toast({ variant: 'destructive', title: 'Asset Missing', description: 'Please upload a primary image first.' });
+        return;
+    }
+
+    setIsAnalyzing(true);
+    try {
+        const result = await analyzeProductImage({ imageUrl: imageGallery[0] });
+        
+        form.setValue('name', result.suggestedName, { shouldValidate: true });
+        form.setValue('description', result.description, { shouldValidate: true });
+        setSelectedCategories(result.suggestedCategories);
+        setTagsInput(result.suggestedTags.join(', '));
+
+        toast({
+            title: 'AI Insights Applied',
+            description: 'The master catalog entry has been enriched with executive-grade metadata.',
+            action: <Sparkles className="h-4 w-4 text-primary" />
+        });
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Magic Failed',
+            description: error.message
+        });
+    } finally {
+        setIsAnalyzing(false);
+    }
+  };
 
   const uploadToCloudinaryWithProgress = (file: File, id: string) => {
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
@@ -263,14 +296,24 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="bg-card border-primary sm:max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-primary font-headline text-2xl">
-            <Gem className="h-6 w-6" />
-            Executive Catalog Entry
-          </DialogTitle>
-          <DialogDescription className="text-muted-foreground">
-            Configure a new luxury asset for the global dropshipping network.
-          </DialogDescription>
+        <DialogHeader className="flex flex-row items-center justify-between pr-8">
+          <div>
+            <DialogTitle className="flex items-center gap-2 text-primary font-headline text-2xl">
+                <Gem className="h-6 w-6" />
+                Executive Catalog Entry
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+                Configure a new luxury asset for the global dropshipping network.
+            </DialogDescription>
+          </div>
+          <Button 
+            onClick={handleAIMagic} 
+            disabled={imageGallery.length === 0 || isAnalyzing}
+            className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-black hidden sm:flex h-12"
+          >
+            {isAnalyzing ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
+            AI ENRICHMENT
+          </Button>
         </DialogHeader>
         
         <Form {...form}>
@@ -423,7 +466,7 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
 
                             {Object.keys(uploads).length < 5 && (
                                 <div 
-                                    onClick={() => fileInputRef.current?.click()}
+                                    onClick={() => !isUploading && fileInputRef.current?.click()}
                                     className="aspect-square rounded-lg border-2 border-dashed border-primary/20 hover:border-primary/50 bg-primary/5 cursor-pointer flex flex-col items-center justify-center transition-all"
                                 >
                                     <Plus className="h-5 w-5 text-primary/40" />
