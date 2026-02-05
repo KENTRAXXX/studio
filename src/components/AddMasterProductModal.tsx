@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { 
     Loader2, 
@@ -146,9 +147,7 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
 
     filesToUpload.forEach(file => {
         const id = crypto.randomUUID();
-        const reader = new FileReader();
         
-        // Optimistic UI: show a placeholder if possible or just the state
         setUploads(prev => ({
             ...prev,
             [id]: { id, progress: 0 }
@@ -195,7 +194,6 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
         description: `${data.name} is now available in the Master Catalog.`,
       });
       
-      // Cleanup
       onOpenChange(false);
       form.reset();
       setUploads({});
@@ -307,7 +305,6 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
                                             </span>
                                         </div>
                                         
-                                        {/* Gold Progress Overlay */}
                                         <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-800">
                                             <motion.div 
                                                 className="h-full bg-gradient-to-r from-yellow-600 to-yellow-400 shadow-gold-glow"
