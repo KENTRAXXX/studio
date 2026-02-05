@@ -1,12 +1,12 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useUser, useFirestore, useDoc, useStorage, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +30,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import SomaLogo from '@/components/logo';
+import { uploadImage } from '@/lib/utils/upload-image';
 
 const storefrontSchema = z.object({
   storeName: z.string().min(3, 'Store name must be at least 3 characters.'),
@@ -44,9 +45,9 @@ type ThemeOption = {
     id: string;
     name: string;
     colors: {
-        primary: string; // HSL
-        background: string; // HSL
-        accent: string; // HSL
+        primary: string; 
+        background: string; 
+        accent: string; 
     };
     previewClass: string;
 };
@@ -78,7 +79,6 @@ const THEMES: ThemeOption[] = [
     }
 ];
 
-// WYSIWYG Storefront Preview Component
 const BoutiqueLivePreview = ({ storeName, tagline, logoUrl, themeId }: { storeName: string, tagline: string, logoUrl?: string, themeId: string }) => {
     const theme = THEMES.find(t => t.id === themeId) || THEMES[0];
     
@@ -90,7 +90,6 @@ const BoutiqueLivePreview = ({ storeName, tagline, logoUrl, themeId }: { storeNa
             
             <div className="relative aspect-[4/3] w-full rounded-2xl border-8 border-slate-900 bg-slate-900 shadow-2xl overflow-hidden group">
                 <div className="absolute inset-0 overflow-hidden flex flex-col" style={{ backgroundColor: `hsl(${theme.colors.background})` }}>
-                    {/* Header */}
                     <div className="h-12 border-b flex items-center justify-between px-4" style={{ borderColor: `hsl(${theme.colors.primary} / 0.1)` }}>
                         <div className="flex items-center gap-2">
                             {logoUrl ? (
@@ -108,7 +107,6 @@ const BoutiqueLivePreview = ({ storeName, tagline, logoUrl, themeId }: { storeNa
                         </div>
                     </div>
 
-                    {/* Hero Section */}
                     <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-3">
                         <div className="relative w-full h-24 rounded-lg bg-slate-800 overflow-hidden">
                             <img src="https://picsum.photos/seed/soma-hero/600/400" className="w-full h-full object-cover opacity-40" alt="Hero" />
@@ -122,7 +120,6 @@ const BoutiqueLivePreview = ({ storeName, tagline, logoUrl, themeId }: { storeNa
                             </div>
                         </div>
 
-                        {/* Product Grid Mockup */}
                         <div className="grid grid-cols-2 gap-2 w-full pt-2">
                             {[1, 2].map((i) => (
                                 <div key={i} className="space-y-1">
@@ -135,7 +132,6 @@ const BoutiqueLivePreview = ({ storeName, tagline, logoUrl, themeId }: { storeNa
                     </div>
                 </div>
                 
-                {/* Glass Overlay for Premium Feel */}
                 <div className="absolute inset-0 pointer-events-none border border-white/5 rounded-xl shadow-inner" />
             </div>
             <p className="text-center text-[10px] text-muted-foreground italic">Live visual feedback • Changes apply instantly to preview</p>
@@ -146,7 +142,6 @@ const BoutiqueLivePreview = ({ storeName, tagline, logoUrl, themeId }: { storeNa
 export default function StorefrontSettingsPage() {
     const { user } = useUser();
     const firestore = useFirestore();
-    const storage = useStorage();
     const { toast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -166,7 +161,6 @@ export default function StorefrontSettingsPage() {
         },
     });
 
-    // Watch values for live preview
     const watchedStoreName = form.watch('storeName');
     const watchedTagline = form.watch('tagline');
     const watchedLogoUrl = form.watch('logoUrl');
@@ -187,16 +181,13 @@ export default function StorefrontSettingsPage() {
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (!file || !user || !storage || !firestore) return;
+        if (!file || !user) return;
 
         setIsUploading(true);
         try {
-            const storageRef = ref(storage, `stores/${user.uid}/branding/logo`);
-            await uploadBytes(storageRef, file);
-            const downloadUrl = await getDownloadURL(storageRef);
-            
+            const downloadUrl = await uploadImage(file);
             form.setValue('logoUrl', downloadUrl);
-            toast({ title: 'Branding Secured', description: 'Your boutique logo has been updated.' });
+            toast({ title: 'Branding Secured', description: 'Your boutique logo has been hosted on Cloudinary.' });
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
         } finally {
@@ -248,7 +239,6 @@ export default function StorefrontSettingsPage() {
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                     
-                    {/* Left Panel: Configuration */}
                     <div className="lg:col-span-7 space-y-8">
                         <Card className="border-primary/20 bg-slate-900/30 overflow-hidden">
                             <CardHeader>
@@ -335,9 +325,7 @@ export default function StorefrontSettingsPage() {
                         </Card>
                     </div>
 
-                    {/* Right Panel: Live Preview & SEO */}
                     <div className="lg:col-span-5 space-y-8 lg:sticky lg:top-24">
-                        {/* WYSIWYG Preview */}
                         <Card className="border-primary/20 bg-slate-900/30 overflow-hidden">
                             <CardHeader className="bg-muted/30 border-b border-primary/10">
                                 <CardTitle className="text-sm font-headline uppercase tracking-widest text-slate-200 flex items-center gap-2">
@@ -354,7 +342,6 @@ export default function StorefrontSettingsPage() {
                             </CardContent>
                         </Card>
 
-                        {/* SEO Section */}
                         <Card className="border-primary/20 bg-slate-900/30">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-slate-200">

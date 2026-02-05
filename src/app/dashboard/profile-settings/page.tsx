@@ -1,13 +1,13 @@
+
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore, useStorage, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/firebase/user-profile-provider';
 import { doc, updateDoc, collection } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +26,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { uploadImage } from '@/lib/utils/upload-image';
 
 const profileSchema = z.object({
   displayName: z.string().min(2, 'Display name must be at least 2 characters.'),
@@ -42,7 +43,6 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 export default function ProfileSettingsPage() {
     const { userProfile, loading: profileLoading } = useUserProfile();
     const firestore = useFirestore();
-    const storage = useStorage();
     const { toast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -93,23 +93,20 @@ export default function ProfileSettingsPage() {
 
     const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (!file || !userProfile?.id || !storage || !firestore) return;
+        if (!file || !userProfile?.id || !firestore) return;
 
         setIsUploading(true);
         try {
-            const storageRef = ref(storage, `avatars/${userProfile.id}`);
-            await uploadBytes(storageRef, file);
-            const downloadUrl = await getDownloadURL(storageRef);
-            
+            const downloadUrl = await uploadImage(file);
             const userRef = doc(firestore, 'users', userProfile.id);
             await updateDoc(userRef, { 
                 photoURL: downloadUrl,
-                avatarUrl: downloadUrl // Sync both for consistency
+                avatarUrl: downloadUrl 
             });
 
             toast({ 
                 title: 'Identity Secured', 
-                description: 'Your profile avatar has been updated successfully.',
+                description: 'Your profile avatar has been updated via Cloudinary.',
                 action: <CheckCircle2 className="h-5 w-5 text-green-500" />
             });
         } catch (error: any) {
@@ -190,7 +187,7 @@ export default function ProfileSettingsPage() {
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <div> {/* Wrapper for tooltip on disabled button */}
+                                <div> 
                                     <Button 
                                         asChild={isBoutiqueReady}
                                         variant="outline" 
@@ -226,7 +223,6 @@ export default function ProfileSettingsPage() {
             
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleUpdate)} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Avatar Sidebar */}
                     <div className="space-y-6">
                         <Card className="border-primary/50 overflow-hidden bg-slate-900/30">
                             <CardHeader className="pb-4">
@@ -319,7 +315,6 @@ export default function ProfileSettingsPage() {
                         </Card>
                     </div>
 
-                    {/* Form Content */}
                     <Card className="lg:col-span-2 border-primary/50">
                         <CardHeader>
                             <CardTitle>Professional Credentials</CardTitle>
@@ -365,7 +360,7 @@ export default function ProfileSettingsPage() {
                                             <FormLabel>Public Bio</FormLabel>
                                             <FormControl>
                                                 <Textarea 
-                                                    placeholder="Describe your boutique's mission and philosophy... (e.g. 'Crafting timeless elegance for the modern aristocrat.')" 
+                                                    placeholder="Describe your boutique's mission and philosophy..." 
                                                     className="min-h-[120px] border-primary/20 resize-none"
                                                     {...field}
                                                 />

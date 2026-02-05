@@ -3,9 +3,8 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useUserProfile, useStorage } from '@/firebase';
+import { useUser, useFirestore, useUserProfile } from '@/firebase';
 import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +37,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { uploadImage } from '@/lib/utils/upload-image';
 
 const AVAILABLE_CATEGORIES = [
     "Watches", 
@@ -66,7 +66,6 @@ export default function AddProductPage() {
   const { user, loading: userLoading } = useUser();
   const { userProfile, loading: profileLoading } = useUserProfile();
   const firestore = useFirestore();
-  const storage = useStorage();
   const router = useRouter();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -85,7 +84,7 @@ export default function AddProductPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  // Pre-generate an ID for structured storage path
+  // Pre-generate an ID
   const [tempId, setTempId] = useState(() => crypto.randomUUID());
 
   const numericWholesale = parseFloat(wholesalePrice) || 0;
@@ -93,7 +92,6 @@ export default function AddProductPage() {
 
   const isPriceInvalid = useMemo(() => {
     if (!wholesalePrice || !suggestedRetailPrice) return false;
-    // REQUIREMENT: Retail Price must be at least 15% higher than Wholesale Price
     return numericRetail < (numericWholesale * 1.15);
   }, [numericWholesale, numericRetail, wholesalePrice, suggestedRetailPrice]);
 
@@ -110,7 +108,7 @@ export default function AddProductPage() {
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0 || !user || !storage) return;
+    if (!files || files.length === 0 || !user) return;
 
     const remainingSlots = MAX_IMAGES - imageUrls.length;
     const filesToUpload = Array.from(files).slice(0, remainingSlots);
@@ -126,18 +124,16 @@ export default function AddProductPage() {
 
     setIsUploading(true);
     try {
-        const uploadPromises = filesToUpload.map(async (file, index) => {
+        const uploadPromises = filesToUpload.map(async (file) => {
             if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
                 throw new Error(`File ${file.name} is not a supported format.`);
             }
-            const storageRef = ref(storage, `master_catalog/${tempId}/${Date.now()}_${index}_${file.name}`);
-            const snapshot = await uploadBytes(storageRef, file);
-            return getDownloadURL(snapshot.ref);
+            return uploadImage(file);
         });
 
         const urls = await Promise.all(uploadPromises);
         setImageUrls(prev => [...prev, ...urls]);
-        toast({ title: 'Upload Complete', description: `${urls.length} asset(s) secured successfully.` });
+        toast({ title: 'Assets Secured', description: `${urls.length} image(s) processed by Cloudinary.` });
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Upload Failed', description: error.message || 'Could not upload images.' });
     } finally {
@@ -198,7 +194,7 @@ export default function AddProductPage() {
       await setDoc(pendingDocRef, {
         productName,
         description,
-        imageUrl: imageUrls[0], // primary image
+        imageUrl: imageUrls[0], 
         imageUrls: imageUrls,
         wholesalePrice: numericWholesale,
         suggestedRetailPrice: numericRetail,

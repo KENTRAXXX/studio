@@ -3,9 +3,8 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useStorage, useCollection, useUserProfile, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useUserProfile, useMemoFirebase } from '@/firebase';
 import { collection, query, where, doc, setDoc, deleteDoc, serverTimestamp, orderBy } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -26,6 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import SomaLogo from '@/components/logo';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { uploadImage } from '@/lib/utils/upload-image';
 
 type MarketingAsset = {
     id: string;
@@ -46,7 +46,6 @@ export default function MarketingAssetsPage() {
     const { user, loading: userLoading } = useUser();
     const { userProfile, loading: profileLoading } = useUserProfile();
     const firestore = useFirestore();
-    const storage = useStorage();
     const { toast } = useToast();
     const router = useRouter();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -68,17 +67,13 @@ export default function MarketingAssetsPage() {
     const { data: assets, loading: assetsLoading } = useCollection<MarketingAsset>(assetsQuery);
 
     const handleUpload = async (files: FileList | null) => {
-        if (!files || files.length === 0 || !user || !storage || !firestore) return;
+        if (!files || files.length === 0 || !user || !firestore) return;
 
         setIsUploading(true);
         const uploadPromises = Array.from(files).map(async (file) => {
             const assetId = crypto.randomUUID();
-            const storagePath = `marketing/${user.uid}/${activeTab}/${assetId}_${file.name}`;
-            const storageRef = ref(storage, storagePath);
-
             try {
-                const snapshot = await uploadBytes(storageRef, file);
-                const downloadUrl = await getDownloadURL(snapshot.ref);
+                const downloadUrl = await uploadImage(file);
 
                 await setDoc(doc(firestore, 'marketing_assets', assetId), {
                     fileName: file.name,
@@ -86,7 +81,6 @@ export default function MarketingAssetsPage() {
                     fileType: file.type,
                     category: activeTab,
                     userId: user.uid,
-                    storagePath: storagePath,
                     createdAt: serverTimestamp()
                 });
 
@@ -103,13 +97,13 @@ export default function MarketingAssetsPage() {
         if (successCount > 0) {
             toast({
                 title: 'Assets Secured',
-                description: `Successfully uploaded ${successCount} marketing asset(s).`,
+                description: `Successfully uploaded ${successCount} asset(s) to Cloudinary.`,
             });
         } else {
             toast({
                 variant: 'destructive',
                 title: 'Upload Failed',
-                description: 'Could not upload assets. Please check your connection.',
+                description: 'Could not upload assets. Please check your configuration.',
             });
         }
 
@@ -118,17 +112,12 @@ export default function MarketingAssetsPage() {
     };
 
     const handleDelete = async (asset: MarketingAsset) => {
-        if (!firestore || !storage) return;
+        if (!firestore) return;
 
         try {
-            // Delete from Storage first
-            const storageRef = ref(storage, (asset as any).storagePath);
-            await deleteObject(storageRef);
-
             // Delete from Firestore
             await deleteDoc(doc(firestore, 'marketing_assets', asset.id));
-
-            toast({ title: 'Asset Removed', description: `${asset.fileName} has been deleted.` });
+            toast({ title: 'Asset Removed', description: `${asset.fileName} has been deleted from your portal.` });
         } catch (err: any) {
             toast({ variant: 'destructive', title: 'Delete Failed', description: err.message });
         }
@@ -205,7 +194,6 @@ export default function MarketingAssetsPage() {
                             </div>
                         </div>
 
-                        {/* Drag and Drop Zone */}
                         <div 
                             onDragOver={onDragOver}
                             onDragLeave={onDragLeave}
@@ -252,7 +240,6 @@ export default function MarketingAssetsPage() {
                                                         <FolderOpen className="h-12 w-12 text-slate-600" />
                                                     )}
 
-                                                    {/* Hover Overlay */}
                                                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                                                         <Button size="icon" variant="ghost" className="h-8 w-8 text-white hover:text-primary" asChild>
                                                             <a href={asset.fileUrl} download={asset.fileName} target="_blank">

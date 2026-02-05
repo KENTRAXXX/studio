@@ -4,9 +4,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserProfile } from '@/firebase/user-profile-provider';
-import { useFirestore, useUser, useStorage, useAuth } from '@/firebase';
+import { useFirestore, useUser, useAuth } from '@/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from 'firebase/auth';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -26,6 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import SomaLogo from '@/components/logo';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { uploadImage } from '@/lib/utils/upload-image';
 
 const onboardingSchema = z.object({
   legalBusinessName: z.string().min(3, 'A business name is required.'),
@@ -71,7 +71,6 @@ export default function BackstagePage() {
   const { userProfile, loading: profileLoading } = useUserProfile();
   const { user, loading: userLoading } = useUser();
   const firestore = useFirestore();
-  const storage = useStorage();
   const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
@@ -219,20 +218,16 @@ export default function BackstagePage() {
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user || !storage || !firestore) return;
+    if (!file || !user || !firestore) return;
 
     setIsUploading(true);
     setUploadComplete(false);
 
     try {
-        const storageRef = ref(storage, `verifications/sellers/${user.uid}/id_document`);
-        await uploadBytes(storageRef, file);
-        const downloadUrl = await getDownloadURL(storageRef);
-
+        const downloadUrl = await uploadImage(file);
         form.setValue('governmentIdUrl', downloadUrl, { shouldValidate: true });
-
         setUploadComplete(true);
-        toast({ title: 'ID Uploaded', description: 'Your identity document has been securely stored.' });
+        toast({ title: 'ID Secured', description: 'Your identity document has been uploaded to Cloudinary.' });
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Upload Failed', description: error.message || 'Could not upload document.' });
     } finally {
@@ -316,7 +311,7 @@ export default function BackstagePage() {
             },
             status: 'pending_review',
             hasAcceptedTerms: true,
-            verificationFeedback: null, // Clear feedback upon resubmission
+            verificationFeedback: null, 
         });
         
         toast({ title: 'Application Submitted!', description: 'Your business is now under review.'});
@@ -495,7 +490,7 @@ export default function BackstagePage() {
                                                         ) : (uploadComplete && !isActionRequired) ? (
                                                             <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
                                                                 <CheckCircle2 className="h-10 w-10 text-green-500 mx-auto mb-2" />
-                                                                <p className="text-sm font-medium text-green-500">ID Document Securely Stored</p>
+                                                                <p className="text-sm font-medium text-green-500">ID Secured in Cloudinary</p>
                                                             </motion.div>
                                                         ) : (
                                                             <>

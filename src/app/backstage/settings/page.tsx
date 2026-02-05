@@ -1,10 +1,10 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useAuth, useUser, useFirestore, useUserProfile, useStorage } from '@/firebase';
+import { useAuth, useUser, useFirestore, useUserProfile } from '@/firebase';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -43,13 +43,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { uploadImage } from '@/lib/utils/upload-image';
 
 export default function BackstageSettingsPage() {
   const auth = useAuth();
   const { user } = useUser();
   const { userProfile, loading: profileLoading } = useUserProfile();
   const firestore = useFirestore();
-  const storage = useStorage();
   const { toast } = useToast();
   const router = useRouter();
   
@@ -114,19 +114,16 @@ export default function BackstageSettingsPage() {
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user || !storage || !firestore) return;
+    if (!file || !user || !firestore) return;
 
     setIsUploadingAvatar(true);
     try {
-      const storageRef = ref(storage, `profile_images/${user.uid}/avatar`);
-      await uploadBytes(storageRef, file);
-      const downloadUrl = await getDownloadURL(storageRef);
-      
+      const downloadUrl = await uploadImage(file);
       setAvatarUrl(downloadUrl);
       const userRef = doc(firestore, 'users', user.uid);
       await updateDoc(userRef, { avatarUrl: downloadUrl });
 
-      toast({ title: 'Avatar Updated', description: 'Your brand avatar has been secured.' });
+      toast({ title: 'Avatar Updated', description: 'Your brand avatar has been hosted on Cloudinary.' });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
     } finally {
@@ -136,19 +133,16 @@ export default function BackstageSettingsPage() {
 
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user || !storage || !firestore) return;
+    if (!file || !user || !firestore) return;
 
     setIsUploadingCover(true);
     try {
-      const storageRef = ref(storage, `profile_images/${user.uid}/cover`);
-      await uploadBytes(storageRef, file);
-      const downloadUrl = await getDownloadURL(storageRef);
-      
+      const downloadUrl = await uploadImage(file);
       setCoverPhotoUrl(downloadUrl);
       const userRef = doc(firestore, 'users', user.uid);
       await updateDoc(userRef, { coverPhotoUrl: downloadUrl });
 
-      toast({ title: 'Banner Updated', description: 'Brand cover photo has been deployed.' });
+      toast({ title: 'Banner Updated', description: 'Brand cover photo is live via Cloudinary.' });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
     } finally {
@@ -245,7 +239,6 @@ export default function BackstageSettingsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-            {/* Brand Profile Section */}
             <Card className="border-primary/20 bg-slate-900/30 overflow-hidden">
             <CardHeader>
                 <CardTitle className="text-xl font-headline flex items-center gap-2 text-slate-200">
@@ -255,7 +248,6 @@ export default function BackstageSettingsPage() {
                 <CardDescription className="text-slate-500">How your brand appears to Moguls and elite customers.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-8">
-                {/* Cover Photo Upload */}
                 <div className="space-y-4">
                     <Label className="text-xs uppercase tracking-widest text-slate-500 font-bold">Public Brand Banner</Label>
                     <div 
@@ -352,7 +344,6 @@ export default function BackstageSettingsPage() {
             </CardContent>
             </Card>
 
-            {/* Notification Preferences Section */}
             <Card className="border-primary/20 bg-slate-900/30">
             <CardHeader>
                 <CardTitle className="text-xl font-headline flex items-center gap-2 text-slate-200">
@@ -403,7 +394,6 @@ export default function BackstageSettingsPage() {
         </div>
 
         <div className="space-y-8">
-            {/* Security Protocols Card */}
             <Card className="border-primary/20 bg-slate-900/30">
             <CardHeader>
                 <CardTitle className="text-xl font-headline flex items-center gap-2 text-slate-200">
@@ -443,7 +433,6 @@ export default function BackstageSettingsPage() {
             </CardContent>
             </Card>
 
-            {/* Identity & Session Card */}
             <Card className="border-primary/20 bg-slate-900/30">
             <CardHeader>
                 <CardTitle className="text-xl font-headline flex items-center gap-2 text-slate-200">
@@ -468,7 +457,6 @@ export default function BackstageSettingsPage() {
             </CardContent>
             </Card>
 
-            {/* Danger Zone Section */}
             <Card className="border-destructive/50 bg-destructive/5">
             <CardHeader>
                 <CardTitle className="text-xl font-headline flex items-center gap-2 text-destructive">
