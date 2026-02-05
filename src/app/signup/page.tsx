@@ -24,7 +24,7 @@ import SomaLogo from '@/components/logo';
 import { useSignUp } from '@/hooks/use-signup';
 import { usePaystack } from '@/hooks/use-paystack';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, ShieldCheck } from 'lucide-react';
+import { Loader2, ShieldCheck, Lock } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -34,6 +34,7 @@ const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
   referralCode: z.string().optional(),
+  adminCode: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -73,6 +74,7 @@ function SignUpForm() {
       email: '',
       password: '',
       referralCode: '',
+      adminCode: '',
     },
   });
 
@@ -86,6 +88,19 @@ function SignUpForm() {
   const onSubmit = (data: FormValues) => {
     const isFreePlan = (planTier === 'SELLER' && interval === 'free') || planTier === 'ADMIN';
     
+    // GATELOCK: Executive Authorization Check
+    if (planTier === 'ADMIN') {
+        const systemSecret = process.env.NEXT_PUBLIC_ADMIN_GATE_CODE;
+        if (!systemSecret || data.adminCode !== systemSecret) {
+            toast({
+                variant: 'destructive',
+                title: 'Authorization Denied',
+                description: 'The provided Executive Access Code is invalid or missing.',
+            });
+            return;
+        }
+    }
+
     signUp({ ...data, planTier: planTier, plan: interval }, {
       onSuccess: async (user) => {
         if (!isFreePlan) {
@@ -206,6 +221,31 @@ function SignUpForm() {
                                         </FormItem>
                                         )}
                                     />
+
+                                    {planTier === 'ADMIN' && (
+                                        <FormField
+                                            control={form.control}
+                                            name="adminCode"
+                                            render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel className="text-primary font-bold flex items-center gap-2">
+                                                    <Lock className="h-3 w-3" /> Executive Access Code
+                                                </FormLabel>
+                                                <FormControl>
+                                                <Input 
+                                                    type="password"
+                                                    placeholder="Enter System Secret" 
+                                                    {...field} 
+                                                    className="bg-primary/5 border-primary/20"
+                                                />
+                                                </FormControl>
+                                                <FormDescription>Administrator registration requires system-level authorization.</FormDescription>
+                                                <FormMessage />
+                                            </FormItem>
+                                            )}
+                                        />
+                                    )}
+
                                      <FormField
                                         control={form.control}
                                         name="referralCode"

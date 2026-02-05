@@ -1,3 +1,4 @@
+
 # SOMA Executive Platform
 
 The Ultimate Design System for Luxury E-commerce.
@@ -11,6 +12,7 @@ NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=SomaDS
 NEXT_PUBLIC_ROOT_DOMAIN=your-app.pages.dev
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_key
 NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=pk_test_...
+NEXT_PUBLIC_ADMIN_GATE_CODE=SOMA-SECRET-CODE-2024
 GOOGLE_GENAI_API_KEY=your_gemini_key
 PAYSTACK_SECRET_KEY=sk_test_...
 RESEND_API_KEY=re_...
@@ -28,7 +30,7 @@ NEXT_PUBLIC_BRAND_YEARLY_PLAN_CODE=PLN_...
 To deploy the project to Cloudflare Pages, run:
 
 ```bash
-npx wrangler pages deploy .next --project-name=studio
+npm run deploy
 ```
 
 ## Note on Multi-Tenancy
