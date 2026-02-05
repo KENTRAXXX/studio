@@ -77,6 +77,8 @@ const AVAILABLE_CATEGORIES = [
     "Digital Assets"
 ];
 
+const MAX_IMAGES = 10;
+
 const formSchema = z.object({
   name: z.string().min(3, { message: 'Product name must be at least 3 characters.' }),
   description: z.string().min(10, { message: 'Description must be at least 10 characters.' }),
@@ -243,7 +245,7 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
     const files = e.target.files;
     if (!files) return;
 
-    const remainingSlots = 5 - Object.keys(uploads).length;
+    const remainingSlots = MAX_IMAGES - Object.keys(uploads).length;
     const filesToUpload = Array.from(files).slice(0, remainingSlots);
 
     filesToUpload.forEach(file => {
@@ -454,7 +456,7 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
                     <div className="space-y-4">
                         <Label className="flex items-center gap-2 text-primary/80">
                             <ImageIcon className="h-4 w-4" />
-                            Asset Gallery (Max 5)
+                            Asset Gallery (Max 10)
                         </Label>
                         
                         <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
@@ -490,7 +492,7 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
                                 ))}
                             </AnimatePresence>
 
-                            {Object.keys(uploads).length < 5 && (
+                            {Object.keys(uploads).length < MAX_IMAGES && (
                                 <div 
                                     onClick={() => !isUploading && fileInputRef.current?.click()}
                                     className="aspect-square rounded-lg border-2 border-dashed border-primary/20 hover:border-primary/50 bg-primary/5 cursor-pointer flex flex-col items-center justify-center transition-all"

@@ -61,7 +61,7 @@ const AVAILABLE_CATEGORIES = [
     "Digital Assets"
 ];
 
-const MAX_IMAGES = 5;
+const MAX_IMAGES = 10;
 
 export default function AddProductPage() {
   const { user, loading: userLoading } = useUser();
@@ -426,7 +426,7 @@ export default function AddProductPage() {
                     <div className="space-y-4">
                         <Label className="flex items-center gap-2">
                             <ImageIcon className="h-4 w-4 text-primary" />
-                            Product Photography (Max 5, 1:1 Aspect Ratio)
+                            Product Photography (Max 10, 1:1 Aspect Ratio)
                         </Label>
                         
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -495,7 +495,7 @@ export default function AddProductPage() {
                             variant="outline"
                             className="md:hidden h-14 border-primary text-primary font-black"
                         >
-                            {isAnalyzing ? <Loader2 className="animate-spin mr-2" /> : <Sparkles className="mr-2" />}
+                            {isAnalyzing ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
                             AI MAGIC CURATION
                         </Button>
 
