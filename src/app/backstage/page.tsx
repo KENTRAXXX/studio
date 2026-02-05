@@ -21,6 +21,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Loader2, Send, ShieldCheck, CheckCircle2, UploadCloud, Phone, Check, MapPin, AlertTriangle, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { ToastAction } from '@/components/ui/toast';
 import SomaLogo from '@/components/logo';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -67,7 +68,7 @@ const SomaShieldTerms = () => (
         </div>
          <div className="space-y-1">
             <h4 className="font-semibold text-foreground">4. Financial Processing & Payouts</h4>
-            <p><strong>Centralized Financial Processing</strong>: SOMA serves as the Merchant of Record for all transactions. Customer payments are processed centrally through our secure system. Your earnings (Wholesale Price minus the applicable SOMA commission) are logged to your `payouts_pending` ledger immediately after a sale. <strong>Payout Availability</strong>: To protect against fraud and accommodate customer returns, these pending funds become available for withdrawal only after the order's return window has closed (typically 7 days). <strong>Commission Structure</strong>: SOMA's commission (9% for the free tier, 3% for the Brand tier) is automatically deducted from the wholesale price of each item you sell.</p>
+            <p><strong>Centralized Financial Processing</strong>: SOMA serves as the Merchant of Record for all transactions. Customer payments are processed centrally through our secure system. Your earnings (Wholesale Price minus the applicable SOMA commission) are logged to your `payouts_pending` ledger immediately after a sale. <strong>Payout Availability</strong>: To protect against fraud and accommodate customer returns, these pending funds become available for withdrawal only after the order's return window has closed (typically 7 days). <strong>Hold Period</strong>: To prevent fraud, payouts are held for a 7–14 day period before becoming available for withdrawal. <strong>Withdrawals</strong>: Payout requests are processed by SOMA Admin within 24–48 business hours.</p>
         </div>
          <div className="space-y-1">
             <h4 className="font-semibold text-foreground">5. Return Policy</h4>
@@ -208,7 +209,25 @@ export default function BackstagePage() {
         toast({ title: 'Code Sent', description: 'A verification code has been sent to your phone.' });
     } catch (error: any) {
         console.error("OTP Error:", error);
-        toast({ variant: 'destructive', title: 'Error', description: error.message || 'Could not send verification code.' });
+        
+        // Handle billing/operation errors gracefully for prototype
+        if (error.code === 'auth/billing-not-enabled' || error.code === 'auth/operation-not-allowed') {
+            toast({ 
+                variant: 'destructive', 
+                title: 'Provider Limitation', 
+                description: 'Phone Auth requires Firebase Blaze plan or explicit activation. Simulate for prototype?',
+                action: (
+                    <ToastAction altText="Simulate Success" onClick={() => {
+                        setIsPhoneVerified(true);
+                        toast({ title: "Verification Simulated", description: "Identity verified via executive bypass." });
+                    }}>
+                        Simulate
+                    </ToastAction>
+                )
+            });
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: error.message || 'Could not send verification code.' });
+        }
     } finally {
         setIsSendingOTP(false);
     }
