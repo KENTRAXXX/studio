@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { getFirestore, doc, getDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import type { Metadata, ResolvingMetadata } from 'next';
@@ -10,6 +9,8 @@ import { demoProducts } from '@/lib/demo-data';
 import { HeroSection } from '@/components/store/hero-section';
 import { ProductGrid } from '@/components/store/product-grid';
 import { StoreVisitorTracker } from '@/components/store/visitor-tracker';
+
+export const runtime = 'edge';
 
 const getFirestoreInstance = () => {
     const apps = getApps();
@@ -130,7 +131,6 @@ export default async function StorefrontPage({ params }: { params: { storeId: st
     }
   }
 
-  // Hero section data maps custom tagline to heroTitle
   const heroTitle = storeData?.heroTitle || 'Elegance Redefined';
   const heroSubtitle = storeData?.heroSubtitle || 'Discover curated collections of timeless luxury.';
   const heroImageUrl = storeData?.heroImageUrl || PlaceHolderImages.find(img => img.id === 'storefront-hero')?.imageUrl;

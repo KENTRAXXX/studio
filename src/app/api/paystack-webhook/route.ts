@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClientStore } from '@/ai/flows/create-client-store';
@@ -8,6 +7,8 @@ import { firebaseConfig } from '@/firebase/config';
 import { sendOrderEmail } from '@/ai/flows/send-order-email';
 import { sendReferralActivatedEmail } from '@/ai/flows/send-referral-activated-email';
 import { formatCurrency } from '@/utils/format';
+
+export const runtime = 'edge';
 
 const basePrices: Record<string, number> = {
     MERCHANT: 19.99,
@@ -38,10 +39,6 @@ async function logWebhookEvent(eventType: string, payload: any, status: 'success
     }
 }
 
-/**
- * Calculates the referral commission percentage based on the referrer's active count.
- * Tiers: 0-20 (10%), 21-50 (15%), 51+ (20%)
- */
 function getCommissionRate(activeCount: number): number {
     if (activeCount >= 51) return 0.20;
     if (activeCount >= 21) return 0.15;
@@ -97,7 +94,6 @@ async function executePaymentSplit(eventData: any) {
                     wholesalePrice: wholesalePrice
                 });
                 
-                // Tiered Commission Logic: 3% for BRAND, 9% for SELLER
                 if (vendorId !== 'admin' && productData.isManagedBySoma) { 
                     const vendorRef = doc(firestore, "users", vendorId);
                     const vendorSnap = await transaction.get(vendorRef);
@@ -260,8 +256,6 @@ export async function POST(req: Request) {
                     
                     if (referrerSnap.exists() && referrerSnap.data().hasAccess === true) {
                         const referrerData = referrerSnap.data();
-                        
-                        // Calculate Tiered Rate
                         const currentActiveCount = referrerData.activeReferralCount || 0;
                         const commissionRate = getCommissionRate(currentActiveCount);
                         
@@ -278,14 +272,13 @@ export async function POST(req: Request) {
                                 userId: referredBy,
                                 amount: referralReward,
                                 currency: 'USD',
-                                status: 'pending_maturity', // Payout requires 14-day hold
+                                status: 'pending_maturity',
                                 type: 'referral_reward',
                                 referredUserId: userId,
                                 createdAt: new Date().toISOString(),
                                 description: `${commissionRate * 100}% Referral Reward for ${userData.email || 'New User'} activation.`
                             });
 
-                            // Update Referrer Aggregates
                             transaction.update(referrerRef, {
                                 activeReferralCount: increment(1),
                                 totalReferralEarnings: increment(referralReward)
@@ -306,10 +299,9 @@ export async function POST(req: Request) {
                     paidAt: new Date().toISOString(),
                 });
 
-                // Log Subscription Revenue
                 const revenueRef = doc(collection(firestore, 'revenue_logs'));
                 transaction.set(revenueRef, {
-                    amount: amount / 100, // Convert cents to dollars
+                    amount: amount / 100,
                     currency: 'USD',
                     type: 'SUBSCRIPTION',
                     userId: userId,

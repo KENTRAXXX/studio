@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -10,22 +9,17 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { 
     ShieldCheck, 
-    Instagram, 
-    Globe, 
     MessageSquare, 
     Loader2, 
     ArrowLeft,
     Box,
-    ExternalLink,
-    Zap,
     Check,
-    TrendingUp,
-    Users,
     Star,
     Truck,
     CheckCircle2,
     AlertTriangle,
-    Activity
+    Activity,
+    Zap
 } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useMemo } from 'react';
@@ -33,22 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/utils/format';
 
-/**
- * @fileOverview Dynamic Brand Profile Page
- * Viewable by logged-in Moguls and Admins to discover and vet strategic partners.
- * Now includes Brand Health metrics and high-demand transparency alerts.
- */
-
-type MasterProduct = {
-    id: string;
-    name: string;
-    description: string;
-    masterCost: number;
-    retailPrice: number;
-    imageUrl: string;
-    vendorId: string;
-    status: string;
-};
+export const runtime = 'edge';
 
 const StarRating = ({ rating }: { rating: number }) => {
     return (
@@ -66,6 +45,17 @@ const StarRating = ({ rating }: { rating: number }) => {
     );
 };
 
+type MasterProduct = {
+    id: string;
+    name: string;
+    description: string;
+    masterCost: number;
+    retailPrice: number;
+    imageUrl: string;
+    vendorId: string;
+    status: string;
+};
+
 export default function BrandProfilePage() {
     const params = useParams();
     const router = useRouter();
@@ -78,7 +68,6 @@ export default function BrandProfilePage() {
 
     const [syncingIds, setSyncingProducts] = useState<Set<string>>(new Set());
     
-    // 1. Fetch Brand Profile
     const brandRef = useMemoFirebase(() => {
         if (!firestore || !brandUsername) return null;
         return doc(firestore, 'users', brandUsername);
@@ -86,7 +75,6 @@ export default function BrandProfilePage() {
 
     const { data: brandProfile, loading: brandLoading } = useDoc<any>(brandRef);
 
-    // 2. Fetch Brand's Collection from Master Catalog
     const collectionQuery = useMemoFirebase(() => {
         if (!firestore || !brandUsername) return null;
         return query(
@@ -98,7 +86,6 @@ export default function BrandProfilePage() {
 
     const { data: brandProducts, loading: productsLoading } = useCollection<MasterProduct>(collectionQuery);
 
-    // 3. Calculate Platform-wide Adoption (Sync Count)
     const adoptionQuery = useMemoFirebase(() => {
         if (!firestore || !brandUsername) return null;
         return query(collectionGroup(firestore, 'products'), where('vendorId', '==', brandUsername));
@@ -106,14 +93,10 @@ export default function BrandProfilePage() {
 
     const { data: syncedInstances } = useCollection(adoptionQuery);
 
-    // Health Logic
     const healthMetrics = useMemo(() => {
         if (!brandProfile) return null;
-        
         const isVerified = brandProfile.status === 'approved';
         const syncCount = syncedInstances?.length || 0;
-        
-        // Mocked based on profile maturity and verification status
         return {
             authenticityScore: isVerified ? 100 : 85,
             inventoryAccuracy: isVerified ? 99.4 : 92.0,
@@ -123,7 +106,6 @@ export default function BrandProfilePage() {
         };
     }, [brandProfile, syncedInstances]);
 
-    // Permission Logic
     const isMogul = viewerProfile?.userRole === 'MOGUL';
     const isAdmin = viewerProfile?.userRole === 'ADMIN';
     const isOwner = viewerProfile?.id === brandUsername;
@@ -201,7 +183,6 @@ export default function BrandProfilePage() {
 
     return (
         <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 pb-24">
-            {/* Hero Section */}
             <div className="relative h-[450px] w-full overflow-hidden">
                 <Image 
                     src={brandProfile.coverPhotoUrl || "https://images.unsplash.com/photo-1497215728101-856f4ea42174?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxNXx8bHV4dXJ5JTIwb2ZmaWNlfGVufDB8fHx8MTc4ODU0NTEzNHww&ixlib=rb-4.1.0&q=80&w=1080"} 
@@ -262,22 +243,19 @@ export default function BrandProfilePage() {
 
             <div className="container py-16 px-4 sm:px-6 lg:px-8 mx-auto">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    {/* Left: Stats & Integrity Widget */}
                     <div className="lg:col-span-4 space-y-6">
                         {healthMetrics?.isHighDemand && (
-                            <AlertTriangle className="h-full w-full">
-                                <Card className="border-orange-500/50 bg-orange-500/5 overflow-hidden">
-                                    <CardContent className="p-4 flex items-center gap-4">
-                                        <div className="bg-orange-500/20 p-3 rounded-full animate-pulse">
-                                            <AlertTriangle className="h-6 w-6 text-orange-500" />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-orange-500 uppercase tracking-widest">High Demand Partner</p>
-                                            <p className="text-xs text-orange-400/80 leading-tight mt-0.5">This brand is currently synced with {syncedInstances?.length} boutiques. Fulfillment times may be slightly elevated.</p>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </AlertTriangle>
+                            <Card className="border-orange-500/50 bg-orange-500/5 overflow-hidden">
+                                <CardContent className="p-4 flex items-center gap-4">
+                                    <div className="bg-orange-500/20 p-3 rounded-full animate-pulse">
+                                        <AlertTriangle className="h-6 w-6 text-orange-500" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-orange-500 uppercase tracking-widest">High Demand Partner</p>
+                                        <p className="text-xs text-orange-400/80 leading-tight mt-0.5">This brand is currently synced with {syncedInstances?.length} boutiques. Fulfillment times may be slightly elevated.</p>
+                                    </div>
+                                </CardContent>
+                            </Card>
                         )}
 
                         <Card className="border-primary/20 bg-slate-900/30">
@@ -288,7 +266,6 @@ export default function BrandProfilePage() {
                                 </div>
                             </CardHeader>
                             <CardContent className="space-y-8">
-                                {/* Accuracy Score */}
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-end">
                                         <div className="space-y-0.5">
@@ -300,7 +277,6 @@ export default function BrandProfilePage() {
                                     <Progress value={healthMetrics?.inventoryAccuracy} className="h-1.5 bg-slate-800" />
                                 </div>
 
-                                {/* Authenticity Score */}
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-end">
                                         <div className="space-y-0.5">
@@ -332,7 +308,6 @@ export default function BrandProfilePage() {
                             </CardContent>
                         </Card>
 
-                        {/* Network Stats */}
                         <div className="grid grid-cols-2 gap-4">
                             <Card className="border-primary/10 bg-slate-900/20">
                                 <CardContent className="pt-6">
@@ -349,7 +324,6 @@ export default function BrandProfilePage() {
                         </div>
                     </div>
 
-                    {/* Right: Collection Feed */}
                     <div className="lg:col-span-8 space-y-10">
                         <section className="space-y-10">
                             <div className="flex items-end justify-between border-b border-primary/10 pb-6">

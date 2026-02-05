@@ -28,11 +28,7 @@ import SomaLogo from '@/components/logo';
 import { usePaystack } from '@/hooks/use-paystack';
 import { useToast } from '@/hooks/use-toast';
 
-const steps = [
-  { id: 'information', name: 'Information' },
-  { id: 'shipping', name: 'Shipping' },
-  { id: 'payment', name: 'Payment' },
-];
+export const runtime = 'edge';
 
 const addressSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -171,12 +167,10 @@ const PaymentStep = ({ onBack, site, checkoutData }: { onBack: () => void; site:
         }
       },
       (reference) => {
-         console.log('Payment successful', reference);
          const orderId = `SOMA-${reference.trxref.slice(-6).toUpperCase()}`;
          router.push(`/checkout/order-confirmation?orderId=${orderId}`);
       },
       () => {
-        console.log('Payment popup closed.');
         toast({ variant: 'default', title: 'Payment Canceled', description: 'Your payment was not completed.' });
       }
     );
@@ -219,7 +213,7 @@ export default function CheckoutPage() {
   const subtotal = getCartTotal();
   const total = subtotal + shippingPrice;
 
-  const handleNext = () => setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
+  const handleNext = () => setCurrentStep((prev) => Math.min(prev + 1, 2));
   const handleBack = () => setCurrentStep((prev) => Math.max(prev - 1, 0));
 
   const updateCheckoutData = (data: Partial<AddressFormValues>) => {
@@ -239,24 +233,6 @@ export default function CheckoutPage() {
     
       <div className="container mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 py-12 px-4 sm:px-6 lg:px-8">
         <main>
-          <nav aria-label="Progress">
-            <ol role="list" className="flex items-center space-x-2 text-sm font-medium text-muted-foreground">
-              {steps.map((step, stepIdx) => (
-                <li key={step.name} className={cn("flex items-center", {"flex-1": stepIdx !== steps.length -1})}>
-                  {stepIdx < currentStep ? (
-                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">{stepIdx + 1}</span>
-                  ) : stepIdx === currentStep ? (
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-primary text-primary">{stepIdx + 1}</span>
-                  ) : (
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full border border-border">{stepIdx + 1}</span>
-                  )}
-                  <span className={cn("ml-2", stepIdx <= currentStep && 'text-primary')}>{step.name}</span>
-                  {stepIdx !== steps.length -1 && <div className="flex-1 h-px bg-border ml-2"></div>}
-                </li>
-              ))}
-            </ol>
-          </nav>
-
           <div className="mt-12">
             <AnimatePresence mode="wait">
                 {currentStep === 0 && <InformationStep onNext={handleNext} setCheckoutData={updateCheckoutData} />}
@@ -272,7 +248,7 @@ export default function CheckoutPage() {
                 {cart.map(item => (
                     <li key={item.product.id} className="flex justify-between items-center text-sm">
                         <span>{item.product.name} x {item.quantity}</span>
-                        <span className="font-medium">${(item.product.price * item.quantity).toFixed(2)}</span>
+                        <span className="font-medium">${((item.product.suggestedRetailPrice || item.product.price) * item.quantity).toFixed(2)}</span>
                     </li>
                 ))}
             </ul>

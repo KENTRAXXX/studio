@@ -10,6 +10,8 @@ import { HeroSection } from '@/components/store/hero-section';
 import { ProductGrid } from '@/components/store/product-grid';
 import { StoreVisitorTracker } from '@/components/store/visitor-tracker';
 
+export const runtime = 'edge';
+
 const getFirestoreInstance = () => {
     const apps = getApps();
     const app = apps.length > 0 ? apps[0] : initializeApp(firebaseConfig);

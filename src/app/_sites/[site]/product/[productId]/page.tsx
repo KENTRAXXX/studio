@@ -27,6 +27,8 @@ import {
   type CarouselApi
 } from "@/components/ui/carousel";
 
+export const runtime = 'edge';
+
 type ColorOption = {
     name: string;
     imageUrl: string;
@@ -157,7 +159,6 @@ export default function ProductDetailPage() {
       </Link>
 
       <div className="grid md:grid-cols-2 gap-12 items-start">
-        {/* Gallery Carousel */}
         <div className="space-y-8">
             <div className="relative w-full rounded-3xl overflow-hidden border-2 border-primary/10 bg-slate-950 shadow-2xl group">
                 {gallery.length > 0 ? (
@@ -191,7 +192,6 @@ export default function ProductDetailPage() {
                 )}
             </div>
             
-            {/* Store Owner Pricing Box */}
             {(userProfile?.planTier === 'MERCHANT' || userProfile?.planTier === 'SCALER' || userProfile?.planTier === 'ENTERPRISE' || userProfile?.userRole === 'ADMIN') && (
               <Card className="border-primary/50 bg-card shadow-lg">
                   <CardHeader>
@@ -259,7 +259,6 @@ export default function ProductDetailPage() {
         </div>
 
 
-        {/* Product Info */}
         <div className="space-y-8 pt-4">
           <div className="space-y-4">
             <h1 className="text-4xl md:text-5xl font-bold font-headline text-primary leading-tight">{product.name}</h1>
@@ -273,7 +272,6 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          {/* Color Selection UI */}
           {colors.length > 0 && (
               <div className="space-y-4 pt-4 border-t border-white/5">
                   <div className="flex items-center gap-2">
