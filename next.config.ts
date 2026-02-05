@@ -1,7 +1,7 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-  output: 'standalone',
+  output: 'standalone', // Optimized for high-performance Edge routing and production tracing
   typescript: {
     ignoreBuildErrors: true,
   },
