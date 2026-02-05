@@ -2,7 +2,6 @@
   "name": "studio",
   "compatibility_date": "2026-02-05",
   "assets": {
-    "directory": "./.next",
-    "binding": "ASSETS"
+    "directory": "./.next"
   }
 }
