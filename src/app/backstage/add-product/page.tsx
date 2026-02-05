@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -22,7 +23,9 @@ import {
     Layers, 
     AlertCircle, 
     Package,
-    Sparkles
+    Sparkles,
+    Palette,
+    Plus
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import SomaLogo from '@/components/logo';
@@ -37,6 +40,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { uploadToCloudinary } from '@/lib/utils/upload-image';
 import { analyzeProductImage } from '@/ai/flows/analyze-product-image';
 
@@ -63,6 +73,11 @@ const AVAILABLE_CATEGORIES = [
 
 const MAX_IMAGES = 10;
 
+type ColorOption = {
+    name: string;
+    imageUrl: string;
+};
+
 export default function AddProductPage() {
   const { user, loading: userLoading } = useUser();
   const { userProfile, loading: profileLoading } = useUserProfile();
@@ -80,6 +95,7 @@ export default function AddProductPage() {
   
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [tagsInput, setTagsInput] = useState('');
+  const [colorOptions, setColorOptions] = useState<ColorOption[]>([]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -135,7 +151,7 @@ export default function AddProductPage() {
 
         const urls = await Promise.all(uploadPromises);
         setImageUrls(prev => [...prev, ...urls]);
-        toast({ title: 'Assets Secured', description: `${urls.length} image(s) processed by Cloudinary.` });
+        toast({ title: 'Assets Secured', description: `${urls.length} image(s) processed.` });
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Upload Failed', description: error.message || 'Could not upload images.' });
     } finally {
@@ -145,7 +161,10 @@ export default function AddProductPage() {
   };
 
   const removeImage = (indexToRemove: number) => {
+      const removedUrl = imageUrls[indexToRemove];
       setImageUrls(prev => prev.filter((_, i) => i !== indexToRemove));
+      // Also cleanup color options mapping to this image
+      setColorOptions(prev => prev.filter(opt => opt.imageUrl !== removedUrl));
   };
 
   const handleAIMagic = async () => {
@@ -165,7 +184,7 @@ export default function AddProductPage() {
 
         toast({
             title: 'Curation Intelligence Applied',
-            description: 'Luxury metadata has been auto-generated for your masterpiece.',
+            description: 'Luxury metadata has been auto-generated.',
             action: <Sparkles className="h-4 w-4 text-primary" />
         });
     } catch (error: any) {
@@ -177,6 +196,18 @@ export default function AddProductPage() {
     } finally {
         setIsAnalyzing(false);
     }
+  };
+
+  const addColorOption = () => {
+      setColorOptions(prev => [...prev, { name: '', imageUrl: imageUrls[0] || '' }]);
+  };
+
+  const removeColorOption = (index: number) => {
+      setColorOptions(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateColorOption = (index: number, updates: Partial<ColorOption>) => {
+      setColorOptions(prev => prev.map((opt, i) => i === index ? { ...opt, ...updates } : opt));
   };
 
   const toggleCategory = (cat: string) => {
@@ -194,6 +225,7 @@ export default function AddProductPage() {
     setQuantityAvailable('100');
     setSelectedCategories([]);
     setTagsInput('');
+    setColorOptions([]);
     setTempId(crypto.randomUUID());
     setShowSuccessModal(false);
   };
@@ -201,12 +233,12 @@ export default function AddProductPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !firestore) {
-      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to submit a product.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
       return;
     }
 
     if (imageUrls.length === 0) {
-        toast({ variant: 'destructive', title: 'Image Required', description: 'Please upload at least one product image to proceed.' });
+        toast({ variant: 'destructive', title: 'Image Required', description: 'Please upload at least one product image.' });
         return;
     }
     
@@ -214,7 +246,7 @@ export default function AddProductPage() {
       toast({ 
         variant: 'destructive', 
         title: 'Pricing Strategy Error', 
-        description: 'Your Suggested Retail Price must be at least 15% higher than the Wholesale Price.' 
+        description: 'Retail price must be at least 15% higher than Wholesale.' 
       });
       return;
     }
@@ -229,6 +261,7 @@ export default function AddProductPage() {
         description,
         imageUrl: imageUrls[0], 
         imageGallery: imageUrls,
+        colorOptions: colorOptions.filter(opt => opt.name && opt.imageUrl),
         wholesalePrice: numericWholesale,
         suggestedRetailPrice: numericRetail,
         stockLevel: parseInt(quantityAvailable, 10) || 0,
@@ -272,8 +305,8 @@ export default function AddProductPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <p className="text-muted-foreground">
-                Our elite review team will verify your product details and pricing strategy. You will be notified via email once it is live in the SOMA Master Catalog.
+            <p className="text-muted-foreground text-sm">
+                Our elite review team will verify your product details and pricing strategy. You will be notified via email once it is live.
             </p>
           </div>
           <DialogFooter className="sm:justify-center">
@@ -287,18 +320,18 @@ export default function AddProductPage() {
       <div className="text-center mb-10">
         <SomaLogo className="h-12 w-12 mx-auto" />
         <h1 className="text-4xl font-bold font-headline mt-4 text-primary">Supplier Submission</h1>
-        <p className="mt-2 text-lg text-muted-foreground">Add a new product to the SOMA Master Catalog.</p>
+        <p className="mt-2 text-lg text-muted-foreground">Add a new luxury item to the SOMA Master Catalog.</p>
       </div>
 
-      <Card className="w-full max-w-5xl border-primary/50 overflow-hidden">
+      <Card className="w-full max-w-6xl border-primary/50 overflow-hidden">
         <CardHeader className="flex flex-row items-center justify-between">
             <div>
                 <CardTitle className="flex items-center gap-2 text-2xl">
                     <PackagePlus className="h-6 w-6 text-primary"/>
-                    New Product Details
+                    Masterpiece Details
                 </CardTitle>
                 <CardDescription>
-                    Categorize and detail your luxury item for the global catalog.
+                    Configure variants and metadata for the global collection.
                 </CardDescription>
             </div>
             <Button 
@@ -311,132 +344,172 @@ export default function AddProductPage() {
             </Button>
         </CardHeader>
         <CardContent>
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                <div className="space-y-6">
-                    <div className="space-y-2">
-                        <Label htmlFor="product-name">Product Name</Label>
-                        <Input 
-                            id="product-name" 
-                            value={productName} 
-                            onChange={(e) => setProductName(e.target.value)} 
-                            required 
-                            placeholder="e.g., 'The Olympian Chronograph'"
-                            className="h-12"
-                        />
-                    </div>
-                    
-                    <div className="space-y-2">
-                        <Label className="flex items-center gap-2">
-                            <Layers className="h-4 w-4 text-primary" />
-                            Product Categories
-                        </Label>
-                        <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-border bg-muted/10">
-                            {AVAILABLE_CATEGORIES.map(cat => (
-                                <button
-                                    key={cat}
-                                    type="button"
-                                    onClick={() => toggleCategory(cat)}
-                                    className={cn(
-                                        "px-3 py-1.5 rounded-full text-xs font-semibold transition-all border",
-                                        selectedCategories.includes(cat) 
-                                            ? "bg-primary text-primary-foreground border-primary" 
-                                            : "bg-background text-muted-foreground border-border hover:border-primary/50"
-                                    )}
-                                >
-                                    {cat}
-                                </button>
-                            ))}
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <div className="space-y-8">
+                    {/* Basic Info */}
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="product-name">Product Name</Label>
+                            <Input 
+                                id="product-name" 
+                                value={productName} 
+                                onChange={(e) => setProductName(e.target.value)} 
+                                required 
+                                placeholder="e.g., 'The Obsidian Chronograph'"
+                                className="h-12"
+                            />
+                        </div>
+                        
+                        <div className="space-y-2">
+                            <Label className="flex items-center gap-2">
+                                <Layers className="h-4 w-4 text-primary" />
+                                Product Categories
+                            </Label>
+                            <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-border bg-muted/10">
+                                {AVAILABLE_CATEGORIES.map(cat => (
+                                    <button
+                                        key={cat}
+                                        type="button"
+                                        onClick={() => toggleCategory(cat)}
+                                        className={cn(
+                                            "px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tighter transition-all border",
+                                            selectedCategories.includes(cat) 
+                                                ? "bg-primary text-primary-foreground border-primary" 
+                                                : "bg-background text-muted-foreground border-border hover:border-primary/50"
+                                        )}
+                                    >
+                                        {cat}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="description">Product Narrative</Label>
+                            <Textarea 
+                                id="description" 
+                                value={description} 
+                                onChange={(e) => setDescription(e.target.value)} 
+                                required 
+                                placeholder="Evocative description highlighting craftsmanship and materials..."
+                                className="min-h-[120px] resize-none"
+                            />
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="tags" className="flex items-center gap-2">
-                            <Tags className="h-4 w-4 text-primary" />
-                            Custom Tags
-                        </Label>
-                        <Input 
-                            id="tags" 
-                            value={tagsInput} 
-                            onChange={(e) => setTagsInput(e.target.value)} 
-                            placeholder="e.g., Limited Edition, Sustainable, Handmade"
-                            className="h-12"
-                        />
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-tight">Separate tags with commas</p>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor="description">Product Description</Label>
-                        <Textarea 
-                            id="description" 
-                            value={description} 
-                            onChange={(e) => setDescription(e.target.value)} 
-                            required 
-                            placeholder="Describe the key features and luxury appeal of your product."
-                            className="min-h-[150px] resize-none"
-                        />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Pricing & Stock */}
+                    <div className="grid grid-cols-3 gap-6">
                         <div className="space-y-2">
                             <Label htmlFor="wholesale-price">Wholesale ($)</Label>
                             <Input id="wholesale-price" type="number" step="0.01" value={wholesalePrice} onChange={(e) => setWholesalePrice(e.target.value)} required placeholder="250.00"/>
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-tight">Your payout</p>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="retail-price">Retail ($)</Label>
-                            <Input id="retail-price" type="number" step="0.01" value={suggestedRetailPrice} onChange={(e) => setSuggestedRetailPrice(e.target.value)} required placeholder="650.00" className={cn(isPriceInvalid && "border-destructive focus-visible:ring-destructive")}/>
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-tight">Listing price</p>
+                            <Input id="retail-price" type="number" step="0.01" value={suggestedRetailPrice} onChange={(e) => setSuggestedRetailPrice(e.target.value)} required placeholder="650.00" className={cn(isPriceInvalid && "border-destructive")}/>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="quantity-available" className="flex items-center gap-1">
-                                <Package className="h-3 w-3 text-primary" /> Qty
-                            </Label>
+                            <Label htmlFor="quantity-available">Qty</Label>
                             <Input id="quantity-available" type="number" value={quantityAvailable} onChange={(e) => setQuantityAvailable(e.target.value)} required placeholder="100"/>
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-tight">Stock level</p>
                         </div>
                     </div>
 
                     {isPriceInvalid && (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2 text-destructive text-sm font-semibold bg-destructive/10 p-3 rounded-lg border border-destructive/20">
+                        <div className="flex items-center gap-2 text-destructive text-xs font-bold bg-destructive/10 p-3 rounded-lg border border-destructive/20">
                             <AlertCircle className="h-4 w-4" />
-                            <span>Suggested Retail must be at least 15% higher than Wholesale Price.</span>
-                        </motion.div>
+                            <span>Suggested Retail must be at least 15% higher than Wholesale.</span>
+                        </div>
                     )}
 
-                    {(numericWholesale > 0 && numericRetail > 0 && !isPriceInvalid) && (
-                        <motion.div 
-                            initial={{ opacity: 0, y: 10 }} 
-                            animate={{ opacity: 1, y: 0 }}
-                            className="p-4 rounded-lg border border-border bg-muted/30 flex justify-between items-center"
-                        >
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                                <TrendingUp className="h-4 w-4" />
-                                <span className="text-sm font-medium">Proposed Margin</span>
-                            </div>
-                            <span className={cn(
-                                "text-2xl font-bold font-mono",
-                                margin < 20 ? "text-orange-500" : margin > 40 ? "text-primary" : "text-foreground"
-                            )}>
-                                {margin.toFixed(1)}%
-                            </span>
-                        </motion.div>
-                    )}
+                    {/* Color Variants */}
+                    <div className="space-y-4 pt-4 border-t border-white/5">
+                        <div className="flex items-center justify-between">
+                            <Label className="flex items-center gap-2 text-primary">
+                                <Palette className="h-4 w-4" />
+                                Color Variations
+                            </Label>
+                            <Button 
+                                type="button" 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={addColorOption}
+                                className="h-8 border-primary/20 hover:bg-primary/5"
+                            >
+                                <Plus className="h-3.5 w-3.5 mr-1" /> Add Color
+                            </Button>
+                        </div>
+                        
+                        <div className="space-y-3">
+                            {colorOptions.map((opt, idx) => (
+                                <motion.div 
+                                    key={idx} 
+                                    initial={{ opacity: 0, y: 5 }} 
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="flex items-center gap-3 bg-muted/20 p-3 rounded-xl border border-white/5"
+                                >
+                                    <div className="flex-1">
+                                        <Input 
+                                            placeholder="Color Name (e.g. Ivory)" 
+                                            value={opt.name}
+                                            onChange={(e) => updateColorOption(idx, { name: e.target.value })}
+                                            className="h-10 bg-background"
+                                        />
+                                    </div>
+                                    <div className="w-[180px]">
+                                        <Select 
+                                            value={opt.imageUrl} 
+                                            onValueChange={(val) => updateColorOption(idx, { imageUrl: val })}
+                                        >
+                                            <SelectTrigger className="h-10 bg-background">
+                                                <SelectValue placeholder="Select Photo" />
+                                            </SelectTrigger>
+                                            <SelectContent className="bg-slate-900 border-primary/20">
+                                                {imageUrls.map((url, i) => (
+                                                    <SelectItem key={i} value={url} className="focus:bg-primary/10">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="relative h-6 w-6 rounded overflow-hidden">
+                                                                <Image src={url} alt={`Photo ${i+1}`} fill className="object-cover" />
+                                                            </div>
+                                                            <span className="text-[10px]">Photo {i+1}</span>
+                                                        </div>
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <Button 
+                                        type="button" 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        onClick={() => removeColorOption(idx)}
+                                        className="h-10 w-10 text-destructive hover:bg-destructive/10"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </motion.div>
+                            ))}
+                            {colorOptions.length === 0 && (
+                                <p className="text-[10px] text-muted-foreground italic">No colors defined. The product will list as a single variant.</p>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
-                <div className="space-y-6">
+                <div className="space-y-8">
+                    {/* Visual Asset Management */}
                     <div className="space-y-4">
-                        <Label className="flex items-center gap-2">
-                            <ImageIcon className="h-4 w-4 text-primary" />
-                            Product Photography (Max 10, 1:1 Aspect Ratio)
+                        <Label className="flex items-center gap-2 text-primary/80 uppercase tracking-widest text-[10px] font-black">
+                            <ImageIcon className="h-4 w-4" />
+                            Visual Registry (Max {MAX_IMAGES})
                         </Label>
                         
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                             {imageUrls.map((url, index) => (
-                                <div key={index} className="relative aspect-square rounded-xl overflow-hidden border border-primary/50 group">
+                                <div key={index} className="relative aspect-square rounded-xl overflow-hidden border border-primary/50 group bg-slate-900">
                                     <Image 
                                         src={url} 
                                         alt={`Product ${index + 1}`} 
                                         fill 
-                                        className="object-cover"
+                                        className="object-cover opacity-80 group-hover:opacity-100 transition-opacity"
                                     />
                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                         <Button 
@@ -450,7 +523,7 @@ export default function AddProductPage() {
                                         </Button>
                                     </div>
                                     {index === 0 && (
-                                        <Badge className="absolute top-2 left-2 bg-primary text-primary-foreground">Primary</Badge>
+                                        <Badge className="absolute top-2 left-2 bg-primary text-primary-foreground text-[8px] font-black tracking-widest h-4">PRIMARY</Badge>
                                     )}
                                 </div>
                             ))}
@@ -459,17 +532,17 @@ export default function AddProductPage() {
                                 <div 
                                     onClick={() => !isUploading && fileInputRef.current?.click()}
                                     className={cn(
-                                        "relative aspect-square border-2 border-dashed rounded-xl flex flex-col items-center justify-center transition-all duration-300 overflow-hidden cursor-pointer",
-                                        "border-primary/30 hover:border-primary bg-muted/20",
+                                        "relative aspect-square border-2 border-dashed rounded-xl flex flex-col items-center justify-center transition-all duration-300 cursor-pointer overflow-hidden bg-slate-900/40",
+                                        "border-primary/30 hover:border-primary",
                                         isUploading && "animate-pulse"
                                     )}
                                 >
                                     {isUploading ? (
                                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                                     ) : (
-                                        <div className="flex flex-col items-center justify-center p-4 text-center">
-                                            <UploadCloud className="h-8 w-8 text-muted-foreground mb-2" />
-                                            <span className="text-[10px] font-semibold">Upload</span>
+                                        <div className="flex flex-col items-center gap-2 text-center p-4">
+                                            <UploadCloud className="h-8 w-8 text-muted-foreground" />
+                                            <span className="text-[10px] font-black uppercase text-primary/60">Upload</span>
                                         </div>
                                     )}
                                 </div>
@@ -485,7 +558,20 @@ export default function AddProductPage() {
                             onChange={handleFileUpload} 
                             disabled={isUploading || imageUrls.length >= MAX_IMAGES}
                         />
-                        <p className="text-xs text-muted-foreground italic">Tip: Luxury products perform best with minimalist, high-contrast backgrounds.</p>
+                    </div>
+
+                    <div className="space-y-4 pt-4 border-t border-white/5">
+                        <Label htmlFor="tags" className="flex items-center gap-2 uppercase tracking-widest text-[10px] font-black text-muted-foreground">
+                            <Tags className="h-4 w-4" />
+                            SEO Tag Registry
+                        </Label>
+                        <Input 
+                            id="tags" 
+                            value={tagsInput} 
+                            onChange={(e) => setTagsInput(e.target.value)} 
+                            placeholder="Limited Edition, Sustainable, Handmade..."
+                            className="h-12 border-primary/10 bg-slate-950"
+                        />
                     </div>
 
                     <div className="flex flex-col gap-4">
@@ -503,14 +589,14 @@ export default function AddProductPage() {
                             type="submit" 
                             disabled={isSubmitting || isUploading || imageUrls.length === 0 || selectedCategories.length === 0 || isPriceInvalid} 
                             size="lg" 
-                            className="w-full h-14 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground text-lg font-bold"
+                            className="w-full h-16 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground text-xl font-bold"
                         >
                             {isSubmitting ? (
                                 <>
-                                    <Loader2 className="animate-spin mr-2" />
-                                    Finalizing Submission...
+                                    <Loader2 className="animate-spin mr-3" />
+                                    TRANSMITTING...
                                 </>
-                            ) : 'Submit for Review'}
+                            ) : 'Submit for Curation'}
                         </Button>
                     </div>
                 </div>

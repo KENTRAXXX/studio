@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo, useRef } from 'react';
@@ -27,7 +28,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Form,
   FormControl,
@@ -51,7 +58,8 @@ import {
     Tags,
     X,
     Plus,
-    ImageIcon
+    ImageIcon,
+    Palette
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { analyzeProductImage } from '@/ai/flows/analyze-product-image';
@@ -98,6 +106,11 @@ interface UploadState {
     isError?: boolean;
 }
 
+type ColorOption = {
+    name: string;
+    imageUrl: string;
+};
+
 interface EditMasterProductModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
@@ -110,6 +123,7 @@ interface EditMasterProductModalProps {
     stockLevel: number;
     imageId: string;
     imageGallery?: string[];
+    colorOptions?: ColorOption[];
     vendorId: string;
     categories?: string[];
     tags?: string[];
@@ -128,6 +142,7 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
   const [imageGallery, setImageGallery] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [tagsInput, setTagsInput] = useState('');
+  const [colorOptions, setColorOptions] = useState<ColorOption[]>([]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -161,6 +176,7 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
       setSelectedCategories(product.categories || []);
       setTagsInput(product.tags?.join(', ') || '');
       setImageGallery(product.imageGallery || [product.imageId]);
+      setColorOptions(product.colorOptions || []);
       
       const initialUploads: Record<string, UploadState> = {};
       (product.imageGallery || [product.imageId]).forEach(url => {
@@ -174,7 +190,7 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
   const handleAIMagic = async () => {
     const primaryImage = imageGallery[0] || form.getValues('imageId');
     if (!primaryImage) {
-        toast({ variant: 'destructive', title: 'Asset Missing', description: 'Cannot analyze a product without a primary image.' });
+        toast({ variant: 'destructive', title: 'Asset Missing', description: 'Photo required for AI analysis.' });
         return;
     }
 
@@ -188,8 +204,8 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
         setTagsInput(result.suggestedTags.join(', '));
 
         toast({
-            title: 'Intelligence Synchronized',
-            description: 'Luxury metadata has been auto-generated for this asset. "SOMA" branding has been omitted.',
+            title: 'Registry Synchronized',
+            description: 'Luxury metadata has been auto-generated.',
             action: <Sparkles className="h-4 w-4 text-primary" />
         });
     } catch (error: any) {
@@ -265,7 +281,20 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
       });
       if (url) {
           setImageGallery(prev => prev.filter(u => u !== url));
+          setColorOptions(prev => prev.filter(opt => opt.imageUrl !== url));
       }
+  };
+
+  const addColorOption = () => {
+      setColorOptions(prev => [...prev, { name: '', imageUrl: imageGallery[0] || '' }]);
+  };
+
+  const removeColorOption = (index: number) => {
+      setColorOptions(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateColorOption = (index: number, updates: Partial<ColorOption>) => {
+      setColorOptions(prev => prev.map((opt, i) => i === index ? { ...opt, ...updates } : opt));
   };
 
   const toggleCategory = (cat: string) => {
@@ -286,13 +315,14 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
           ...data,
           categories: selectedCategories,
           tags: tags,
+          colorOptions: colorOptions.filter(opt => opt.name && opt.imageUrl),
           imageGallery: imageGallery,
           imageId: imageGallery[0] || data.imageId
       });
 
       toast({
         title: 'Registry Updated',
-        description: `${data.name} metadata has been synchronized.`,
+        description: `${data.name} metadata synchronized.`,
       });
       onOpenChange(false);
 
@@ -300,7 +330,7 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
       toast({
         variant: 'destructive',
         title: 'Update Failed',
-        description: error.message || 'An unexpected error occurred.',
+        description: error.message,
       });
     } finally {
       setIsSubmitting(false);
@@ -314,7 +344,7 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
         await deleteDoc(doc(firestore, 'Master_Catalog', product.id));
         toast({
             title: 'Asset Liquidated',
-            description: `${product.name} has been removed from the registry.`,
+            description: `${product.name} removed from registry.`,
         });
         onOpenChange(false);
       } catch (error: any) {
@@ -326,7 +356,7 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-card border-primary sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-card border-primary sm:max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="flex flex-col sm:flex-row items-center justify-between gap-4 pr-8">
           <div className="text-center sm:text-left">
             <DialogTitle className="flex items-center justify-center sm:justify-start gap-2 text-primary font-headline text-2xl">
@@ -334,7 +364,7 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
                 Registry Editor
             </DialogTitle>
             <DialogDescription>
-                Modify strategic metadata for this global catalog asset.
+                Synchronize strategic metadata for this luxury asset.
             </DialogDescription>
           </div>
           <Button 
@@ -348,9 +378,9 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="space-y-6">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <div className="space-y-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField control={form.control} name="name" render={({ field }) => (
                             <FormItem>
@@ -377,9 +407,8 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
                     )} />
 
                     <div className="space-y-3">
-                        <Label className="flex items-center gap-2">
-                            <Layers className="h-4 w-4 text-primary" />
-                            Categories
+                        <Label className="flex items-center gap-2 text-[10px] font-black uppercase text-muted-foreground tracking-widest">
+                            <Layers className="h-3 w-3" /> Categorization
                         </Label>
                         <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-primary/10 bg-muted/10">
                             {AVAILABLE_CATEGORIES.map(cat => (
@@ -388,7 +417,7 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
                                     type="button"
                                     onClick={() => toggleCategory(cat)}
                                     className={cn(
-                                        "px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-tighter transition-all border",
+                                        "px-2 py-1 rounded-full text-[10px] font-bold uppercase transition-all border",
                                         selectedCategories.includes(cat) 
                                             ? "bg-primary text-primary-foreground border-primary" 
                                             : "bg-background text-muted-foreground border-border hover:border-primary/50"
@@ -400,20 +429,71 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label className="flex items-center gap-2">
-                            <Tags className="h-4 w-4 text-primary" />
-                            Search Tags
-                        </Label>
-                        <Input 
-                            value={tagsInput} 
-                            onChange={(e) => setTagsInput(e.target.value)} 
-                            placeholder="Comma separated..."
-                        />
+                    {/* Color Mapping */}
+                    <div className="space-y-4 pt-4 border-t border-white/5">
+                        <div className="flex items-center justify-between">
+                            <Label className="flex items-center gap-2 text-primary font-bold">
+                                <Palette className="h-4 w-4" />
+                                Master Color Palette
+                            </Label>
+                            <Button 
+                                type="button" 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={addColorOption}
+                                className="h-8 border-primary/20"
+                            >
+                                <Plus className="h-3.5 w-3.5 mr-1" /> Add Color
+                            </Button>
+                        </div>
+                        
+                        <div className="space-y-3">
+                            {colorOptions.map((opt, idx) => (
+                                <div key={idx} className="flex items-center gap-3 bg-slate-900/50 p-3 rounded-xl border border-white/5">
+                                    <Input 
+                                        placeholder="Color Name" 
+                                        value={opt.name}
+                                        onChange={(e) => updateColorOption(idx, { name: e.target.value })}
+                                        className="h-10 bg-background flex-1"
+                                    />
+                                    <div className="w-[160px]">
+                                        <Select 
+                                            value={opt.imageUrl} 
+                                            onValueChange={(val) => updateColorOption(idx, { imageUrl: val })}
+                                        >
+                                            <SelectTrigger className="h-10 bg-background">
+                                                <SelectValue placeholder="Asset" />
+                                            </SelectTrigger>
+                                            <SelectContent className="bg-slate-900 border-primary/20">
+                                                {imageGallery.map((url, i) => (
+                                                    <SelectItem key={i} value={url}>
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="relative h-6 w-6 rounded overflow-hidden">
+                                                                <img src={url} className="h-full w-full object-cover" />
+                                                            </div>
+                                                            <span className="text-[10px]">Photo {i+1}</span>
+                                                        </div>
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <Button 
+                                        type="button" 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        onClick={() => removeColorOption(idx)}
+                                        className="h-10 w-10 text-destructive"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
-                <div className="space-y-6">
+                <div className="space-y-8">
                     <div className="grid grid-cols-3 gap-4">
                         <FormField control={form.control} name="masterCost" render={({ field }) => (
                             <FormItem>
@@ -442,7 +522,7 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
                         <div className="p-4 rounded-xl border border-primary/20 bg-primary/5 flex justify-between items-center">
                             <div className="flex items-center gap-2 text-muted-foreground">
                                 <TrendingUp className="h-4 w-4 text-primary" />
-                                <span className="text-xs font-bold uppercase tracking-widest">Calculated Margin</span>
+                                <span className="text-xs font-bold uppercase">Market Margin</span>
                             </div>
                             <span className={cn(
                                 "text-2xl font-bold font-mono",
@@ -454,9 +534,9 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
                     )}
 
                     <div className="space-y-4">
-                        <Label className="flex items-center gap-2 text-primary/80">
+                        <Label className="flex items-center gap-2 text-primary/80 uppercase tracking-widest text-[10px] font-black">
                             <ImageIcon className="h-4 w-4" />
-                            Asset Gallery (Max 10)
+                            Asset Gallery (Max {MAX_IMAGES})
                         </Label>
                         
                         <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
@@ -504,6 +584,17 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
                         </div>
                         <input type="file" ref={fileInputRef} className="hidden" multiple accept="image/*" onChange={handleFileChange} />
                     </div>
+
+                    <div className="space-y-2">
+                        <Label className="flex items-center gap-2 text-[10px] font-black uppercase text-muted-foreground tracking-widest">
+                            <Tags className="h-3 w-3" /> Search Tags
+                        </Label>
+                        <Input 
+                            value={tagsInput} 
+                            onChange={(e) => setTagsInput(e.target.value)} 
+                            placeholder="Comma separated..."
+                        />
+                    </div>
                 </div>
             </div>
             
@@ -518,7 +609,7 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
                         <AlertDialogHeader>
                             <AlertDialogTitle className="font-headline text-destructive">Verify Liquidation</AlertDialogTitle>
                             <AlertDialogDescription className="text-slate-400">
-                                This will permanently remove the product from the master catalog. Synced boutiques will lose access to this SKU.
+                                Permanent removal from Master Catalog. All clones will lose access.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -531,7 +622,7 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
                 </AlertDialog>
 
                 <Button type="submit" disabled={isSubmitting || isUploading} className="w-full sm:w-auto btn-gold-glow bg-primary h-12 font-bold px-8">
-                    {isSubmitting ? <Loader2 className="animate-spin" /> : 'Synchronize Registry'}
+                    {isSubmitting ? <Loader2 className="animate-spin" /> : 'Synchronize Global Catalog'}
                 </Button>
             </DialogFooter>
           </form>

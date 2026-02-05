@@ -111,6 +111,21 @@
                     "type": "string",
                     "description": "URL of the main product image."
                 },
+                "imageGallery": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "A collection of luxury visuals for the product gallery."
+                },
+                "colorOptions": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": { "type": "string" },
+                            "imageUrl": { "type": "string" }
+                        }
+                    }
+                },
                 "productType": {
                     "type": "string",
                     "description": "The type of the product.",
