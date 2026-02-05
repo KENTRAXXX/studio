@@ -128,7 +128,7 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
 
   const handleAIMagic = async () => {
     if (imageGallery.length === 0) {
-        toast({ variant: 'destructive', title: 'Asset Missing', description: 'Please upload a primary image first.' });
+        toast({ variant: 'destructive', title: 'Asset Missing', description: 'Please upload a primary image first to activate AI Enrichment.' });
         return;
     }
 
@@ -309,7 +309,7 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
           </div>
           <Button 
             onClick={handleAIMagic} 
-            disabled={imageGallery.length === 0 || isAnalyzing}
+            disabled={isAnalyzing}
             className="w-full sm:w-auto btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-black h-12"
           >
             {isAnalyzing ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
@@ -326,7 +326,7 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
                         <FormField control={form.control} name="name" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Product Name</FormLabel>
-                                <FormControl><Input placeholder="e.g., 'The Olympian'" {...field} /></FormControl>
+                                <FormControl><Input placeholder="e.g., 'The Obsidian Chronograph'" {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
@@ -434,9 +434,9 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
                         
                         <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
                             <AnimatePresence>
-                                {Object.values(uploads).map((upload) => (
+                                {Object.entries(uploads).map(([id, upload]) => (
                                     <motion.div 
-                                        key={upload.id}
+                                        key={id}
                                         initial={{ opacity: 0, scale: 0.8 }}
                                         animate={{ opacity: 1, scale: 1 }}
                                         exit={{ opacity: 0, scale: 0.8 }}
@@ -447,7 +447,7 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
                                                 <img src={upload.url} alt="Upload" className="h-full w-full object-cover" />
                                                 <button 
                                                     type="button" 
-                                                    onClick={() => removeUpload(upload.id, upload.url)}
+                                                    onClick={() => removeUpload(id, upload.url)}
                                                     className="absolute top-1 right-1 p-0.5 bg-black/60 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
                                                 >
                                                     <X className="h-2 w-2" />

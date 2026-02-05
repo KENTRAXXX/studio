@@ -56,15 +56,19 @@ const prompt = ai.definePrompt({
   name: 'analyzeProductImagePrompt',
   input: { schema: AnalyzeProductImageInputSchema },
   output: { schema: AnalyzeProductImageOutputSchema },
-  prompt: `You are an elite luxury commerce curator at SOMA.
+  prompt: `You are an elite luxury commerce curator specializing in high-end global fashion, accessories, and lifestyle goods.
   
   Analyze the product in this image: {{media url=imageUrl}}
   
-  Based on the visual details, generate the following metadata for our master catalog:
+  Based on the visual details, generate the following metadata for a luxury marketplace catalog:
   
-  1. **Suggested Name**: Create a sophisticated, brand-aligned name.
-  2. **Description**: Write a compelling, evocative, and luxury-standard description (min 3 sentences). Highlight craftsmanship and emotional appeal.
+  1. **Suggested Name**: Create a sophisticated, unique, and evocative name for the product itself. 
+     CRITICAL: Do NOT include the word "SOMA" in the product name. The name should reflect the item's design, material, or heritage (e.g., 'The Obsidian Chronograph' instead of 'SOMA Watch').
+  
+  2. **Description**: Write a compelling, evocative, and luxury-standard description (min 3 sentences). Highlight craftsmanship, materials, and emotional appeal. Focus on the product's story.
+  
   3. **Categories**: Choose the 1-3 most appropriate categories from this list ONLY: ${AVAILABLE_CATEGORIES.join(', ')}.
+  
   4. **Tags**: Generate 5-8 SEO-optimized tags that describe the style, materials, and target occasion.
   
   Ensure the tone is high-end, exclusive, and professional.`,

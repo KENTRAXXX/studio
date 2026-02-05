@@ -187,7 +187,7 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
 
         toast({
             title: 'Intelligence Synchronized',
-            description: 'Luxury metadata has been auto-generated for this asset.',
+            description: 'Luxury metadata has been auto-generated for this asset. "SOMA" branding has been omitted.',
             action: <Sparkles className="h-4 w-4 text-primary" />
         });
     } catch (error: any) {
