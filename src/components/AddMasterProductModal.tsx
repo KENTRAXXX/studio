@@ -28,6 +28,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { 
     Loader2, 
@@ -37,13 +39,38 @@ import {
     CheckCircle2, 
     ImageIcon, 
     Sparkles, 
-    Plus
+    Plus,
+    Tags,
+    Layers,
+    TrendingUp,
+    Package
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import Image from 'next/image';
+
+const AVAILABLE_CATEGORIES = [
+    "Watches", 
+    "Leather Goods", 
+    "Jewelry", 
+    "Fragrance", 
+    "Apparel", 
+    "Accessories", 
+    "Home Decor", 
+    "Electronics",
+    "Fine Art",
+    "Spirits & Wine",
+    "Travel Gear",
+    "Beauty & Skincare",
+    "Wellness",
+    "Collectibles",
+    "Automotive",
+    "Gourmet Food",
+    "Furniture",
+    "Digital Assets"
+];
 
 const formSchema = z.object({
   name: z.string().min(3, { message: 'Product name must be at least 3 characters.' }),
+  description: z.string().min(10, { message: 'Description must be at least 10 characters.' }),
   masterCost: z.coerce.number().positive({ message: 'Cost must be a positive number.' }),
   retailPrice: z.coerce.number().positive({ message: 'Price must be a positive number.' }),
   stockLevel: z.coerce.number().int().min(0, { message: 'Stock cannot be negative.' }),
@@ -72,18 +99,29 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploads, setUploads] = useState<Record<string, UploadState>>({});
   const [imageGallery, setImageGallery] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [tagsInput, setTagsInput] = useState('');
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     mode: 'onChange',
     defaultValues: {
       name: '',
+      description: '',
       masterCost: 0,
       retailPrice: 0,
       stockLevel: 100,
       vendorId: 'admin',
     },
   });
+
+  const watchedWholesale = form.watch('masterCost');
+  const watchedRetail = form.watch('retailPrice');
+
+  const margin = useMemo(() => {
+    if (!watchedRetail || watchedRetail <= 0) return 0;
+    return ((watchedRetail - watchedWholesale) / watchedRetail) * 100;
+  }, [watchedWholesale, watchedRetail]);
 
   const uploadToCloudinaryWithProgress = (file: File, id: string) => {
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
@@ -170,6 +208,12 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
       }
   };
 
+  const toggleCategory = (cat: string) => {
+    setSelectedCategories(prev => 
+        prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
+    );
+  };
+
   const handleSubmit = async (data: FormValues) => {
     if (!firestore) return;
     if (imageGallery.length === 0) {
@@ -179,10 +223,14 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
     
     setIsSubmitting(true);
     try {
+      const tags = tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
       const catalogRef = collection(firestore, 'Master_Catalog');
+      
       await addDoc(catalogRef, {
         ...data,
-        imageId: imageGallery[0], // First image is primary
+        categories: selectedCategories,
+        tags: tags,
+        imageId: imageGallery[0],
         imageGallery: imageGallery,
         productType: 'INTERNAL',
         status: 'active',
@@ -198,6 +246,8 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
       form.reset();
       setUploads({});
       setImageGallery([]);
+      setSelectedCategories([]);
+      setTagsInput('');
 
     } catch (error: any) {
       toast({
@@ -212,7 +262,7 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-card border-primary sm:max-w-2xl">
+      <DialogContent className="bg-card border-primary sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-primary font-headline text-2xl">
             <Gem className="h-6 w-6" />
@@ -224,138 +274,177 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField control={form.control} name="name" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Product Designation</FormLabel>
-                        <FormControl><Input placeholder="e.g., 'The Olympian Chronograph'" {...field} className="h-11" /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )} />
-                <FormField control={form.control} name="vendorId" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Vendor Authority</FormLabel>
-                        <FormControl><Input {...field} className="h-11" /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )} />
-            </div>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Left Column: Details */}
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField control={form.control} name="name" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Product Name</FormLabel>
+                                <FormControl><Input placeholder="e.g., 'The Olympian'" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="vendorId" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Vendor ID</FormLabel>
+                                <FormControl><Input {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                    </div>
 
-            <div className="grid grid-cols-3 gap-4">
-                 <FormField control={form.control} name="masterCost" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Wholesale ($)</FormLabel>
-                        <FormControl><Input type="number" step="0.01" placeholder="250.00" {...field} className="h-11 font-mono" /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )} />
-                 <FormField control={form.control} name="retailPrice" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Rec. Retail ($)</FormLabel>
-                        <FormControl><Input type="number" step="0.01" placeholder="650.00" {...field} className="h-11 font-mono" /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )} />
-                <FormField control={form.control} name="stockLevel" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Stock Reserve</FormLabel>
-                        <FormControl><Input type="number" placeholder="100" {...field} className="h-11 font-mono" /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )} />
-             </div>
+                    <FormField control={form.control} name="description" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Luxury Narrative</FormLabel>
+                            <FormControl><Textarea placeholder="Describe the craftsmanship and appeal..." className="min-h-[100px] resize-none" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
 
-             <div className="space-y-4">
-                <Label className="flex items-center gap-2 text-primary/80">
-                    <ImageIcon className="h-4 w-4" />
-                    Multi-Asset Luxury Gallery (Max 5)
-                </Label>
-                
-                <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">
-                    <AnimatePresence>
-                        {Object.values(uploads).map((upload) => (
-                            <motion.div 
-                                key={upload.id}
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.8 }}
-                                className="relative aspect-square rounded-xl overflow-hidden border-2 border-primary/20 bg-slate-900/50 group"
-                            >
-                                {upload.url ? (
-                                    <>
-                                        <img src={upload.url} alt="Upload" className="h-full w-full object-cover" />
-                                        <button 
-                                            type="button" 
-                                            onClick={() => removeUpload(upload.id, upload.url)}
-                                            className="absolute top-1 right-1 p-1 bg-black/60 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                                        >
-                                            <X className="h-3 w-3" />
-                                        </button>
-                                        <div className="absolute bottom-1 right-1">
-                                            <CheckCircle2 className="h-4 w-4 text-green-500 fill-black" />
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="h-full w-full flex flex-col items-center justify-center p-2 text-center">
-                                        <div className="relative">
-                                            <Loader2 className="h-6 w-6 animate-spin text-primary opacity-40" />
-                                            <span className="absolute inset-0 flex items-center justify-center text-[8px] font-mono font-bold text-primary">
-                                                {upload.progress}%
-                                            </span>
-                                        </div>
-                                        
-                                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-800">
-                                            <motion.div 
-                                                className="h-full bg-gradient-to-r from-yellow-600 to-yellow-400 shadow-gold-glow"
-                                                initial={{ width: 0 }}
-                                                animate={{ width: `${upload.progress}%` }}
-                                            />
-                                        </div>
-                                    </div>
-                                )}
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
+                    <div className="space-y-3">
+                        <Label className="flex items-center gap-2">
+                            <Layers className="h-4 w-4 text-primary" />
+                            Categories
+                        </Label>
+                        <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-primary/10 bg-muted/10">
+                            {AVAILABLE_CATEGORIES.map(cat => (
+                                <button
+                                    key={cat}
+                                    type="button"
+                                    onClick={() => toggleCategory(cat)}
+                                    className={cn(
+                                        "px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-tighter transition-all border",
+                                        selectedCategories.includes(cat) 
+                                            ? "bg-primary text-primary-foreground border-primary" 
+                                            : "bg-background text-muted-foreground border-border hover:border-primary/50"
+                                    )}
+                                >
+                                    {cat}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
 
-                    {Object.keys(uploads).length < 5 && (
-                        <div 
-                            onClick={() => fileInputRef.current?.click()}
-                            className="aspect-square rounded-xl border-2 border-dashed border-primary/20 hover:border-primary/50 bg-primary/5 cursor-pointer flex flex-col items-center justify-center transition-all group"
-                        >
-                            <Plus className="h-6 w-6 text-primary/40 group-hover:text-primary transition-colors" />
-                            <span className="text-[8px] font-black uppercase tracking-widest text-primary/40 mt-1">Add Asset</span>
+                    <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                            <Tags className="h-4 w-4 text-primary" />
+                            Search Tags
+                        </Label>
+                        <Input 
+                            value={tagsInput} 
+                            onChange={(e) => setTagsInput(e.target.value)} 
+                            placeholder="Limited Edition, Sustainable, Gold..."
+                        />
+                        <p className="text-[10px] text-muted-foreground uppercase">Comma separated</p>
+                    </div>
+                </div>
+
+                {/* Right Column: Financials & Assets */}
+                <div className="space-y-6">
+                    <div className="grid grid-cols-3 gap-4">
+                        <FormField control={form.control} name="masterCost" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Wholesale ($)</FormLabel>
+                                <FormControl><Input type="number" step="0.01" {...field} className="font-mono" /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="retailPrice" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Retail ($)</FormLabel>
+                                <FormControl><Input type="number" step="0.01" {...field} className="font-mono" /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="stockLevel" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Reserve</FormLabel>
+                                <FormControl><Input type="number" {...field} className="font-mono" /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                    </div>
+
+                    {watchedRetail > 0 && (
+                        <div className="p-4 rounded-xl border border-primary/20 bg-primary/5 flex justify-between items-center">
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                                <TrendingUp className="h-4 w-4 text-primary" />
+                                <span className="text-xs font-bold uppercase tracking-widest">Market Margin</span>
+                            </div>
+                            <span className={cn(
+                                "text-2xl font-bold font-mono",
+                                margin < 20 ? "text-orange-500" : margin > 40 ? "text-primary" : "text-slate-200"
+                            )}>
+                                {margin.toFixed(1)}%
+                            </span>
                         </div>
                     )}
+
+                    <div className="space-y-4">
+                        <Label className="flex items-center gap-2 text-primary/80">
+                            <ImageIcon className="h-4 w-4" />
+                            Asset Gallery (Max 5)
+                        </Label>
+                        
+                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+                            <AnimatePresence>
+                                {Object.values(uploads).map((upload) => (
+                                    <motion.div 
+                                        key={upload.id}
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.8 }}
+                                        className="relative aspect-square rounded-lg overflow-hidden border border-primary/20 bg-slate-900/50 group"
+                                    >
+                                        {upload.url ? (
+                                            <>
+                                                <img src={upload.url} alt="Upload" className="h-full w-full object-cover" />
+                                                <button 
+                                                    type="button" 
+                                                    onClick={() => removeUpload(upload.id, upload.url)}
+                                                    className="absolute top-1 right-1 p-0.5 bg-black/60 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    <X className="h-2 w-2" />
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <div className="h-full w-full flex items-center justify-center p-1">
+                                                <Loader2 className="h-4 w-4 animate-spin text-primary opacity-40" />
+                                                <span className="absolute inset-0 flex items-center justify-center text-[8px] font-mono font-bold text-primary">
+                                                    {upload.progress}%
+                                                </span>
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+
+                            {Object.keys(uploads).length < 5 && (
+                                <div 
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="aspect-square rounded-lg border-2 border-dashed border-primary/20 hover:border-primary/50 bg-primary/5 cursor-pointer flex flex-col items-center justify-center transition-all"
+                                >
+                                    <Plus className="h-5 w-5 text-primary/40" />
+                                    <span className="text-[8px] font-black uppercase text-primary/40 mt-1">Upload</span>
+                                </div>
+                            )}
+                        </div>
+                        <input type="file" ref={fileInputRef} className="hidden" multiple accept="image/*" onChange={handleFileChange} />
+                    </div>
                 </div>
-                
-                <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    className="hidden" 
-                    multiple 
-                    accept="image/*" 
-                    onChange={handleFileChange} 
-                />
-                
-                <p className="text-[10px] text-muted-foreground italic flex items-center gap-1.5 pt-2">
-                    <Sparkles className="h-3 w-3 text-primary" />
-                    High-res photography recommended. First upload will be the signature hero asset.
-                </p>
-             </div>
+            </div>
             
-            <DialogFooter className="pt-4">
+            <DialogFooter className="pt-6 border-t border-primary/10">
               <Button 
                 type="submit" 
                 disabled={isSubmitting || imageGallery.length === 0} 
                 className="w-full h-14 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
               >
                 {isSubmitting ? (
-                    <>
-                        <Loader2 className="animate-spin mr-2" />
-                        Synchronizing Master Catalog...
-                    </>
-                ) : 'Launch Item to Marketplace'}
+                    <><Loader2 className="animate-spin mr-2" /> Deploying Luxury Asset...</>
+                ) : 'Synchronize Global Catalog'}
               </Button>
             </DialogFooter>
           </form>
