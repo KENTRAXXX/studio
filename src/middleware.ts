@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export const runtime = 'edge';
+export const runtime = 'experimental-edge';
 
 // This function represents the logic for resolving a hostname to a storeId.
 // It uses a cache-aside pattern: check cache first, then fallback to DB.
