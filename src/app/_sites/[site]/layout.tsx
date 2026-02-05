@@ -1,0 +1,278 @@
+'use client';
+
+import { useState, createContext, useContext, useEffect } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { Search, ShoppingCart, X, Loader2, Mail, Instagram, Twitter } from 'lucide-react';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+
+import { Button } from '@/components/ui/button';
+import SomaLogo from '@/components/logo';
+import { PlaceHolderImages, type ImagePlaceholder } from '@/lib/placeholder-images';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Separator } from '@/components/ui/separator';
+import { formatCurrency } from '@/utils/format';
+
+type CartItem = {
+  product: any;
+  quantity: number;
+};
+
+type CartContextType = {
+  cart: CartItem[];
+  addToCart: (product: any) => void;
+  removeFromCart: (productId: string) => void;
+  getCartTotal: () => number;
+};
+
+const CartContext = createContext<CartContextType | undefined>(undefined);
+
+export function useCart() {
+  const context = useContext(CartContext);
+  if (!context) {
+    throw new Error('useCart must be used within a CartProvider');
+  }
+  return context;
+}
+
+export function CartProvider({ children }: { children: React.PropsWithChildren<{}>['children'] }) {
+  const [cart, setCart] = useState<CartItem[]>([]);
+
+  const addToCart = (product: any) => {
+    setCart((prevCart) => {
+      const existingItem = prevCart.find((item) => item.product.id === product.id);
+      if (existingItem) {
+        return prevCart.map((item) =>
+          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+        );
+      }
+      return [...prevCart, { product, quantity: 1 }];
+    });
+  };
+
+  const removeFromCart = (productId: string) => {
+    setCart((prevCart) => prevCart.filter((item) => item.product.id !== productId));
+  };
+
+  const getCartTotal = () => {
+    return cart.reduce((total, item) => {
+        const price = item.product.suggestedRetailPrice || item.product.price;
+        return total + price * item.quantity;
+    }, 0);
+  };
+  
+  const value = { cart, addToCart, removeFromCart, getCartTotal };
+
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+}
+
+
+const getPlaceholderImage = (id: string): ImagePlaceholder | undefined => {
+    return PlaceHolderImages.find(img => img.id === id);
+}
+
+function CartSheet({site}: {site: string}) {
+    const { cart, removeFromCart, getCartTotal } = useCart();
+    
+    return (
+        <Sheet>
+            <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative text-primary-foreground hover:bg-primary/20 hover:text-primary">
+                    <ShoppingCart className="h-6 w-6" aria-label={`Shopping Cart, ${cart.reduce((acc, item) => acc + item.quantity, 0)} items`} />
+                    {cart.length > 0 && (
+                        <span className="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                            {cart.reduce((acc, item) => acc + item.quantity, 0)}
+                        </span>
+                    )}
+                </Button>
+            </SheetTrigger>
+            <SheetContent className="bg-background border-primary/20">
+                <SheetHeader>
+                    <SheetTitle className="text-primary font-headline text-2xl">My Cart</SheetTitle>
+                </SheetHeader>
+                <div className="flex flex-col h-full py-4">
+                    {cart.length > 0 ? (
+                        <>
+                            <div className="flex-1 overflow-y-auto pr-4">
+                                <ul className="space-y-4">
+                                    {cart.map(item => {
+                                        const price = item.product.suggestedRetailPrice || item.product.price;
+                                        return (
+                                        <li key={item.product.id} className="flex items-center gap-4">
+                                            <div className="relative h-16 w-16 rounded-md overflow-hidden border border-primary/20">
+                                                <Image src={getPlaceholderImage(item.product.imageId)?.imageUrl || item.product.imageUrl || ''} alt={item.product.name} fill className="object-cover" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <h3 className="font-semibold">{item.product.name}</h3>
+                                                <p className="text-sm text-muted-foreground">{formatCurrency(Math.round(price * 100))} x {item.quantity}</p>
+                                            </div>
+                                            <p className="font-semibold">{formatCurrency(Math.round(price * item.quantity * 100))}</p>
+                                            <Button variant="ghost" size="icon" onClick={() => removeFromCart(item.product.id)} aria-label={`Remove ${item.product.name} from cart`}>
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        </li>
+                                    )})}
+                                </ul>
+                            </div>
+                            <Separator className="my-4 bg-primary/20" />
+                            <div className="space-y-4">
+                                <div className="flex justify-between font-bold text-lg">
+                                    <span>Subtotal</span>
+                                    <span>{formatCurrency(Math.round(getCartTotal() * 100))}</span>
+                                </div>
+                                <Button asChild className="w-full h-12 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+                                    <Link href={`/checkout`}>Checkout</Link>
+                                </Button>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center h-full text-center">
+                            <ShoppingCart className="h-16 w-16 text-muted-foreground/50 mb-4" />
+                            <h3 className="text-xl font-semibold">Your cart is empty</h3>
+                            <p className="text-muted-foreground">Add some products to get started.</p>
+                        </div>
+                    )}
+                </div>
+            </SheetContent>
+        </Sheet>
+    );
+}
+
+function ContactSheet({ ownerEmail }: { ownerEmail?: string }) {
+    return (
+        <Sheet>
+            <SheetTrigger asChild>
+                <Button variant="link" className="text-sm text-muted-foreground hover:text-primary p-0 h-auto">Contact Us</Button>
+            </SheetTrigger>
+            <SheetContent className="bg-background border-primary/20">
+                <SheetHeader>
+                    <SheetTitle className="text-primary font-headline text-2xl">Contact Us</SheetTitle>
+                </SheetHeader>
+                <div className="py-8 text-center space-y-6">
+                     <Mail className="h-12 w-12 text-primary mx-auto" aria-hidden="true" />
+                     <div>
+                        <h3 className="font-semibold">Have a question?</h3>
+                        <p className="text-muted-foreground">Reach out to the store owner directly at:</p>
+                        {ownerEmail ?
+                            <a href={`mailto:${ownerEmail}`} className="font-bold text-primary text-lg">{ownerEmail}</a>
+                            : <Loader2 className="h-6 w-6 animate-spin mx-auto mt-2" />
+                        }
+                     </div>
+                     <Separator className="my-4 bg-primary/20"/>
+                     <div className="text-xs text-muted-foreground">
+                        <p>Support Powered by <span className="font-bold text-primary">SOMA</span></p>
+                     </div>
+                </div>
+            </SheetContent>
+        </Sheet>
+    )
+}
+
+
+export default function StoreLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const params = useParams();
+  const site = params.site as string;
+  const firestore = useFirestore();
+
+  const storeRef = useMemoFirebase(() => {
+    return firestore && site ? doc(firestore, 'stores', site) : null;
+  }, [firestore, site]);
+  const { data: storeData, loading: storeLoading } = useDoc<any>(storeRef);
+  
+  const ownerRef = useMemoFirebase(() => {
+    if (!firestore || !storeData?.userId) return null;
+    return doc(firestore, 'users', storeData.userId);
+  }, [firestore, storeData?.userId]);
+  const { data: ownerData } = useDoc<any>(ownerRef);
+
+  const storeName = storeData?.storeName || "SOMA Store";
+  const logoUrl = storeData?.logoUrl;
+  const themeColors = storeData?.themeConfig?.colors;
+
+  const customStyles = themeColors ? {
+    '--primary': themeColors.primary,
+    '--background': themeColors.background,
+    '--card': themeColors.background,
+    '--accent': themeColors.accent,
+    '--ring': themeColors.primary,
+    '--border': `hsl(${themeColors.primary} / 0.2)`,
+  } as React.CSSProperties : {};
+
+  const socials = ownerData?.socials;
+
+  return (
+    <CartProvider>
+        <div 
+            className="min-h-screen bg-background text-foreground font-body selection:bg-primary/30"
+            style={customStyles}
+        >
+          <header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-sm border-b border-primary/20">
+            <div className="container mx-auto flex h-20 items-center justify-between px-4 sm:px-6 lg:px-8">
+              <Link href={`/`} className="flex items-center gap-2 group">
+                {storeLoading ? (
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                ) : logoUrl ? (
+                    <div className="relative h-10 w-auto">
+                        <img src={logoUrl} alt={storeName} className="h-10 w-auto object-contain transition-transform group-hover:scale-105" />
+                    </div>
+                ) : (
+                    <SomaLogo className="h-8 w-8 text-primary" aria-hidden="true" />
+                )}
+                <h1 className="font-headline text-2xl font-bold text-primary tracking-tighter transition-colors group-hover:text-primary/80">
+                    {storeLoading ? 'Loading...' : storeName}
+                </h1>
+              </Link>
+              <div className="flex items-center gap-4">
+                <div className="relative hidden md:block">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                  <input
+                    placeholder="Search products..."
+                    aria-label="Search products"
+                    className="h-10 w-full rounded-md border border-primary/30 bg-transparent pl-10 pr-4 text-sm placeholder:text-muted-foreground focus:ring-primary"
+                  />
+                </div>
+                <CartSheet site={site} />
+              </div>
+            </div>
+          </header>
+          <main id="main-content" className="animate-in fade-in duration-700" tabIndex={-1}>{children}</main>
+          <footer className="bg-card border-t border-primary/10">
+            <div className="container mx-auto flex flex-col items-center justify-between gap-6 py-12 px-4 sm:flex-row sm:px-6 lg:px-8">
+              <div className="space-y-4 text-center sm:text-left">
+                <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} {storeName}. All Rights Reserved.</p>
+                {socials && (
+                    <div className="flex items-center justify-center sm:justify-start gap-4">
+                        {socials.instagram && (
+                            <Link href={`https://instagram.com/${socials.instagram}`} target="_blank" className="text-muted-foreground hover:text-primary transition-colors" aria-label="Visit our Instagram">
+                                <Instagram className="h-5 w-5" />
+                            </Link>
+                        )}
+                        {socials.tiktok && (
+                            <Link href={`https://tiktok.com/@${socials.tiktok}`} target="_blank" className="text-muted-foreground hover:text-primary transition-colors" aria-label="Visit our TikTok">
+                                <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.83 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.33 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.04-.1z"/></svg>
+                            </Link>
+                        )}
+                        {socials.x && (
+                            <Link href={`https://x.com/${socials.x}`} target="_blank" className="text-muted-foreground hover:text-primary transition-colors" aria-label="Visit our X (Twitter)">
+                                <Twitter className="h-5 w-5" />
+                            </Link>
+                        )}
+                    </div>
+                )}
+              </div>
+              <div className="flex gap-6">
+                <Link href="/legal/terms" className="text-sm text-muted-foreground hover:text-primary">Privacy Policy</Link>
+                <ContactSheet ownerEmail={ownerData?.email}/>
+              </div>
+            </div>
+          </footer>
+        </div>
+    </CartProvider>
+  );
+}
