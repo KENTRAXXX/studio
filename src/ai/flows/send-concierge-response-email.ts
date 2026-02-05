@@ -1,39 +1,22 @@
-
 'use server';
 
 /**
- * @fileOverview Genkit flow for sending a response email to a brand partner from SOMA Admin.
+ * @fileOverview Utility for sending a response email to a brand partner from SOMA Admin.
+ * Decoupled from Genkit to support Edge Runtime.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'zod';
-
-const SendConciergeResponseEmailInputSchema = z.object({
-  to: z.string().email(),
-  subject: z.string(),
-  originalMessage: z.string(),
-  responseMessage: z.string(),
-  ticketId: z.string(),
-});
-export type SendConciergeResponseEmailInput = z.infer<typeof SendConciergeResponseEmailInputSchema>;
-
-const SendConciergeResponseEmailOutputSchema = z.object({
-  success: z.boolean(),
-  message: z.string(),
-});
+export type SendConciergeResponseEmailInput = {
+  to: string;
+  subject: string;
+  originalMessage: string;
+  responseMessage: string;
+  ticketId: string;
+};
 
 export async function sendConciergeResponseEmail(input: SendConciergeResponseEmailInput) {
-  return sendConciergeResponseEmailFlow(input);
-}
-
-const sendConciergeResponseEmailFlow = ai.defineFlow(
-  {
-    name: 'sendConciergeResponseEmailFlow',
-    inputSchema: SendConciergeResponseEmailInputSchema,
-    outputSchema: SendConciergeResponseEmailOutputSchema,
-  },
-  async ({ to, subject, originalMessage, responseMessage, ticketId }) => {
+    const { to, subject, originalMessage, responseMessage, ticketId } = input;
     const resendApiKey = process.env.RESEND_API_KEY;
+    
     if (!resendApiKey) {
       console.error("Resend API key is missing.");
       return { success: false, message: 'Email service configuration error.' };
@@ -87,5 +70,4 @@ const sendConciergeResponseEmailFlow = ai.defineFlow(
         message: error.message || 'An unknown error occurred.',
       };
     }
-  }
-);
+}

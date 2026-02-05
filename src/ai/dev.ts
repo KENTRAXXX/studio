@@ -1,13 +1,4 @@
 import { config } from 'dotenv';
 config();
 
-import '@/ai/flows/create-client-store.ts';
-import '@/ai/flows/initialize-paystack-transaction.ts';
-import '@/ai/flows/send-welcome-email.ts';
-import '@/ai/flows/send-payout-confirmation-email.ts';
-import '@/ai/flows/send-action-required-email.ts';
-import '@/ai/flows/send-concierge-email.ts';
-import '@/ai/flows/send-concierge-response-email.ts';
-import '@/ai/flows/send-referral-activated-email.ts';
-import '@/ai/flows/send-funds-available-email.ts';
 import '@/ai/flows/analyze-product-image.ts';

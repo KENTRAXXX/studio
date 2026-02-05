@@ -1,40 +1,24 @@
 'use server';
 
 /**
- * @fileOverview Genkit flow for sending referral activation emails via Resend.
+ * @fileOverview Utility for sending referral activation emails via Resend.
+ * Decoupled from Genkit to support Edge Runtime.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'zod';
 import React from 'react';
 import { ReferralActivatedEmail } from '@/lib/emails/referral-activated-email';
 
-const SendReferralActivatedEmailInputSchema = z.object({
-  to: z.string().email(),
-  referrerName: z.string(),
-  protegeName: z.string(),
-  creditAmount: z.string(),
-});
-export type SendReferralActivatedEmailInput = z.infer<typeof SendReferralActivatedEmailInputSchema>;
-
-const SendReferralActivatedEmailOutputSchema = z.object({
-  success: z.boolean(),
-  message: z.string(),
-  id: z.string().optional(),
-});
+export type SendReferralActivatedEmailInput = {
+  to: string;
+  referrerName: string;
+  protegeName: string;
+  creditAmount: string;
+};
 
 export async function sendReferralActivatedEmail(input: SendReferralActivatedEmailInput) {
-  return sendReferralActivatedEmailFlow(input);
-}
-
-const sendReferralActivatedEmailFlow = ai.defineFlow(
-  {
-    name: 'sendReferralActivatedEmailFlow',
-    inputSchema: SendReferralActivatedEmailInputSchema,
-    outputSchema: SendReferralActivatedEmailOutputSchema,
-  },
-  async ({ to, referrerName, protegeName, creditAmount }) => {
+    const { to, referrerName, protegeName, creditAmount } = input;
     const resendApiKey = process.env.RESEND_API_KEY;
+    
     if (!resendApiKey) {
       console.error("Resend API key is missing.");
       return { success: false, message: 'Email service configuration error.' };
@@ -62,7 +46,7 @@ const sendReferralActivatedEmailFlow = ai.defineFlow(
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to send referral email.');
+        throw new Error(data.message || 'Failed to send email.');
       }
 
       return {
@@ -77,5 +61,4 @@ const sendReferralActivatedEmailFlow = ai.defineFlow(
         message: error.message || 'An unknown error occurred.',
       };
     }
-  }
-);
+}

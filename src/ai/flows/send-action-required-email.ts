@@ -1,38 +1,23 @@
 'use server';
 
 /**
- * @fileOverview Genkit flow for sending an "Action Required" email to sellers via Resend.
+ * @fileOverview Utility for sending an "Action Required" email to sellers via Resend.
+ * Decoupled from Genkit to support Edge Runtime.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'zod';
 import React from 'react';
 import { ActionRequiredEmail } from '@/lib/emails/action-required-email';
 
-const SendActionRequiredEmailInputSchema = z.object({
-  to: z.string().email().describe("The recipient's email address."),
-  name: z.string().describe("The name of the seller or business."),
-  feedback: z.string().describe("The admin feedback explaining what needs to be changed."),
-});
-export type SendActionRequiredEmailInput = z.infer<typeof SendActionRequiredEmailInputSchema>;
-
-const SendActionRequiredEmailOutputSchema = z.object({
-  success: z.boolean(),
-  message: z.string(),
-});
+export type SendActionRequiredEmailInput = {
+  to: string;
+  name: string;
+  feedback: string;
+};
 
 export async function sendActionRequiredEmail(input: SendActionRequiredEmailInput) {
-  return sendActionRequiredEmailFlow(input);
-}
-
-const sendActionRequiredEmailFlow = ai.defineFlow(
-  {
-    name: 'sendActionRequiredEmailFlow',
-    inputSchema: SendActionRequiredEmailInputSchema,
-    outputSchema: SendActionRequiredEmailOutputSchema,
-  },
-  async ({ to, name, feedback }) => {
+    const { to, name, feedback } = input;
     const resendApiKey = process.env.RESEND_API_KEY;
+    
     if (!resendApiKey) {
       console.error("Resend API key is missing.");
       return { success: false, message: 'Email service configuration error.' };
@@ -70,5 +55,4 @@ const sendActionRequiredEmailFlow = ai.defineFlow(
         message: error.message || 'An unknown error occurred.',
       };
     }
-  }
-);
+}

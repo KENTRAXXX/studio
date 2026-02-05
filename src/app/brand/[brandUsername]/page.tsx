@@ -320,7 +320,7 @@ export default function BrandProfilePage() {
                                     <p className="text-[10px] uppercase font-black text-slate-500 tracking-widest">Catalog Depth</p>
                                     <p className="text-2xl font-bold font-mono mt-1">{brandProducts?.length || 0}</p>
                                 </CardContent>
-                            </Card>
+                            </div>
                         </div>
                     </div>
 

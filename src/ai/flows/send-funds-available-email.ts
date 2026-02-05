@@ -1,39 +1,23 @@
 'use server';
 
 /**
- * @fileOverview Genkit flow for notifying referrers that their matured rewards are available.
+ * @fileOverview Utility for notifying referrers that their matured rewards are available.
+ * Decoupled from Genkit to support Edge Runtime.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'zod';
 import React from 'react';
 import { FundsAvailableEmail } from '@/lib/emails/funds-available-email';
 
-const SendFundsAvailableEmailInputSchema = z.object({
-  to: z.string().email(),
-  name: z.string(),
-  amount: z.string(),
-});
-export type SendFundsAvailableEmailInput = z.infer<typeof SendFundsAvailableEmailInputSchema>;
-
-const SendFundsAvailableEmailOutputSchema = z.object({
-  success: z.boolean(),
-  message: z.string(),
-  id: z.string().optional(),
-});
+export type SendFundsAvailableEmailInput = {
+  to: string;
+  name: string;
+  amount: string;
+};
 
 export async function sendFundsAvailableEmail(input: SendFundsAvailableEmailInput) {
-  return sendFundsAvailableEmailFlow(input);
-}
-
-const sendFundsAvailableEmailFlow = ai.defineFlow(
-  {
-    name: 'sendFundsAvailableEmailFlow',
-    inputSchema: SendFundsAvailableEmailInputSchema,
-    outputSchema: SendFundsAvailableEmailOutputSchema,
-  },
-  async ({ to, name, amount }) => {
+    const { to, name, amount } = input;
     const resendApiKey = process.env.RESEND_API_KEY;
+    
     if (!resendApiKey) {
       console.error("Resend API key is missing.");
       return { success: false, message: 'Email service configuration error.' };
@@ -75,5 +59,4 @@ const sendFundsAvailableEmailFlow = ai.defineFlow(
         message: error.message || 'An unknown error occurred.',
       };
     }
-  }
-);
+}

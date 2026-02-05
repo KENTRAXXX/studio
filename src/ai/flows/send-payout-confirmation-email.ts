@@ -1,43 +1,36 @@
 'use server';
 
-import { ai } from '@/ai/genkit';
-import { z } from 'zod';
+/**
+ * @fileOverview Utility for sending payout confirmation emails via Resend.
+ * Decoupled from Genkit to support Edge Runtime.
+ */
+
 import React from 'react';
 import { PayoutConfirmationEmail } from '@/lib/emails/payout-confirmation-email';
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'localhost:9002';
 
-const SendPayoutConfirmationEmailInputSchema = z.object({
-  to: z.string().email(),
-  name: z.string(),
-  amount: z.number(),
-  withdrawalId: z.string(),
-  token: z.string(),
-});
-export type SendPayoutConfirmationEmailInput = z.infer<typeof SendPayoutConfirmationEmailInputSchema>;
+export type SendPayoutConfirmationEmailInput = {
+  to: string;
+  name: string;
+  amount: number;
+  withdrawalId: string;
+  token: string;
+};
 
-const SendPayoutConfirmationEmailOutputSchema = z.object({
-  success: z.boolean(),
-  message: z.string(),
-  id: z.string().optional(),
-});
-export type SendPayoutConfirmationEmailOutput = z.infer<typeof SendPayoutConfirmationEmailOutputSchema>;
+export type SendPayoutConfirmationEmailOutput = {
+  success: boolean;
+  message: string;
+  id?: string;
+};
 
 export async function sendPayoutConfirmationEmail(input: SendPayoutConfirmationEmailInput): Promise<SendPayoutConfirmationEmailOutput> {
-  return sendPayoutConfirmationEmailFlow(input);
-}
-
-const sendPayoutConfirmationEmailFlow = ai.defineFlow(
-  {
-    name: 'sendPayoutConfirmationEmailFlow',
-    inputSchema: SendPayoutConfirmationEmailInputSchema,
-    outputSchema: SendPayoutConfirmationEmailOutputSchema,
-  },
-  async ({ to, name, amount, withdrawalId, token }) => {
+    const { to, name, amount, withdrawalId, token } = input;
     const resendApiKey = process.env.RESEND_API_KEY;
+    
     if (!resendApiKey) {
-      console.error("Resend API key is not configured. Payout confirmation email will not be sent.");
-      return { success: false, message: 'Email service is not configured on the server.' };
+      console.error("Resend API key is not configured.");
+      return { success: false, message: 'Email service is not configured.' };
     }
 
     const confirmationUrl = `https://${ROOT_DOMAIN}/api/confirm-payout?token=${token}&id=${withdrawalId}`;
@@ -53,7 +46,6 @@ const sendPayoutConfirmationEmailFlow = ai.defineFlow(
           from: `"SOMA Platform" <no-reply@somads.com>`,
           to: to,
           subject: 'Action Required: Confirm Your SOMA Payout Request',
-          // Using React.createElement to fix parsing error in .ts file
           react: React.createElement(PayoutConfirmationEmail, { name, amount, confirmationUrl }),
         })
       });
@@ -61,15 +53,12 @@ const sendPayoutConfirmationEmailFlow = ai.defineFlow(
       const data = await response.json();
 
       if (!response.ok) {
-        console.error('Resend API Error:', data);
-        throw new Error(data.message || 'Failed to send payout confirmation email.');
+        throw new Error(data.message || 'Failed to send email.');
       }
       
-      console.log(`Payout confirmation email sent successfully via Resend. ID: ${data.id}`);
       return { success: true, message: `Payout confirmation email sent to ${to}.`, id: data.id };
     } catch (error: any) {
-      console.error("Failed to send payout confirmation email via Resend:", error);
-      return { success: false, message: error.message || 'An unknown error occurred while sending email.' };
+      console.error("Failed to send payout confirmation email:", error);
+      return { success: false, message: error.message || 'An unknown error occurred.' };
     }
-  }
-);
+}

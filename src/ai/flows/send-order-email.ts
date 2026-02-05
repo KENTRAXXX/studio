@@ -1,32 +1,31 @@
 'use server';
 
-import { ai } from '@/ai/genkit';
-import { z } from 'zod';
+/**
+ * @fileOverview Utility for sending order-related emails via Resend.
+ * Decoupled from Genkit to support Edge Runtime.
+ */
+
 import React from 'react';
 import { OrderConfirmationEmail, ShippedEmail, CancelledEmail } from '@/lib/emails/order-confirmation';
 
-const SendOrderEmailInputSchema = z.object({
-  to: z.string().email().describe("The recipient's email address."),
-  orderId: z.string().describe('The unique ID of the order.'),
-  status: z.enum(['Pending', 'Shipped', 'Cancelled']).describe('The current status of the order.'),
-  storeName: z.string().describe("The name of the client's store."),
-});
-export type SendOrderEmailInput = z.infer<typeof SendOrderEmailInputSchema>;
+export type SendOrderEmailInput = {
+  to: string;
+  orderId: string;
+  status: 'Pending' | 'Shipped' | 'Cancelled';
+  storeName: string;
+};
 
-const SendOrderEmailOutputSchema = z.object({
-  success: z.boolean(),
-  message: z.string(),
-  id: z.string().optional(),
-});
-export type SendOrderEmailOutput = z.infer<typeof SendOrderEmailOutputSchema>;
-
+export type SendOrderEmailOutput = {
+  success: boolean;
+  message: string;
+  id?: string;
+};
 
 const getEmailContent = (status: 'Pending' | 'Shipped' | 'Cancelled', orderId: string, storeName: string) => {
     switch (status) {
         case 'Pending':
             return {
                 subject: `Your order #${orderId} from ${storeName} is confirmed!`,
-                // Using React.createElement to fix parsing error in .ts file
                 template: React.createElement(OrderConfirmationEmail, { orderId, storeName })
             };
         case 'Shipped':
@@ -42,30 +41,12 @@ const getEmailContent = (status: 'Pending' | 'Shipped' | 'Cancelled', orderId: s
     }
 }
 
-/**
- * Sends an email using the Resend API.
- * This flow now handles real email dispatch.
- *
- * @param input - The order details for the email.
- * @returns A success status and the ID of the sent email from Resend.
- */
 export async function sendOrderEmail(input: SendOrderEmailInput): Promise<SendOrderEmailOutput> {
-  return sendOrderEmailFlow(input);
-}
-
-
-const sendOrderEmailFlow = ai.defineFlow(
-  {
-    name: 'sendOrderEmailFlow',
-    inputSchema: SendOrderEmailInputSchema,
-    outputSchema: SendOrderEmailOutputSchema,
-  },
-  async ({ to, orderId, status, storeName }) => {
-
+    const { to, orderId, status, storeName } = input;
     const resendApiKey = process.env.RESEND_API_KEY;
+    
     if (!resendApiKey) {
-        console.error("Resend API key is not configured. Cannot send email.");
-        // We return success=false but don't throw an error to prevent crashing the calling flow.
+        console.error("Resend API key is not configured.");
         return {
             success: false,
             message: 'Email service is not configured on the server.',
@@ -82,21 +63,18 @@ const sendOrderEmailFlow = ai.defineFlow(
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                from: `"${storeName}" <no-reply@somads.com>`, // Replace with your verified Resend domain
+                from: `"${storeName}" <no-reply@somads.com>`,
                 to: to,
                 subject: subject,
-                react: template, // Resend uses a 'react' property for JSX templates
+                react: template,
             })
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-            console.error('Resend API Error:', data);
             throw new Error(data.message || 'Failed to send email.');
         }
-
-        console.log(`Email sent successfully via Resend. ID: ${data.id}`);
 
         return {
             success: true,
@@ -108,8 +86,7 @@ const sendOrderEmailFlow = ai.defineFlow(
          console.error("Failed to send email via Resend:", error);
          return {
             success: false,
-            message: error.message || 'An unknown error occurred while sending the email.',
+            message: error.message || 'An unknown error occurred.',
          }
     }
-  }
-);
+}
