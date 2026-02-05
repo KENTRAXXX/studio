@@ -1,7 +1,7 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-  output: 'standalone', // Optimized for high-performance Edge routing and production tracing
+  // Removed output: 'standalone' to resolve Cloudflare 404 and adapter conflicts
   typescript: {
     ignoreBuildErrors: true,
   },
