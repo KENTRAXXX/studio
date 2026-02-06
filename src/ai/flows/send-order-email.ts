@@ -6,6 +6,7 @@
  */
 
 import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { OrderConfirmationEmail, ShippedEmail, CancelledEmail } from '@/lib/emails/order-confirmation';
 
 export type SendOrderEmailInput = {
@@ -56,6 +57,8 @@ export async function sendOrderEmail(input: SendOrderEmailInput): Promise<SendOr
     const { subject, template } = getEmailContent(status, orderId, storeName);
     
     try {
+        const htmlContent = renderToStaticMarkup(template);
+
         const response = await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: {
@@ -66,7 +69,7 @@ export async function sendOrderEmail(input: SendOrderEmailInput): Promise<SendOr
                 from: `"${storeName}" <no-reply@somads.com>`,
                 to: to,
                 subject: subject,
-                react: template,
+                html: htmlContent,
             })
         });
 

@@ -20,7 +20,8 @@ import {
     Copy,
     RefreshCw,
     ShieldAlert,
-    Clock
+    Clock,
+    Trash2
 } from 'lucide-react';
 import {
   Table,
@@ -61,14 +62,17 @@ export default function DomainSettingsPage() {
   const { toast } = useToast();
   
   const [domainInput, setDomainInput] = useState('');
+  const [hasSetInitial, setHasSetInitial] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
 
   useEffect(() => {
-    if (storeData?.customDomain) {
+    if (storeData?.customDomain && !hasSetInitial) {
       setDomainInput(storeData.customDomain);
+      setHasSetInitial(true);
     }
-  }, [storeData]);
+  }, [storeData?.customDomain, hasSetInitial]);
 
   const domainStatus = storeData?.domainStatus || 'unverified';
 
@@ -110,6 +114,29 @@ export default function DomainSettingsPage() {
     } finally {
         setIsSaving(false);
     }
+  };
+
+  const handleDisconnect = async () => {
+      if (!storeRef) return;
+      setIsDisconnecting(true);
+      try {
+          await updateDoc(storeRef, {
+              customDomain: null,
+              domainStatus: 'unverified',
+              ownershipRecord: null,
+              sslValidationRecord: null,
+              cfStatus: null,
+              sslStatus: null,
+              cfHostnameId: null
+          });
+          setDomainInput('');
+          setHasSetInitial(false);
+          toast({ title: 'Domain Disconnected', description: 'Registry records have been cleared.' });
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Error', description: error.message });
+      } finally {
+          setIsDisconnecting(false);
+      }
   };
 
   const checkStatus = async () => {
@@ -164,16 +191,28 @@ export default function DomainSettingsPage() {
         </div>
         
         {domainStatus !== 'unverified' && (
-            <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={checkStatus} 
-                disabled={isCheckingStatus}
-                className="border-primary/20 hover:bg-primary/5"
-            >
-                {isCheckingStatus ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                Refresh Deployment Status
-            </Button>
+            <div className="flex gap-2">
+                <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={checkStatus} 
+                    disabled={isCheckingStatus}
+                    className="border-primary/20 hover:bg-primary/5"
+                >
+                    {isCheckingStatus ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                    Refresh Status
+                </Button>
+                <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleDisconnect}
+                    disabled={isDisconnecting}
+                    className="text-muted-foreground hover:text-destructive"
+                >
+                    {isDisconnecting ? <Loader2 className="animate-spin h-4 w-4" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                    Disconnect
+                </Button>
+            </div>
         )}
       </div>
 

@@ -6,6 +6,7 @@
  */
 
 import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { ActionRequiredEmail } from '@/lib/emails/action-required-email';
 
 export type SendActionRequiredEmailInput = {
@@ -24,6 +25,8 @@ export async function sendActionRequiredEmail(input: SendActionRequiredEmailInpu
     }
 
     try {
+      const htmlContent = renderToStaticMarkup(React.createElement(ActionRequiredEmail, { name, feedback }));
+
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -34,7 +37,7 @@ export async function sendActionRequiredEmail(input: SendActionRequiredEmailInpu
           from: `"SOMA Concierge" <no-reply@somads.com>`,
           to: to,
           subject: 'Action Required: Finalizing your SOMA Seller Hub',
-          react: React.createElement(ActionRequiredEmail, { name, feedback }),
+          html: htmlContent,
         })
       });
 

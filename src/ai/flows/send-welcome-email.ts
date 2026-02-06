@@ -1,6 +1,7 @@
 'use server';
 
 import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { WelcomeEmail } from '@/lib/emails/welcome-email';
 
 export type SendWelcomeEmailInput = {
@@ -22,6 +23,8 @@ export async function sendWelcomeEmail(input: SendWelcomeEmailInput): Promise<Se
     }
 
     try {
+      const htmlContent = renderToStaticMarkup(React.createElement(WelcomeEmail, { storeName: input.storeName }));
+
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -32,7 +35,7 @@ export async function sendWelcomeEmail(input: SendWelcomeEmailInput): Promise<Se
           from: `"SOMA Platform" <no-reply@somads.com>`,
           to: input.to,
           subject: 'Welcome to SOMA! Your Store is LIVE!',
-          react: React.createElement(WelcomeEmail, { storeName: input.storeName }),
+          html: htmlContent,
         })
       });
 

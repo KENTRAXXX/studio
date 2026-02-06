@@ -6,6 +6,7 @@
  */
 
 import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { PayoutConfirmationEmail } from '@/lib/emails/payout-confirmation-email';
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'localhost:9002';
@@ -36,6 +37,8 @@ export async function sendPayoutConfirmationEmail(input: SendPayoutConfirmationE
     const confirmationUrl = `https://${ROOT_DOMAIN}/api/confirm-payout?token=${token}&id=${withdrawalId}`;
     
     try {
+      const htmlContent = renderToStaticMarkup(React.createElement(PayoutConfirmationEmail, { name, amount, confirmationUrl }));
+
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -46,7 +49,7 @@ export async function sendPayoutConfirmationEmail(input: SendPayoutConfirmationE
           from: `"SOMA Platform" <no-reply@somads.com>`,
           to: to,
           subject: 'Action Required: Confirm Your SOMA Payout Request',
-          react: React.createElement(PayoutConfirmationEmail, { name, amount, confirmationUrl }),
+          html: htmlContent,
         })
       });
 

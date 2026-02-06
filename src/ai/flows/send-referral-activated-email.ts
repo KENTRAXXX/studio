@@ -6,6 +6,7 @@
  */
 
 import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { ReferralActivatedEmail } from '@/lib/emails/referral-activated-email';
 
 export type SendReferralActivatedEmailInput = {
@@ -25,6 +26,12 @@ export async function sendReferralActivatedEmail(input: SendReferralActivatedEma
     }
 
     try {
+      const htmlContent = renderToStaticMarkup(React.createElement(ReferralActivatedEmail, { 
+        referrerName, 
+        protegeName, 
+        creditAmount 
+      }));
+
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -35,11 +42,7 @@ export async function sendReferralActivatedEmail(input: SendReferralActivatedEma
           from: `"SOMA Ecosystem" <no-reply@somads.com>`,
           to: to,
           subject: `Congratulations! Your protege ${protegeName} is now active`,
-          react: React.createElement(ReferralActivatedEmail, { 
-            referrerName, 
-            protegeName, 
-            creditAmount 
-          }),
+          html: htmlContent,
         })
       });
 

@@ -6,6 +6,7 @@
  */
 
 import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { FundsAvailableEmail } from '@/lib/emails/funds-available-email';
 
 export type SendFundsAvailableEmailInput = {
@@ -24,6 +25,8 @@ export async function sendFundsAvailableEmail(input: SendFundsAvailableEmailInpu
     }
 
     try {
+      const htmlContent = renderToStaticMarkup(React.createElement(FundsAvailableEmail, { name, amount }));
+
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -34,10 +37,7 @@ export async function sendFundsAvailableEmail(input: SendFundsAvailableEmailInpu
           from: `"SOMA Ecosystem" <no-reply@somads.com>`,
           to: to,
           subject: `Funds Released: Your referral rewards are ready`,
-          react: React.createElement(FundsAvailableEmail, { 
-            name, 
-            amount 
-          }),
+          html: htmlContent,
         })
       });
 
