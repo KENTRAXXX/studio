@@ -1,6 +1,6 @@
 export const runtime = 'edge';
 
-import { NextRequest, NextResponse } from 'next/request';
+import { NextRequest, NextResponse } from 'next/server';
 import { initializeApp, getApps } from 'firebase/app';
 import { doc, updateDoc, getFirestore } from 'firebase/firestore';
 import { firebaseConfig } from '@/firebase/config';
