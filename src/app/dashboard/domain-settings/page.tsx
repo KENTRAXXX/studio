@@ -1,4 +1,5 @@
 'use client';
+export const runtime = 'edge';
 
 import { useState, useEffect } from 'react';
 import { useUser, useFirestore, useDoc } from '@/firebase';
@@ -7,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Globe, CheckCircle2, Loader2, Link as LinkIcon, AlertTriangle, ExternalLink, ShieldCheck } from 'lucide-react';
+import { Globe, CheckCircle2, Loader2, Link as LinkIcon, AlertTriangle, ExternalLink, ShieldCheck, Zap } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -46,7 +47,7 @@ export default function DomainSettingsPage() {
   const domainStatus = storeData?.domainStatus || 'unverified';
 
   const handleSave = async () => {
-    if (!storeRef || !domainInput) return;
+    if (!user || !domainInput) return;
     
     // Simple regex for domain validation
     const tldRegex = /\.(com|org|net|io|co|store|shop|xyz|dev|app|me)$/i;
@@ -61,16 +62,29 @@ export default function DomainSettingsPage() {
 
     setIsSaving(true);
     try {
-        await updateDoc(storeRef, {
-            customDomain: domainInput.toLowerCase(),
-            domainStatus: 'pending_dns'
+        // Trigger automated registration via Cloudflare API
+        const response = await fetch('/api/register-domain', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                domain: domainInput.toLowerCase(),
+                storeId: user.uid
+            })
         });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || 'Registration failed');
+        }
+
         toast({
-            title: 'Domain Registered',
-            description: 'Registry updated. Please configure your DNS records as shown below.'
+            title: 'Infrastructure Synced',
+            description: 'Domain registered with Cloudflare. Please update your DNS records.',
+            action: <Zap className="h-4 w-4 text-primary" />
         });
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+        toast({ variant: 'destructive', title: 'Provisioning Failed', description: error.message });
     } finally {
         setIsSaving(false);
     }
@@ -80,9 +94,8 @@ export default function DomainSettingsPage() {
     if (!storeRef || !storeData?.customDomain) return;
     setIsVerifying(true);
     
-    // In a real environment, this would call a server-side proxy to check DNS records
-    // For this prototype, we simulate the verification logic
     try {
+        // Simulated verification logic for the prototype
         await new Promise(resolve => setTimeout(resolve, 2000));
         
         await updateDoc(storeRef, {
@@ -90,7 +103,7 @@ export default function DomainSettingsPage() {
         });
         
         toast({
-            title: 'Success!',
+            title: 'Verification Success!',
             description: 'Your custom domain is now connected and live.',
             className: 'bg-green-600 border-green-600 text-white'
         });
@@ -132,7 +145,7 @@ export default function DomainSettingsPage() {
         <CardHeader className="bg-muted/30 border-b border-primary/10">
           <CardTitle>Step 1: Identity Assignment</CardTitle>
           <CardDescription>
-            Enter the custom domain you purchased from your registrar (e.g. GoDaddy).
+            Enter the custom domain you purchased from your registrar.
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-6">
@@ -149,7 +162,7 @@ export default function DomainSettingsPage() {
                 />
             </div>
              <Button onClick={handleSave} disabled={isSaving || domainStatus === 'connected' || !domainInput} className="h-12 px-8 btn-gold-glow">
-                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Apply Domain'}
+                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Register & Sync'}
             </Button>
           </div>
         </CardContent>
@@ -163,7 +176,7 @@ export default function DomainSettingsPage() {
                     Step 2: External DNS Configuration
                 </CardTitle>
                 <CardDescription className="text-slate-300">
-                    Log in to your registrar and add these records. This authorizes SOMA to serve your content.
+                    Log in to your registrar and add these records to authorize SOMA to serve your content.
                 </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
@@ -197,7 +210,7 @@ export default function DomainSettingsPage() {
                 <div className="mt-8 p-6 rounded-xl bg-primary/5 border border-primary/20 flex flex-col sm:flex-row items-center justify-between gap-6">
                     <div className="space-y-1">
                         <p className="text-sm font-bold text-slate-200">Propagation Handshake</p>
-                        <p className="text-xs text-muted-foreground leading-relaxed">DNS changes can take up to 24 hours to propagate globally, though they are often active within minutes.</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">DNS changes can take up to 24 hours to propagate globally.</p>
                     </div>
                      <Button onClick={handleVerify} disabled={isVerifying} className="w-full sm:w-auto h-12 px-8 btn-gold-glow bg-primary font-bold">
                         {isVerifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle2 className="mr-2 h-4 w-4"/>}
@@ -236,7 +249,7 @@ export default function DomainSettingsPage() {
           <div>
               <h4 className="text-sm font-bold text-slate-200 mb-1 uppercase tracking-widest">Registrar Note</h4>
               <p className="text-xs text-slate-500 leading-relaxed">
-                  These records are generated by the SOMA provisioning engine. If you are using a proxy service like Cloudflare, ensure that the "SSL/TLS encryption mode" is set to **Full** or **Full (strict)** to prevent handshake errors.
+                  These records are generated by the SOMA provisioning engine. Ensure that your SSL/TLS mode is set to **Full** or **Full (strict)** if using a proxy.
               </p>
           </div>
       </div>
