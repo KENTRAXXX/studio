@@ -59,6 +59,16 @@ export default function DashboardOverviewPage() {
         return orders?.reduce((acc, order) => acc + order.total, 0) || 0;
     }, [orders]);
 
+    // HANDSHAKE: If they have paid, but the store doesn't exist yet, redirect to the Launch Wizard
+    useEffect(() => {
+        if (!isLoading && userProfile?.hasAccess && !storeData) {
+            const isSupplier = userProfile.planTier === 'SELLER' || userProfile.planTier === 'BRAND';
+            if (!isSupplier) {
+                router.push('/dashboard/my-store');
+            }
+        }
+    }, [isLoading, userProfile, storeData, router]);
+
     if (isLoading || userProfile?.userRole === 'ADMIN') {
         return (
             <div className="flex h-96 w-full items-center justify-center">
@@ -77,7 +87,7 @@ export default function DashboardOverviewPage() {
         return <DashboardController planTier={userProfile.planTier} />;
     }
 
-    // If they have paid, but the store doesn't exist yet (webhook delay), show a waiting message.
+    // Provisioning check (fallback while redirect triggers)
     if (!storeData) {
         return <ProvisioningLoader />;
     }

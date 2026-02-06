@@ -84,9 +84,12 @@ async function executePaymentSplit(eventData: any) {
 
         await runTransaction(firestore, async (transaction) => {
             const ordersRef = collection(firestore, `stores/${storeId}/orders`);
-            const existingOrderQuery = query(ordersRef, where("paymentReference", "==", reference));
-            const existingOrderSnap = await transaction.get(existingOrderQuery);
-            if (!existingOrderSnap.empty) {
+            
+            // FIXED: transaction.get() only accepts DocumentReference. We check if the order exists by its deterministic ID.
+            const orderDocRef = doc(ordersRef, orderId);
+            const orderSnap = await transaction.get(orderDocRef);
+            
+            if (orderSnap.exists()) {
                 console.log(`Order with reference ${reference} has already been processed. Skipping.`);
                 return;
             }
@@ -176,8 +179,7 @@ async function executePaymentSplit(eventData: any) {
                 });
             }
 
-            const newOrderRef = doc(ordersRef, orderId);
-            transaction.set(newOrderRef, {
+            transaction.set(orderDocRef, {
                 orderId,
                 status: "Pending",
                 cart: processedCart,
