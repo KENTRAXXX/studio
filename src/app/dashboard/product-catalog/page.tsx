@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
-import { Gem, Loader2, Check, Warehouse, Sparkles } from 'lucide-react';
+import { Gem, Loader2, Check, Warehouse, Sparkles, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -22,6 +22,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/firebase/user-profile-provider';
 import { collection, doc, setDoc, getDocs, query, where } from 'firebase/firestore';
@@ -45,18 +46,17 @@ type Product = {
   tags?: string[];
 };
 
+const ITEMS_PER_PAGE = 20;
+
 // A unified function to get an image URL
 const getProductImage = (product: Product) => {
-    // For demo products, imageId is the key to find the URL in PlaceHolderImages
     const placeholder = PlaceHolderImages.find(p => p.id === product.imageId);
     if (placeholder) {
         return placeholder.imageUrl;
     }
-    // Fallback for live products that might have full URLs (though less common now)
     if (product.imageId?.startsWith('https')) {
         return product.imageId;
     }
-    // Final fallback
     return `https://picsum.photos/seed/${product.id}/100/100`;
 }
 
@@ -69,6 +69,8 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
 
   const [syncedProducts, setSyncedProducts] = useState<Set<string>>(new Set());
   const [syncingProducts, setSyncingProducts] = useState<Set<string>>(new Set());
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Firestore logic - Only pull 'active' products
   const masterCatalogRef = useMemoFirebase(() => {
@@ -98,6 +100,20 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
       });
     }
   }, [userProductsRef]);
+
+  const filteredCatalog = useMemo(() => {
+    if (!masterCatalog) return [];
+    return masterCatalog.filter(p => 
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.categories?.some(cat => cat.toLowerCase().includes(searchTerm.toLowerCase()))
+    ).sort((a, b) => a.name.localeCompare(b.name));
+  }, [masterCatalog, searchTerm]);
+
+  const totalPages = Math.ceil(filteredCatalog.length / ITEMS_PER_PAGE);
+  const paginatedCatalog = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredCatalog.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredCatalog, currentPage]);
 
   const handleSync = async (product: Product) => {
     if (isDemo) {
@@ -159,7 +175,7 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
 
   const checkIfNew = (approvedAt: any) => {
     if (!approvedAt) return false;
-    const approvalDate = approvedAt.toDate ? approvalDate.toDate() : new Date(approvedAt);
+    const approvalDate = approvedAt.toDate ? approvedAt.toDate() : new Date(approvedAt);
     const now = new Date();
     const diffInHours = (now.getTime() - approvalDate.getTime()) / (1000 * 60 * 60);
     return diffInHours <= 48;
@@ -179,10 +195,26 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
 
       <Card className="border-primary/50">
         <CardHeader>
-          <CardTitle>Discovery Engine</CardTitle>
-          <CardDescription>
-            Browse the SOMA Master Catalog for your next best-selling luxury items.
-          </CardDescription>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <CardTitle>Discovery Engine</CardTitle>
+                <CardDescription>
+                    Browse the SOMA Master Catalog for your next best-selling luxury items.
+                </CardDescription>
+            </div>
+            <div className="relative w-full md:max-w-xs">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                    placeholder="Search name or category..." 
+                    value={searchTerm}
+                    onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        setCurrentPage(1);
+                    }}
+                    className="pl-10 h-10 border-primary/20"
+                />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
             {isLoading ? (
@@ -196,108 +228,140 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
                     <p className="text-muted-foreground mt-2">There are currently no active products in the master catalog.</p>
                 </div>
             ) : (
-                <Table>
-                    <TableHeader>
-                    <TableRow>
-                        <TableHead className="w-[80px]">Image</TableHead>
-                        <TableHead>Product Name</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead className="text-right">Wholesale Cost</TableHead>
-                        <TableHead className="text-right">Retail</TableHead>
-                        <TableHead className="text-center">Margin</TableHead>
-                        <TableHead className="text-center">Stock Level</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                    {masterCatalog.map((product) => {
-                      const isSynced = syncedProducts.has(product.id);
-                      const isSyncing = syncingProducts.has(product.id);
-                      const isNew = checkIfNew(product.approvedAt);
-                      const wholesale = product.masterCost || 0;
-                      const retail = product.retailPrice || 0;
-                      const margin = retail > 0 ? ((retail - wholesale) / retail) * 100 : 0;
+                <div className="space-y-4">
+                    <div className="rounded-md border">
+                        <Table>
+                            <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[80px]">Image</TableHead>
+                                <TableHead>Product Name</TableHead>
+                                <TableHead>Category</TableHead>
+                                <TableHead className="text-right">Wholesale Cost</TableHead>
+                                <TableHead className="text-right">Retail</TableHead>
+                                <TableHead className="text-center">Margin</TableHead>
+                                <TableHead className="text-center">Stock Level</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                            {paginatedCatalog.map((product) => {
+                            const isSynced = syncedProducts.has(product.id);
+                            const isSyncing = syncingProducts.has(product.id);
+                            const isNew = checkIfNew(product.approvedAt);
+                            const wholesale = product.masterCost || 0;
+                            const retail = product.retailPrice || 0;
+                            const margin = retail > 0 ? ((retail - wholesale) / retail) * 100 : 0;
 
-                      return (
-                        <TableRow key={product.id}>
-                        <TableCell>
-                            <div className="relative w-16 h-16 rounded-md overflow-hidden border border-border">
-                            <Image
-                                src={getProductImage(product)}
-                                alt={product.name}
-                                fill
-                                className="object-cover"
-                                data-ai-hint="product photo"
-                            />
-                            </div>
-                        </TableCell>
-                        <TableCell>
-                            <div className="flex flex-col">
-                                <div className="flex items-center gap-2">
-                                    <span className="font-medium">{product.name}</span>
-                                    {isNew && (
-                                        <Badge className="bg-primary text-primary-foreground text-[10px] h-5 px-1.5 animate-pulse">
-                                            <Sparkles className="h-3 w-3 mr-1" /> NEW
-                                        </Badge>
+                            return (
+                                <TableRow key={product.id}>
+                                <TableCell>
+                                    <div className="relative w-16 h-16 rounded-md overflow-hidden border border-border">
+                                    <Image
+                                        src={getProductImage(product)}
+                                        alt={product.name}
+                                        fill
+                                        className="object-cover"
+                                        data-ai-hint="product photo"
+                                    />
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <div className="flex flex-col">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-medium">{product.name}</span>
+                                            {isNew && (
+                                                <Badge className="bg-primary text-primary-foreground text-[10px] h-5 px-1.5 animate-pulse">
+                                                    <Sparkles className="h-3 w-3 mr-1" /> NEW
+                                                </Badge>
+                                            )}
+                                        </div>
+                                        <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-tighter mt-0.5">SKU: {product.id.slice(0, 8)}</span>
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <Badge variant="outline" className="text-[10px] uppercase border-primary/20 text-primary/80">
+                                        {product.categories?.[0] || 'Luxury'}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell className="text-right font-mono text-sm">
+                                    ${wholesale.toFixed(2)}
+                                </TableCell>
+                                <TableCell className="text-right font-mono text-sm">
+                                    ${retail.toFixed(2)}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                    <div className={cn(
+                                        "font-bold font-mono text-sm",
+                                        margin < 20 ? "text-orange-500" : margin > 40 ? "text-primary" : "text-muted-foreground"
+                                    )}>
+                                        {margin.toFixed(0)}%
+                                    </div>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                    <Badge
+                                    variant={
+                                        product.stockLevel > 20 ? 'outline' : 'destructive'
+                                    }
+                                    className={cn(
+                                        "text-[10px]",
+                                        product.stockLevel > 20 && 'bg-green-600/10 text-green-400 border-green-600/20'
                                     )}
-                                </div>
-                                <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-tighter mt-0.5">SKU: {product.id.slice(0, 8)}</span>
+                                    >
+                                    {product.stockLevel}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                {isSynced ? (
+                                    <Button variant="ghost" size="sm" disabled className="text-green-500">
+                                        <Check className="mr-2 h-4 w-4" /> Synced
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleSync(product)}
+                                        disabled={isSyncing}
+                                        className="border-primary/20 hover:border-primary/50"
+                                    >
+                                        {isSyncing ? <Loader2 className="animate-spin" /> : 'Sync Item'}
+                                    </Button>
+                                )}
+                                </TableCell>
+                                </TableRow>
+                            )
+                            })}
+                            </TableBody>
+                        </Table>
+                    </div>
+
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-between px-2 py-4">
+                            <p className="text-sm text-muted-foreground">
+                                Page <span className="font-bold text-foreground">{currentPage}</span> of <span className="font-bold text-foreground">{totalPages}</span>
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    disabled={currentPage === 1}
+                                    className="h-8 w-8 p-0"
+                                >
+                                    <ChevronLeft className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                    disabled={currentPage === totalPages}
+                                    className="h-8 w-8 p-0"
+                                >
+                                    <ChevronRight className="h-4 w-4" />
+                                </Button>
                             </div>
-                        </TableCell>
-                        <TableCell>
-                            <Badge variant="outline" className="text-[10px] uppercase border-primary/20 text-primary/80">
-                                {product.categories?.[0] || 'Luxury'}
-                            </Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-sm">
-                            ${wholesale.toFixed(2)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-sm">
-                            ${retail.toFixed(2)}
-                        </TableCell>
-                        <TableCell className="text-center">
-                            <div className={cn(
-                                "font-bold font-mono text-sm",
-                                margin < 20 ? "text-orange-500" : margin > 40 ? "text-primary" : "text-muted-foreground"
-                            )}>
-                                {margin.toFixed(0)}%
-                            </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                            <Badge
-                            variant={
-                                product.stockLevel > 20 ? 'outline' : 'destructive'
-                            }
-                            className={cn(
-                                "text-[10px]",
-                                product.stockLevel > 20 && 'bg-green-600/10 text-green-400 border-green-600/20'
-                            )}
-                            >
-                            {product.stockLevel}
-                            </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                           {isSynced ? (
-                             <Button variant="ghost" size="sm" disabled className="text-green-500">
-                                <Check className="mr-2 h-4 w-4" /> Synced
-                             </Button>
-                           ) : (
-                             <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleSync(product)}
-                                disabled={isSyncing}
-                                className="border-primary/20 hover:border-primary/50"
-                              >
-                                {isSyncing ? <Loader2 className="animate-spin" /> : 'Sync Item'}
-                              </Button>
-                           )}
-                        </TableCell>
-                        </TableRow>
-                      )
-                    })}
-                    </TableBody>
-                </Table>
+                        </div>
+                    )}
+                </div>
             )}
         </CardContent>
       </Card>

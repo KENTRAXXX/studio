@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Gem, PlusCircle, Loader2, Warehouse, Sparkles } from "lucide-react";
+import { Gem, PlusCircle, Loader2, Warehouse, Sparkles, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -16,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 
 import { useUserProfile } from '@/firebase/user-profile-provider';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
@@ -39,6 +40,8 @@ type MasterProduct = {
   tags?: string[];
 }
 
+const ITEMS_PER_PAGE = 20;
+
 export default function AdminCatalogPage() {
   const { userProfile, loading: profileLoading } = useUserProfile();
   const firestore = useFirestore();
@@ -49,6 +52,8 @@ export default function AdminCatalogPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<MasterProduct | null>(null);
   const [isSeeding, setIsSeeding] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     if (!profileLoading) {
@@ -64,6 +69,20 @@ export default function AdminCatalogPage() {
   }, [firestore]);
 
   const { data: masterCatalog, loading: productsLoading } = useCollection<MasterProduct>(catalogQuery);
+
+  const filteredCatalog = useMemo(() => {
+    if (!masterCatalog) return [];
+    return masterCatalog.filter(p => 
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.categories?.some(cat => cat.toLowerCase().includes(searchTerm.toLowerCase()))
+    ).sort((a, b) => a.name.localeCompare(b.name));
+  }, [masterCatalog, searchTerm]);
+
+  const totalPages = Math.ceil(filteredCatalog.length / ITEMS_PER_PAGE);
+  const paginatedCatalog = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredCatalog.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredCatalog, currentPage]);
 
   const handleEditClick = (product: MasterProduct) => {
     setSelectedProduct(product);
@@ -220,8 +239,24 @@ export default function AdminCatalogPage() {
 
       <Card className="border-primary/50">
           <CardHeader>
-              <CardTitle>All Master Products</CardTitle>
-              <CardDescription>Directly manage the global product catalog available for dropshipping.</CardDescription>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <CardTitle>All Master Products</CardTitle>
+                    <CardDescription>Directly manage the global product catalog available for dropshipping.</CardDescription>
+                </div>
+                <div className="relative w-full md:max-w-xs">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                        placeholder="Search name or category..." 
+                        value={searchTerm}
+                        onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            setCurrentPage(1);
+                        }}
+                        className="pl-10 h-10 border-primary/20"
+                    />
+                </div>
+              </div>
           </CardHeader>
           <CardContent>
                {isLoading ? (
@@ -239,54 +274,82 @@ export default function AdminCatalogPage() {
                     </Button>
                 </div>
                ) : (
-                <div className="rounded-md border">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-[80px]">Image</TableHead>
-                                <TableHead>Product Name</TableHead>
-                                <TableHead>Category</TableHead>
-                                <TableHead className="text-right">Wholesale</TableHead>
-                                <TableHead className="text-right">Retail</TableHead>
-                                <TableHead className="text-center">Stock</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {masterCatalog.slice(0, 50).map((product) => (
-                                <TableRow key={product.id}>
-                                    <TableCell>
-                                        <div className="relative w-16 h-16 rounded-md overflow-hidden border border-border">
-                                            <Image
-                                                src={getPlaceholderImage(product.imageId)}
-                                                alt={product.name}
-                                                fill
-                                                className="object-cover"
-                                                data-ai-hint="product photo"
-                                            />
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="font-medium">{product.name}</TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline" className="text-[10px] uppercase">
-                                            {product.categories?.[0] || 'Uncategorized'}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right font-mono">${product.masterCost.toFixed(2)}</TableCell>
-                                    <TableCell className="text-right font-mono text-primary">${product.retailPrice.toFixed(2)}</TableCell>
-                                    <TableCell className="text-center">
-                                        <Badge variant={product.stockLevel < 10 ? "destructive" : "default"}>{product.stockLevel || 0}</Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="outline" size="sm" onClick={() => handleEditClick(product)}>Edit</Button>
-                                    </TableCell>
+                <div className="space-y-4">
+                    <div className="rounded-md border">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-[80px]">Image</TableHead>
+                                    <TableHead>Product Name</TableHead>
+                                    <TableHead>Category</TableHead>
+                                    <TableHead className="text-right">Wholesale</TableHead>
+                                    <TableHead className="text-right">Retail</TableHead>
+                                    <TableHead className="text-center">Stock</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                    {masterCatalog.length > 50 && (
-                        <div className="p-4 text-center border-t text-sm text-muted-foreground">
-                            Viewing first 50 of {masterCatalog.length} products. Use search to find specific items.
+                            </TableHeader>
+                            <TableBody>
+                                {paginatedCatalog.map((product) => (
+                                    <TableRow key={product.id}>
+                                        <TableCell>
+                                            <div className="relative w-16 h-16 rounded-md overflow-hidden border border-border">
+                                                <Image
+                                                    src={getPlaceholderImage(product.imageId)}
+                                                    alt={product.name}
+                                                    fill
+                                                    className="object-cover"
+                                                    data-ai-hint="product photo"
+                                                />
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="font-medium">{product.name}</TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline" className="text-[10px] uppercase">
+                                                {product.categories?.[0] || 'Uncategorized'}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right font-mono">${product.masterCost.toFixed(2)}</TableCell>
+                                        <TableCell className="text-right font-mono text-primary">${product.retailPrice.toFixed(2)}</TableCell>
+                                        <TableCell className="text-center">
+                                            <Badge variant={product.stockLevel < 10 ? "destructive" : "default"}>{product.stockLevel || 0}</Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <Button variant="outline" size="sm" onClick={() => handleEditClick(product)}>Edit</Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                    
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-between px-2 py-4">
+                            <p className="text-sm text-muted-foreground">
+                                Showing <span className="font-bold text-foreground">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> to <span className="font-bold text-foreground">{Math.min(currentPage * ITEMS_PER_PAGE, filteredCatalog.length)}</span> of <span className="font-bold text-foreground">{filteredCatalog.length}</span> luxury assets
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    disabled={currentPage === 1}
+                                    className="h-8 w-8 p-0"
+                                >
+                                    <ChevronLeft className="h-4 w-4" />
+                                </Button>
+                                <div className="text-xs font-bold font-mono">
+                                    {currentPage} / {totalPages}
+                                </div>
+                                <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                    disabled={currentPage === totalPages}
+                                    className="h-8 w-8 p-0"
+                                >
+                                    <ChevronRight className="h-4 w-4" />
+                                </Button>
+                            </div>
                         </div>
                     )}
                 </div>
