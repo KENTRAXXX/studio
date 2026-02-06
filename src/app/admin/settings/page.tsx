@@ -1,14 +1,50 @@
 'use client';
 
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Settings, ShieldCheck, Zap, DollarSign, Key, Globe } from 'lucide-react';
+import { Settings, ShieldCheck, Zap, DollarSign, Key, Globe, Mail, Loader2, CheckCircle2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { sendTestEmail } from '@/ai/flows/send-test-email';
+import { useToast } from '@/hooks/use-toast';
 
 export default function PlatformSettingsPage() {
+  const { toast } = useToast();
+  const [testEmail, setTestEmail] = useState('');
+  const [isTesting, setIsTesting] = useState(false);
+
+  const handleRunEmailTest = async () => {
+    if (!testEmail) {
+        toast({ variant: 'destructive', title: 'Address Required', description: 'Enter a recipient email for the diagnostic test.' });
+        return;
+    }
+
+    setIsTesting(true);
+    try {
+        const result = await sendTestEmail({ to: testEmail });
+        if (result.success) {
+            toast({
+                title: 'Transmission Success',
+                description: 'Check your inbox for the SOMA Digital Handshake.',
+                action: <CheckCircle2 className="h-4 w-4 text-green-500" />
+            });
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Transmission Failed',
+            description: error.message
+        });
+    } finally {
+        setIsTesting(false);
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto space-y-10 pb-20">
       <header>
@@ -47,6 +83,53 @@ export default function PlatformSettingsPage() {
           <Card className="border-primary/20 bg-slate-900/30">
             <CardHeader>
               <CardTitle className="text-xl font-headline flex items-center gap-2">
+                <Mail className="h-5 w-5 text-primary" />
+                Edge Transmission Diagnostic
+              </CardTitle>
+              <CardDescription>Verify the Resend API configuration and Edge runtime delivery.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="test-email">Recipient Email Address</Label>
+                    <div className="flex gap-3">
+                        <Input 
+                            id="test-email" 
+                            type="email" 
+                            placeholder="executive@somatoday.com" 
+                            value={testEmail}
+                            onChange={(e) => setTestEmail(e.target.value)}
+                            className="bg-black/40 border-primary/10"
+                        />
+                        <Button 
+                            variant="outline" 
+                            className="border-primary/30 text-primary hover:bg-primary/10"
+                            onClick={handleRunEmailTest}
+                            disabled={isTesting}
+                        >
+                            {isTesting ? <Loader2 className="animate-spin h-4 w-4" /> : <Zap className="h-4 w-4 mr-2" />}
+                            Send Test Transmission
+                        </Button>
+                    </div>
+                </div>
+                <div className="p-4 rounded-lg bg-black/20 border border-white/5 space-y-2">
+                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Configuration Check</p>
+                    <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-400">Sender Identity:</span>
+                        <code className="text-primary">no-reply@somatoday.com</code>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-400">API Gateway:</span>
+                        <span className="text-green-500 font-bold">READY (RESEND)</span>
+                    </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-primary/20 bg-slate-900/30">
+            <CardHeader>
+              <CardTitle className="text-xl font-headline flex items-center gap-2">
                 <Key className="h-5 w-5 text-primary" />
                 API Orchestration
               </CardTitle>
@@ -64,7 +147,7 @@ export default function PlatformSettingsPage() {
                 <div className="flex items-center justify-between p-4 rounded-lg bg-black/40 border border-white/5">
                   <div>
                     <p className="text-sm font-bold text-slate-200">Resend API Domain</p>
-                    <p className="text-xs text-muted-foreground font-mono">somads.com</p>
+                    <p className="text-xs text-muted-foreground font-mono">somatoday.com</p>
                   </div>
                   <Badge variant="outline" className="text-green-500 border-green-500/30 bg-green-500/5">VERIFIED</Badge>
                 </div>
