@@ -12,6 +12,7 @@ import AnimatedCounter from '@/components/ui/animated-counter';
 import Image from 'next/image';
 import { useToastWithRandomCity } from '@/hooks/use-toast-with-random-city';
 import { LiveFeedTicker } from '@/components/ui/live-feed-ticker';
+import { useUser } from '@/firebase';
 
 /**
  * Constants for deterministic growth calculation.
@@ -22,6 +23,7 @@ const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 function LiveCounter() {
   const [count, setCount] = useState<number | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const calculateStoreCount = () => {
@@ -39,12 +41,14 @@ function LiveCounter() {
     const updateCount = () => {
         setCount((prev) => (prev || 0) + 1);
         const randomInterval = Math.random() * (600000 - 300000) + 300000; // 5 to 10 minutes
-        setTimeout(updateCount, randomInterval);
+        timerRef.current = setTimeout(updateCount, randomInterval);
     };
 
-    const firstTimeout = setTimeout(updateCount, Math.random() * (600000 - 300000) + 300000);
+    timerRef.current = setTimeout(updateCount, Math.random() * (600000 - 300000) + 300000);
 
-    return () => clearTimeout(firstTimeout);
+    return () => {
+        if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, []);
 
 
@@ -78,7 +82,9 @@ function LiveCounter() {
 
 function PlatformPulse() {
     const ref = useRef(null);
+    const { user } = useUser();
     const isInView = useInView(ref, { once: true, amount: 0.5 });
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
     
     const [initialValues, setInitialValues] = useState<{currentSales: number, currentSellers: number, currentBrands: number} | null>(null);
     const [globalSalesSum, setGlobalSalesSum] = useState<number | null>(null);
@@ -120,20 +126,26 @@ function PlatformPulse() {
         const updateSales = () => {
             const saleAmount = Math.random() * (185.00 - 14.50) + 14.50;
             setGlobalSalesSum(prev => (prev || 0) + saleAmount);
-            showRandomCityToast(saleAmount);
+            
+            // Only show pop-up toasts for anonymous visitors to reduce annoyance for logged-in users
+            if (!user) {
+                showRandomCityToast(saleAmount);
+            }
 
             setIsGlowing(true);
             setTimeout(() => setIsGlowing(false), 2000); // Glow duration
 
-            const randomInterval = Math.random() * (5000 - 2000) + 2000;
-            setTimeout(updateSales, randomInterval);
+            const randomInterval = Math.random() * (15000 - 8000) + 8000;
+            timerRef.current = setTimeout(updateSales, randomInterval);
         };
         
-        const timeoutId = setTimeout(updateSales, Math.random() * (15000 - 5000) + 5000);
+        timerRef.current = setTimeout(updateSales, Math.random() * (15000 - 5000) + 5000);
         
-        return () => clearTimeout(timeoutId);
+        return () => {
+            if (timerRef.current) clearTimeout(timerRef.current);
+        };
 
-    }, [globalSalesSum, showRandomCityToast]);
+    }, [globalSalesSum, showRandomCityToast, user]);
 
     return (
         <section ref={ref} className="container z-10 py-20">
