@@ -23,6 +23,7 @@ export default function BackstageReturnPage() {
   // Determine the friendly label for the user's role
   const tierLabel = useMemo(() => {
     if (!userProfile) return 'Mogul';
+    if (userProfile.userRole === 'ADMIN') return 'Administrator';
     if (userProfile.planTier === 'BRAND') return 'Brand';
     if (userProfile.planTier === 'SELLER') return 'Seller';
     return 'Mogul';
@@ -71,10 +72,13 @@ export default function BackstageReturnPage() {
             });
           }, 250);
 
-          // Redirect to appropriate dashboard based on tier
-          const destination = (data.planTier === 'SELLER' || data.planTier === 'BRAND') 
-            ? '/backstage' 
-            : '/dashboard';
+          // Redirect to appropriate dashboard based on role/tier
+          let destination = '/dashboard';
+          if (data.userRole === 'ADMIN') {
+              destination = '/admin';
+          } else if (data.planTier === 'SELLER' || data.planTier === 'BRAND') {
+              destination = '/backstage';
+          }
 
           setTimeout(() => {
             router.push(destination);

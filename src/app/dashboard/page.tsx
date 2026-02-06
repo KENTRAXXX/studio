@@ -64,7 +64,8 @@ export default function DashboardOverviewPage() {
         // Safe access to sessionStorage in useEffect to detect "Just Launched" state
         const justLaunched = typeof window !== 'undefined' && sessionStorage.getItem('soma_just_launched') === 'true';
         
-        if (!isLoading && userProfile?.hasAccess && !storeData && !justLaunched) {
+        // GATELOCK: Admins do not need a store instance
+        if (!isLoading && userProfile?.hasAccess && userProfile?.userRole !== 'ADMIN' && !storeData && !justLaunched) {
             const isSupplier = userProfile.planTier === 'SELLER' || userProfile.planTier === 'BRAND';
             if (!isSupplier) {
                 router.push('/dashboard/my-store');

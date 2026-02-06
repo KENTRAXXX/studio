@@ -20,7 +20,7 @@ type UserProfile = {
   userRole?: 'ADMIN' | 'MOGUL' | 'SELLER';
   plan?: 'monthly' | 'yearly' | 'lifetime' | 'free';
   paidAt?: string;
-  planTier?: 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND';
+  planTier?: 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND' | 'ADMIN';
   status?: 'pending_review' | 'approved' | 'rejected' | 'action_required';
   walletStatus?: 'under_review' | 'active' | 'flagged';
   completedLessons?: string[];
@@ -132,11 +132,17 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
          return;
        }
 
-       // 4. Status Guard: If pending review, lock to the status page
+       // 4. Status Guard: If pending review, lock to the status page (Bypass for Admins)
        const isDashboardOrBackstage = pathname.startsWith('/dashboard') || pathname.startsWith('/backstage');
-       if (userProfile.status === 'pending_review' && isDashboardOrBackstage && !isPendingReviewPage && !isPublicRoute && !isLegalPage && !isReturnPage) {
+       if (userProfile.userRole !== 'ADMIN' && userProfile.status === 'pending_review' && isDashboardOrBackstage && !isPendingReviewPage && !isPublicRoute && !isLegalPage && !isReturnPage) {
           router.push('/backstage/pending-review');
           return;
+       }
+
+       // 5. Admin Routing: If admin hits dashboard root, push them to /admin
+       if (userProfile.userRole === 'ADMIN' && pathname === '/dashboard') {
+           router.push('/admin');
+           return;
        }
     }
 

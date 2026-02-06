@@ -109,6 +109,11 @@ export default function BackstagePage() {
   useEffect(() => {
     const isLoading = profileLoading || userLoading;
     if (!isLoading && userProfile) {
+        // GATELOCK: Admins should not be in the supplier onboarding backstage
+        if (userProfile.userRole === 'ADMIN') {
+            router.push('/admin');
+            return;
+        }
         if (userProfile.planTier !== 'SELLER' && userProfile.planTier !== 'BRAND') {
             router.push('/access-denied');
             return;
