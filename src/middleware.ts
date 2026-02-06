@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCfAccessJwt } from './lib/auth-utils';
 
@@ -22,8 +21,8 @@ async function resolveHostname(hostname: string, baseUrl: string): Promise<strin
     }
 
     // 3. Custom Domain Resolution via KV or API
-    // The binding name is 'DOMAIN_MAP'
-    const kv = (process.env as any).DOMAIN_MAP;
+    // The binding name is 'KV_BINDING'
+    const kv = (process.env as any).KV_BINDING;
     if (kv) {
         try {
             const storeIdFromCache = await kv.get(`domain:${hostname}`);
@@ -56,7 +55,7 @@ async function resolveHostname(hostname: string, baseUrl: string): Promise<strin
  * Identity-Based Resolver: Maps Authenticated Email to Store ID
  */
 async function resolveIdentity(email: string, baseUrl: string): Promise<string | null> {
-    const kv = (process.env as any).DOMAIN_MAP;
+    const kv = (process.env as any).KV_BINDING;
     if (kv) {
         try {
             const identityFromCache = await kv.get(`user:${email}`);
