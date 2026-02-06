@@ -67,7 +67,8 @@ export default function DomainSettingsPage() {
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
 
-  const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somads.pages.dev';
+  // Use the verified pages.dev URL as the primary proxy target for CNAMEs
+  const ROOT_PROXY_TARGET = 'studio-770.pages.dev';
 
   useEffect(() => {
     if (storeData?.customDomain && !hasSetInitial) {
@@ -97,7 +98,7 @@ export default function DomainSettingsPage() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                domain: domainInput.toLowerCase(),
+                domain: domainInput.toLowerCase().trim(),
                 storeId: user.uid
             })
         });
@@ -331,9 +332,9 @@ export default function DomainSettingsPage() {
                                 <TableRow className="border-primary/5">
                                     <TableCell><Badge variant="outline" className="border-primary/50 text-primary">CNAME</Badge></TableCell>
                                     <TableCell className="font-mono text-xs text-slate-200">@ or shop</TableCell>
-                                    <TableCell className="font-mono text-xs text-primary font-bold tracking-wider">{ROOT_DOMAIN}</TableCell>
+                                    <TableCell className="font-mono text-xs text-primary font-bold tracking-wider">{ROOT_PROXY_TARGET}</TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10" onClick={() => copyToClipboard(ROOT_DOMAIN, 'CNAME')}>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10" onClick={() => copyToClipboard(ROOT_PROXY_TARGET, 'CNAME')}>
                                             <Copy className="h-3 w-3" />
                                         </Button>
                                     </TableCell>

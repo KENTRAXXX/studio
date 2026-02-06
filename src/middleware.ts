@@ -7,12 +7,13 @@ export const runtime = 'experimental-edge';
  * Multi-Tenancy Resolver: Maps Hostnames to Site IDs
  */
 async function resolveHostname(hostname: string, baseUrl: string): Promise<string | null> {
-    const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'localhost:9002';
+    const ROOT_DOMAIN = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
     const rootBase = ROOT_DOMAIN.split(':')[0];
     
-    // 1. Check if it's a subdomain of the root (e.g. apple.somads.com)
+    // 1. Check if it's a subdomain of the root (e.g. boutique.somatoday.com)
     if (hostname.endsWith(`.${rootBase}`)) {
-        return hostname.replace(`.${rootBase}`, "");
+        const subdomain = hostname.replace(`.${rootBase}`, "");
+        if (subdomain && subdomain !== 'www') return subdomain;
     }
 
     // 2. Special handling for demo domain
@@ -21,7 +22,6 @@ async function resolveHostname(hostname: string, baseUrl: string): Promise<strin
     }
 
     // 3. Custom Domain Resolution via KV or API
-    // The binding name is 'KV_BINDING'
     const kv = (process.env as any).KV_BINDING;
     if (kv) {
         try {
@@ -85,13 +85,21 @@ async function resolveIdentity(email: string, baseUrl: string): Promise<string |
 
 export async function middleware(request: NextRequest) {
   const url = request.nextUrl;
-  const hostname = request.headers.get('host');
+  const hostname = request.headers.get('host')?.toLowerCase();
   const cfAccessJwt = request.headers.get('cf-access-jwt-assertion');
-  const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'localhost:9002';
+  const ROOT_DOMAIN = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
 
   if (!hostname) return NextResponse.next();
   
   const currentHost = hostname.split(':')[0];
+
+  // PLATFORM ROOT CHECK:
+  // Identify if the request is hitting the platform's main landing/dashboard/api
+  const isPlatformRoot = 
+    currentHost === ROOT_DOMAIN || 
+    currentHost === `www.${ROOT_DOMAIN}` || 
+    currentHost.endsWith('.pages.dev') ||
+    currentHost === 'localhost';
 
   // 1. Zero Trust Identity Handshake
   if (cfAccessJwt) {
@@ -99,17 +107,17 @@ export async function middleware(request: NextRequest) {
     if (payload?.email) {
         const identitySiteId = await resolveIdentity(payload.email, request.url);
         if (identitySiteId) {
-            // If the user visits the root domain homepage or dashboard, home-route them
-            if (currentHost === ROOT_DOMAIN.split(':')[0] && (url.pathname === '/' || url.pathname === '/dashboard')) {
+            // If the user visits the root domain homepage or dashboard, home-route them to their specific instance
+            if (isPlatformRoot && (url.pathname === '/' || url.pathname === '/dashboard')) {
                 return NextResponse.rewrite(new URL(`/_sites/${identitySiteId}${url.pathname}${url.search}`, request.url));
             }
         }
     }
   }
 
-  // 2. Bypass for root domain (Platform Landing & Dashboard)
-  if (currentHost === ROOT_DOMAIN.split(':')[0]) {
-    // Handle the legacy /store/ path rewrite for the root domain
+  // 2. Bypass for platform root (Landing Page, Auth, Dashboard, etc.)
+  if (isPlatformRoot) {
+    // Handle the legacy /store/ path rewrite for the root domain (if accessed directly via root/store/id)
     if (url.pathname.startsWith('/store/')) {
         const parts = url.pathname.split('/');
         const siteId = parts[2];
@@ -120,6 +128,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // 3. Multi-tenant resolution (Subdomains/Custom Domains)
+  // This logic is only reached if NOT hitting a platform root alias
   const site = await resolveHostname(currentHost, request.url);
   
   if (site) {
