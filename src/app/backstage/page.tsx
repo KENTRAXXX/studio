@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useUserProfile } from '@/firebase/user-profile-provider';
 import { useFirestore, useUser, useAuth } from '@/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from 'firebase/auth';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -18,10 +17,8 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Send, ShieldCheck, CheckCircle2, UploadCloud, Phone, Check, MapPin, AlertTriangle, Globe } from 'lucide-react';
+import { Loader2, Send, ShieldCheck, CheckCircle2, UploadCloud, MapPin, AlertTriangle, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { ToastAction } from '@/components/ui/toast';
 import SomaLogo from '@/components/logo';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -92,14 +89,6 @@ export default function BackstagePage() {
   const [uploadComplete, setUploadComplete] = useState(false);
   const [mapCoords, setMapCoords] = useState<[number, number] | null>(null);
 
-  // Phone Verification States
-  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
-  const [isSendingOTP, setIsSendingOTP] = useState(false);
-  const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
-  const [isOTPModalOpen, setIsOTPModalOpen] = useState(false);
-  const [otpCode, setOtpCode] = useState('');
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
-
   const isActionRequired = userProfile?.status === 'action_required';
 
   const form = useForm<OnboardingFormValues>({
@@ -148,9 +137,6 @@ export default function BackstagePage() {
             if (userProfile.verificationData.governmentIdUrl) {
                 setUploadComplete(true);
             }
-            if (userProfile.verificationData.isPhoneVerified) {
-                setIsPhoneVerified(true);
-            }
             if (userProfile.verificationData.latitude && userProfile.verificationData.longitude) {
                 setMapCoords([userProfile.verificationData.latitude, userProfile.verificationData.longitude]);
             }
@@ -191,64 +177,6 @@ export default function BackstagePage() {
     }
   };
 
-  const handleSendOTP = async () => {
-    if (!auth || !form.getValues('contactPhone') || isSendingOTP) return;
-    
-    setIsSendingOTP(true);
-    try {
-        const phoneNumber = form.getValues('contactPhone');
-        const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`;
-        
-        const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-            size: 'invisible',
-        });
-        
-        const result = await signInWithPhoneNumber(auth, formattedPhone, verifier);
-        setConfirmationResult(result);
-        setIsOTPModalOpen(true);
-        toast({ title: 'Code Sent', description: 'A verification code has been sent to your phone.' });
-    } catch (error: any) {
-        console.error("OTP Error:", error);
-        
-        // Handle billing/operation errors gracefully for prototype
-        if (error.code === 'auth/billing-not-enabled' || error.code === 'auth/operation-not-allowed') {
-            toast({ 
-                variant: 'destructive', 
-                title: 'Provider Limitation', 
-                description: 'Phone Auth requires Firebase Blaze plan or explicit activation. Simulate for prototype?',
-                action: (
-                    <ToastAction altText="Simulate Success" onClick={() => {
-                        setIsPhoneVerified(true);
-                        toast({ title: "Verification Simulated", description: "Identity verified via executive bypass." });
-                    }}>
-                        Simulate
-                    </ToastAction>
-                )
-            });
-        } else {
-            toast({ variant: 'destructive', title: 'Error', description: error.message || 'Could not send verification code.' });
-        }
-    } finally {
-        setIsSendingOTP(false);
-    }
-  };
-
-  const handleVerifyOTP = async () => {
-    if (!confirmationResult || otpCode.length !== 6 || isVerifyingOTP) return;
-    
-    setIsVerifyingOTP(true);
-    try {
-        await confirmationResult.confirm(otpCode);
-        setIsPhoneVerified(true);
-        setIsOTPModalOpen(false);
-        toast({ title: 'Phone Verified', description: 'Your phone number has been successfully verified.' });
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Verification Failed', description: 'Invalid code. Please try again.' });
-    } finally {
-        setIsVerifyingOTP(false);
-    }
-  };
-
   const handleSubmit = async (data: OnboardingFormValues) => {
     if (!user || !firestore) {
         toast({ variant: 'destructive', title: 'Error', description: 'Could not connect to services.' });
@@ -273,7 +201,7 @@ export default function BackstagePage() {
                 taxId: data.taxId,
                 contactPhone: data.contactPhone,
                 governmentIdUrl: data.governmentIdUrl,
-                isPhoneVerified: true,
+                isPhoneVerified: true, // Manual verification for prototype
                 latitude: data.latitude,
                 longitude: data.longitude,
             },
@@ -305,35 +233,6 @@ export default function BackstagePage() {
   
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 sm:p-6">
-        <div id="recaptcha-container"></div>
-        
-        <Dialog open={isOTPModalOpen} onOpenChange={setIsOTPModalOpen}>
-            <DialogContent className="bg-card border-primary">
-                <DialogHeader>
-                    <DialogTitle className="font-headline text-primary">Verify Phone Number</DialogTitle>
-                    <DialogDescription>
-                        Enter the 6-digit code sent to your mobile device.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                    <Input 
-                        placeholder="123456" 
-                        value={otpCode} 
-                        onChange={(e) => setOtpCode(e.target.value)}
-                        maxLength={6}
-                        className="text-center text-2xl tracking-widest h-14 font-mono"
-                    />
-                    <Button 
-                        onClick={handleVerifyOTP} 
-                        className="w-full h-12 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
-                        disabled={otpCode.length !== 6 || isVerifyingOTP}
-                    >
-                        {isVerifyingOTP ? <Loader2 className="animate-spin" /> : "Confirm Code"}
-                    </Button>
-                </div>
-            </DialogContent>
-        </Dialog>
-
         <div className="text-center mb-10">
             <SomaLogo className="h-12 w-12 mx-auto" />
             <h1 className="text-4xl font-bold font-headline mt-4 text-primary">SOMA Seller Hub</h1>
@@ -402,29 +301,15 @@ export default function BackstagePage() {
                                         )} />
                                         <FormField control={form.control} name="contactPhone" render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Contact Phone (E.164 format)</FormLabel>
-                                                <div className="flex gap-2">
-                                                    <FormControl>
-                                                        <Input 
-                                                            placeholder="+15551234567" 
-                                                            {...field} 
-                                                            disabled={(isPhoneVerified && !isActionRequired) || isSubmitting}
-                                                        />
-                                                    </FormControl>
-                                                    <Button 
-                                                        type="button" 
-                                                        variant={(isPhoneVerified && !isActionRequired) ? "outline" : "secondary"}
-                                                        disabled={(isPhoneVerified && !isActionRequired) || !field.value || isSendingOTP}
-                                                        onClick={handleSendOTP}
-                                                        className={cn(
-                                                            "w-24 shrink-0 transition-all",
-                                                            (isPhoneVerified && !isActionRequired) && "border-green-500 text-green-500 bg-green-500/5 hover:bg-green-500/10"
-                                                        )}
-                                                    >
-                                                        {isSendingOTP ? <Loader2 className="animate-spin h-4 w-4" /> : (isPhoneVerified && !isActionRequired) ? <><Check className="mr-1 h-4 w-4"/>Verified</> : "Verify"}
-                                                    </Button>
-                                                </div>
-                                                <FormDescription>Verification code will be sent via SMS.</FormDescription>
+                                                <FormLabel>Contact Phone</FormLabel>
+                                                <FormControl>
+                                                    <Input 
+                                                        placeholder="+15551234567" 
+                                                        {...field} 
+                                                        disabled={isSubmitting}
+                                                    />
+                                                </FormControl>
+                                                <FormDescription>Official contact number for fulfillment alerts.</FormDescription>
                                                 <FormMessage />
                                             </FormItem>
                                         )} />
@@ -509,7 +394,7 @@ export default function BackstagePage() {
                                     <div className="flex justify-end pt-4">
                                         <Button 
                                             type="submit" 
-                                            disabled={isSubmitting || !agreedToTerms || !uploadComplete || !isPhoneVerified} 
+                                            disabled={isSubmitting || !agreedToTerms || !uploadComplete} 
                                             size="lg" 
                                             className="h-12 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
                                         >
