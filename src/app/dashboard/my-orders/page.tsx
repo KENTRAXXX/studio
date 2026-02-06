@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
-import { useUser, useFirestore, useCollection, useUserProfile } from "@/firebase";
+import { useUser, useFirestore, useCollection, useUserProfile, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy } from "firebase/firestore";
 import { Loader2, AlertTriangle, DollarSign, Package, TrendingUp } from "lucide-react";
 import { useMemo } from "react";
@@ -68,7 +68,7 @@ export default function MyOrdersPage() {
   const { userProfile, loading: profileLoading } = useUserProfile();
   const firestore = useFirestore();
 
-  const ordersRef = useMemo(() => {
+  const ordersRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
         collection(firestore, `stores/${user.uid}/orders`), 
@@ -151,8 +151,7 @@ export default function MyOrdersPage() {
           <CardContent>
             <div className="text-2xl font-bold text-green-400">{formatCurrency(Math.round(netProfit * 100))}</div>
           </CardContent>
-        </Card>
-      </div>
+        </div>
 
       <Card className="border-primary/50">
         <CardHeader>

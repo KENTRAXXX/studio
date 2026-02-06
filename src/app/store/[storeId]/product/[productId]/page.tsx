@@ -8,7 +8,7 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { notFound, useParams, useRouter } from 'next/navigation';
 import { ShoppingBag, Check, Loader2, DollarSign, TrendingUp, ArrowLeft, Palette } from 'lucide-react';
 import { useCart } from '../../layout';
-import { useDoc, useFirestore } from '@/firebase';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,7 +37,9 @@ export default function ProductDetailPage() {
   const firestore = useFirestore();
   const { userProfile, loading: profileLoading } = useUserProfile();
 
-  const productRef = firestore ? doc(firestore, `stores/${storeId}/products/${productId}`) : null;
+  const productRef = useMemoFirebase(() => {
+    return firestore ? doc(firestore, `stores/${storeId}/products/${productId}`) : null;
+  }, [firestore, storeId, productId]);
   const { data: product, loading: productLoading } = useDoc<any>(productRef);
   
   const [currentPrice, setCurrentPrice] = useState(0);

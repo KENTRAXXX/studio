@@ -2,7 +2,7 @@
 export const runtime = 'edge';
 
 import { useState, useEffect } from 'react';
-import { useUser, useFirestore, useDoc } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -54,7 +54,9 @@ type StoreData = {
 export default function DomainSettingsPage() {
   const { user } = useUser();
   const firestore = useFirestore();
-  const storeRef = firestore && user ? doc(firestore, 'stores', user.uid) : null;
+  const storeRef = useMemoFirebase(() => {
+    return firestore && user ? doc(firestore, 'stores', user.uid) : null;
+  }, [firestore, user]);
   const { data: storeData, loading: storeLoading } = useDoc<StoreData>(storeRef);
   const { toast } = useToast();
   

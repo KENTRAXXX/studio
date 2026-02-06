@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useMemo, useState, useRef } from 'react';
@@ -20,7 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 import { useUserProfile } from '@/firebase/user-profile-provider';
-import { useUser, useFirestore, useCollection } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, doc } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { AddPrivateProductModal } from '@/components/AddPrivateProductModal';
@@ -60,7 +59,7 @@ export default function MyPrivateInventoryPage() {
     }
   }, [isLoading, userProfile, router]);
 
-  const privateProductsRef = useMemo(() => {
+  const privateProductsRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
       collection(firestore, 'stores', user.uid, 'products'),

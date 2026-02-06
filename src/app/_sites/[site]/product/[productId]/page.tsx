@@ -1,4 +1,5 @@
 'use client';
+export const runtime = 'edge';
 
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { notFound, useParams, useRouter } from 'next/navigation';
 import { ShoppingBag, Check, Loader2, DollarSign, TrendingUp, ArrowLeft, Palette } from 'lucide-react';
 import { useCart } from '../../layout';
-import { useDoc, useFirestore } from '@/firebase';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,13 +28,6 @@ import {
   type CarouselApi
 } from "@/components/ui/carousel";
 
-export const runtime = 'edge';
-
-type ColorOption = {
-    name: string;
-    imageUrl: string;
-};
-
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -44,7 +38,9 @@ export default function ProductDetailPage() {
   const firestore = useFirestore();
   const { userProfile, loading: profileLoading } = useUserProfile();
 
-  const productRef = firestore ? doc(firestore, `stores/${site}/products/${productId}`) : null;
+  const productRef = useMemoFirebase(() => {
+    return firestore ? doc(firestore, `stores/${site}/products/${productId}`) : null;
+  }, [firestore, site, productId]);
   const { data: product, loading: productLoading } = useDoc<any>(productRef);
   
   const [currentPrice, setCurrentPrice] = useState(0);

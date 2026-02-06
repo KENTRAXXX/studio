@@ -22,7 +22,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { useUser, useCollection, useFirestore } from '@/firebase';
+import { useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/firebase/user-profile-provider';
 import { collection, doc, setDoc, getDocs, query, where } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -69,7 +69,7 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
   const [syncingProducts, setSyncingProducts] = useState<Set<string>>(new Set());
 
   // Firestore logic - Only pull 'active' products
-  const masterCatalogRef = useMemo(() => {
+  const masterCatalogRef = useMemoFirebase(() => {
     if (!firestore || isDemo) return null;
     return query(
         collection(firestore, 'Master_Catalog'), 
@@ -79,7 +79,7 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
   
   const { data: liveCatalog, loading: catalogLoading } = useCollection<Product>(masterCatalogRef);
   
-  const userProductsRef = useMemo(() => {
+  const userProductsRef = useMemoFirebase(() => {
     if (!firestore || !user || isDemo) return null;
     return collection(firestore, 'stores', user.uid, 'products');
   }, [firestore, user, isDemo]);
