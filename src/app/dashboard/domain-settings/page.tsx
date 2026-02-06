@@ -67,6 +67,8 @@ export default function DomainSettingsPage() {
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
 
+  const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somads.pages.dev';
+
   useEffect(() => {
     if (storeData?.customDomain && !hasSetInitial) {
       setDomainInput(storeData.customDomain);
@@ -329,9 +331,9 @@ export default function DomainSettingsPage() {
                                 <TableRow className="border-primary/5">
                                     <TableCell><Badge variant="outline" className="border-primary/50 text-primary">CNAME</Badge></TableCell>
                                     <TableCell className="font-mono text-xs text-slate-200">@ or shop</TableCell>
-                                    <TableCell className="font-mono text-xs text-primary font-bold tracking-wider">somads.pages.dev</TableCell>
+                                    <TableCell className="font-mono text-xs text-primary font-bold tracking-wider">{ROOT_DOMAIN}</TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10" onClick={() => copyToClipboard('somads.pages.dev', 'CNAME')}>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10" onClick={() => copyToClipboard(ROOT_DOMAIN, 'CNAME')}>
                                             <Copy className="h-3 w-3" />
                                         </Button>
                                     </TableCell>
