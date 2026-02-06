@@ -53,7 +53,7 @@ const ChoosePathStep = ({ onSelectPath }: { onSelectPath: (path: 'MERCHANT' | 'D
                         <CardTitle>I want to dropship.</CardTitle>
                         <CardDescription>Sell products from the SOMA Luxury Catalog without holding inventory.</CardDescription>
                     </CardHeader>
-                </div>
+                </Card>
             </div>
         </motion.div>
     )
