@@ -2,12 +2,8 @@
 
 /**
  * @fileOverview Utility for sending order-related emails via Resend.
- * Decoupled from Genkit to support Edge Runtime.
+ * Uses raw HTML template literals for Cloudflare Edge compatibility.
  */
-
-import React from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
-import { OrderConfirmationEmail, ShippedEmail, CancelledEmail } from '@/lib/emails/order-confirmation';
 
 export type SendOrderEmailInput = {
   to: string;
@@ -27,17 +23,33 @@ const getEmailContent = (status: 'Pending' | 'Shipped' | 'Cancelled', orderId: s
         case 'Pending':
             return {
                 subject: `Your order #${orderId} from ${storeName} is confirmed!`,
-                template: React.createElement(OrderConfirmationEmail, { orderId, storeName })
+                html: `
+                  <div style="font-family: sans-serif; color: #333;">
+                    <h1 style="color: #D4AF37;">Order Confirmed: #${orderId}</h1>
+                    <p>Thank you for your purchase from ${storeName}!</p>
+                    <p>We've received your order and are getting it ready for shipment. We'll notify you again once it's on its way.</p>
+                  </div>
+                `
             };
         case 'Shipped':
             return {
                 subject: `Your order #${orderId} from ${storeName} has shipped!`,
-                template: React.createElement(ShippedEmail, { orderId, storeName })
+                html: `
+                  <div style="font-family: sans-serif; color: #333;">
+                    <h1 style="color: #D4AF37;">Your Order #${orderId} from ${storeName} Has Shipped!</h1>
+                    <p>Your items are on their way. You can track your package using the link in the shipping confirmation email.</p>
+                  </div>
+                `
             };
         case 'Cancelled':
              return {
                 subject: `Your order #${orderId} from ${storeName} has been cancelled.`,
-                template: React.createElement(CancelledEmail, { orderId, storeName })
+                html: `
+                  <div style="font-family: sans-serif; color: #333;">
+                    <h1 style="color: #D4AF37;">Order Cancelled: #${orderId}</h1>
+                    <p>Your order from ${storeName} has been cancelled as requested. If you have any questions, please contact support.</p>
+                  </div>
+                `
             };
     }
 }
@@ -54,11 +66,9 @@ export async function sendOrderEmail(input: SendOrderEmailInput): Promise<SendOr
         };
     }
 
-    const { subject, template } = getEmailContent(status, orderId, storeName);
+    const { subject, html } = getEmailContent(status, orderId, storeName);
     
     try {
-        const htmlContent = renderToStaticMarkup(template);
-
         const response = await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: {
@@ -69,7 +79,7 @@ export async function sendOrderEmail(input: SendOrderEmailInput): Promise<SendOr
                 from: `"${storeName}" <no-reply@somads.com>`,
                 to: to,
                 subject: subject,
-                html: htmlContent,
+                html: html,
             })
         });
 

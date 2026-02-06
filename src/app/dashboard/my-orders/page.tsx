@@ -85,7 +85,6 @@ export default function MyOrdersPage() {
     
     const totalCost = orders.reduce((acc, order) => {
         const orderCost = order.cart.reduce((itemAcc, item) => {
-            // Use saved wholesale price, or fallback to 70% of retail if missing (for legacy or manual entries)
             const itemWholesale = item.wholesalePrice ?? (item.price * 0.7);
             return itemAcc + (itemWholesale * item.quantity);
         }, 0);
@@ -151,7 +150,8 @@ export default function MyOrdersPage() {
           <CardContent>
             <div className="text-2xl font-bold text-green-400">{formatCurrency(Math.round(netProfit * 100))}</div>
           </CardContent>
-        </div>
+        </Card>
+      </div>
 
       <Card className="border-primary/50">
         <CardHeader>
