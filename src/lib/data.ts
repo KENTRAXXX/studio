@@ -120,6 +120,116 @@ export const masterCatalog: Product[] = [
     imageId: 'demo-fashion-1',
     categories: ['Leather Goods', 'Travel Gear'],
     tags: ['Leather', 'Weekender', 'Jetset']
+  },
+  {
+    id: 'prod-011',
+    name: 'Aetherial Glass Decanter',
+    description: 'Hand-blown by artisans in Murano, this crystalline decanter features a gold-leaf stopper and a weighted base for perfect aeration.',
+    masterCost: 95,
+    retailPrice: 285,
+    stockLevel: 40,
+    imageId: 'product-4',
+    categories: ['Spirits & Wine', 'Home Decor'],
+    tags: ['Murano', 'Gold Leaf', 'Artisan']
+  },
+  {
+    id: 'prod-012',
+    name: 'Zenith Marble Coffee Table',
+    description: 'A single slab of Calacatta gold marble suspended on a minimalist steel frame. Each piece features unique natural veining.',
+    masterCost: 450,
+    retailPrice: 1450,
+    stockLevel: 10,
+    imageId: 'storefront-product-1',
+    categories: ['Furniture', 'Home Decor'],
+    tags: ['Marble', 'Minimalist', 'Calacatta']
+  },
+  {
+    id: 'prod-013',
+    name: 'Solaris 4K Audio Array',
+    description: 'Immersive soundscapes delivered via 12 precision-tuned drivers. Encased in reclaimed oak with a touch-sensitive interface.',
+    masterCost: 320,
+    retailPrice: 899,
+    stockLevel: 35,
+    imageId: 'demo-gadget-2',
+    categories: ['Electronics'],
+    tags: ['Audio', 'Oak', 'Smart Home']
+  },
+  {
+    id: 'prod-014',
+    name: 'Vanguard Cashmere Coat',
+    description: 'Double-breasted excellence. 100% Loro Piana cashmere with hand-sewn buttonholes and a structured silhouette.',
+    masterCost: 550,
+    retailPrice: 1800,
+    stockLevel: 20,
+    imageId: 'demo-fashion-2',
+    categories: ['Apparel'],
+    tags: ['Cashmere', 'Loro Piana', 'Executive']
+  },
+  {
+    id: 'prod-015',
+    name: 'Dynasty Jade Cufflinks',
+    description: 'Rare imperial green jade set in 24k gold. A subtle nod to heritage and enduring power.',
+    masterCost: 120,
+    retailPrice: 450,
+    stockLevel: 50,
+    imageId: 'demo-jewelry-2',
+    categories: ['Jewelry', 'Accessories'],
+    tags: ['Jade', 'Gold', 'Heritage']
+  },
+  {
+    id: 'prod-016',
+    name: 'Eclipse Matte Gin',
+    description: 'Small-batch botanical gin with hints of yuzu and black pepper. Bottled in a signature matte black ceramic flask.',
+    masterCost: 45,
+    retailPrice: 125,
+    stockLevel: 100,
+    imageId: 'product-4',
+    categories: ['Spirits & Wine'],
+    tags: ['Small Batch', 'Botanical', 'Ceramic']
+  },
+  {
+    id: 'prod-017',
+    name: 'Prism Light Sculpture',
+    description: 'Interactive lighting that reacts to the time of day. Features dichroic glass panels that cast evolving color spectrums.',
+    masterCost: 280,
+    retailPrice: 750,
+    stockLevel: 15,
+    imageId: 'storefront-product-2',
+    categories: ['Fine Art', 'Home Decor'],
+    tags: ['Interactive', 'Light', 'Modern']
+  },
+  {
+    id: 'prod-018',
+    name: 'Nomad Carbon Fiber Bike',
+    description: 'Ultra-lightweight frame designed for the urban elite. Integrated GPS and electronic shifting. Weight: 6.8kg.',
+    masterCost: 1200,
+    retailPrice: 3800,
+    stockLevel: 5,
+    imageId: 'demo-gadget-1',
+    categories: ['Automotive', 'Electronics'],
+    tags: ['Carbon Fiber', 'GPS', 'High Performance']
+  },
+  {
+    id: 'prod-019',
+    name: 'Origin Cold-Pressed Honey',
+    description: 'Harvested from a single remote grove in the Highlands. Unfiltered, enzyme-rich, and packaged in a limited edition stoneware crock.',
+    masterCost: 25,
+    retailPrice: 85,
+    stockLevel: 200,
+    imageId: 'product-4',
+    categories: ['Gourmet Food'],
+    tags: ['Organic', 'Highlands', 'Limited']
+  },
+  {
+    id: 'prod-020',
+    name: 'Oracle Smart Mirror',
+    description: 'Vanity redefined. Integrated skin-health analysis and professional lighting control. Disappears into a standard mirror when inactive.',
+    masterCost: 350,
+    retailPrice: 950,
+    stockLevel: 30,
+    imageId: 'demo-gadget-2',
+    categories: ['Electronics', 'Beauty & Skincare'],
+    tags: ['Smart Mirror', 'Analysis', 'Vanity']
   }
 ];
 

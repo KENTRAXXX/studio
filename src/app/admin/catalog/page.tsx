@@ -78,9 +78,21 @@ export default function AdminCatalogPage() {
     setIsSeeding(true);
     
     try {
-        const batch = writeBatch(firestore);
+        let batch = writeBatch(firestore);
         const catalogRef = collection(firestore, 'Master_Catalog');
 
+        const categories = [
+            "Watches", "Leather Goods", "Jewelry", "Fragrance", "Apparel", 
+            "Accessories", "Home Decor", "Electronics", "Fine Art", 
+            "Spirits & Wine", "Travel Gear", "Beauty & Skincare", 
+            "Wellness", "Collectibles", "Automotive", "Gourmet Food", 
+            "Furniture", "Digital Assets"
+        ];
+        
+        const adjectives = ["Elite", "Royal", "Obsidian", "Imperial", "Grand", "Midnight", "Aether", "Luxe", "Velvet", "Golden", "Celestial", "Timeless", "Apex", "Noble", "Ethereal", "Sovereign"];
+        const nouns = ["Chronograph", "Vessel", "Heritage", "Essence", "Vault", "Legacy", "Prism", "Aura", "Zenith", "Archive", "Manifesto", "Oracle", "Covenant", "Horizon", "Ascent", "Sanctum"];
+
+        // 1. Curated Hand-crafted Mock Data first
         mockData.forEach((item) => {
             const newDocRef = doc(catalogRef, item.id);
             batch.set(newDocRef, {
@@ -93,10 +105,46 @@ export default function AdminCatalogPage() {
             });
         });
 
+        // 2. Programmatic Expansion to 1,000 items
+        for (let i = 0; i < 980; i++) {
+            const category = categories[i % categories.length];
+            const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+            const noun = nouns[Math.floor(Math.random() * nouns.length)];
+            const name = `${adj} ${noun} ${i + 21}`;
+            const id = `seed-${i + 21}`;
+            
+            const cost = Math.floor(Math.random() * (1500 - 40) + 40);
+            const retail = Math.floor(cost * (1.8 + Math.random()));
+            
+            const newDocRef = doc(catalogRef, id);
+            batch.set(newDocRef, {
+                id,
+                name,
+                description: `An exquisite expression of ${adj.toLowerCase()} luxury. This ${noun.toLowerCase()} from our ${category} department is designed for the discerning individual who appreciates ${adj.toLowerCase()} craftsmanship. Guaranteed authenticity from the SOMA Strategic Assets Group.`,
+                masterCost: cost,
+                retailPrice: retail,
+                stockLevel: Math.floor(Math.random() * 250) + 10,
+                imageId: `product-${(i % 8) + 1}`, 
+                categories: [category],
+                tags: [adj, noun, category, "Investment Grade"],
+                status: 'active',
+                vendorId: 'admin',
+                productType: 'INTERNAL',
+                submittedAt: serverTimestamp(),
+                isActive: true
+            });
+
+            // Commit in chunks of 450 to avoid the 500 write limit
+            if ((i + mockData.length + 1) % 450 === 0) {
+                await batch.commit();
+                batch = writeBatch(firestore);
+            }
+        }
+
         await batch.commit();
         toast({
-            title: 'Catalog Seeded!',
-            description: 'The global master registry has been populated with mock luxury products.',
+            title: 'Global Catalog Seeded!',
+            description: '1,000 luxury assets have been synchronized with the Master Catalog.',
         });
     } catch (error: any) {
         toast({
@@ -143,7 +191,7 @@ export default function AdminCatalogPage() {
                 className="border-primary/30 text-primary hover:bg-primary/5"
             >
                 {isSeeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                Seed Mock Data
+                Seed 1,000 Products
             </Button>
             <Button onClick={() => setIsAddModalOpen(true)} className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
                 <PlusCircle className="mr-2 h-5 w-5"/>
@@ -169,50 +217,61 @@ export default function AdminCatalogPage() {
                     <p className="text-muted-foreground mt-2 mb-6">Initialize the platform by seeding mock data or adding manual entries.</p>
                     <Button onClick={handleSeedCatalog} disabled={isSeeding} variant="outline" className="border-primary text-primary font-bold h-12 px-8">
                         {isSeeding ? <Loader2 className="animate-spin mr-2" /> : <Sparkles className="mr-2" />}
-                        Populate Global Registry
+                        Populate Global Registry (1,000 Items)
                     </Button>
                 </div>
                ) : (
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-[80px]">Image</TableHead>
-                            <TableHead>Product Name</TableHead>
-                            <TableHead>Vendor ID</TableHead>
-                            <TableHead className="text-right">Master Cost</TableHead>
-                            <TableHead className="text-right">Retail Price</TableHead>
-                            <TableHead className="text-center">Stock</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {masterCatalog.map((product) => (
-                            <TableRow key={product.id}>
-                                <TableCell>
-                                    <div className="relative w-16 h-16 rounded-md overflow-hidden border border-border">
-                                        <Image
-                                            src={getPlaceholderImage(product.imageId)}
-                                            alt={product.name}
-                                            fill
-                                            className="object-cover"
-                                            data-ai-hint="product photo"
-                                        />
-                                    </div>
-                                </TableCell>
-                                <TableCell className="font-medium">{product.name}</TableCell>
-                                <TableCell className="font-mono text-xs">{product.vendorId}</TableCell>
-                                <TableCell className="text-right font-mono">${product.masterCost.toFixed(2)}</TableCell>
-                                <TableCell className="text-right font-mono">${product.retailPrice.toFixed(2)}</TableCell>
-                                <TableCell className="text-center">
-                                    <Badge>{product.stockLevel || 0}</Badge>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    <Button variant="outline" size="sm" onClick={() => handleEditClick(product)}>Edit</Button>
-                                </TableCell>
+                <div className="rounded-md border">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[80px]">Image</TableHead>
+                                <TableHead>Product Name</TableHead>
+                                <TableHead>Category</TableHead>
+                                <TableHead className="text-right">Wholesale</TableHead>
+                                <TableHead className="text-right">Retail</TableHead>
+                                <TableHead className="text-center">Stock</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                        </TableHeader>
+                        <TableBody>
+                            {masterCatalog.slice(0, 50).map((product) => (
+                                <TableRow key={product.id}>
+                                    <TableCell>
+                                        <div className="relative w-16 h-16 rounded-md overflow-hidden border border-border">
+                                            <Image
+                                                src={getPlaceholderImage(product.imageId)}
+                                                alt={product.name}
+                                                fill
+                                                className="object-cover"
+                                                data-ai-hint="product photo"
+                                            />
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="font-medium">{product.name}</TableCell>
+                                    <TableCell>
+                                        <Badge variant="outline" className="text-[10px] uppercase">
+                                            {(product as any).categories?.[0] || 'Uncategorized'}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right font-mono">${product.masterCost.toFixed(2)}</TableCell>
+                                    <TableCell className="text-right font-mono text-primary">${product.retailPrice.toFixed(2)}</TableCell>
+                                    <TableCell className="text-center">
+                                        <Badge variant={product.stockLevel < 10 ? "destructive" : "default"}>{product.stockLevel || 0}</Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="outline" size="sm" onClick={() => handleEditClick(product)}>Edit</Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                    {masterCatalog.length > 50 && (
+                        <div className="p-4 text-center border-t text-sm text-muted-foreground">
+                            Viewing first 50 of {masterCatalog.length} products. Use search to find specific items.
+                        </div>
+                    )}
+                </div>
                )}
           </CardContent>
       </Card>
