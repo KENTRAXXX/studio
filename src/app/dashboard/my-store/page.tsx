@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -53,7 +53,7 @@ const ChoosePathStep = ({ onSelectPath }: { onSelectPath: (path: 'MERCHANT' | 'D
                         <CardTitle>I want to dropship.</CardTitle>
                         <CardDescription>Sell products from the SOMA Luxury Catalog without holding inventory.</CardDescription>
                     </CardHeader>
-                </Card>
+                </div>
             </div>
         </motion.div>
     )
@@ -382,6 +382,10 @@ export default function MyStorePage() {
 
   const handleLaunch = async (firstProduct?: any) => {
     if (!user || !firestore || !storeType || !userProfile) return;
+    
+    // Set a signal to the main dashboard that we are in the process of provisioning
+    // This prevents the redirect loop due to Firestore sync lag.
+    sessionStorage.setItem('soma_just_launched', 'true');
     setIsLaunching(true);
 
     try {
@@ -475,6 +479,7 @@ export default function MyStorePage() {
 
     } catch (error: any) {
         setIsLaunching(false);
+        sessionStorage.removeItem('soma_just_launched');
         toast({
             variant: "destructive",
             title: 'Launch Failed',
@@ -483,14 +488,14 @@ export default function MyStorePage() {
     }
   };
 
-  const onLaunchComplete = () => {
+  const onLaunchComplete = useCallback(() => {
       setIsLaunching(false);
       toast({
           title: 'Your empire is live!',
           description: 'Congratulations! Your store has been successfully launched.',
       });
       router.push('/dashboard');
-  }
+  }, [router, toast]);
   
   const handlePathSelection = (path: 'MERCHANT' | 'DROPSHIP') => {
       setStoreType(path);

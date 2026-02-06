@@ -61,13 +61,23 @@ export default function DashboardOverviewPage() {
 
     // HANDSHAKE: If they have paid, but the store doesn't exist yet, redirect to the Launch Wizard
     useEffect(() => {
-        if (!isLoading && userProfile?.hasAccess && !storeData) {
+        // Safe access to sessionStorage in useEffect to detect "Just Launched" state
+        const justLaunched = typeof window !== 'undefined' && sessionStorage.getItem('soma_just_launched') === 'true';
+        
+        if (!isLoading && userProfile?.hasAccess && !storeData && !justLaunched) {
             const isSupplier = userProfile.planTier === 'SELLER' || userProfile.planTier === 'BRAND';
             if (!isSupplier) {
                 router.push('/dashboard/my-store');
             }
         }
     }, [isLoading, userProfile, storeData, router]);
+
+    // Cleanup logic: If the store data arrives, clear the "just launched" flag
+    useEffect(() => {
+        if (storeData && typeof window !== 'undefined') {
+            sessionStorage.removeItem('soma_just_launched');
+        }
+    }, [storeData]);
 
     if (isLoading || userProfile?.userRole === 'ADMIN') {
         return (
@@ -87,7 +97,7 @@ export default function DashboardOverviewPage() {
         return <DashboardController planTier={userProfile.planTier} />;
     }
 
-    // Provisioning check (fallback while redirect triggers)
+    // Provisioning check (fallback while sync triggers)
     if (!storeData) {
         return <ProvisioningLoader />;
     }
