@@ -35,6 +35,8 @@ type MasterProduct = {
   imageId: string;
   imageGallery?: string[];
   vendorId: string;
+  categories?: string[];
+  tags?: string[];
 }
 
 export default function AdminCatalogPage() {
@@ -88,6 +90,19 @@ export default function AdminCatalogPage() {
             "Wellness", "Collectibles", "Automotive", "Gourmet Food", 
             "Furniture", "Digital Assets"
         ];
+
+        const categoryImageMap: Record<string, string[]> = {
+            "Watches": ["product-1", "demo-jewelry-3"],
+            "Leather Goods": ["product-2", "product-7", "demo-fashion-1"],
+            "Jewelry": ["product-5", "demo-jewelry-1", "demo-jewelry-2", "demo-jewelry-3"],
+            "Fragrance": ["product-4"],
+            "Apparel": ["product-3", "product-6", "demo-fashion-2", "demo-fashion-3"],
+            "Accessories": ["product-7", "product-8"],
+            "Home Decor": ["storefront-product-2", "product-4"],
+            "Electronics": ["demo-gadget-1", "demo-gadget-2", "demo-gadget-3"],
+            "Furniture": ["storefront-product-1"],
+            "Travel Gear": ["demo-fashion-1"],
+        };
         
         const adjectives = ["Elite", "Royal", "Obsidian", "Imperial", "Grand", "Midnight", "Aether", "Luxe", "Velvet", "Golden", "Celestial", "Timeless", "Apex", "Noble", "Ethereal", "Sovereign"];
         const nouns = ["Chronograph", "Vessel", "Heritage", "Essence", "Vault", "Legacy", "Prism", "Aura", "Zenith", "Archive", "Manifesto", "Oracle", "Covenant", "Horizon", "Ascent", "Sanctum"];
@@ -115,6 +130,9 @@ export default function AdminCatalogPage() {
             
             const cost = Math.floor(Math.random() * (1500 - 40) + 40);
             const retail = Math.floor(cost * (1.8 + Math.random()));
+
+            const possibleImages = categoryImageMap[category] || ["product-1", "product-2", "product-3", "product-4"];
+            const imageId = possibleImages[i % possibleImages.length];
             
             const newDocRef = doc(catalogRef, id);
             batch.set(newDocRef, {
@@ -124,7 +142,7 @@ export default function AdminCatalogPage() {
                 masterCost: cost,
                 retailPrice: retail,
                 stockLevel: Math.floor(Math.random() * 250) + 10,
-                imageId: `product-${(i % 8) + 1}`, 
+                imageId: imageId, 
                 categories: [category],
                 tags: [adj, noun, category, "Investment Grade"],
                 status: 'active',
@@ -251,7 +269,7 @@ export default function AdminCatalogPage() {
                                     <TableCell className="font-medium">{product.name}</TableCell>
                                     <TableCell>
                                         <Badge variant="outline" className="text-[10px] uppercase">
-                                            {(product as any).categories?.[0] || 'Uncategorized'}
+                                            {product.categories?.[0] || 'Uncategorized'}
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right font-mono">${product.masterCost.toFixed(2)}</TableCell>

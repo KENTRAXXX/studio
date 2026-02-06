@@ -41,6 +41,8 @@ type Product = {
   isActive?: boolean;
   status?: string;
   approvedAt?: any;
+  categories?: string[];
+  tags?: string[];
 };
 
 // A unified function to get an image URL
@@ -127,6 +129,8 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
         productType: product.productType,
         vendorId: product.vendorId,
         isManagedBySoma: true,
+        categories: product.categories || [],
+        tags: product.tags || []
       };
 
       await setDoc(newProductRef, productDataToSync);
@@ -155,7 +159,7 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
 
   const checkIfNew = (approvedAt: any) => {
     if (!approvedAt) return false;
-    const approvalDate = approvedAt.toDate ? approvedAt.toDate() : new Date(approvedAt);
+    const approvalDate = approvedAt.toDate ? approvalDate.toDate() : new Date(approvedAt);
     const now = new Date();
     const diffInHours = (now.getTime() - approvalDate.getTime()) / (1000 * 60 * 60);
     return diffInHours <= 48;
@@ -197,6 +201,7 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
                     <TableRow>
                         <TableHead className="w-[80px]">Image</TableHead>
                         <TableHead>Product Name</TableHead>
+                        <TableHead>Category</TableHead>
                         <TableHead className="text-right">Wholesale Cost</TableHead>
                         <TableHead className="text-right">Retail</TableHead>
                         <TableHead className="text-center">Margin</TableHead>
@@ -238,6 +243,11 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
                                 </div>
                                 <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-tighter mt-0.5">SKU: {product.id.slice(0, 8)}</span>
                             </div>
+                        </TableCell>
+                        <TableCell>
+                            <Badge variant="outline" className="text-[10px] uppercase border-primary/20 text-primary/80">
+                                {product.categories?.[0] || 'Luxury'}
+                            </Badge>
                         </TableCell>
                         <TableCell className="text-right font-mono text-sm">
                             ${wholesale.toFixed(2)}
