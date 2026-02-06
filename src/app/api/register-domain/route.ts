@@ -18,7 +18,12 @@ const getDb = () => {
 
 export async function POST(request: NextRequest) {
   try {
-    const { domain, storeId } = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) {
+        return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+
+    const { domain, storeId } = body;
 
     if (!domain || !storeId) {
       return NextResponse.json({ error: 'Missing domain or storeId' }, { status: 400 });
@@ -30,7 +35,9 @@ export async function POST(request: NextRequest) {
 
     if (!CLOUDFLARE_EMAIL || !CLOUDFLARE_API_KEY || !CLOUDFLARE_ZONE_ID) {
       console.error("Missing Cloudflare API credentials in environment.");
-      return NextResponse.json({ error: 'System configuration error' }, { status: 500 });
+      return NextResponse.json({ 
+          error: 'Platform configuration incomplete. Ensure CLOUDFLARE_EMAIL, CLOUDFLARE_API_KEY, and CLOUDFLARE_ZONE_ID are set in Pages Secrets.' 
+      }, { status: 500 });
     }
 
     // 1. Register with Cloudflare Custom Hostnames API
@@ -53,10 +60,17 @@ export async function POST(request: NextRequest) {
       }
     );
 
+    const contentType = cfResponse.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+        const errorText = await cfResponse.text();
+        console.error('Cloudflare non-JSON response:', errorText);
+        throw new Error(`Cloudflare API returned non-JSON response (${cfResponse.status}). Check credentials.`);
+    }
+
     const cfData = await cfResponse.json();
 
     if (!cfResponse.ok) {
-      // If hostname already exists (1406), we still want to fetch its details to get verification records
+      // If hostname already exists (1406), we still want to proceed to fetch its details or handle it
       if (cfData.errors?.[0]?.code !== 1406) {
         throw new Error(cfData.errors?.[0]?.message || 'Cloudflare API failure');
       }
@@ -65,14 +79,13 @@ export async function POST(request: NextRequest) {
     // 2. Map domain to storeId in KV_BINDING for the middleware
     const kv = (process.env as any).KV_BINDING;
     if (kv) {
-      await kv.put(`domain:${domain.toLowerCase()}`, storeId);
+      await kv.put(`domain:${domain.toLowerCase()}`, storeId).catch((e: any) => console.error("KV put failed:", e));
     }
 
     // 3. Update Firestore status with verification details
     const firestore = getDb();
     const storeRef = doc(firestore, 'stores', storeId);
     
-    // Ownership and SSL details for the UI
     const verificationInfo = {
       customDomain: domain.toLowerCase(),
       domainStatus: 'pending_dns',
@@ -92,6 +105,6 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Domain registration error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 }

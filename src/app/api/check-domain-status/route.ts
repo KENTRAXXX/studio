@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   const CLOUDFLARE_ZONE_ID = process.env.CLOUDFLARE_ZONE_ID;
 
   if (!CLOUDFLARE_EMAIL || !CLOUDFLARE_API_KEY || !CLOUDFLARE_ZONE_ID) {
-    return NextResponse.json({ error: 'System configuration error' }, { status: 500 });
+    return NextResponse.json({ error: 'System configuration error: Missing Cloudflare credentials.' }, { status: 500 });
   }
 
   try {
@@ -60,6 +60,11 @@ export async function GET(request: NextRequest) {
       }
     );
 
+    const contentType = cfResponse.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Cloudflare API returned non-JSON response (${cfResponse.status}).`);
+    }
+
     const cfData = await cfResponse.json();
 
     if (!cfResponse.ok || !cfData.result?.[0]) {
@@ -68,7 +73,6 @@ export async function GET(request: NextRequest) {
 
     const cfResult = cfData.result[0];
     
-    // Determine internal status mapping
     let internalStatus: 'pending_dns' | 'connected' | 'unverified' = 'pending_dns';
     if (cfResult.status === 'active' && cfResult.ssl?.status === 'active') {
       internalStatus = 'connected';
@@ -93,6 +97,6 @@ export async function GET(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Status check error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Internal error' }, { status: 500 });
   }
 }

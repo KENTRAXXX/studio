@@ -67,7 +67,6 @@ export default function DomainSettingsPage() {
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
 
-  // Use the verified pages.dev URL as the primary proxy target for CNAMEs
   const ROOT_PROXY_TARGET = 'studio-770.pages.dev';
 
   useEffect(() => {
@@ -103,6 +102,11 @@ export default function DomainSettingsPage() {
             })
         });
 
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Server returned an invalid response format. Please ensure Cloudflare environment variables are correctly configured in your Pages dashboard.');
+        }
+
         const result = await response.json();
 
         if (!response.ok) throw new Error(result.error || 'Registration failed');
@@ -113,7 +117,11 @@ export default function DomainSettingsPage() {
             action: <Zap className="h-4 w-4 text-primary" />
         });
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Provisioning Error', description: error.message });
+        toast({ 
+            variant: 'destructive', 
+            title: 'Provisioning Error', 
+            description: error.message || 'An unexpected error occurred. Please check system logs.' 
+        });
     } finally {
         setIsSaving(false);
     }
@@ -148,6 +156,11 @@ export default function DomainSettingsPage() {
     
     try {
         const response = await fetch(`/api/check-domain-status?storeId=${user.uid}`);
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Handshake failed: Invalid response from diagnostic API.');
+        }
+
         const result = await response.json();
 
         if (!response.ok) throw new Error(result.error || 'Status check failed');
@@ -273,7 +286,6 @@ export default function DomainSettingsPage() {
                 </CardDescription>
             </CardHeader>
             <CardContent className="pt-6 space-y-8">
-                {/* 1. Ownership Verification (TXT) */}
                 <div className="space-y-4">
                     <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400">
                         <ShieldAlert className="h-3.5 w-3.5" /> Domain Ownership (Required)
@@ -313,7 +325,6 @@ export default function DomainSettingsPage() {
                     </div>
                 </div>
 
-                {/* 2. Routing & SSL (CNAME) */}
                 <div className="space-y-4">
                     <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400">
                         <Clock className="h-3.5 w-3.5" /> Traffic Routing & SSL Handshake
