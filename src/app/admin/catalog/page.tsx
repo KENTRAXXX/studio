@@ -6,7 +6,7 @@ import Image from 'next/image';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Gem, PlusCircle, Loader2, Warehouse } from "lucide-react";
+import { Gem, PlusCircle, Loader2, Warehouse, Sparkles } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -19,10 +19,12 @@ import { Badge } from "@/components/ui/badge";
 
 import { useUserProfile } from '@/firebase/user-profile-provider';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, writeBatch, doc, serverTimestamp } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { AddMasterProductModal } from '@/components/AddMasterProductModal';
 import { EditMasterProductModal } from '@/components/EditMasterProductModal';
+import { masterCatalog as mockData } from '@/lib/data';
+import { useToast } from '@/hooks/use-toast';
 
 type MasterProduct = {
   id: string;
@@ -39,10 +41,12 @@ export default function AdminCatalogPage() {
   const { userProfile, loading: profileLoading } = useUserProfile();
   const firestore = useFirestore();
   const router = useRouter();
+  const { toast } = useToast();
   
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<MasterProduct | null>(null);
+  const [isSeeding, setIsSeeding] = useState(false);
 
   useEffect(() => {
     if (!profileLoading) {
@@ -68,6 +72,42 @@ export default function AdminCatalogPage() {
     if (id?.startsWith('https')) return id;
     return PlaceHolderImages.find(img => img.id === id)?.imageUrl || 'https://picsum.photos/seed/placeholder/100/100';
   }
+
+  const handleSeedCatalog = async () => {
+    if (!firestore) return;
+    setIsSeeding(true);
+    
+    try {
+        const batch = writeBatch(firestore);
+        const catalogRef = collection(firestore, 'Master_Catalog');
+
+        mockData.forEach((item) => {
+            const newDocRef = doc(catalogRef, item.id);
+            batch.set(newDocRef, {
+                ...item,
+                status: 'active',
+                vendorId: 'admin',
+                productType: 'INTERNAL',
+                submittedAt: serverTimestamp(),
+                isActive: true
+            });
+        });
+
+        await batch.commit();
+        toast({
+            title: 'Catalog Seeded!',
+            description: 'The global master registry has been populated with mock luxury products.',
+        });
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Seeding Failed',
+            description: error.message
+        });
+    } finally {
+        setIsSeeding(false);
+    }
+  };
 
   const isLoading = profileLoading || productsLoading;
 
@@ -95,10 +135,21 @@ export default function AdminCatalogPage() {
             <Gem className="h-8 w-8 text-primary" />
             <h1 className="text-3xl font-bold font-headline">Master Catalog Editor</h1>
         </div>
-        <Button onClick={() => setIsAddModalOpen(true)} className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
-            <PlusCircle className="mr-2 h-5 w-5"/>
-            Add New Product
-        </Button>
+        <div className="flex gap-3">
+            <Button 
+                variant="outline" 
+                onClick={handleSeedCatalog} 
+                disabled={isSeeding}
+                className="border-primary/30 text-primary hover:bg-primary/5"
+            >
+                {isSeeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                Seed Mock Data
+            </Button>
+            <Button onClick={() => setIsAddModalOpen(true)} className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
+                <PlusCircle className="mr-2 h-5 w-5"/>
+                Add New Product
+            </Button>
+        </div>
       </div>
 
       <Card className="border-primary/50">
@@ -115,7 +166,11 @@ export default function AdminCatalogPage() {
                 <div className="flex flex-col items-center justify-center text-center h-64 border-2 border-dashed border-primary/20 rounded-lg">
                     <Warehouse className="h-16 w-16 text-muted-foreground mb-4" />
                     <h3 className="text-xl font-bold font-headline text-primary">The Master Catalog is Empty</h3>
-                    <p className="text-muted-foreground mt-2 mb-6">Add the first globally available product.</p>
+                    <p className="text-muted-foreground mt-2 mb-6">Initialize the platform by seeding mock data or adding manual entries.</p>
+                    <Button onClick={handleSeedCatalog} disabled={isSeeding} variant="outline" className="border-primary text-primary font-bold h-12 px-8">
+                        {isSeeding ? <Loader2 className="animate-spin mr-2" /> : <Sparkles className="mr-2" />}
+                        Populate Global Registry
+                    </Button>
                 </div>
                ) : (
                 <Table>
