@@ -8,7 +8,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Globe, CheckCircle2, Loader2, Link as LinkIcon, AlertTriangle, ExternalLink, ShieldCheck, Zap } from 'lucide-react';
+import { 
+    Globe, 
+    CheckCircle2, 
+    Loader2, 
+    Link as LinkIcon, 
+    AlertTriangle, 
+    ExternalLink, 
+    ShieldCheck, 
+    Zap,
+    Copy,
+    RefreshCw,
+    ShieldAlert,
+    Clock
+} from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -22,9 +35,20 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 
+type VerificationRecord = {
+    type: string;
+    name: string;
+    value: string;
+};
+
 type StoreData = {
     customDomain?: string;
     domainStatus?: 'unverified' | 'pending_dns' | 'connected';
+    ownershipRecord?: VerificationRecord;
+    sslValidationRecord?: VerificationRecord;
+    cfStatus?: string;
+    sslStatus?: string;
+    lastCfSync?: string;
 }
 
 export default function DomainSettingsPage() {
@@ -36,7 +60,7 @@ export default function DomainSettingsPage() {
   
   const [domainInput, setDomainInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
 
   useEffect(() => {
     if (storeData?.customDomain) {
@@ -49,20 +73,18 @@ export default function DomainSettingsPage() {
   const handleSave = async () => {
     if (!user || !domainInput) return;
     
-    // Simple regex for domain validation
     const tldRegex = /\.(com|org|net|io|co|store|shop|xyz|dev|app|me)$/i;
     if (!tldRegex.test(domainInput)) {
         toast({
             variant: 'destructive',
             title: 'Invalid Domain',
-            description: 'Please enter a valid domain name (e.g., yourbrand.com).'
+            description: 'Please enter a valid domain name.'
         });
         return;
     }
 
     setIsSaving(true);
     try {
-        // Trigger automated registration via Cloudflare API
         const response = await fetch('/api/register-domain', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -74,147 +96,230 @@ export default function DomainSettingsPage() {
 
         const result = await response.json();
 
-        if (!response.ok) {
-            throw new Error(result.error || 'Registration failed');
-        }
+        if (!response.ok) throw new Error(result.error || 'Registration failed');
 
         toast({
-            title: 'Infrastructure Synced',
-            description: 'Domain registered with Cloudflare. Please update your DNS records.',
+            title: 'Registry Sync Initiated',
+            description: 'Verification records generated. Please update your DNS.',
             action: <Zap className="h-4 w-4 text-primary" />
         });
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Provisioning Failed', description: error.message });
+        toast({ variant: 'destructive', title: 'Provisioning Error', description: error.message });
     } finally {
         setIsSaving(false);
     }
   };
 
-  const handleVerify = async () => {
-    if (!storeRef || !storeData?.customDomain) return;
-    setIsVerifying(true);
+  const checkStatus = async () => {
+    if (!user) return;
+    setIsCheckingStatus(true);
     
     try {
-        // Simulated verification logic for the prototype
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        await updateDoc(storeRef, {
-            domainStatus: 'connected'
-        });
-        
-        toast({
-            title: 'Verification Success!',
-            description: 'Your custom domain is now connected and live.',
-            className: 'bg-green-600 border-green-600 text-white'
-        });
-    } catch (error) {
+        const response = await fetch(`/api/check-domain-status?storeId=${user.uid}`);
+        const result = await response.json();
+
+        if (!response.ok) throw new Error(result.error || 'Status check failed');
+
+        if (result.status === 'connected') {
+            toast({
+                title: 'Boutique Live!',
+                description: 'Domain verification successful.',
+                className: 'bg-green-600 border-green-600 text-white'
+            });
+        } else {
+            toast({
+                title: 'Check Complete',
+                description: `Current status: ${result.cfData?.status || 'Pending'}. Propagation takes time.`,
+            });
+        }
+    } catch (error: any) {
          toast({
             variant: 'destructive',
-            title: 'Verification Error',
-            description: 'Could not reach your domain. Please ensure your DNS records are correct.'
+            title: 'Handshake Error',
+            description: error.message
         });
     } finally {
-        setIsVerifying(false);
+        setIsCheckingStatus(false);
     }
+  };
+
+  const copyToClipboard = (text: string, label: string) => {
+      navigator.clipboard.writeText(text);
+      toast({ title: 'Copied', description: `${label} value copied to clipboard.` });
   };
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
-      <div className="flex items-center gap-4">
-        <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
-            <Globe className="h-8 w-8 text-primary" />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
+                <Globe className="h-8 w-8 text-primary" />
+            </div>
+            <div>
+                <h1 className="text-3xl font-bold font-headline">Custom Domain Control</h1>
+                <p className="text-muted-foreground mt-1 text-sm">Orchestrate your global web presence via Cloudflare for SaaS.</p>
+            </div>
         </div>
-        <div>
-            <h1 className="text-3xl font-bold font-headline">Custom Domain Control</h1>
-            <p className="text-muted-foreground mt-1 text-sm">Synchronize your unique web address with the SOMA global network.</p>
-        </div>
+        
+        {domainStatus !== 'unverified' && (
+            <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={checkStatus} 
+                disabled={isCheckingStatus}
+                className="border-primary/20 hover:bg-primary/5"
+            >
+                {isCheckingStatus ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                Refresh Deployment Status
+            </Button>
+        )}
       </div>
 
        <Card className="border-primary/50 bg-primary/5 border-2 shadow-gold-glow">
         <CardHeader className="flex flex-row items-center gap-4">
             <ShieldCheck className="h-10 w-10 text-primary" />
             <div>
-                <CardTitle className="text-primary text-xl">SOMA Authority Records</CardTitle>
-                <CardDescription className="text-primary/80 font-medium">Use the records provided below to authorize SOMA as the hosting provider for your domain.</CardDescription>
+                <CardTitle className="text-primary text-xl">SOMA Authority Proxy</CardTitle>
+                <CardDescription className="text-primary/80 font-medium">Use the generated records below to link your registrar to our global edge network.</CardDescription>
             </div>
         </CardHeader>
       </Card>
 
-
       <Card className="border-primary/50 overflow-hidden bg-slate-900/20">
         <CardHeader className="bg-muted/30 border-b border-primary/10">
-          <CardTitle>Step 1: Identity Assignment</CardTitle>
-          <CardDescription>
-            Enter the custom domain you purchased from your registrar.
-          </CardDescription>
+          <CardTitle>Step 1: Domain Mapping</CardTitle>
+          <CardDescription>Enter your root domain (e.g., brand.com) or a subdomain (e.g., shop.brand.com).</CardDescription>
         </CardHeader>
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row items-end gap-4">
             <div className="w-full sm:flex-1 space-y-2">
-                 <Label htmlFor="custom-domain" className="text-xs uppercase tracking-widest font-black text-muted-foreground">Your Registered Domain</Label>
+                 <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Public Web Address</Label>
                 <Input
-                  id="custom-domain"
-                  placeholder="e.g., boutique.com"
+                  placeholder="e.g., my-luxury-boutique.com"
                   value={domainInput}
                   onChange={(e) => setDomainInput(e.target.value)}
                   disabled={domainStatus === 'connected' || isSaving}
-                  className="h-12 border-primary/20 bg-slate-950"
+                  className="h-12 border-primary/20 bg-slate-950 font-mono"
                 />
             </div>
-             <Button onClick={handleSave} disabled={isSaving || domainStatus === 'connected' || !domainInput} className="h-12 px-8 btn-gold-glow">
-                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Register & Sync'}
+             <Button onClick={handleSave} disabled={isSaving || domainStatus === 'connected' || !domainInput} className="h-12 px-8 btn-gold-glow bg-primary font-bold">
+                {isSaving ? <Loader2 className="animate-spin" /> : 'Register with Cloudflare'}
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {domainStatus === 'pending_dns' && (
-        <Card className="border-primary card-gold-pulse overflow-hidden bg-slate-900/40">
+      {(domainStatus === 'pending_dns' || domainStatus === 'connected') && (
+        <Card className={cn(
+            "border-primary overflow-hidden bg-slate-900/40",
+            domainStatus === 'pending_dns' && "card-gold-pulse"
+        )}>
             <CardHeader className="bg-primary/5 border-b border-primary/10">
-                <CardTitle className="flex items-center gap-2 text-primary font-headline">
-                    <AlertTriangle className="text-primary h-5 w-5"/> 
-                    Step 2: External DNS Configuration
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2 text-primary font-headline">
+                        <AlertTriangle className="text-primary h-5 w-5"/> 
+                        Step 2: DNS Protocol Sync
+                    </CardTitle>
+                    {storeData?.lastCfSync && (
+                        <p className="text-[10px] font-mono text-muted-foreground uppercase">Last Sync: {new Date(storeData.lastCfSync).toLocaleTimeString()}</p>
+                    )}
+                </div>
                 <CardDescription className="text-slate-300">
-                    Log in to your registrar and add these records to authorize SOMA to serve your content.
+                    Add these specific records at your registrar to authorize SSL and traffic routing.
                 </CardDescription>
             </CardHeader>
-            <CardContent className="pt-6">
-                <div className="rounded-xl border border-primary/20 bg-black/40 overflow-hidden">
-                    <Table>
-                        <TableHeader className="bg-primary/5">
-                            <TableRow className="border-primary/10">
-                                <TableHead className="text-primary font-bold">Type</TableHead>
-                                <TableHead className="text-primary font-bold">Host / Name</TableHead>
-                                <TableHead className="text-primary font-bold">Value / Points To</TableHead>
-                                <TableHead className="text-right text-primary font-bold">TTL</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            <TableRow className="border-primary/5">
-                                <TableCell><Badge variant="outline" className="border-primary/50 text-primary">A</Badge></TableCell>
-                                <TableCell className="font-mono text-slate-200">@</TableCell>
-                                <TableCell className="font-mono text-primary font-bold tracking-wider">76.76.21.21</TableCell>
-                                <TableCell className="text-right text-slate-500 font-mono text-xs">Automatic</TableCell>
-                            </TableRow>
-                            <TableRow className="border-transparent">
-                                <TableCell><Badge variant="outline" className="border-primary/50 text-primary">CNAME</Badge></TableCell>
-                                <TableCell className="font-mono text-slate-200">www</TableCell>
-                                <TableCell className="font-mono text-slate-200">{domainInput || 'yourdomain.com'}</TableCell>
-                                <TableCell className="text-right text-slate-500 font-mono text-xs">Automatic</TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
+            <CardContent className="pt-6 space-y-8">
+                {/* 1. Ownership Verification (TXT) */}
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400">
+                        <ShieldAlert className="h-3.5 w-3.5" /> Domain Ownership (Required)
+                    </div>
+                    <div className="rounded-xl border border-primary/20 bg-black/40 overflow-hidden">
+                        <Table>
+                            <TableHeader className="bg-primary/5">
+                                <TableRow className="border-primary/10">
+                                    <TableHead className="text-primary font-bold text-[10px]">TYPE</TableHead>
+                                    <TableHead className="text-primary font-bold text-[10px]">HOST / NAME</TableHead>
+                                    <TableHead className="text-primary font-bold text-[10px]">VALUE / CONTENT</TableHead>
+                                    <TableHead className="text-right"></TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow className="border-transparent">
+                                    <TableCell><Badge variant="outline" className="border-primary/50 text-primary">TXT</Badge></TableCell>
+                                    <TableCell className="font-mono text-xs text-slate-200">
+                                        {storeData?.ownershipRecord?.name || '---'}
+                                    </TableCell>
+                                    <TableCell className="max-w-xs">
+                                        <code className="text-[10px] text-primary break-all">{storeData?.ownershipRecord?.value || 'Generating...'}</code>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-8 w-8 hover:bg-primary/10"
+                                            onClick={() => storeData?.ownershipRecord && copyToClipboard(storeData.ownershipRecord.value, 'TXT')}
+                                        >
+                                            <Copy className="h-3 w-3" />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </div>
+                </div>
+
+                {/* 2. Routing & SSL (CNAME) */}
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400">
+                        <Clock className="h-3.5 w-3.5" /> Traffic Routing & SSL Handshake
+                    </div>
+                    <div className="rounded-xl border border-primary/20 bg-black/40 overflow-hidden">
+                        <Table>
+                            <TableHeader className="bg-primary/5">
+                                <TableRow className="border-primary/10">
+                                    <TableHead className="text-primary font-bold text-[10px]">TYPE</TableHead>
+                                    <TableHead className="text-primary font-bold text-[10px]">HOST / NAME</TableHead>
+                                    <TableHead className="text-primary font-bold text-[10px]">TARGET / DESTINATION</TableHead>
+                                    <TableHead className="text-right"></TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow className="border-primary/5">
+                                    <TableCell><Badge variant="outline" className="border-primary/50 text-primary">CNAME</Badge></TableCell>
+                                    <TableCell className="font-mono text-xs text-slate-200">@ or shop</TableCell>
+                                    <TableCell className="font-mono text-xs text-primary font-bold tracking-wider">somads.pages.dev</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10" onClick={() => copyToClipboard('somads.pages.dev', 'CNAME')}>
+                                            <Copy className="h-3 w-3" />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                                {storeData?.sslValidationRecord && (
+                                    <TableRow className="border-transparent">
+                                        <TableCell><Badge variant="outline" className="border-primary/50 text-primary">{storeData.sslValidationRecord.type}</Badge></TableCell>
+                                        <TableCell className="font-mono text-xs text-slate-200 truncate max-w-[150px]">{storeData.sslValidationRecord.name}</TableCell>
+                                        <TableCell className="max-w-xs"><code className="text-[10px] text-primary break-all">{storeData.sslValidationRecord.value}</code></TableCell>
+                                        <TableCell className="text-right">
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10" onClick={() => copyToClipboard(storeData.sslValidationRecord!.value, 'SSL Record')}>
+                                                <Copy className="h-3 w-3" />
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
                 </div>
                 
-                <div className="mt-8 p-6 rounded-xl bg-primary/5 border border-primary/20 flex flex-col sm:flex-row items-center justify-between gap-6">
+                <div className="p-6 rounded-xl bg-primary/5 border border-primary/20 flex flex-col sm:flex-row items-center justify-between gap-6">
                     <div className="space-y-1">
-                        <p className="text-sm font-bold text-slate-200">Propagation Handshake</p>
-                        <p className="text-xs text-muted-foreground leading-relaxed">DNS changes can take up to 24 hours to propagate globally.</p>
+                        <p className="text-sm font-bold text-slate-200">Global DNS Propagation</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">Propagation status: <span className="text-primary font-bold">{storeData?.cfStatus || 'Pending'}</span></p>
                     </div>
-                     <Button onClick={handleVerify} disabled={isVerifying} className="w-full sm:w-auto h-12 px-8 btn-gold-glow bg-primary font-bold">
-                        {isVerifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle2 className="mr-2 h-4 w-4"/>}
-                        Verify DNS Sync
+                     <Button onClick={checkStatus} disabled={isCheckingStatus} className="w-full sm:w-auto h-12 px-8 btn-gold-glow bg-primary font-bold">
+                        {isCheckingStatus ? <Loader2 className="animate-spin mr-2 h-4 w-4"/> : <CheckCircle2 className="mr-2 h-4 w-4"/>}
+                        Check Verification Status
                     </Button>
                 </div>
             </CardContent>
@@ -226,12 +331,12 @@ export default function DomainSettingsPage() {
             <CardHeader className="bg-green-500/10 border-b border-green-500/20">
                 <CardTitle className="flex items-center gap-2 text-green-400">
                     <CheckCircle2 className="h-5 w-5"/> 
-                    Boutique Infrastructure Live
+                    Boutique Infrastructure Verified
                 </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
                  <p className="text-slate-300 leading-relaxed">
-                    Identity verified. Your executive storefront is successfully mapped to your custom domain.
+                    Identity confirmed. Your executive storefront is correctly resolving via the Cloudflare Edge.
                     <br />
                     <Link href={`https://${storeData?.customDomain || domainInput}`} target="_blank" className="inline-flex items-center font-black text-primary hover:text-primary/80 mt-4 text-lg tracking-tight uppercase">
                         {storeData?.customDomain || domainInput} 
@@ -247,9 +352,9 @@ export default function DomainSettingsPage() {
               <LinkIcon className="h-5 w-5" />
           </div>
           <div>
-              <h4 className="text-sm font-bold text-slate-200 mb-1 uppercase tracking-widest">Registrar Note</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                  These records are generated by the SOMA provisioning engine. Ensure that your SSL/TLS mode is set to **Full** or **Full (strict)** if using a proxy.
+              <h4 className="text-sm font-bold text-slate-200 mb-1 uppercase tracking-widest">SaaS Provider Note</h4>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                  Verification records are provided by the SOMA SaaS Engine. We use CNAME-based validation to automatically manage your SSL certificates. Do not remove the TXT ownership record after verification, as it is required for continuous certificate renewal.
               </p>
           </div>
       </div>

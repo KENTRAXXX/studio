@@ -1,13 +1,13 @@
 export const runtime = 'edge';
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/request';
 import { initializeApp, getApps } from 'firebase/app';
 import { doc, updateDoc, getFirestore } from 'firebase/firestore';
 import { firebaseConfig } from '@/firebase/config';
 
 /**
  * @fileOverview Edge API route to register custom hostnames via Cloudflare API
- * and sync them to the KV store for multi-tenant routing.
+ * and sync verification records to Firestore.
  */
 
 const getDb = () => {
@@ -17,22 +17,22 @@ const getDb = () => {
 };
 
 export async function POST(request: NextRequest) {
-  const { domain, storeId } = await request.json();
-
-  if (!domain || !storeId) {
-    return NextResponse.json({ error: 'Missing domain or storeId' }, { status: 400 });
-  }
-
-  const CLOUDFLARE_EMAIL = process.env.CLOUDFLARE_EMAIL;
-  const CLOUDFLARE_API_KEY = process.env.CLOUDFLARE_API_KEY;
-  const CLOUDFLARE_ZONE_ID = process.env.CLOUDFLARE_ZONE_ID;
-
-  if (!CLOUDFLARE_EMAIL || !CLOUDFLARE_API_KEY || !CLOUDFLARE_ZONE_ID) {
-    console.error("Missing Cloudflare API credentials in environment.");
-    return NextResponse.json({ error: 'System configuration error' }, { status: 500 });
-  }
-
   try {
+    const { domain, storeId } = await request.json();
+
+    if (!domain || !storeId) {
+      return NextResponse.json({ error: 'Missing domain or storeId' }, { status: 400 });
+    }
+
+    const CLOUDFLARE_EMAIL = process.env.CLOUDFLARE_EMAIL;
+    const CLOUDFLARE_API_KEY = process.env.CLOUDFLARE_API_KEY;
+    const CLOUDFLARE_ZONE_ID = process.env.CLOUDFLARE_ZONE_ID;
+
+    if (!CLOUDFLARE_EMAIL || !CLOUDFLARE_API_KEY || !CLOUDFLARE_ZONE_ID) {
+      console.error("Missing Cloudflare API credentials in environment.");
+      return NextResponse.json({ error: 'System configuration error' }, { status: 500 });
+    }
+
     // 1. Register with Cloudflare Custom Hostnames API
     const cfResponse = await fetch(
       `https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/custom_hostnames`,
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     const cfData = await cfResponse.json();
 
     if (!cfResponse.ok) {
-      // If hostname already exists (409), we treat it as success for our KV sync
+      // If hostname already exists (1406), we still want to fetch its details to get verification records
       if (cfData.errors?.[0]?.code !== 1406) {
         throw new Error(cfData.errors?.[0]?.message || 'Cloudflare API failure');
       }
@@ -66,23 +66,28 @@ export async function POST(request: NextRequest) {
     const kv = (process.env as any).KV_BINDING;
     if (kv) {
       await kv.put(`domain:${domain.toLowerCase()}`, storeId);
-    } else {
-      console.warn("KV_BINDING not found. Manual sync required.");
     }
 
-    // 3. Update Firestore status
+    // 3. Update Firestore status with verification details
     const firestore = getDb();
     const storeRef = doc(firestore, 'stores', storeId);
-    await updateDoc(storeRef, {
+    
+    // Ownership and SSL details for the UI
+    const verificationInfo = {
       customDomain: domain.toLowerCase(),
       domainStatus: 'pending_dns',
-      cfHostnameId: cfData.result?.id || 'existing'
-    });
+      cfHostnameId: cfData.result?.id || 'existing',
+      ownershipRecord: cfData.result?.ownership_verification || null,
+      sslValidationRecord: cfData.result?.ssl?.validation_records?.[0] || null,
+      lastCfSync: new Date().toISOString()
+    };
+
+    await updateDoc(storeRef, verificationInfo);
 
     return NextResponse.json({ 
       success: true, 
-      message: 'Domain registered and KV mapped.',
-      cfData: cfData.result 
+      message: 'Domain registered and verification records synced.',
+      data: verificationInfo
     });
 
   } catch (error: any) {
