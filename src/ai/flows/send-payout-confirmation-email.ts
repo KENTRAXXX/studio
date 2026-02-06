@@ -55,7 +55,7 @@ export async function sendPayoutConfirmationEmail(input: SendPayoutConfirmationE
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          from: `"SOMA Platform" <no-reply@somads.com>`,
+          from: `"SOMA Platform" <no-reply@somatoday.com>`,
           to: to,
           subject: 'Action Required: Confirm Your SOMA Payout Request',
           html: htmlContent,

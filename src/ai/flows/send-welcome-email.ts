@@ -45,7 +45,7 @@ export async function sendWelcomeEmail(input: SendWelcomeEmailInput): Promise<Se
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          from: `"SOMA Platform" <no-reply@somads.com>`,
+          from: `"SOMA Platform" <no-reply@somatoday.com>`,
           to: input.to,
           subject: 'Welcome to SOMA! Your Store is LIVE!',
           html: htmlContent,

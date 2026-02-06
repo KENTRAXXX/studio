@@ -34,7 +34,7 @@ export async function sendActionRequiredEmail(input: SendActionRequiredEmailInpu
           <h3 style="color: #000;">Next Steps:</h3>
           <p>Please log back into your SOMA Backstage portal to re-upload the requested information. Once received, we will prioritize your final approval.</p>
           <div style="margin-top: 30px; text-align: center;">
-              <a href="https://somads.com/backstage" style="background-color: #D4AF37; color: #fff; padding: 14px 28px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Access SOMA Backstage</a>
+              <a href="https://somatoday.com/backstage" style="background-color: #D4AF37; color: #fff; padding: 14px 28px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Access SOMA Backstage</a>
           </div>
           <p>We look forward to seeing your collection live on the platform.</p>
           <p style="margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
@@ -51,7 +51,7 @@ export async function sendActionRequiredEmail(input: SendActionRequiredEmailInpu
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          from: `"SOMA Concierge" <no-reply@somads.com>`,
+          from: `"SOMA Concierge" <no-reply@somatoday.com>`,
           to: to,
           subject: 'Action Required: Finalizing your SOMA Seller Hub',
           html: htmlContent,

@@ -17,7 +17,7 @@ export type SendConciergeEmailInput = {
 export async function sendConciergeEmail(input: SendConciergeEmailInput) {
     const { fromEmail, brandName, subject, message, priority, ticketId } = input;
     const resendApiKey = process.env.RESEND_API_KEY;
-    const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'localhost:9002';
+    const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
     
     if (!resendApiKey) {
       console.error("Resend API key is missing.");
@@ -35,8 +35,8 @@ export async function sendConciergeEmail(input: SendConciergeEmailInput) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          from: `"SOMA Executive Concierge" <no-reply@somads.com>`,
-          to: 'tedd@somads.com', 
+          from: `"SOMA Executive Concierge" <no-reply@somatoday.com>`,
+          to: 'tedd@somatoday.com', 
           subject: `[${priority.toUpperCase()}] New Concierge Message from ${brandName}`,
           html: `
             <div style="font-family: sans-serif; padding: 40px; line-height: 1.6; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 12px;">
@@ -49,7 +49,7 @@ export async function sendConciergeEmail(input: SendConciergeEmailInput) {
               </div>
               <hr style="border: 0; border-top: 1px solid #eee; margin: 32px 0;">
               <p style="font-size: 16px; color: #333; white-space: pre-wrap;">${message}</p>
-              <div style="margin-top: 48_px; text-align: center;">
+              <div style="margin-top: 48px; text-align: center;">
                 <a href="${adminReviewUrl}" style="background: #000; color: #fff; padding: 16px 32px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Review & Respond</a>
               </div>
             </div>

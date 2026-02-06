@@ -33,7 +33,7 @@ export async function sendReferralActivatedEmail(input: SendReferralActivatedEma
           </div>
           <p>This credit has been instantly deposited into your <strong>SOMA Wallet</strong> as a reward for expanding the elite ecosystem. Your mentorship is helping build the future of luxury commerce.</p>
           <div style="margin-top: 30px; text-align: center;">
-              <a href="https://somads.com/dashboard/wallet" style="background-color: #000; color: #fff; padding: 16px 32px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">View My Wallet</a>
+              <a href="https://somatoday.com/dashboard/wallet" style="background-color: #000; color: #fff; padding: 16px 32px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">View My Wallet</a>
           </div>
           <p style="margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px; font-size: 14px; color: #999;">
               Thank you for your continued leadership in the SOMA network.<br/>
@@ -49,7 +49,7 @@ export async function sendReferralActivatedEmail(input: SendReferralActivatedEma
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          from: `"SOMA Ecosystem" <no-reply@somads.com>`,
+          from: `"SOMA Ecosystem" <no-reply@somatoday.com>`,
           to: to,
           subject: `Congratulations! Your protege ${protegeName} is now active`,
           html: htmlContent,

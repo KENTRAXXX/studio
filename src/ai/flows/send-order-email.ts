@@ -76,7 +76,7 @@ export async function sendOrderEmail(input: SendOrderEmailInput): Promise<SendOr
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                from: `"${storeName}" <no-reply@somads.com>`,
+                from: `"${storeName}" <no-reply@somatoday.com>`,
                 to: to,
                 subject: subject,
                 html: html,

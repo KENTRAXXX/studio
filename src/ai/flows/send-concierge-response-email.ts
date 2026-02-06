@@ -30,7 +30,7 @@ export async function sendConciergeResponseEmail(input: SendConciergeResponseEma
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          from: `"SOMA Executive Support" <no-reply@somads.com>`,
+          from: `"SOMA Executive Support" <no-reply@somatoday.com>`,
           to: to,
           subject: `RE: ${subject} [Ref: ${ticketId.slice(0, 8)}]`,
           html: `
