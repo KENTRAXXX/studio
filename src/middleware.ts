@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCfAccessJwt } from './lib/auth-utils';
 
-export const runtime = 'experimental-edge';
+export const runtime = 'edge';
 
 /**
  * Multi-Tenancy Resolver: Maps Hostnames to Site IDs
@@ -128,7 +128,6 @@ export async function middleware(request: NextRequest) {
   }
 
   // 3. Multi-tenant resolution (Subdomains/Custom Domains)
-  // This logic is only reached if NOT hitting a platform root alias
   const site = await resolveHostname(currentHost, request.url);
   
   if (site) {
