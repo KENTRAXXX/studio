@@ -2,19 +2,19 @@
 
 The Ultimate Design System for Luxury E-commerce.
 
-## 🚀 Deployment Checklist
+## 🚀 Deployment Checklist (CRITICAL)
 
-Follow these steps to deploy the SOMA platform to Cloudflare Pages.
+Follow these exact steps in your Cloudflare Pages dashboard to ensure the app functions correctly.
 
-### 1. Cloudflare Pages Setup
-In your Cloudflare Pages dashboard, ensure the following settings:
-- **Framework Preset**: `None` (Manual configuration is more reliable for Next.js 15)
+### 1. Build Settings
+In **Settings > Build & deployments > Build settings**, click **Edit** and set:
+- **Framework Preset**: `None`
 - **Build Command**: `npm run pages:build`
 - **Build Output Directory**: `.vercel/output/static`
-- **Node.js Version**: 18 or higher
+- **Root Directory**: `/`
 
-### 2. Required Environment Variables
-Ensure these are added in **Cloudflare Pages > Settings > Environment Variables**.
+### 2. Environment Variables
+Ensure these are added in **Settings > Environment Variables**.
 
 **Public / Client-Side**
 - `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`=your_cloud_name
@@ -28,11 +28,12 @@ Ensure these are added in **Cloudflare Pages > Settings > Environment Variables*
 - `PAYSTACK_SECRET_KEY`=sk_test_...
 - `RESEND_API_KEY`=re_...
 
-### 3. Multi-Tenancy (KV Store)
-For custom domain support, create a **KV Namespace** named `KV_BINDING` in your Cloudflare dashboard and bind it to your Pages project.
+### 3. Compatibility Flags
+In **Settings > Functions > Compatibility flags**, ensure:
+- `nodejs_compat` is enabled for **both** Production and Preview.
 
-### 4. Compatibility Flags
-Ensure `nodejs_compat` is enabled in your Cloudflare Pages project settings under **Functions > Compatibility Flags**.
+### 4. Multi-Tenancy (KV Store)
+Create a **KV Namespace** named `KV_BINDING` in your Cloudflare dashboard and bind it to your Pages project in **Settings > Functions > KV namespace bindings**.
 
 ## Platform Integrity
 - **Authenticity or Death**: Global policy for all suppliers.
