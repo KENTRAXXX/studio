@@ -5,7 +5,7 @@
  * Regular Server Action (Decoupled from Genkit to support Edge Runtime).
  */
 
-import { convertToCents } from '@/lib/utils/currency';
+import { convertToCents } from '@/lib/currency';
 import { z } from 'zod';
 
 const basePrices: Record<string, number> = {
