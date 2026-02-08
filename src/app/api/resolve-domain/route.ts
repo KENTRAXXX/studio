@@ -13,8 +13,6 @@ function getDb() {
     return getFirestore(app);
 }
 
-export const runtime = 'edge';
-
 /**
  * Resolves a custom domain to a SOMA storeId by querying Firestore.
  * @param request The incoming Next.js request.
@@ -31,8 +29,6 @@ export async function GET(request: NextRequest) {
   try {
     const firestore = getDb();
     const storesRef = collection(firestore, 'stores');
-    // NOTE: This query requires a composite index in Firestore on the `customDomain` field.
-    // The index has been added to firestore.indexes.json
     const q = query(storesRef, where('customDomain', '==', domain), limit(1));
     const querySnapshot = await getDocs(q);
 
@@ -41,11 +37,8 @@ export async function GET(request: NextRequest) {
     }
 
     const storeDoc = querySnapshot.docs[0];
-    // The storeId is the user's ID, which is the document's ID.
     const storeId = storeDoc.id;
 
-    // Return the found storeId
-    // In a production environment, you might also add cache headers here.
     return NextResponse.json({ storeId });
   } catch (error) {
     console.error(`Error resolving domain '${domain}':`, error);

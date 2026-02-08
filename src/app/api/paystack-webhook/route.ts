@@ -1,5 +1,3 @@
-export const runtime = 'edge';
-
 import { NextResponse } from 'next/server';
 import { createClientStore } from '@/ai/flows/create-client-store';
 import { initializeApp, getApps } from 'firebase/app';
@@ -45,7 +43,7 @@ function getCommissionRate(activeCount: number): number {
 }
 
 /**
- * Verifies the Paystack signature using the Web Crypto API (Edge Runtime compatible).
+ * Verifies the Paystack signature using the Web Crypto API.
  */
 async function verifyPaystackSignature(payload: string, signature: string, secret: string): Promise<boolean> {
     const encoder = new TextEncoder();
@@ -84,8 +82,6 @@ async function executePaymentSplit(eventData: any) {
 
         await runTransaction(firestore, async (transaction) => {
             const ordersRef = collection(firestore, `stores/${storeId}/orders`);
-            
-            // FIXED: transaction.get() only accepts DocumentReference. We check if the order exists by its deterministic ID.
             const orderDocRef = doc(ordersRef, orderId);
             const orderSnap = await transaction.get(orderDocRef);
             
@@ -239,7 +235,6 @@ export async function POST(req: Request) {
   }
   
   const rawBody = await req.text();
-  // Paystack standard header is x-paystack-signature
   const paystackSignature = req.headers.get('x-paystack-signature') || req.headers.get('x-stack-signature');
   
   if (paystackSignature) {

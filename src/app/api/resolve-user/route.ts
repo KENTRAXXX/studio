@@ -13,8 +13,6 @@ function getDb() {
     return getFirestore(app);
 }
 
-export const runtime = 'edge';
-
 /**
  * Resolves an email address to a SOMA storeId by querying Firestore.
  * This is used for identity-based routing in middleware.

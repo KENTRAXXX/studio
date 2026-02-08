@@ -1,12 +1,10 @@
-export const runtime = 'edge';
-
 import { NextRequest, NextResponse } from 'next/server';
 import { initializeApp, getApps } from 'firebase/app';
 import { doc, updateDoc, getFirestore } from 'firebase/firestore';
 import { firebaseConfig } from '@/firebase/config';
 
 /**
- * @fileOverview Edge API route to register custom hostnames via Cloudflare API
+ * @fileOverview API route to register custom hostnames via Cloudflare API
  * and sync verification records to Firestore.
  */
 

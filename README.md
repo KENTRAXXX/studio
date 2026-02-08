@@ -9,6 +9,7 @@ Follow these steps to deploy the SOMA platform to the Cloudflare global network.
 
 ### 1. Cloudflare Pages Setup
 In your Cloudflare Pages dashboard, ensure the following settings:
+- **Framework Preset**: `Next.js (App Router)`
 - **Build Command**: `npm run build`
 - **Build Output Directory**: `.next`
 - **Node.js Version**: 18 or higher
@@ -41,13 +42,10 @@ Copy and paste these into **Cloudflare Pages > Settings > Environment Variables*
 - `NEXT_PUBLIC_BRAND_YEARLY_PLAN_CODE`=PLN_...
 
 ### 3. Multi-Tenancy (KV Store)
-For custom domain support, create a **KV Namespace** named `DOMAIN_MAP` in your Cloudflare dashboard and bind it to your Pages project. This allows the middleware to resolve custom boutique domains to store IDs in real-time.
+For custom domain support, create a **KV Namespace** named `KV_BINDING` in your Cloudflare dashboard and bind it to your Pages project. This allows the middleware to resolve custom boutique domains to store IDs in real-time.
 
-### 4. Deployment Command
-To deploy manually via CLI:
-```bash
-npm run deploy
-```
+### 4. Deployment
+For dynamic Next.js features to work on Cloudflare, it is recommended to use the Git integration rather than manual CLI uploads of the `.next` folder.
 
 ## Platform Integrity
 - **Authenticity or Death**: Global policy for all suppliers.

@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCfAccessJwt } from './lib/auth-utils';
 
-export const runtime = 'edge';
-
 /**
  * Multi-Tenancy Resolver: Maps Hostnames to Site IDs
  */

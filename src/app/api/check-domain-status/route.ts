@@ -1,12 +1,10 @@
-export const runtime = 'edge';
-
 import { NextRequest, NextResponse } from 'next/server';
 import { initializeApp, getApps } from 'firebase/app';
 import { doc, updateDoc, getFirestore, getDoc } from 'firebase/firestore';
 import { firebaseConfig } from '@/firebase/config';
 
 /**
- * @fileOverview Edge API route to poll Cloudflare for the latest custom hostname status.
+ * @fileOverview API route to poll Cloudflare for the latest custom hostname status.
  */
 
 const getDb = () => {
