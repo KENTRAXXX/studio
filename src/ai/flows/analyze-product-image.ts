@@ -2,7 +2,7 @@
 
 /**
  * @fileOverview AI flow for analyzing product images. 
- * Includes a resilient fallback for environments where Gemini is restricted.
+ * Refactored for extreme resilience on Cloudflare using direct generation.
  */
 
 import { ai } from '@/ai/genkit';
@@ -39,26 +39,36 @@ const generateFallbackMetadata = (): AnalyzeProductImageOutput => ({
     suggestedTags: ["Luxury", "Curated", "New Arrival", "Exclusive", "Timeless"],
 });
 
-const prompt = ai.definePrompt({
-  name: 'analyzeProductImagePrompt',
-  input: { schema: AnalyzeProductImageInputSchema },
-  output: { schema: AnalyzeProductImageOutputSchema },
-  prompt: `You are an elite luxury commerce curator. Analyze the product in this image: {{media url=imageUrl}}
-  Generate a sophisticated name, evocative description, categories from: ${AVAILABLE_CATEGORIES.join(', ')}, and SEO tags.`,
-});
-
+/**
+ * Analyzes a product image to generate luxury metadata.
+ * Uses direct generation for maximum stability on Cloudflare.
+ */
 export async function analyzeProductImage(input: AnalyzeProductImageInput): Promise<AnalyzeProductImageOutput> {
     try {
-        // Only attempt AI call if API Key is detected, otherwise return fallback immediately
-        if (!process.env.GOOGLE_GENAI_API_KEY) {
-            console.warn("Gemini API key missing. Using resilient fallback.");
+        const apiKey = process.env.GOOGLE_GENAI_API_KEY;
+        if (!apiKey || apiKey.includes('YOUR_')) {
+            console.warn("Gemini API key missing or placeholder. Using fallback.");
             return generateFallbackMetadata();
         }
 
-        const { output } = await prompt(input);
-        return output || generateFallbackMetadata();
+        // Using direct generate call instead of predefined prompt for edge stability
+        const { output } = await ai.generate({
+            model: 'googleai/gemini-2.5-flash',
+            output: { schema: AnalyzeProductImageOutputSchema },
+            prompt: [
+                { text: `You are an elite luxury commerce curator. Analyze this product image and generate a sophisticated name, evocative description, categories from: ${AVAILABLE_CATEGORIES.join(', ')}, and SEO tags.` },
+                { media: { url: input.imageUrl } }
+            ]
+        });
+
+        if (!output) {
+            throw new Error("Empty output from AI model.");
+        }
+
+        return output;
     } catch (error) {
         console.error("AI Analysis Error (Cloudflare Resilience):", error);
+        // Ensure we ALWAYS return a valid object to avoid Server Action serialization errors
         return generateFallbackMetadata();
     }
 }
