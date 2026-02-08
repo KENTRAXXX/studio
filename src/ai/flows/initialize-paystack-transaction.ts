@@ -19,28 +19,31 @@ const basePrices: Record<string, number> = {
 /**
  * Resolves the plan code from environment variables.
  * Checks both PAYSTACK_ and NEXT_PUBLIC_ prefixes to ensure compatibility with Cloudflare secrets.
- * Strictly validates that the code is a real Paystack plan identifier.
+ * Aggressively cleans the input to handle hidden characters or copy-paste artifacts.
  */
 function getPlanCode(tier: string, interval: string): string | undefined {
     const suffix = `${tier}_${interval.toUpperCase()}_PLAN_CODE`;
     const envKey = `PAYSTACK_${suffix}`;
     const publicEnvKey = `NEXT_PUBLIC_${suffix}`;
     
-    const rawCode = process.env[envKey] || process.env[publicEnvKey];
+    const rawValue = process.env[envKey] || process.env[publicEnvKey];
     
-    if (!rawCode || typeof rawCode !== 'string') return undefined;
+    if (!rawValue || typeof rawValue !== 'string') {
+        return undefined;
+    }
 
-    const code = rawCode.trim();
+    // REMOVE ALL WHITESPACE (including spaces in the middle, tabs, and newlines)
+    // This handles cases where plan codes might have been copied with artifacts.
+    const code = rawValue.replace(/\s+/g, '');
     
-    // Strictly validate: must start with PLN_, 
-    // and must not be a placeholder like "PLN_..." or "PLN_YOUR_CODE"
-    const isPlaceholder = 
-        code.includes('...') || 
-        code.includes('YOUR_') || 
-        code.includes('VALUE') ||
-        code.length < 8; // Valid PLN_ codes are usually quite long
-
-    if (code.startsWith('PLN_') && !isPlaceholder) {
+    // Strictly validate: must start with PLN_ and have a reasonable length.
+    // Must not contain placeholder indicators like "..." or "YOUR_".
+    if (
+        code.startsWith('PLN_') && 
+        code.length > 5 &&
+        !code.includes('...') &&
+        !code.includes('YOUR_')
+    ) {
         return code;
     }
     
@@ -91,8 +94,6 @@ export async function initializePaystackTransaction(
         },
     };
 
-    let resolvedPlanCode: string | undefined;
-
     if (input.payment.type === 'signup') {
         const { planTier, interval } = input.payment;
         
@@ -100,7 +101,7 @@ export async function initializePaystackTransaction(
             throw new Error("Free plans do not require payment initialization.");
         }
 
-        resolvedPlanCode = getPlanCode(planTier, interval);
+        const planCode = getPlanCode(planTier, interval);
         
         // Calculate the amount. 
         // Note: Paystack requires the amount even if a plan is provided for some currency configurations.
@@ -114,16 +115,14 @@ export async function initializePaystackTransaction(
         finalPayload.amount = convertToCents(dollarAmount);
         finalPayload.currency = 'USD';
 
-        if (resolvedPlanCode) {
-            finalPayload.plan = resolvedPlanCode;
+        // Only attach the plan if it was resolved and validated successfully
+        if (planCode) {
+            finalPayload.plan = planCode;
         }
     } else {
         finalPayload.amount = convertToCents(input.payment.amountInUSD);
         finalPayload.currency = 'USD';
     }
-
-    // Diagnostic logging for the executive team (visible in Cloudflare Logs)
-    console.log(`[Paystack] Initializing ${input.payment.type} for ${input.email}. Amount: ${finalPayload.amount} cents. Plan: ${resolvedPlanCode || 'None (One-time charge)'}`);
 
     const response = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',
@@ -138,9 +137,14 @@ export async function initializePaystackTransaction(
 
     if (!response.ok) {
       console.error('Paystack API Error Response:', responseData);
-      // Include the payload details in the error if we are in dev or help identify plan errors
-      const errorMsg = responseData.message || 'Unknown error';
-      throw new Error(`Paystack API Error: ${errorMsg}${resolvedPlanCode ? ` (Plan attempted: ${resolvedPlanCode})` : ''}`);
+      let errorMsg = responseData.message || 'Unknown error';
+      
+      // Provide actionable feedback for the specific "Plan not found" issue
+      if (errorMsg.toLowerCase().includes('plan not found') && finalPayload.plan) {
+          errorMsg += ` (Plan ID: ${finalPayload.plan}). Check if this plan was created in Test or Live mode to match your Secret Key.`;
+      }
+      
+      throw new Error(`Paystack API Error: ${errorMsg}`);
     }
 
     if (!responseData.status || !responseData.data) {
