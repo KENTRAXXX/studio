@@ -2,7 +2,7 @@
 
 /**
  * @fileOverview Provides accessibility suggestions for UI components.
- * Refactored for resilience on Cloudflare using direct generation.
+ * Refactored for resilience on Cloudflare using direct generation and stable models.
  */
 
 import { ai } from '@/ai/genkit';
@@ -30,12 +30,18 @@ export async function getAccessibilitySuggestions(input: AccessibilitySuggestion
         }
 
         const { output } = await ai.generate({
-            model: 'googleai/gemini-2.5-flash',
+            model: 'googleai/gemini-1.5-flash',
             output: { schema: AccessibilitySuggestionsOutputSchema },
             prompt: `Review the following UI code for accessibility improvements and provide a concise list of suggestions:\n\n${input.componentCode}`,
         });
 
-        return output || generateFallbackSuggestions();
+        if (!output) {
+            return generateFallbackSuggestions();
+        }
+
+        return {
+            suggestions: output.suggestions
+        };
     } catch (error) {
         console.error("AI A11y Error:", error);
         return generateFallbackSuggestions();

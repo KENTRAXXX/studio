@@ -2,7 +2,7 @@
 
 /**
  * @fileOverview AI flow for analyzing product images. 
- * Refactored for extreme resilience on Cloudflare using direct generation.
+ * Refactored for extreme resilience on Cloudflare using direct generation and stable model identifiers.
  */
 
 import { ai } from '@/ai/genkit';
@@ -51,9 +51,9 @@ export async function analyzeProductImage(input: AnalyzeProductImageInput): Prom
             return generateFallbackMetadata();
         }
 
-        // Using direct generate call instead of predefined prompt for edge stability
+        // Using gemini-1.5-flash for maximum performance and stability on serverless
         const { output } = await ai.generate({
-            model: 'googleai/gemini-2.5-flash',
+            model: 'googleai/gemini-1.5-flash',
             output: { schema: AnalyzeProductImageOutputSchema },
             prompt: [
                 { text: `You are an elite luxury commerce curator. Analyze this product image and generate a sophisticated name, evocative description, categories from: ${AVAILABLE_CATEGORIES.join(', ')}, and SEO tags.` },
@@ -65,7 +65,12 @@ export async function analyzeProductImage(input: AnalyzeProductImageInput): Prom
             throw new Error("Empty output from AI model.");
         }
 
-        return output;
+        return {
+            suggestedName: output.suggestedName || "New Discovery",
+            description: output.description || "Luxury standard asset.",
+            suggestedCategories: output.suggestedCategories || ["Accessories"],
+            suggestedTags: output.suggestedTags || ["Luxury"]
+        };
     } catch (error) {
         console.error("AI Analysis Error (Cloudflare Resilience):", error);
         // Ensure we ALWAYS return a valid object to avoid Server Action serialization errors
