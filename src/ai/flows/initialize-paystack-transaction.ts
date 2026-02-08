@@ -26,19 +26,22 @@ function getPlanCode(tier: string, interval: string): string | undefined {
     const envKey = `PAYSTACK_${suffix}`;
     const publicEnvKey = `NEXT_PUBLIC_${suffix}`;
     
-    const code = process.env[envKey] || process.env[publicEnvKey];
+    const rawCode = process.env[envKey] || process.env[publicEnvKey];
     
-    // Strictly validate: must be a string, must start with PLN_, 
+    if (!rawCode || typeof rawCode !== 'string') return undefined;
+
+    const code = rawCode.trim();
+    
+    // Strictly validate: must start with PLN_, 
     // and must not be a placeholder like "PLN_..." or "PLN_YOUR_CODE"
-    if (
-        code && 
-        typeof code === 'string' && 
-        code.trim().startsWith('PLN_') && 
-        code.trim().length > 4 &&
-        !code.includes('...') &&
-        !code.includes('YOUR_')
-    ) {
-        return code.trim();
+    const isPlaceholder = 
+        code.includes('...') || 
+        code.includes('YOUR_') || 
+        code.includes('VALUE') ||
+        code.length < 8; // Valid PLN_ codes are usually quite long
+
+    if (code.startsWith('PLN_') && !isPlaceholder) {
+        return code;
     }
     
     return undefined;
@@ -88,6 +91,8 @@ export async function initializePaystackTransaction(
         },
     };
 
+    let resolvedPlanCode: string | undefined;
+
     if (input.payment.type === 'signup') {
         const { planTier, interval } = input.payment;
         
@@ -95,7 +100,7 @@ export async function initializePaystackTransaction(
             throw new Error("Free plans do not require payment initialization.");
         }
 
-        const planCode = getPlanCode(planTier, interval);
+        resolvedPlanCode = getPlanCode(planTier, interval);
         
         // Calculate the amount. 
         // Note: Paystack requires the amount even if a plan is provided for some currency configurations.
@@ -109,14 +114,16 @@ export async function initializePaystackTransaction(
         finalPayload.amount = convertToCents(dollarAmount);
         finalPayload.currency = 'USD';
 
-        // Only attach the plan if it was resolved and validated successfully
-        if (planCode) {
-            finalPayload.plan = planCode;
+        if (resolvedPlanCode) {
+            finalPayload.plan = resolvedPlanCode;
         }
     } else {
         finalPayload.amount = convertToCents(input.payment.amountInUSD);
         finalPayload.currency = 'USD';
     }
+
+    // Diagnostic logging for the executive team (visible in Cloudflare Logs)
+    console.log(`[Paystack] Initializing ${input.payment.type} for ${input.email}. Amount: ${finalPayload.amount} cents. Plan: ${resolvedPlanCode || 'None (One-time charge)'}`);
 
     const response = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',
@@ -131,7 +138,9 @@ export async function initializePaystackTransaction(
 
     if (!response.ok) {
       console.error('Paystack API Error Response:', responseData);
-      throw new Error(`Paystack API Error: ${responseData.message || 'Unknown error'}`);
+      // Include the payload details in the error if we are in dev or help identify plan errors
+      const errorMsg = responseData.message || 'Unknown error';
+      throw new Error(`Paystack API Error: ${errorMsg}${resolvedPlanCode ? ` (Plan attempted: ${resolvedPlanCode})` : ''}`);
     }
 
     if (!responseData.status || !responseData.data) {
