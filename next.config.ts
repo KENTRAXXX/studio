@@ -1,7 +1,6 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-  // Removed output: 'standalone' to resolve Cloudflare 404 and adapter conflicts
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -36,7 +35,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  serverExternalPackages: ['genkit', '@genkit-ai/google-genai'],
+  // Ensure heavy AI and Node-dependent libraries are not bundled into the client/edge
+  serverExternalPackages: ['genkit', '@genkit-ai/google-genai', 'express', 'google-auth-library'],
 };
 
 export default nextConfig;
