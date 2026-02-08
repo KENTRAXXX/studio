@@ -1,4 +1,3 @@
-
 # SOMA Executive Platform
 
 The Ultimate Design System for Luxury E-commerce.
@@ -9,8 +8,8 @@ Follow these steps to deploy the SOMA platform to Cloudflare Pages.
 
 ### 1. Cloudflare Pages Setup
 In your Cloudflare Pages dashboard, ensure the following settings:
-- **Framework Preset**: `Next.js`
-- **Build Command**: `npm run build`
+- **Framework Preset**: `None` (Manual configuration is more reliable for Next.js 15)
+- **Build Command**: `npm run pages:build`
 - **Build Output Directory**: `.vercel/output/static`
 - **Node.js Version**: 18 or higher
 
@@ -32,8 +31,8 @@ Ensure these are added in **Cloudflare Pages > Settings > Environment Variables*
 ### 3. Multi-Tenancy (KV Store)
 For custom domain support, create a **KV Namespace** named `KV_BINDING` in your Cloudflare dashboard and bind it to your Pages project.
 
-### 4. Dynamic Features
-The project uses `@cloudflare/next-on-pages` to enable Next.js 15 App Router features on Cloudflare Workers. The build script automatically handles this transformation.
+### 4. Compatibility Flags
+Ensure `nodejs_compat` is enabled in your Cloudflare Pages project settings under **Functions > Compatibility Flags**.
 
 ## Platform Integrity
 - **Authenticity or Death**: Global policy for all suppliers.
