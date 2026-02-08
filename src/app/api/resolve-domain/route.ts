@@ -3,6 +3,8 @@ import { getFirestore, collection, query, where, getDocs, limit } from 'firebase
 import { initializeApp, getApps } from 'firebase/app';
 import { firebaseConfig } from '@/firebase/config';
 
+export const runtime = 'edge';
+
 // Ensure Firebase is initialized only once for the serverless function
 function getDb() {
     const apps = getApps();

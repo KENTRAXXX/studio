@@ -8,6 +8,8 @@ import { firebaseConfig } from '@/firebase/config';
  * and sync verification records to Firestore.
  */
 
+export const runtime = 'edge';
+
 const getDb = () => {
     const apps = getApps();
     const app = apps.length > 0 ? apps[0] : initializeApp(firebaseConfig);

@@ -1,4 +1,5 @@
 'use client';
+export const runtime = 'edge';
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -27,8 +28,6 @@ import { cn } from '@/lib/utils';
 import SomaLogo from '@/components/logo';
 import { usePaystack } from '@/hooks/use-paystack';
 import { useToast } from '@/hooks/use-toast';
-
-export const runtime = 'edge';
 
 const addressSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),

@@ -93,7 +93,7 @@ export default function ProductDetailPage() {
   };
 
   const gallery = product.imageGallery || (product.imageUrl ? [product.imageUrl] : []);
-  const colors = (product.colorOptions as ColorOption[]) || [];
+  const colors = (product.colorOptions as any[]) || [];
 
   const handleColorSelect = (colorName: string) => {
       setSelectedColor(colorName);

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, createContext, useContext, useEffect } from 'react';
@@ -15,6 +14,8 @@ import { PlaceHolderImages, type ImagePlaceholder } from '@/lib/placeholder-imag
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { formatCurrency } from '@/utils/format';
+
+export const runtime = 'edge';
 
 type CartItem = {
   product: any;
