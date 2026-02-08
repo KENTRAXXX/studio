@@ -19,10 +19,29 @@ const basePrices: Record<string, number> = {
 /**
  * Resolves the plan code from environment variables.
  * Checks both PAYSTACK_ and NEXT_PUBLIC_ prefixes to ensure compatibility with Cloudflare secrets.
+ * Strictly validates that the code is a real Paystack plan identifier.
  */
 function getPlanCode(tier: string, interval: string): string | undefined {
     const suffix = `${tier}_${interval.toUpperCase()}_PLAN_CODE`;
-    return process.env[`PAYSTACK_${suffix}`] || process.env[`NEXT_PUBLIC_${suffix}`];
+    const envKey = `PAYSTACK_${suffix}`;
+    const publicEnvKey = `NEXT_PUBLIC_${suffix}`;
+    
+    const code = process.env[envKey] || process.env[publicEnvKey];
+    
+    // Strictly validate: must be a string, must start with PLN_, 
+    // and must not be a placeholder like "PLN_..." or "PLN_YOUR_CODE"
+    if (
+        code && 
+        typeof code === 'string' && 
+        code.trim().startsWith('PLN_') && 
+        code.trim().length > 4 &&
+        !code.includes('...') &&
+        !code.includes('YOUR_')
+    ) {
+        return code.trim();
+    }
+    
+    return undefined;
 }
 
 const SignupPaymentSchema = z.object({
@@ -78,7 +97,8 @@ export async function initializePaystackTransaction(
 
         const planCode = getPlanCode(planTier, interval);
         
-        // Calculate the amount regardless of plan presence to ensure Paystack has valid data
+        // Calculate the amount. 
+        // Note: Paystack requires the amount even if a plan is provided for some currency configurations.
         const basePrice = basePrices[planTier] || 0;
         const dollarAmount = interval === 'yearly' ? basePrice * 10 : basePrice;
         
@@ -89,6 +109,7 @@ export async function initializePaystackTransaction(
         finalPayload.amount = convertToCents(dollarAmount);
         finalPayload.currency = 'USD';
 
+        // Only attach the plan if it was resolved and validated successfully
         if (planCode) {
             finalPayload.plan = planCode;
         }
