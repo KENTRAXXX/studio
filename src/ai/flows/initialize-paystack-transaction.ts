@@ -77,20 +77,20 @@ export async function initializePaystackTransaction(
         }
 
         const planCode = getPlanCode(planTier, interval);
+        
+        // Calculate the amount regardless of plan presence to ensure Paystack has valid data
+        const basePrice = basePrices[planTier] || 0;
+        const dollarAmount = interval === 'yearly' ? basePrice * 10 : basePrice;
+        
+        if (dollarAmount <= 0) {
+            throw new Error(`Plan ${planTier} has no price defined.`);
+        }
+
+        finalPayload.amount = convertToCents(dollarAmount);
+        finalPayload.currency = 'USD';
 
         if (planCode) {
             finalPayload.plan = planCode;
-        } else {
-            // Fallback to one-time charge if no plan code is found
-            const basePrice = basePrices[planTier] || 0;
-            const dollarAmount = interval === 'yearly' ? basePrice * 10 : basePrice;
-            
-            if (dollarAmount <= 0) {
-                throw new Error(`Plan ${planTier} has no price defined and no plan code found.`);
-            }
-
-            finalPayload.amount = convertToCents(dollarAmount);
-            finalPayload.currency = 'USD';
         }
     } else {
         finalPayload.amount = convertToCents(input.payment.amountInUSD);
