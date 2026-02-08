@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense, useTransition, useEffect } from 'react';
@@ -108,8 +107,8 @@ function SignUpForm() {
       onSuccess: async (user) => {
         if (!isFreePlan) {
             toast({
-              title: 'Account Created',
-              description: "Welcome! Let's get you set up.",
+              title: 'Identity Provisioned',
+              description: "Finalizing your empire's secure payment uplink...",
             });
         }
 
@@ -126,7 +125,7 @@ function SignUpForm() {
 
           toast({
             title: isFreePlan ? 'Account Created!' : 'Payment Successful!',
-            description: isFreePlan ? "You're all set." : 'Your store is being provisioned. This may take a moment.',
+            description: isFreePlan ? "Welcome to the elite." : 'Your luxury store is being provisioned across our global edge.',
           });
           
           router.push('/backstage/return');
@@ -135,8 +134,8 @@ function SignUpForm() {
         const onPaystackClose = () => {
           toast({
             variant: 'default',
-            title: 'Payment Incomplete',
-            description: 'Your store will not be created until payment is complete. You can restart from your dashboard.',
+            title: 'Payment Deferred',
+            description: 'Your account is created, but payment is required for full activation.',
           });
           router.push('/backstage/return');
         };
@@ -146,31 +145,38 @@ function SignUpForm() {
             return;
         }
 
-        await initializePayment({
-            email: data.email,
-            payment: {
-                type: 'signup',
-                planTier,
-                interval
-            },
-            metadata: {
-              userId: user.user.uid,
-              plan: interval,
-              planTier: planTier,
-              template: 'gold-standard',
-            },
-          },
-          onPaystackSuccess,
-          onPaystackClose
-        );
-
-        setIsSuccess(true);
+        // Wrap payment initialization in a try/catch to handle API failures gracefully
+        try {
+            await initializePayment({
+                email: data.email,
+                payment: {
+                    type: 'signup',
+                    planTier,
+                    interval
+                },
+                metadata: {
+                  userId: user.user.uid,
+                  plan: interval,
+                  planTier: planTier,
+                  template: 'gold-standard',
+                },
+              },
+              onPaystackSuccess,
+              onPaystackClose
+            );
+            
+            // If we get here, the Paystack modal has been triggered successfully
+            setIsSuccess(true);
+        } catch (error: any) {
+            // Error is already toasted by usePaystack, we just need to ensure the form stays interactive
+            console.error("Signup payment flow error:", error);
+        }
       },
       onError: (err) => {
         toast({
           variant: 'destructive',
           title: 'Sign Up Failed',
-          description: err.message || 'An unknown error occurred.',
+          description: err.message || 'An unexpected error occurred during account creation.',
         });
       },
     });
@@ -178,7 +184,7 @@ function SignUpForm() {
 
   const isPending = isSigningUp || isInitializing;
   const isFreePlan = (planTier === 'SELLER' && interval === 'free') || planTier === 'ADMIN';
-  const buttonText = isFreePlan ? 'Create Admin Account' : 'Create Account & Pay';
+  const buttonText = isFreePlan ? 'Create Admin Account' : 'Confirm Plan & Continue to Pay';
 
   return (
       <div className="w-full max-w-lg">
@@ -190,10 +196,10 @@ function SignUpForm() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                 >
-                    <Card className="border-primary/50">
+                    <Card className="border-primary/50 bg-card/50 backdrop-blur-md">
                         <CardHeader>
-                            <CardTitle>Sign Up for {planName}</CardTitle>
-                            <CardDescription>Enter your details to create an account.</CardDescription>
+                            <CardTitle className="text-2xl font-headline text-primary">Establish My Legacy: {planName}</CardTitle>
+                            <CardDescription>Enter your executive credentials to initialize your SOMA boutique.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <Form {...form}>
@@ -205,7 +211,7 @@ function SignUpForm() {
                                         <FormItem>
                                             <FormLabel>Email Address</FormLabel>
                                             <FormControl>
-                                            <Input placeholder="your.email@example.com" {...field} />
+                                            <Input placeholder="executive@somatoday.com" {...field} className="bg-black/20 border-primary/20" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -216,14 +222,14 @@ function SignUpForm() {
                                         name="password"
                                         render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Password</FormLabel>
+                                            <FormLabel>Account Password</FormLabel>
                                             <FormControl>
                                               <div className="relative">
                                                 <Input 
                                                   type={showPassword ? "text" : "password"} 
                                                   placeholder="••••••••" 
                                                   {...field} 
-                                                  className="pr-10"
+                                                  className="bg-black/20 border-primary/20 pr-10"
                                                 />
                                                 <button
                                                   type="button"
@@ -278,17 +284,17 @@ function SignUpForm() {
                                         render={({ field }) => (
                                         <FormItem>
                                             <FormLabel className="flex items-center gap-2">
-                                                Referral Code {refParam && <ShieldCheck className="h-3.5 w-3.5 text-primary" />}
+                                                Referral Attribution {refParam && <ShieldCheck className="h-3.5 w-3.5 text-primary" />}
                                             </FormLabel>
                                             <FormControl>
                                             <Input 
-                                                placeholder={refParam ? refParam.toUpperCase() : "Enter code (Optional)"} 
+                                                placeholder={refParam ? refParam.toUpperCase() : "Enter partner code (Optional)"} 
                                                 {...field} 
                                                 disabled={!!refParam}
                                                 className={cn(!!refParam && "bg-muted/50 cursor-not-allowed border-primary/20 text-primary font-mono font-bold")}
                                             />
                                             </FormControl>
-                                            {refParam && <p className="text-[10px] text-primary/60 uppercase tracking-widest font-bold">Partner attribution applied via link</p>}
+                                            {refParam && <p className="text-[10px] text-primary/60 uppercase tracking-widest font-bold">Strategic credit applied via link</p>}
                                             <FormMessage />
                                         </FormItem>
                                         )}
@@ -306,14 +312,16 @@ function SignUpForm() {
                                         />
                                         <label
                                             htmlFor="terms"
-                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                            className="text-xs font-medium leading-none text-muted-foreground peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                                         >
-                                           By signing up, you agree to the SOMA Terms of Service and No-Refund Policy.
+                                           I agree to the SOMA Terms of Service, Privacy Policy, and No-Refund Standard.
                                         </label>
                                     </div>
                                     
-                                    <Button type="submit" disabled={isPending || !agreedToTerms} className="w-full h-12 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed">
-                                        {isPending ? <Loader2 className="animate-spin" /> : buttonText}
+                                    <Button type="submit" disabled={isPending || !agreedToTerms} className="w-full h-14 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed font-bold">
+                                        {isPending ? (
+                                            <><Loader2 className="animate-spin mr-2 h-5 w-5" /> Orchestrating Session...</>
+                                        ) : buttonText}
                                     </Button>
                                 </form>
                             </Form>
@@ -327,11 +335,16 @@ function SignUpForm() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                  >
-                    <Card className="border-primary/50">
-                        <CardContent className="p-6 text-center">
-                            <Loader2 className="animate-spin h-8 w-8 text-primary mx-auto mb-4"/>
-                            <p className="text-lg font-medium">Provisioning Session...</p>
-                            <p className="text-muted-foreground text-sm">Synchronizing your credentials with the platform.</p>
+                    <Card className="border-primary/50 bg-primary/5">
+                        <CardContent className="p-12 text-center space-y-6">
+                            <div className="relative mx-auto w-fit">
+                                <Loader2 className="animate-spin h-12 w-12 text-primary"/>
+                                <Lock className="absolute inset-0 m-auto h-4 w-4 text-primary/60" />
+                            </div>
+                            <div>
+                                <p className="text-xl font-headline font-bold text-primary">Payment Handshake Initialized</p>
+                                <p className="text-muted-foreground text-sm mt-2">Securely processing your plan activation via Paystack...</p>
+                            </div>
                         </CardContent>
                     </Card>
                  </motion.div>
@@ -344,11 +357,11 @@ function SignUpForm() {
 
 export default function SignUpPage() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 sm:p-6">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-black gold-mesh-gradient p-4 sm:p-6">
       <div className="text-center mb-10">
         <SomaLogo className="h-12 w-12 mx-auto" />
-        <h1 className="text-4xl font-bold font-headline mt-4 text-primary">Create Your SOMA Account</h1>
-        <p className="mt-2 text-lg text-muted-foreground">Join the future of luxury e-commerce.</p>
+        <h1 className="text-4xl font-bold font-headline mt-4 text-white tracking-tight">Executive Provisioning</h1>
+        <p className="mt-2 text-lg text-muted-foreground">Synchronize your identity with the SOMA ecosystem.</p>
       </div>
       <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
          <SignUpForm />

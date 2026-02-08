@@ -5,7 +5,7 @@
  * Regular Server Action (Decoupled from Genkit to support Edge Runtime).
  */
 
-import { convertToCents } from '@/lib/currency';
+import { convertToCents } from '@/lib/utils/currency';
 import { z } from 'zod';
 
 const basePrices: Record<string, number> = {
@@ -16,9 +16,13 @@ const basePrices: Record<string, number> = {
     BRAND: 21.00,
 };
 
+/**
+ * Resolves the plan code from environment variables.
+ * Checks both PAYSTACK_ and NEXT_PUBLIC_ prefixes to ensure compatibility with Cloudflare secrets.
+ */
 function getPlanCode(tier: string, interval: string): string | undefined {
-    const key = `PAYSTACK_${tier}_${interval.toUpperCase()}_PLAN_CODE`;
-    return process.env[key];
+    const suffix = `${tier}_${interval.toUpperCase()}_PLAN_CODE`;
+    return process.env[`PAYSTACK_${suffix}`] || process.env[`NEXT_PUBLIC_${suffix}`];
 }
 
 const SignupPaymentSchema = z.object({
@@ -54,7 +58,7 @@ export async function initializePaystackTransaction(
 ): Promise<InitializePaystackTransactionOutput> {
     const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
     if (!paystackSecretKey) {
-      throw new Error('Paystack secret key is not configured.');
+      throw new Error('Paystack secret key is not configured in environment variables.');
     }
 
     const finalPayload: any = {
@@ -77,8 +81,14 @@ export async function initializePaystackTransaction(
         if (planCode) {
             finalPayload.plan = planCode;
         } else {
+            // Fallback to one-time charge if no plan code is found
             const basePrice = basePrices[planTier] || 0;
             const dollarAmount = interval === 'yearly' ? basePrice * 10 : basePrice;
+            
+            if (dollarAmount <= 0) {
+                throw new Error(`Plan ${planTier} has no price defined and no plan code found.`);
+            }
+
             finalPayload.amount = convertToCents(dollarAmount);
             finalPayload.currency = 'USD';
         }
@@ -99,6 +109,7 @@ export async function initializePaystackTransaction(
     const responseData = await response.json();
 
     if (!response.ok) {
+      console.error('Paystack API Error Response:', responseData);
       throw new Error(`Paystack API Error: ${responseData.message || 'Unknown error'}`);
     }
 
