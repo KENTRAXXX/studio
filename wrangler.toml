@@ -1,2 +1,8 @@
-# Updated to favor wrangler.jsonc configuration
 name = "studio"
+pages_build_output_dir = ".vercel/output/static"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[kv_namespaces]]
+binding = "KV_BINDING"
+id = "a9fe942791274b2b9987000a75223f2c"
