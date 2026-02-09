@@ -3,8 +3,6 @@ import { initializeApp, getApps } from 'firebase/app';
 import { doc, getDoc, updateDoc, getFirestore } from 'firebase/firestore';
 import { firebaseConfig } from '@/firebase/config';
 
-export const runtime = 'edge';
-
 const getDb = () => {
     const apps = getApps();
     const app = apps.length > 0 ? apps[0] : initializeApp(firebaseConfig);

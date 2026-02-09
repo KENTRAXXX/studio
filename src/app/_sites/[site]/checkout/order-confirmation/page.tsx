@@ -7,8 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { CheckCircle2 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 
-export const runtime = 'edge';
-
 export default function OrderConfirmationPage() {
     const searchParams = useSearchParams();
     const orderId = searchParams.get('orderId');

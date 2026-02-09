@@ -1,5 +1,4 @@
 'use client';
-export const runtime = 'edge';
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -93,7 +92,7 @@ const InformationStep = ({ onNext, setCheckoutData }: { onNext: () => void, setC
               )} />
           </div>
            <FormField control={form.control} name="country" render={({ field }) => (
-                <FormItem><FormLabel>Country</FormLabel><FormControl><Input placeholder="United States" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Country</partition><FormControl><Input placeholder="United States" {...field} /></FormControl><FormMessage /></FormItem>
             )} />
           <div className="flex justify-end pt-4">
             <Button type="submit" size="lg" className="h-12 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">

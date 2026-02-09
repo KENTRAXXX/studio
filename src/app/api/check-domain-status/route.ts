@@ -7,8 +7,6 @@ import { firebaseConfig } from '@/firebase/config';
  * @fileOverview API route to poll Cloudflare for the latest custom hostname status.
  */
 
-export const runtime = 'edge';
-
 const getDb = () => {
     const apps = getApps();
     const app = apps.length > 0 ? apps[0] : initializeApp(firebaseConfig);

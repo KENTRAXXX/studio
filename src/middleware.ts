@@ -19,27 +19,13 @@ async function resolveHostname(hostname: string, baseUrl: string): Promise<strin
         return 'demo';
     }
 
-    // 3. Custom Domain Resolution via KV or API
-    const kv = (process.env as any).KV_BINDING;
-    if (kv) {
-        try {
-            const storeIdFromCache = await kv.get(`domain:${hostname}`);
-            if (storeIdFromCache) return storeIdFromCache;
-        } catch (e) {
-            console.error("KV resolution error (domain):", e);
-        }
-    }
-
+    // 3. Custom Domain Resolution via API
     try {
         const resolveUrl = new URL(`/api/resolve-domain?domain=${hostname}`, baseUrl);
         const response = await fetch(resolveUrl);
         if (response.ok) {
             const data = await response.json();
             const siteId = data.storeId;
-            if (siteId && kv) {
-                // Cache for 1 hour
-                kv.put(`domain:${hostname}`, siteId, { expirationTtl: 3600 }).catch(console.error);
-            }
             return siteId || null;
         }
     } catch (e) {
@@ -53,26 +39,12 @@ async function resolveHostname(hostname: string, baseUrl: string): Promise<strin
  * Identity-Based Resolver: Maps Authenticated Email to Store ID
  */
 async function resolveIdentity(email: string, baseUrl: string): Promise<string | null> {
-    const kv = (process.env as any).KV_BINDING;
-    if (kv) {
-        try {
-            const identityFromCache = await kv.get(`user:${email}`);
-            if (identityFromCache) return identityFromCache;
-        } catch (e) {
-            console.error("KV resolution error (user):", e);
-        }
-    }
-
     try {
         const resolveUrl = new URL(`/api/resolve-user?email=${encodeURIComponent(email)}`, baseUrl);
         const response = await fetch(resolveUrl);
         if (response.ok) {
             const data = await response.json();
             const storeId = data.storeId;
-            if (storeId && kv) {
-                // Cache for 1 hour
-                kv.put(`user:${email}`, storeId, { expirationTtl: 3600 }).catch(console.error);
-            }
             return storeId || null;
         }
     } catch (e) {
@@ -96,6 +68,7 @@ export async function middleware(request: NextRequest) {
   const isPlatformRoot = 
     currentHost === ROOT_DOMAIN || 
     currentHost === `www.${ROOT_DOMAIN}` || 
+    currentHost.endsWith('.vercel.app') ||
     currentHost.endsWith('.pages.dev') ||
     currentHost === 'localhost';
 

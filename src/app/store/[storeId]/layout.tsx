@@ -15,8 +15,6 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Separator } from '@/components/ui/separator';
 import { formatCurrency } from '@/utils/format';
 
-export const runtime = 'edge';
-
 type CartItem = {
   product: any;
   quantity: number;

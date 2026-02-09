@@ -7,8 +7,6 @@ import { sendOrderEmail } from '@/ai/flows/send-order-email';
 import { sendReferralActivatedEmail } from '@/ai/flows/send-referral-activated-email';
 import { formatCurrency } from '@/utils/format';
 
-export const runtime = 'edge';
-
 const basePrices: Record<string, number> = {
     MERCHANT: 19.99,
     SCALER: 29.00,
