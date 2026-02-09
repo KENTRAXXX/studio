@@ -46,8 +46,7 @@ export default function AdminLayout({
     if (!auth) return;
     try {
       await auth.signOut();
-      router.push('/');
-      window.location.reload();
+      router.replace('/');
     } catch (error) {
       console.error('Logout failed:', error);
     }

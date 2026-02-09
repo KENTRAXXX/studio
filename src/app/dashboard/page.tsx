@@ -61,17 +61,18 @@ export default function DashboardOverviewPage() {
 
     // HANDSHAKE: If they have paid, but the store doesn't exist yet, redirect to the Launch Wizard
     useEffect(() => {
-        // Safe access to sessionStorage in useEffect to detect "Just Launched" state
+        if (isLoading || !user) return;
+
         const justLaunched = typeof window !== 'undefined' && sessionStorage.getItem('soma_just_launched') === 'true';
         
         // GATELOCK: Admins do not need a store instance
-        if (!isLoading && userProfile?.hasAccess && userProfile?.userRole !== 'ADMIN' && !storeData && !justLaunched) {
+        if (userProfile?.hasAccess && userProfile?.userRole !== 'ADMIN' && !storeData && !justLaunched) {
             const isSupplier = userProfile.planTier === 'SELLER' || userProfile.planTier === 'BRAND';
             if (!isSupplier) {
                 router.push('/dashboard/my-store');
             }
         }
-    }, [isLoading, userProfile, storeData, router]);
+    }, [isLoading, userProfile, storeData, router, user]);
 
     // Cleanup logic: If the store data arrives, clear the "just launched" flag
     useEffect(() => {
@@ -86,6 +87,11 @@ export default function DashboardOverviewPage() {
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
             </div>
         );
+    }
+
+    // Safety: If no user is present (e.g. during logout transition), don't render the provisioning loader
+    if (!user) {
+        return null;
     }
 
     // If the user hasn't paid, show payment prompt.
@@ -147,7 +153,6 @@ export default function DashboardOverviewPage() {
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                 {/* Only show checklist if the user is not officially 'live' */}
                  {!userProfile?.live && <OnboardingChecklist />}
 
                 <Card className="border-primary/50 flex flex-col items-center justify-center text-center p-8">

@@ -129,8 +129,7 @@ export default function DashboardLayout({
     if (!auth) return;
     try {
       await auth.signOut();
-      router.push('/');
-      window.location.reload();
+      router.replace('/');
     } catch (error) {
       console.error('Logout failed:', error);
     }
@@ -139,7 +138,6 @@ export default function DashboardLayout({
   const currentNavItems = useMemo(() => {
     if (!userProfile) return [];
 
-    // Admins are redirected to /admin, but we keep this fallback just in case
     if (userProfile.userRole === 'ADMIN') {
         return [];
     }
