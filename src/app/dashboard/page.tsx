@@ -20,6 +20,11 @@ export default function DashboardOverviewPage() {
     const firestore = useFirestore();
     const router = useRouter();
 
+    // HANDSHAKE: If user is logged out, stop rendering dashboard components immediately
+    if (!userLoading && !user) {
+        return null;
+    }
+
     // Redirect Admins to the specialized /admin layout
     useEffect(() => {
         if (!profileLoading && userProfile?.userRole === 'ADMIN') {
@@ -75,7 +80,6 @@ export default function DashboardOverviewPage() {
     }
 
     // Safety: If no user is present (e.g. during logout transition), don't render anything
-    // This prevents the Wizard from flashing during sign-out
     if (!user) {
         return null;
     }

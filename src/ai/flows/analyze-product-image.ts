@@ -2,7 +2,7 @@
 
 /**
  * @fileOverview AI flow for analyzing product images. 
- * Refactored for extreme resilience on Cloudflare using direct generation and stable model identifiers.
+ * Refactored for maximum stability on Cloudflare using nodejs_compat and graceful fallbacks.
  */
 
 import { ai } from '@/ai/genkit';
@@ -30,28 +30,29 @@ const AnalyzeProductImageOutputSchema = z.object({
 export type AnalyzeProductImageOutput = z.infer<typeof AnalyzeProductImageOutputSchema>;
 
 /**
- * Fallback generator for restricted environments (e.g. Edge without API keys)
+ * Fallback generator for restricted or high-latency environments.
+ * Prevents the "Unexpected response from server" error by always returning valid data.
  */
 const generateFallbackMetadata = (): AnalyzeProductImageOutput => ({
     suggestedName: "New Luxury Discovery",
-    description: "An exquisite addition to your collection, defined by its timeless silhouette and premium craftsmanship. This piece embodies the SOMA standard of excellence.",
+    description: "An exquisite addition to your collection, defined by its timeless silhouette and premium craftsmanship. This piece embodies the SOMA standard of excellence and heritage design.",
     suggestedCategories: ["Accessories"],
     suggestedTags: ["Luxury", "Curated", "New Arrival", "Exclusive", "Timeless"],
 });
 
 /**
  * Analyzes a product image to generate luxury metadata.
- * Uses direct generation for maximum stability on Cloudflare.
+ * Uses direct ai.generate for stability on serverless runtimes.
  */
 export async function analyzeProductImage(input: AnalyzeProductImageInput): Promise<AnalyzeProductImageOutput> {
     try {
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey || apiKey.includes('YOUR_')) {
-            console.warn("Gemini API key missing or placeholder. Using fallback.");
+            console.warn("Gemini API key missing. Returning graceful fallback.");
             return generateFallbackMetadata();
         }
 
-        // Using gemini-1.5-flash for maximum performance and stability on serverless
+        // Using gemini-1.5-flash for performance and edge stability
         const { output } = await ai.generate({
             model: 'googleai/gemini-1.5-flash',
             output: { schema: AnalyzeProductImageOutputSchema },
@@ -62,7 +63,7 @@ export async function analyzeProductImage(input: AnalyzeProductImageInput): Prom
         });
 
         if (!output) {
-            throw new Error("Empty output from AI model.");
+            return generateFallbackMetadata();
         }
 
         return {
@@ -72,8 +73,7 @@ export async function analyzeProductImage(input: AnalyzeProductImageInput): Prom
             suggestedTags: output.suggestedTags || ["Luxury"]
         };
     } catch (error) {
-        console.error("AI Analysis Error (Cloudflare Resilience):", error);
-        // Ensure we ALWAYS return a valid object to avoid Server Action serialization errors
+        console.error("AI Enrichment Error (Handled):", error);
         return generateFallbackMetadata();
     }
 }

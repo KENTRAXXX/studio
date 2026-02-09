@@ -103,7 +103,7 @@ const DropshipCatalogCard = () => {
             <CardContent>
                 <CardTitle className="text-2xl font-headline">Global Catalog</CardTitle>
                 <p className="text-muted-foreground mt-4 mb-6 text-sm leading-relaxed">
-                    Clone thousands of premium assets from the SOMA Master Catalog.
+                    Clone thousands of premium assets from the SOMA Luxury Catalog.
                 </p>
                 <Button asChild size="lg" className="w-full btn-gold-glow bg-primary font-bold">
                     <Link href="/dashboard/product-catalog">Browse Collection <ArrowRight className="ml-2 h-4 w-4" /></Link>
@@ -352,7 +352,7 @@ const SupplierUploadView = ({ planTier }: { planTier: string }) => {
                             <Sparkles className="h-10 w-10 text-primary" />
                         </div>
                         <h3 className="text-2xl font-bold font-headline text-primary">Master Catalog Clear</h3>
-                        <p className="text-muted-foreground max-w-md mx-auto leading-relaxed">
+                        <p className="text-muted-foreground max-md mx-auto leading-relaxed">
                             Initialize your global presence by submitting your first masterpiece to the SOMA ecosystem.
                         </p>
                         <Button asChild size="lg" className="btn-gold-glow mt-4 font-bold">

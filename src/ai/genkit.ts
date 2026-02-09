@@ -2,9 +2,9 @@ import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
 
 /**
- * Optimized Genkit initialization for Serverless/Edge environments.
+ * Optimized Genkit initialization for Cloudflare Edge.
  * Disables telemetry and logging to minimize gRPC/Node.js dependencies
- * which often cause timeouts or crashes on Cloudflare.
+ * which often cause timeouts or crashes on the edge.
  */
 export const ai = genkit({
   plugins: [
