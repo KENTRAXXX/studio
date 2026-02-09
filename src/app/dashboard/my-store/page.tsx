@@ -21,8 +21,6 @@ import { collection, doc, setDoc, updateDoc, writeBatch, query, where, limit, ge
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
-export const runtime = 'edge';
-
 const progressSteps = [
     { progress: 25, message: 'Securing your custom domain...' },
     { progress: 50, message: 'Syncing with Master Warehouse...' },
@@ -57,8 +55,8 @@ const ChoosePathStep = ({ onSelectPath }: { onSelectPath: (path: 'MERCHANT' | 'D
                 </Card>
             </div>
         </motion.div>
-    )
-}
+    );
+};
 
 const NameStep = ({ storeName, setStoreName, onNext }: { storeName: string, setStoreName: (name: string) => void, onNext: () => void }) => {
     return (
@@ -167,7 +165,6 @@ const BrandingStep = ({ onNext, onBack, logoFile, setLogoFile, faviconFile, setF
 const CollectionStep = ({ onBack, onLaunch, selectedProducts, setSelectedProducts }: any) => {
     const firestore = useFirestore();
     
-    // EXEC: Fetching from real Master Catalog in Firestore
     const catalogQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(
@@ -183,12 +180,12 @@ const CollectionStep = ({ onBack, onLaunch, selectedProducts, setSelectedProduct
         setSelectedProducts((prev: string[]) => 
             checked ? [...prev, productId] : prev.filter(id => id !== productId)
         );
-    }
+    };
     
     const getProductAsset = (id: string) => {
         if (id?.startsWith('http')) return id;
         return PlaceHolderImages.find(img => img.id === id)?.imageUrl || `https://picsum.photos/seed/${id}/600/400`;
-    }
+    };
 
     if (loading) {
         return (
@@ -258,7 +255,7 @@ const CollectionStep = ({ onBack, onLaunch, selectedProducts, setSelectedProduct
             </div>
         </motion.div>
     );
-}
+};
 
 const ProductUploadStep = ({ onBack, onLaunch }: { onBack: () => void, onLaunch: (firstProduct: any) => void }) => {
     const [productName, setProductName] = useState('');
@@ -334,8 +331,8 @@ const ProductUploadStep = ({ onBack, onLaunch }: { onBack: () => void, onLaunch:
                 </Button>
             </div>
          </motion.div>
-    )
-}
+    );
+};
 
 const DeploymentOverlay = ({ messages, onComplete }: { messages: string[], onComplete: () => void }) => {
     const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
@@ -529,7 +526,7 @@ export default function MyStorePage() {
   const handlePathSelection = (path: 'MERCHANT' | 'DROPSHIP') => {
       setStoreType(path);
       setStep(1);
-  }
+  };
 
   const nextStep = () => setStep(s => s + 1);
   const prevStep = () => setStep(s => s - 1);
