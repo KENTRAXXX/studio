@@ -235,6 +235,9 @@ export default function BackstagePage() {
       </div>
     );
   }
+
+  // Session guard for logout
+  if (!user) return null;
   
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 sm:p-6">

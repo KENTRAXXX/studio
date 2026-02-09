@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { 
     collection, 
     query, 
@@ -51,9 +51,15 @@ import { sendWelcomeEmail } from '@/ai/flows/send-welcome-email';
  * Orchestrates platform-wide telemetry across mission-critical sectors.
  */
 export default function AdminOverviewPage() {
+    const { user, loading: userLoading } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
     const [processingId, setProcessingId] = useState<string | null>(null);
+
+    // HANDSHAKE: If user is logged out, stop rendering dashboard components immediately
+    if (!userLoading && !user) {
+        return null;
+    }
 
     // 1. Sector Logic: Stable Query Definitions
     const pendingSellersQ = useMemoFirebase(() => {
