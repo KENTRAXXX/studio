@@ -9,16 +9,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Rocket, UploadCloud, ChevronRight, ChevronLeft, ShoppingBag, Boxes } from 'lucide-react';
+import { Rocket, UploadCloud, ChevronRight, ChevronLeft, ShoppingBag, Boxes, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { createClientStore } from '@/ai/flows/create-client-store';
 import { Progress } from '@/components/ui/progress';
 import { AnimatePresence, motion } from 'framer-motion';
-import { masterCatalog } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { useUser, useFirestore, useUserProfile } from '@/firebase';
-import { collection, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { useUser, useFirestore, useUserProfile, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, doc, setDoc, updateDoc, writeBatch, query, where, limit, getDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
@@ -40,14 +39,14 @@ const ChoosePathStep = ({ onSelectPath }: { onSelectPath: (path: 'MERCHANT' | 'D
             <h2 className="text-2xl font-bold font-headline text-primary mb-2">Choose Your Path</h2>
             <p className="text-muted-foreground mb-8">How do you want to build your empire?</p>
             <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-                <Card onClick={() => onSelectPath('MERCHANT')} className="cursor-pointer hover:border-primary/80 hover:shadow-lg transition-all duration-200">
+                <Card onClick={() => onSelectPath('MERCHANT')} className="cursor-pointer hover:border-primary/80 hover:shadow-lg transition-all duration-200 bg-card/50">
                     <CardHeader className="items-center">
                         <ShoppingBag className="h-12 w-12 text-primary mb-4" />
                         <CardTitle>I have my own products.</CardTitle>
                         <CardDescription>Sell your own unique goods. You manage inventory and fulfillment.</CardDescription>
                     </CardHeader>
                 </Card>
-                <Card onClick={() => onSelectPath('DROPSHIP')} className="cursor-pointer hover:border-primary/80 hover:shadow-lg transition-all duration-200">
+                <Card onClick={() => onSelectPath('DROPSHIP')} className="cursor-pointer hover:border-primary/80 hover:shadow-lg transition-all duration-200 bg-card/50">
                      <CardHeader className="items-center">
                         <Boxes className="h-12 w-12 text-primary mb-4" />
                         <CardTitle>I want to dropship.</CardTitle>
@@ -164,7 +163,18 @@ const BrandingStep = ({ onNext, onBack, logoFile, setLogoFile, faviconFile, setF
 };
 
 const CollectionStep = ({ onBack, onLaunch, selectedProducts, setSelectedProducts }: any) => {
-    const productsToShow = masterCatalog.slice(0, 6);
+    const firestore = useFirestore();
+    
+    const catalogQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(
+            collection(firestore, 'Master_Catalog'), 
+            where('status', '==', 'active'),
+            limit(12)
+        );
+    }, [firestore]);
+
+    const { data: products, loading } = useCollection<any>(catalogQuery);
     
     const handleProductSelect = (productId: string, checked: boolean) => {
         setSelectedProducts((prev: string[]) => 
@@ -172,8 +182,17 @@ const CollectionStep = ({ onBack, onLaunch, selectedProducts, setSelectedProduct
         );
     }
     
-    const getPlaceholderImage = (id: string) => {
-        return PlaceHolderImages.find(img => img.id === id)?.imageUrl || 'https://picsum.photos/seed/placeholder/600/400';
+    const getProductAsset = (id: string) => {
+        if (id?.startsWith('http')) return id;
+        return PlaceHolderImages.find(img => img.id === id)?.imageUrl || `https://picsum.photos/seed/${id}/600/400`;
+    }
+
+    if (loading) {
+        return (
+            <div className="flex h-64 w-full items-center justify-center">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+        );
     }
 
     return (
@@ -188,7 +207,7 @@ const CollectionStep = ({ onBack, onLaunch, selectedProducts, setSelectedProduct
                 <p className="text-muted-foreground">Select at least 3 signature pieces to feature on your homepage.</p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {productsToShow.map((product) => (
+                {products && products.length > 0 ? products.map((product) => (
                 <div
                     key={product.id}
                     onClick={() => handleProductSelect(product.id, !selectedProducts.includes(product.id))}
@@ -206,23 +225,27 @@ const CollectionStep = ({ onBack, onLaunch, selectedProducts, setSelectedProduct
                             onCheckedChange={(checked) => handleProductSelect(product.id, !!checked)}
                         />
                     </div>
-                    <div className="relative w-full aspect-square">
-                        <Image src={getPlaceholderImage(product.imageId)} alt={product.name} fill className="object-cover" />
+                    <div className="relative w-full aspect-square bg-slate-900">
+                        <Image src={getProductAsset(product.imageId)} alt={product.name} fill className="object-cover" />
                     </div>
                      <div className="p-2 text-center bg-card">
-                         <p className="text-sm font-semibold truncate">{product.name}</p>
+                         <p className="text-sm font-semibold truncate px-2">{product.name}</p>
                      </div>
                 </div>
-                ))}
+                )) : (
+                    <div className="col-span-full h-48 flex items-center justify-center border-2 border-dashed rounded-xl">
+                        <p className="text-muted-foreground italic text-sm">Syncing Master Catalog assets...</p>
+                    </div>
+                )}
             </div>
         
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center pt-4">
                  <Button variant="ghost" onClick={onBack}>
                     <ChevronLeft className="mr-2 h-5 w-5" /> Back
                 </Button>
                 <Button 
                     size="lg" 
-                    className="w-full md:w-auto h-16 text-xl btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground"
+                    className="w-full md:w-auto h-16 text-xl btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-black"
                     onClick={onLaunch}
                     disabled={selectedProducts.length < 3}
                 >
@@ -299,7 +322,7 @@ const ProductUploadStep = ({ onBack, onLaunch }: { onBack: () => void, onLaunch:
                 </Button>
                 <Button 
                     size="lg" 
-                    className="w-full md:w-auto h-16 text-xl btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground"
+                    className="w-full md:w-auto h-16 text-xl btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-black"
                     onClick={handleLaunch}
                     disabled={!canLaunch}
                 >
@@ -383,8 +406,6 @@ export default function MyStorePage() {
   const handleLaunch = async (firstProduct?: any) => {
     if (!user || !firestore || !storeType || !userProfile) return;
     
-    // Set a signal to the main dashboard that we are in the process of provisioning
-    // This prevents the redirect loop due to Firestore sync lag.
     sessionStorage.setItem('soma_just_launched', 'true');
     setIsLaunching(true);
 
@@ -399,7 +420,7 @@ export default function MyStorePage() {
         const planTier = userProfile.planTier || (storeType === 'MERCHANT' ? 'MERCHANT' : 'SCALER');
         const userRole = (planTier === 'SELLER' || planTier === 'BRAND') ? 'SELLER' : 'MOGUL';
 
-        // 1. Update User Profile (Client Side)
+        // 1. Update User Profile
         await updateDoc(userRef, {
             hasAccess: true,
             planTier: planTier,
@@ -415,7 +436,7 @@ export default function MyStorePage() {
             throw err;
         });
 
-        // 2. Create Store Configuration (Client Side)
+        // 2. Create Store Configuration
         const storeConfig = {
             userId: userId,
             instanceId: crypto.randomUUID(),
@@ -441,7 +462,7 @@ export default function MyStorePage() {
             throw err;
         });
 
-        // 3. Handle Product Selection / Upload
+        // 3. Handle Product Selection / Upload (SYNC FROM LIVE MASTER CATALOG)
         if (storeType === 'MERCHANT' && firstProduct) {
             const productsRef = collection(storeRef, 'products');
             const productDocRef = doc(productsRef);
@@ -452,25 +473,30 @@ export default function MyStorePage() {
         } else if (storeType === 'DROPSHIP') {
             const productsRef = collection(storeRef, 'products');
             const batch = writeBatch(firestore);
-            const productsToSync = masterCatalog.filter(p => selectedProducts.includes(p.id));
             
-            productsToSync.forEach(product => {
-                const newProductRef = doc(productsRef, product.id);
-                batch.set(newProductRef, {
-                    name: product.name,
-                    suggestedRetailPrice: product.retailPrice,
-                    wholesalePrice: product.masterCost,
-                    description: `A high-quality ${product.name.toLowerCase()} from our master collection.`,
-                    imageUrl: product.imageId,
-                    productType: 'INTERNAL',
-                    vendorId: 'admin',
-                    isManagedBySoma: true,
-                });
-            });
+            for (const productId of selectedProducts) {
+                const masterDocRef = doc(firestore, 'Master_Catalog', productId);
+                const masterSnap = await getDoc(masterDocRef);
+                
+                if (masterSnap.exists()) {
+                    const masterData = masterSnap.data();
+                    const newProductRef = doc(productsRef, productId);
+                    batch.set(newProductRef, {
+                        name: masterData.name,
+                        suggestedRetailPrice: masterData.retailPrice,
+                        wholesalePrice: masterData.masterCost,
+                        description: masterData.description || `A high-quality ${masterData.name.toLowerCase()} from our master collection.`,
+                        imageUrl: masterData.imageId,
+                        productType: masterData.productType || 'INTERNAL',
+                        vendorId: masterData.vendorId || 'admin',
+                        isManagedBySoma: true,
+                    });
+                }
+            }
             await batch.commit();
         }
 
-        // 4. Trigger Welcome Email (Server Side)
+        // 4. Trigger Welcome Email
         await createClientStore({
             userId,
             email: user.email!,

@@ -144,6 +144,21 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
            router.push('/admin');
            return;
        }
+
+       // 6. Role-Based Segregation: Prevent cross-portal access
+       // Moguls (Scalers, Merchants, Enterprise) should not access /admin or /backstage manually
+       const isMogulTier = ['MERCHANT', 'SCALER', 'ENTERPRISE'].includes(userProfile.planTier || '');
+       if (isMogulTier && (pathname.startsWith('/admin') || pathname.startsWith('/backstage')) && !isPublicRoute) {
+           router.push('/dashboard');
+           return;
+       }
+
+       // Sellers/Brands should not access /admin or /dashboard manually (other than overview)
+       const isSellerTier = ['SELLER', 'BRAND'].includes(userProfile.planTier || '');
+       if (isSellerTier && pathname.startsWith('/admin') && !isPublicRoute) {
+           router.push('/backstage');
+           return;
+       }
     }
 
   }, [user, userLoading, userProfile, profileLoading, pathname, router]);

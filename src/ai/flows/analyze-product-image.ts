@@ -45,7 +45,7 @@ const generateFallbackMetadata = (): AnalyzeProductImageOutput => ({
  */
 export async function analyzeProductImage(input: AnalyzeProductImageInput): Promise<AnalyzeProductImageOutput> {
     try {
-        const apiKey = process.env.GOOGLE_GENAI_API_KEY;
+        const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey || apiKey.includes('YOUR_')) {
             console.warn("Gemini API key missing or placeholder. Using fallback.");
             return generateFallbackMetadata();

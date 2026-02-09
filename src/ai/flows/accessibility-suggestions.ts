@@ -24,7 +24,7 @@ const generateFallbackSuggestions = () => ({
 
 export async function getAccessibilitySuggestions(input: AccessibilitySuggestionsInput): Promise<AccessibilitySuggestionsOutput> {
     try {
-        const apiKey = process.env.GOOGLE_GENAI_API_KEY;
+        const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey || apiKey.includes('YOUR_')) {
             return generateFallbackSuggestions();
         }

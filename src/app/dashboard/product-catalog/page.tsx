@@ -48,7 +48,6 @@ type Product = {
 
 const ITEMS_PER_PAGE = 20;
 
-// A unified function to get an image URL
 const getProductImage = (product: Product) => {
     const placeholder = PlaceHolderImages.find(p => p.id === product.imageId);
     if (placeholder) {
@@ -65,14 +64,20 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
   const { user } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
-  const { userProfile } = useUserProfile();
+  const { userProfile, loading: profileLoading } = useUserProfile();
 
   const [syncedProducts, setSyncedProducts] = useState<Set<string>>(new Set());
   const [syncingProducts, setSyncingProducts] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Firestore logic - Only pull 'active' products
+  // AUTH GUARD: Only Scaler and Enterprise can access dropshipping catalog
+  useEffect(() => {
+    if (!profileLoading && userProfile && userProfile.planTier !== 'SCALER' && userProfile.planTier !== 'ENTERPRISE' && userProfile.userRole !== 'ADMIN') {
+      router.push('/access-denied');
+    }
+  }, [userProfile, profileLoading, router]);
+
   const masterCatalogRef = useMemoFirebase(() => {
     if (!firestore || isDemo) return null;
     return query(
@@ -88,9 +93,8 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
     return collection(firestore, 'stores', user.uid, 'products');
   }, [firestore, user, isDemo]);
 
-  // Determine which data to use
   const masterCatalog = isDemo ? [] : liveCatalog;
-  const isLoading = isDemo ? false : catalogLoading;
+  const isLoading = isDemo ? false : (catalogLoading || profileLoading);
 
   useEffect(() => {
     if (userProductsRef) {
