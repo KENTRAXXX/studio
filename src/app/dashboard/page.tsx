@@ -14,21 +14,6 @@ import Link from 'next/link';
 import DashboardController from './dashboard-controller';
 import { OnboardingChecklist } from '@/components/dashboard/OnboardingChecklist';
 
-type Order = {
-    total: number;
-}
-
-type StoreData = {
-    customDomain?: string;
-    domainStatus?: 'unverified' | 'pending_dns' | 'connected';
-    status?: 'Live' | 'Maintenance';
-    visitorCount?: number;
-}
-
-type Product = {
-    id: string;
-}
-
 export default function DashboardOverviewPage() {
     const { user, loading: userLoading } = useUser();
     const { userProfile, loading: profileLoading } = useUserProfile();
@@ -44,19 +29,19 @@ export default function DashboardOverviewPage() {
 
     // Data fetching for overview metrics
     const storeRef = useMemoFirebase(() => user && firestore ? doc(firestore, 'stores', user.uid) : null, [user, firestore]);
-    const { data: storeData, loading: storeLoading } = useDoc<StoreData>(storeRef);
+    const { data: storeData, loading: storeLoading } = useDoc<any>(storeRef);
 
     const ordersRef = useMemoFirebase(() => user && firestore ? collection(firestore, `stores/${user.uid}/orders`) : null, [user, firestore]);
-    const { data: orders, loading: ordersLoading } = useCollection<Order>(ordersRef);
+    const { data: orders, loading: ordersLoading } = useCollection<any>(ordersRef);
 
     const productsRef = useMemoFirebase(() => user && firestore ? collection(firestore, `stores/${user.uid}/products`) : null, [user, firestore]);
-    const { data: products, loading: productsLoading } = useCollection<Product>(productsRef);
+    const { data: products, loading: productsLoading } = useCollection<any>(productsRef);
 
     const isLoading = userLoading || profileLoading || storeLoading || ordersLoading || productsLoading;
     
     // Calculations
     const totalSales = useMemo(() => {
-        return orders?.reduce((acc, order) => acc + order.total, 0) || 0;
+        return orders?.reduce((acc, order) => acc + (order.total || 0), 0) || 0;
     }, [orders]);
 
     // HANDSHAKE: If they have paid, but the store doesn't exist yet, redirect to the Launch Wizard

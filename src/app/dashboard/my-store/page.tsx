@@ -21,6 +21,8 @@ import { collection, doc, setDoc, updateDoc, writeBatch, query, where, limit, ge
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
+export const runtime = 'edge';
+
 const progressSteps = [
     { progress: 25, message: 'Securing your custom domain...' },
     { progress: 50, message: 'Syncing with Master Warehouse...' },
@@ -52,7 +54,7 @@ const ChoosePathStep = ({ onSelectPath }: { onSelectPath: (path: 'MERCHANT' | 'D
                         <CardTitle>I want to dropship.</CardTitle>
                         <CardDescription>Sell products from the SOMA Luxury Catalog without holding inventory.</CardDescription>
                     </CardHeader>
-                </div>
+                </Card>
             </div>
         </motion.div>
     )
