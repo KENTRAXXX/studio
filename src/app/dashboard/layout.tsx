@@ -128,8 +128,9 @@ export default function DashboardLayout({
   const handleLogout = async () => {
     if (!auth) return;
     try {
-      await auth.signOut();
+      // EXEC: Pre-emptive redirect to prevent flash
       router.replace('/');
+      await auth.signOut();
     } catch (error) {
       console.error('Logout failed:', error);
     }

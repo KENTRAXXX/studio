@@ -24,7 +24,7 @@ Ensure these are added in **Settings > Environment Variables**.
 - `NEXT_PUBLIC_ADMIN_GATE_CODE`=SOMA-SECRET-CODE-2024
 
 **Private / Server-Side (Secrets)**
-- `GOOGLE_GENAI_API_KEY`=your_gemini_key
+- `GEMINI_API_KEY`=your_gemini_key
 - `PAYSTACK_SECRET_KEY`=sk_test_...
 - `RESEND_API_KEY`=re_...
 

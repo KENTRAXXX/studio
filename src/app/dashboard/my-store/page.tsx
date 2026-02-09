@@ -52,7 +52,7 @@ const ChoosePathStep = ({ onSelectPath }: { onSelectPath: (path: 'MERCHANT' | 'D
                         <CardTitle>I want to dropship.</CardTitle>
                         <CardDescription>Sell products from the SOMA Luxury Catalog without holding inventory.</CardDescription>
                     </CardHeader>
-                </Card>
+                </div>
             </div>
         </motion.div>
     )
@@ -165,6 +165,7 @@ const BrandingStep = ({ onNext, onBack, logoFile, setLogoFile, faviconFile, setF
 const CollectionStep = ({ onBack, onLaunch, selectedProducts, setSelectedProducts }: any) => {
     const firestore = useFirestore();
     
+    // EXEC: Fetching from real Master Catalog in Firestore
     const catalogQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(
@@ -204,7 +205,7 @@ const CollectionStep = ({ onBack, onLaunch, selectedProducts, setSelectedProduct
         >
              <div>
                 <h2 className="text-2xl font-bold font-headline text-primary">Curate Your Collection</h2>
-                <p className="text-muted-foreground">Select at least 3 signature pieces to feature on your homepage.</p>
+                <p className="text-muted-foreground">Select at least 3 signature pieces from the SOMA Global Registry to feature on your homepage.</p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {products && products.length > 0 ? products.map((product) => (

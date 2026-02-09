@@ -81,7 +81,7 @@ export default function DashboardOverviewPage() {
         }
     }, [storeData]);
 
-    if (isLoading || userProfile?.userRole === 'ADMIN') {
+    if (isLoading) {
         return (
             <div className="flex h-96 w-full items-center justify-center">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -89,7 +89,8 @@ export default function DashboardOverviewPage() {
         );
     }
 
-    // Safety: If no user is present (e.g. during logout transition), don't render the provisioning loader
+    // Safety: If no user is present (e.g. during logout transition), don't render anything
+    // This prevents the Wizard from flashing during sign-out
     if (!user) {
         return null;
     }
