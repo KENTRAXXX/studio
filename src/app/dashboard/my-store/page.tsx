@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -429,12 +429,12 @@ export default function MyStorePage() {
   const { userProfile } = useUserProfile();
   const firestore = useFirestore();
 
-  // CHECK FOR EXISTING STORE (Persistence Gatelock)
+  // 1. PERSISTENCE GATELOCK: Prevent wizard re-entry
   const storeRef = useMemoFirebase(() => user && firestore ? doc(firestore, 'stores', user.uid) : null, [firestore, user]);
   const { data: storeData, loading: storeLoading } = useDoc<any>(storeRef);
 
   useEffect(() => {
-    // If a store already exists and we are not in the middle of launching, redirect to dashboard.
+    // Only redirect to dashboard if the store exists AND we aren't in the middle of launching
     if (!storeLoading && storeData && !isLaunching) {
         router.replace('/dashboard');
     }
@@ -444,7 +444,7 @@ export default function MyStorePage() {
     if (!user || !firestore || !storeType || !userProfile) return;
     
     setIsLaunching(true);
-    // Set flag to prevent Dashboard redirect during provisioning gap
+    // Set sticky flag to bridge the gap between creation and data synchronization
     if (typeof window !== 'undefined') {
         sessionStorage.setItem('soma_just_launched', 'true');
     }
@@ -459,7 +459,6 @@ export default function MyStorePage() {
         const planTier = userProfile.planTier || (storeType === 'MERCHANT' ? 'MERCHANT' : 'SCALER');
         const userRole = (planTier === 'SELLER' || planTier === 'BRAND') ? 'SELLER' : 'MOGUL';
 
-        // Generate Subdomain Slug
         const slug = storeName.toLowerCase().replace(/[^a-z0-9]/g, '') || userId.slice(0, 8);
 
         // 1. Update User Profile
@@ -468,22 +467,17 @@ export default function MyStorePage() {
             planTier: planTier,
             userRole: userRole,
             paidAt: new Date().toISOString(),
-        }).catch(async (err) => {
-            const permissionError = new FirestorePermissionError({
-                path: userRef.path,
-                operation: 'update',
-                requestResourceData: { hasAccess: true, planTier },
-            } satisfies SecurityRuleContext);
-            errorEmitter.emit('permission-error', permissionError);
-            throw err;
         });
 
         // 2. Create Store Configuration
         const storeConfig = {
             userId: userId,
             instanceId: crypto.randomUUID(),
-            slug: slug, // Instant Subdomain
-            theme: 'Gold Standard',
+            slug: slug,
+            themeConfig: {
+                id: 'onyx',
+                colors: { primary: '45 74% 51%', background: '0 0% 2%', accent: '0 0% 10%' }
+            },
             currency: 'USD',
             createdAt: new Date().toISOString(),
             storeName: storeName || "My SOMA Store",
@@ -496,17 +490,9 @@ export default function MyStorePage() {
         };
 
         const targetStoreRef = doc(firestore, 'stores', userId);
-        await setDoc(targetStoreRef, storeConfig).catch(async (err) => {
-            const permissionError = new FirestorePermissionError({
-                path: targetStoreRef.path,
-                operation: 'create',
-                requestResourceData: storeConfig,
-            } satisfies SecurityRuleContext);
-            errorEmitter.emit('permission-error', permissionError);
-            throw err;
-        });
+        await setDoc(targetStoreRef, storeConfig);
 
-        // 3. Handle Product Selection / Upload (SYNC FROM LIVE MASTER CATALOG)
+        // 3. Handle Product Synchronization
         if (storeType === 'MERCHANT' && firstProduct) {
             const productsRef = collection(targetStoreRef, 'products');
             const productDocRef = doc(productsRef);
@@ -540,7 +526,7 @@ export default function MyStorePage() {
             await batch.commit();
         }
 
-        // 4. Trigger Welcome Email
+        // 4. Trigger Welcome Sequence
         await createClientStore({
             userId,
             email: user.email!,
@@ -554,8 +540,8 @@ export default function MyStorePage() {
         }
         toast({
             variant: "destructive",
-            title: 'Launch Failed',
-            description: error.message || 'An unexpected error occurred during launch.',
+            title: 'Deployment Failed',
+            description: error.message || 'An unexpected error occurred during the launch sequence.',
         });
     }
   };
@@ -563,8 +549,8 @@ export default function MyStorePage() {
   const onLaunchComplete = useCallback(() => {
       setIsLaunching(false);
       toast({
-          title: 'Your empire is live!',
-          description: 'Congratulations! Your store has been successfully launched.',
+          title: 'Empire Activated',
+          description: 'Your storefront has been successfully deployed to the SOMA network.',
       });
       router.push('/dashboard');
   }, [router, toast]);
@@ -577,25 +563,13 @@ export default function MyStorePage() {
   const nextStep = () => setStep(s => s + 1);
   const prevStep = () => setStep(s => s - 1);
 
-  const wizardSteps = useMemo(() => {
-    const commonSteps = [
-        <NameStep key="step1" storeName={storeName} setStoreName={setStoreName} onNext={nextStep} />,
-        <BrandingStep key="step2" onNext={nextStep} onBack={prevStep} logoFile={logoFile} setLogoFile={setLogoFile} faviconFile={faviconFile} setFaviconFile={setFaviconFile} />
-    ];
-    if (storeType === 'MERCHANT') {
-        return [
-            ...commonSteps,
-            <ProductUploadStep key="step3-merchant" onBack={prevStep} onLaunch={handleLaunch} />
-        ];
-    }
-    if (storeType === 'DROPSHIP') {
-        return [
-            ...commonSteps,
-            <CollectionStep key="step3-dropship" onBack={prevStep} onLaunch={() => handleLaunch()} selectedProducts={selectedProducts} setSelectedProducts={setSelectedProducts} />
-        ];
-    }
-    return [];
-  }, [storeType, storeName, logoFile, faviconFile, selectedProducts, handleLaunch]);
+  const wizardSteps = [
+    <NameStep key="step1" storeName={storeName} setStoreName={setStoreName} onNext={nextStep} />,
+    <BrandingStep key="step2" onNext={nextStep} onBack={prevStep} logoFile={logoFile} setLogoFile={setLogoFile} faviconFile={faviconFile} setFaviconFile={setFaviconFile} />,
+    storeType === 'MERCHANT' 
+        ? <ProductUploadStep key="step3-merchant" onBack={prevStep} onLaunch={handleLaunch} />
+        : <CollectionStep key="step3-dropship" onBack={prevStep} onLaunch={() => handleLaunch()} selectedProducts={selectedProducts} setSelectedProducts={setSelectedProducts} />
+  ];
 
   const currentStepComponent = step === 0 
     ? <ChoosePathStep onSelectPath={handlePathSelection} planTier={userProfile?.planTier} />
@@ -622,7 +596,7 @@ export default function MyStorePage() {
 
       <div className="mb-12">
         <h1 className="text-3xl font-bold font-headline text-primary">SOMA Launch Wizard</h1>
-        <p className="text-muted-foreground">Follow the steps to configure and launch your new luxury storefront.</p>
+        <p className="text-muted-foreground">Orchestrate your high-end boutique configuration.</p>
         <Progress value={storeType ? (step / (wizardSteps.length || 1)) * 100 : 0} className="w-full h-2 mt-4 bg-muted border border-primary/20" />
       </div>
       
