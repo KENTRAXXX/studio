@@ -51,19 +51,20 @@ export default function DashboardOverviewPage() {
 
     // HANDSHAKE: If they have paid, but the store doesn't exist yet, redirect to the Launch Wizard
     useEffect(() => {
-        if (isLoading || !user) return;
+        if (isLoading || !user || !userProfile) return;
 
         // Check if we literally JUST launched to prevent loop during provision sync
         const justLaunched = typeof window !== 'undefined' && sessionStorage.getItem('soma_just_launched') === 'true';
         
         // GATELOCK: Ensure Merchants/Scalers have a store record.
-        if (userProfile?.hasAccess && userProfile?.userRole !== 'ADMIN' && !storeData && !justLaunched) {
+        // We only redirect if we are certain the store data is missing (not just loading)
+        if (userProfile.hasAccess && userProfile.userRole !== 'ADMIN' && storeData === null && !storeLoading && !justLaunched) {
             const isSupplier = userProfile.planTier === 'SELLER' || userProfile.planTier === 'BRAND';
             if (!isSupplier) {
                 router.push('/dashboard/my-store');
             }
         }
-    }, [isLoading, userProfile, storeData, router, user]);
+    }, [isLoading, userProfile, storeData, storeLoading, router, user]);
 
     // Cleanup logic: If the store data arrives, clear the "just launched" flag
     useEffect(() => {

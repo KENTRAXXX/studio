@@ -101,6 +101,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
     if (userLoading || profileLoading) return;
 
     // 1. PUBLIC ROUTE WHITELIST
+    // Expanded to include root-level product and checkout paths for custom domains
     const isPublicRoute = 
       pathname === '/' || 
       pathname === '/login' ||
@@ -108,12 +109,14 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       pathname.startsWith('/plan-selection') || 
       pathname.startsWith('/store') || 
       pathname.startsWith('/brand') || 
-      pathname.startsWith('/api');
+      pathname.startsWith('/api') ||
+      pathname.startsWith('/product') ||
+      pathname.startsWith('/checkout') ||
+      pathname === '/payout-confirmed' ||
+      pathname === '/access-denied';
       
     const isLegalPage = pathname.startsWith('/legal');
-    const isAccessDeniedPage = pathname === '/access-denied';
     const isReturnPage = pathname === '/backstage/return';
-    const isPayoutConfirmedPage = pathname === '/payout-confirmed';
 
     // 2. AUTH GUARD: Basic presence
     if (!user && !isPublicRoute && !isLegalPage) {
@@ -123,7 +126,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
 
     if (userProfile) {
        // 3. ACCOUNT DISABILITY LOCK
-       if (userProfile.isDisabled && !isAccessDeniedPage) {
+       if (userProfile.isDisabled && pathname !== '/access-denied') {
          router.push('/access-denied');
          return;
        }
@@ -138,7 +141,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       
        // 5. SUBSCRIPTION & PAYMENT GATELOCK
        // If they haven't paid, they are pinned to their portal root.
-       if (!userProfile.hasAccess && !isPublicRoute && !isLegalPage && !isReturnPage && !isPayoutConfirmedPage && !isAccessDeniedPage) {
+       if (!userProfile.hasAccess && !isPublicRoute && !isLegalPage && !isReturnPage) {
            const tier = getTier(userProfile.planTier);
            const portalRoot = `/${tier.portal}`;
            if (pathname !== portalRoot) {
@@ -152,7 +155,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
        const tierConfig = getTier(userProfile.planTier);
        const isAtCorrectPortal = pathname.startsWith(`/${tierConfig.portal}`);
        
-       if (userProfile.hasAccess && !isAtCorrectPortal && !isPublicRoute && !isLegalPage && !isReturnPage && !isAccessDeniedPage) {
+       if (userProfile.hasAccess && !isAtCorrectPortal && !isPublicRoute && !isLegalPage && !isReturnPage) {
            // Clear any local storage flags from previous role sessions
            if (typeof window !== 'undefined') {
                sessionStorage.removeItem('soma_just_launched');
@@ -162,7 +165,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
        }
 
        // 7. TERMS GATELOCK
-       if (userProfile.hasAcceptedTerms === false && !isLegalPage && !isPublicRoute && !isReturnPage && !isAccessDeniedPage) {
+       if (userProfile.hasAcceptedTerms === false && !isLegalPage && !isPublicRoute && !isReturnPage) {
          router.push('/legal/terms');
          return;
        }

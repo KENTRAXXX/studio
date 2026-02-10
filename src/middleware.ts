@@ -8,13 +8,27 @@ async function resolveHostname(hostname: string, baseUrl: string): Promise<strin
     const ROOT_DOMAIN = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
     const currentHost = hostname.toLowerCase();
     
-    // 1. Root check: Skip resolution for the main platform site
-    if (currentHost === ROOT_DOMAIN || currentHost === `www.${ROOT_DOMAIN}` || currentHost === 'localhost') {
+    // 1. Root & Platform Domain check: Skip resolution for system domains
+    const isPlatformDomain = 
+        currentHost === ROOT_DOMAIN || 
+        currentHost === `www.${ROOT_DOMAIN}` || 
+        currentHost === 'localhost' ||
+        currentHost.endsWith('.vercel.app') ||
+        currentHost.endsWith('.web.app') ||
+        currentHost.endsWith('.firebaseapp.com');
+
+    if (isPlatformDomain) {
+        // Still check for subdomains on the root platform domain
+        if (currentHost.endsWith(`.${ROOT_DOMAIN}`)) {
+            const subdomain = currentHost.substring(0, currentHost.length - ROOT_DOMAIN.length - 1);
+            if (subdomain && subdomain !== 'www') {
+                return subdomain;
+            }
+        }
         return null;
     }
 
-    // 2. Custom Domain / Subdomain Resolution via Tier-Aware API
-    // This handles 'my-brand.com' OR subdomains like 'deluxeinc.somatoday.com'
+    // 2. Custom Domain Resolution via Tier-Aware API
     try {
         const resolveUrl = new URL(`/api/resolve-domain?domain=${currentHost}`, baseUrl);
         const response = await fetch(resolveUrl);
@@ -24,16 +38,6 @@ async function resolveHostname(hostname: string, baseUrl: string): Promise<strin
         }
     } catch (e) {
         console.error(`Multi-tenancy resolution error for ${currentHost}:`, e);
-    }
-
-    // 3. Subdomain Check: If not found in API, check if it's a direct subdomain of the root
-    if (currentHost.endsWith(`.${ROOT_DOMAIN}`)) {
-        const subdomain = currentHost.substring(0, currentHost.length - ROOT_DOMAIN.length - 1);
-        if (subdomain && subdomain !== 'www') {
-            // We still need to verify if this subdomain exists as a slug or storeId
-            // The API handles both, so we pass it through
-            return subdomain; 
-        }
     }
     
     return null;
@@ -69,6 +73,7 @@ export async function middleware(request: NextRequest) {
   const tenantIdentifier = await resolveHostname(currentHost, request.url);
   
   if (tenantIdentifier) {
+    // Internally rewrite to the domain route while maintaining the browser URL
     return NextResponse.rewrite(new URL(`/${tenantIdentifier}${path}${url.search}`, request.url));
   }
   
