@@ -27,15 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-type SupportTicket = {
-    id: string;
-    subject: string;
-    message: string;
-    status: 'OPEN' | 'RESOLVED';
-    storeId: string;
-    createdAt: any;
-};
+import { SupportTicket } from '@/lib/types';
 
 type StoreData = {
     userId: string;
@@ -96,25 +88,12 @@ export function GlobalSupportContent() {
                 </div>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center gap-4 bg-muted/20 p-4 rounded-xl border border-primary/10">
-                    <div className="text-center px-6 border-r border-primary/10">
-                        <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest mb-1">Active Tickets</p>
-                        <p className="text-2xl font-mono font-bold text-primary">{tickets?.filter(t => t.status === 'OPEN').length || 0}</p>
-                    </div>
-                    <div className="text-center px-6">
-                        <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest mb-1">Registry Scale</p>
-                        <p className="text-2xl font-mono font-bold text-slate-200">{stores?.length || 0} Stores</p>
-                    </div>
-                </div>
-            </div>
-
             <Card className="border-primary/50 overflow-hidden bg-slate-900/20 shadow-2xl">
                 <CardHeader className="bg-muted/30 border-b border-primary/10">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
                             <CardTitle>Communication Ledger</CardTitle>
-                            <CardDescription>Consolidated stream of all customer inquiries.</CardDescription>
+                            <CardDescription>Consolidated stream of all customer inquiries across the platform.</CardDescription>
                         </div>
                         <div className="flex flex-wrap gap-3">
                             <div className="relative w-full md:w-64">
@@ -213,29 +192,6 @@ export function GlobalSupportContent() {
                     </Table>
                 </CardContent>
             </Card>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="bg-primary/5 border-primary/20">
-                    <CardHeader>
-                        <CardTitle className="text-sm font-headline uppercase tracking-widest flex items-center gap-2 text-primary">
-                            <ShieldCheck className="h-4 w-4" /> Strategic Oversight
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-[11px] text-muted-foreground space-y-2 leading-relaxed">
-                        <p>Admins maintain read-only access to all boutique inquiries to ensure platform integrity and quality of service.</p>
-                    </CardContent>
-                </Card>
-                <Card className="bg-primary/5 border-primary/20">
-                    <CardHeader>
-                        <CardTitle className="text-sm font-headline uppercase tracking-widest flex items-center gap-2 text-primary">
-                            <MessageCircle className="h-4 w-4" /> Resolution Pulse
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-[11px] text-muted-foreground space-y-2 leading-relaxed">
-                        <p>Tickets marked as <span className="text-slate-200 font-bold">RESOLVED</span> remain in the ledger for historical audit.</p>
-                    </CardContent>
-                </Card>
-            </div>
         </div>
     );
 }

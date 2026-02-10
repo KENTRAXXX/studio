@@ -21,16 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import SomaLogo from '@/components/logo';
-
-type SupportTicket = {
-    id: string;
-    subject: string;
-    message: string;
-    status: 'OPEN' | 'RESOLVED';
-    messages: string[];
-    createdAt: any;
-    customerId?: string;
-};
+import { SupportTicket } from '@/lib/types';
 
 export function SupportPortalContent() {
     const { user } = useUser();
@@ -74,7 +65,7 @@ export function SupportPortalContent() {
             });
 
             setReplyText('');
-            toast({ title: 'Reply Transmitted', description: 'Your message has been added.' });
+            toast({ title: 'Reply Transmitted', description: 'Your message has been added to the conversation.' });
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Transmission Error', description: error.message });
         } finally {

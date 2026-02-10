@@ -15,7 +15,6 @@ export function initializeFirebase() {
     
     try {
       // Attempt to initialize via Firebase App Hosting environment variables
-      // In build environments, this will likely fail and fall back to the config object
       firebaseApp = initializeApp();
     } catch (e) {
       if (!isBuildEnvironment) {
