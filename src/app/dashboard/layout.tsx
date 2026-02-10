@@ -45,6 +45,7 @@ import {
   LogOut,
   Palette,
   ShieldCheck,
+  Landmark,
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
