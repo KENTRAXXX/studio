@@ -5,7 +5,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "SupportTicket",
       "type": "object",
-      "description": "Represents a support ticket within the SOMA platform.",
+      "description": "Represents a strategic support inquiry between a customer and a boutique curator.",
       "properties": {
         "id": {
           "type": "string",
@@ -13,11 +13,11 @@
         },
         "subject": {
           "type": "string",
-          "description": "Subject line of the support ticket."
+          "description": "The subject line of the inquiry."
         },
         "message": {
           "type": "string",
-          "description": "The initial message content of the support ticket."
+          "description": "The initial message content."
         },
         "status": {
           "type": "string",
@@ -25,19 +25,19 @@
             "OPEN",
             "RESOLVED"
           ],
-          "description": "The current status of the support ticket."
+          "description": "The current status of the inquiry thread."
         },
         "storeId": {
           "type": "string",
-          "description": "Reference to Store (UID of the owner)."
+          "description": "Relation to the specific store where the inquiry was made."
         },
         "customerId": {
           "type": "string",
-          "description": "Reference to Customer. Optional if the user is not logged in."
+          "description": "Optional relation to a registered customer account."
         },
         "messages": {
           "type": "array",
-          "description": "Array of messages associated with the support ticket.",
+          "description": "The persistent conversation thread.",
           "items": {
             "type": "string"
           }
@@ -52,7 +52,8 @@
         "subject",
         "message",
         "status",
-        "storeId"
+        "storeId",
+        "messages"
       ]
     }
   },
@@ -71,7 +72,7 @@
           "schema": {
             "$ref": "#/backend/entities/SupportTicket"
           },
-          "description": "Represents a support ticket associated with a store."
+          "description": "Threaded communication records isolated per boutique."
         }
       }
     ]

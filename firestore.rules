@@ -25,7 +25,6 @@ service cloud.firestore {
     // --- Collection Rules ---
 
     match /stores/{storeId}/supportTickets/{supportTicketId} {
-      
       // Access granted to the customer who created it, the store owner, or an admin
       allow get: if isExistingTicketOwner() || isOwner(storeId) || isAdmin();
       

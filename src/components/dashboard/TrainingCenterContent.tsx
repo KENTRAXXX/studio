@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useUser, useFirestore, useCollection } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { useUserProfile } from '@/firebase/user-profile-provider';
 
@@ -86,7 +87,11 @@ export function TrainingCenterContent() {
     const { toast } = useToast();
     const router = useRouter();
 
-    const trainingModulesRef = firestore ? collection(firestore, 'Training_Modules') : null;
+    const trainingModulesRef = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return collection(firestore, 'Training_Modules');
+    }, [firestore]);
+
     const { data: trainingModules, loading: modulesLoading } = useCollection<TrainingModule>(trainingModulesRef);
     
     const [selectedVideo, setSelectedVideo] = useState<TrainingModule | null>(null);

@@ -1,9 +1,11 @@
+
 import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
 
 /**
- * @fileOverview Executive Training Center Wrapper.
- * Dynamic loading prevents static build-time initialization of Firebase services.
+ * @fileOverview Executive Training Center Gateway.
+ * Refactored as a thin Server Component wrapper to resolve Next.js 15 build conflicts.
+ * Uses dynamic client-side loading to isolate Firebase runtime from the build server.
  */
 
 const TrainingCenterContent = dynamic(
