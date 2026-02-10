@@ -5,7 +5,7 @@ import { Loader2 } from 'lucide-react';
 /**
  * @fileOverview Branded Boutique Contact Gateway Wrapper.
  * Refactored as a Server Component to ensure 'force-dynamic' 
- * correctly bypasses static prerendering on the build server.
+ * correctly bypasses static prerendering.
  */
 
 const ContactFormContent = dynamic(

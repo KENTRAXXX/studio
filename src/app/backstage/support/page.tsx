@@ -4,7 +4,8 @@ import { Loader2 } from 'lucide-react';
 
 /**
  * @fileOverview Boutique Support Terminal Wrapper.
- * Server Component that dynamically loads client logic to resolve build-time Firebase errors.
+ * Refactored as a Server Component to ensure 'force-dynamic' 
+ * correctly bypasses static prerendering.
  */
 
 const SupportPortalContent = dynamic(

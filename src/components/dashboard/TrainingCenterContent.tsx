@@ -86,6 +86,7 @@ export function TrainingCenterContent() {
     const { toast } = useToast();
     const router = useRouter();
 
+    // MANDATORY MEMOIZATION for Next.js 15 stability
     const trainingModulesRef = useMemoFirebase(() => {
         if (!firestore) return null;
         return collection(firestore, 'Training_Modules');
