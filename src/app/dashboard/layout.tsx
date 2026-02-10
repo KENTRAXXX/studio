@@ -25,7 +25,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
   LayoutDashboard,
@@ -38,8 +37,6 @@ import {
   ShoppingBag,
   GraduationCap,
   Package,
-  Users,
-  Gift,
   User,
   ImageIcon,
   FolderOpen,
@@ -48,7 +45,6 @@ import {
   LogOut,
   Palette,
   ShieldCheck,
-  Landmark
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
@@ -67,7 +63,7 @@ const scalerNavItems = [
   { href: '/dashboard/domain-settings', icon: Globe, label: 'Domain Settings' },
   { href: '/dashboard/analytics', icon: BarChart2, label: 'Analytics' },
   { href: '/dashboard/wallet', icon: Wallet, label: 'SOMA Wallet' },
-  { href: '/dashboard/referrals', icon: Gift, label: 'Referrals' },
+  { href: '/dashboard/referrals', icon: Globe, label: 'Referrals' },
   { href: '/dashboard/accessibility-checker', icon: Accessibility, label: 'A11y Checker' },
 ];
 
@@ -84,7 +80,7 @@ const enterpriseNavItems = [
   { href: '/dashboard/domain-settings', icon: Globe, label: 'Domain Settings' },
   { href: '/dashboard/analytics', icon: BarChart2, label: 'Analytics' },
   { href: '/dashboard/wallet', icon: Wallet, label: 'SOMA Wallet' },
-  { href: '/dashboard/referrals', icon: Gift, label: 'Referrals' },
+  { href: '/dashboard/referrals', icon: Globe, label: 'Referrals' },
   { href: '/dashboard/accessibility-checker', icon: Accessibility, label: 'A11y Checker' },
 ];
 
@@ -99,7 +95,7 @@ const merchantNavItems = [
   { href: '/dashboard/domain-settings', icon: Globe, label: 'Domain Settings' },
   { href: '/dashboard/analytics', icon: BarChart2, label: 'Analytics' },
   { href: '/dashboard/wallet', icon: Wallet, label: 'SOMA Wallet' },
-  { href: '/dashboard/referrals', icon: Gift, label: 'Referrals' },
+  { href: '/dashboard/referrals', icon: Globe, label: 'Referrals' },
   { href: '/dashboard/accessibility-checker', icon: Accessibility, label: 'A11y Checker' },
 ];
 
@@ -128,7 +124,6 @@ export default function DashboardLayout({
   const handleLogout = async () => {
     if (!auth) return;
     try {
-      // EXEC: Pre-emptive redirect to prevent flash
       router.replace('/');
       await auth.signOut();
     } catch (error) {
@@ -141,6 +136,17 @@ export default function DashboardLayout({
 
     if (userProfile.userRole === 'ADMIN') {
         return [];
+    }
+
+    // Strict Gatelock: If no access, only show Overview
+    if (!userProfile.hasAccess) {
+        return [
+            { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
+            ...(userProfile.planTier === 'SELLER' || userProfile.planTier === 'BRAND' 
+                ? [{ href: '/backstage', icon: ShieldCheck, label: 'Onboarding Status' }]
+                : []
+            )
+        ];
     }
 
     const isPendingReview = userProfile.status === 'pending_review';
@@ -194,15 +200,16 @@ export default function DashboardLayout({
         <SidebarFooter>
           <SidebarMenu>
             <SidebarMenuItem>
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start text-muted-foreground hover:text-red-400 hover:bg-red-400/5 px-2 h-9"
+                onClick={() => setIsLogoutDialogOpen(true)}
+              >
+                <LogOut className="h-4 w-4 mr-2" aria-hidden="true" />
+                <span>Sign Out</span>
+              </Button>
+              
               <AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
-                <AlertDialogTrigger asChild>
-                  <SidebarMenuButton 
-                    className="text-muted-foreground hover:text-red-400 transition-colors"
-                  >
-                    <LogOut className="h-4 w-4" aria-hidden="true" />
-                    <span>Sign Out</span>
-                  </SidebarMenuButton>
-                </AlertDialogTrigger>
                 <AlertDialogContent className="bg-card border-primary/30 max-w-sm">
                   <AlertDialogHeader>
                     <AlertDialogTitle className="font-headline text-xl text-primary text-center">Executive Departure</AlertDialogTitle>

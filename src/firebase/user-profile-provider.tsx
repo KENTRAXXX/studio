@@ -106,12 +106,14 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       pathname.startsWith('/signup') || 
       pathname.startsWith('/plan-selection') || 
       pathname.startsWith('/store') || 
+      pathname.startsWith('/brand') || 
       pathname.startsWith('/api');
       
     const isLegalPage = pathname.startsWith('/legal');
     const isAccessDeniedPage = pathname === '/access-denied';
     const isPendingReviewPage = pathname === '/backstage/pending-review';
     const isReturnPage = pathname === '/backstage/return';
+    const isPayoutConfirmedPage = pathname === '/payout-confirmed';
 
     // 1. AUTH GUARD: If not logged in and not on a public or legal route, redirect to home
     if (!user && !isPublicRoute && !isLegalPage) {
@@ -125,37 +127,50 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
          router.push('/access-denied');
          return;
        }
+
+       // 3. ADMIN BYPASS & ROUTING
+       if (userProfile.userRole === 'ADMIN') {
+           if (pathname === '/dashboard') {
+               router.push('/admin');
+           }
+           return; // Admins bypass all other platform gatelocks
+       }
       
-       // 3. Check if terms have been accepted (bypass for Admins)
-       if (userProfile.userRole !== 'ADMIN' && userProfile.hasAcceptedTerms === false && !isLegalPage && !isPublicRoute && !isPendingReviewPage && !isReturnPage) {
+       // 4. PAYMENT GATELOCK (Non-Admins)
+       // If they haven't paid, restrict them to the portal root where the prompt is.
+       if (!userProfile.hasAccess && !isPublicRoute && !isLegalPage && !isReturnPage && !isPayoutConfirmedPage && !isAccessDeniedPage) {
+           const isBasePortal = pathname === '/dashboard' || pathname === '/backstage';
+           if (!isBasePortal) {
+               const target = (userProfile.planTier === 'SELLER' || userProfile.planTier === 'BRAND') ? '/backstage' : '/dashboard';
+               router.push(target);
+               return;
+           }
+       }
+
+       // 5. TERMS GATELOCK
+       if (userProfile.hasAcceptedTerms === false && !isLegalPage && !isPublicRoute && !isPendingReviewPage && !isReturnPage) {
          router.push('/legal/terms');
          return;
        }
 
-       // 4. Status Guard: If pending review, lock to the status page (Bypass for Admins)
+       // 6. STATUS GUARD (Pending Review)
        const isDashboardOrBackstage = pathname.startsWith('/dashboard') || pathname.startsWith('/backstage');
-       if (userProfile.userRole !== 'ADMIN' && userProfile.status === 'pending_review' && isDashboardOrBackstage && !isPendingReviewPage && !isPublicRoute && !isLegalPage && !isReturnPage) {
+       if (userProfile.status === 'pending_review' && isDashboardOrBackstage && !isPendingReviewPage && !isPublicRoute && !isLegalPage && !isReturnPage) {
           router.push('/backstage/pending-review');
           return;
        }
 
-       // 5. Admin Routing: If admin hits dashboard root, push them to /admin
-       if (userProfile.userRole === 'ADMIN' && pathname === '/dashboard') {
-           router.push('/admin');
-           return;
-       }
-
-       // 6. Role-Based Segregation: Prevent cross-portal access
-       // Moguls (Scalers, Merchants, Enterprise) should not access /admin or /backstage manually
+       // 7. PORTAL SEGREGATION: Prevent cross-portal access
+       // Moguls (Scalers, Merchants, Enterprise) should not access /admin or /backstage
        const isMogulTier = ['MERCHANT', 'SCALER', 'ENTERPRISE'].includes(userProfile.planTier || '');
        if (isMogulTier && (pathname.startsWith('/admin') || pathname.startsWith('/backstage')) && !isPublicRoute) {
            router.push('/dashboard');
            return;
        }
 
-       // Sellers/Brands should not access /admin or /dashboard manually (other than overview)
+       // Suppliers (Sellers/Brands) should be directed to /backstage if they hit /dashboard sub-pages
        const isSellerTier = ['SELLER', 'BRAND'].includes(userProfile.planTier || '');
-       if (isSellerTier && pathname.startsWith('/admin') && !isPublicRoute) {
+       if (isSellerTier && pathname.startsWith('/dashboard') && pathname !== '/dashboard' && !isPublicRoute) {
            router.push('/backstage');
            return;
        }
