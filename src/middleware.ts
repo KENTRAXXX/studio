@@ -9,28 +9,31 @@ async function resolveHostname(hostname: string, baseUrl: string): Promise<strin
     const currentHost = hostname.toLowerCase();
     
     // 1. Root & Platform Domain check: Skip resolution for system domains
-    const isPlatformDomain = 
+    const isPlatformRoot = 
         currentHost === ROOT_DOMAIN || 
         currentHost === `www.${ROOT_DOMAIN}` || 
         currentHost === 'localhost' ||
+        currentHost === '127.0.0.1';
+
+    const isPlatformSuffix = 
         currentHost.endsWith('.vercel.app') ||
         currentHost.endsWith('.web.app') ||
         currentHost.endsWith('.firebaseapp.com');
 
-    if (isPlatformDomain) {
-        // Still check for subdomains on the root platform domain
-        if (currentHost.endsWith(`.${ROOT_DOMAIN}`)) {
-            const subdomain = currentHost.substring(0, currentHost.length - ROOT_DOMAIN.length - 1);
-            if (subdomain && subdomain !== 'www') {
-                return subdomain;
-            }
+    if (isPlatformRoot || isPlatformSuffix) {
+        // If it's a subdomain of the platform domain (not www), we need to resolve it via API
+        if (currentHost.endsWith(`.${ROOT_DOMAIN}`) && currentHost !== `www.${ROOT_DOMAIN}`) {
+            // Fall through to API resolution
+        } else {
+            return null;
         }
-        return null;
     }
 
-    // 2. Custom Domain Resolution via Tier-Aware API
+    // 2. Custom Domain or Platform Subdomain Resolution via Resolver API
     try {
-        const resolveUrl = new URL(`/api/resolve-domain?domain=${currentHost}`, baseUrl);
+        const origin = new URL(baseUrl).origin;
+        // The API handles mapping slugs (deluxeinc) or custom domains (brand.com) to store UIDs
+        const resolveUrl = new URL(`/api/resolve-domain?domain=${currentHost}`, origin);
         const response = await fetch(resolveUrl);
         if (response.ok) {
             const data = await response.json();
@@ -75,6 +78,7 @@ export async function middleware(request: NextRequest) {
   
   if (tenantIdentifier) {
     // Internally rewrite to the domain route while maintaining the browser URL
+    // Rewrites to /[UID]/path
     return NextResponse.rewrite(new URL(`/${tenantIdentifier}${path}${url.search}`, request.url));
   }
   

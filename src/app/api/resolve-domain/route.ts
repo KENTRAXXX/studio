@@ -14,7 +14,7 @@ function getDb() {
 }
 
 /**
- * Resolves a hostname or subdomain slug to a SOMA storeId.
+ * Resolves a hostname or subdomain slug to a SOMA storeId (UID).
  * Supports:
  * 1. Full Custom Domains (brand.com)
  * 2. Branded Subdomains (deluxeinc.somatoday.com)
@@ -23,7 +23,11 @@ function getDb() {
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const domain = searchParams.get('domain');
-  const ROOT_DOMAIN = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
+  
+  // Dynamic Root Domain detection to support Vercel Previews and Localhost
+  const hostHeader = request.headers.get('host') || '';
+  const detectedRoot = hostHeader.split('.').slice(-2).join('.');
+  const ROOT_DOMAIN = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || detectedRoot || 'somatoday.com').toLowerCase();
 
   if (!domain) {
     return NextResponse.json({ error: 'Domain parameter is required' }, { status: 400 });
@@ -78,6 +82,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Plan tier unauthorized for branded routing' }, { status: 403 });
     }
 
+    // CRITICAL: Returns the storeDoc.id (the UID) which maps to /[domain]/ route
     return NextResponse.json({ storeId: storeDoc.id });
   } catch (error) {
     console.error(`Boutique resolution error for '${domain}':`, error);
