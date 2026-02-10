@@ -1,11 +1,9 @@
-'use client';
-
 import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
 
 /**
  * @fileOverview Boutique Support Terminal Wrapper.
- * Uses dynamic import with SSR disabled to prevent build-time Firebase initialization errors.
+ * Server Component that dynamically loads client logic to resolve build-time Firebase errors.
  */
 
 const SupportPortalContent = dynamic(
@@ -19,6 +17,8 @@ const SupportPortalContent = dynamic(
     )
   }
 );
+
+export const dynamic = 'force-dynamic';
 
 export default function BackstageSupportPage() {
     return <SupportPortalContent />;

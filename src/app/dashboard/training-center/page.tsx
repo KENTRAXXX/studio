@@ -1,12 +1,9 @@
-'use client';
-
 import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
 
 /**
  * @fileOverview Executive Training Center Wrapper.
- * Uses dynamic import with SSR disabled to prevent build-time Firebase initialization errors.
- * All UI and logic are isolated within the dynamic component.
+ * Dynamic loading prevents static build-time initialization of Firebase services.
  */
 
 const TrainingCenterContent = dynamic(

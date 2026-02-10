@@ -1,11 +1,9 @@
-'use client';
-
 import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
 
 /**
  * @fileOverview Global Support Oversight Wrapper.
- * Uses dynamic import with SSR disabled to prevent build-time Firebase initialization errors.
+ * Server Component wrapper ensuring high-fidelity Firestore logic runs strictly in the browser.
  */
 
 const GlobalSupportContent = dynamic(
@@ -19,6 +17,8 @@ const GlobalSupportContent = dynamic(
     )
   }
 );
+
+export const dynamic = 'force-dynamic';
 
 export default function AdminGlobalSupport() {
     return <GlobalSupportContent />;

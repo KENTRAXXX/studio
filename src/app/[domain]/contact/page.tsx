@@ -1,11 +1,10 @@
-'use client';
-
 import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
 
 /**
- * @fileOverview Branded Boutique Contact Gateway.
- * Uses dynamic import with SSR disabled to ensure Firebase logic runs strictly on the client.
+ * @fileOverview Branded Boutique Contact Gateway Wrapper.
+ * Refactored as a Server Component to ensure 'force-dynamic' 
+ * correctly bypasses static prerendering on the build server.
  */
 
 const ContactFormContent = dynamic(
