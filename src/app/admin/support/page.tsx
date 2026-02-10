@@ -1,11 +1,12 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { Loader2, Headset } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 /**
- * @fileOverview Global Support Oversight.
+ * @fileOverview Global Support Oversight Wrapper.
  * Uses dynamic import with SSR disabled to prevent build-time Firebase initialization errors.
+ * All UI and logic are isolated within the dynamic component.
  */
 
 const GlobalSupportContent = dynamic(
@@ -23,18 +24,5 @@ const GlobalSupportContent = dynamic(
 export const dynamic = 'force-dynamic';
 
 export default function AdminGlobalSupport() {
-    return (
-        <div className="space-y-8 max-w-7xl mx-auto pb-20">
-            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div>
-                    <h1 className="text-3xl font-bold font-headline text-primary flex items-center gap-3">
-                        <Headset className="h-8 w-8" />
-                        Global Support Oversight
-                    </h1>
-                    <p className="text-muted-foreground mt-1">Platform-wide telemetry for boutique client inquiries.</p>
-                </div>
-            </header>
-            <GlobalSupportContent />
-        </div>
-    );
+    return <GlobalSupportContent />;
 }

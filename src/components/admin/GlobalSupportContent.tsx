@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useMemo } from 'react';
 import { useFirestore, useCollection, useUserProfile, useMemoFirebase } from '@/firebase';
-import { collection, collectionGroup, query, orderBy, where, limit } from 'firebase/firestore';
+import { collection, collectionGroup, query, orderBy, limit } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -16,7 +15,8 @@ import {
     MessageCircle, 
     ShieldCheck,
     ArrowUpRight,
-    Filter
+    Filter,
+    Headset
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -45,7 +45,6 @@ type StoreData = {
 export function GlobalSupportContent() {
     const firestore = useFirestore();
     const { userProfile, loading: profileLoading } = useUserProfile();
-    const router = useRouter();
 
     const [searchTerm, setSearchTerm] = useState('');
     const [storeFilter, setStoreFilter] = useState('all');
@@ -79,14 +78,24 @@ export function GlobalSupportContent() {
 
     if (profileLoading || storesLoading || ticketsLoading) {
         return (
-            <div className="flex h-96 items-center justify-center">
+            <div className="flex h-screen items-center justify-center bg-background">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
             </div>
         );
     }
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 max-w-7xl mx-auto pb-20 p-4">
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div>
+                    <h1 className="text-3xl font-bold font-headline text-primary flex items-center gap-3">
+                        <Headset className="h-8 w-8" />
+                        Global Support Oversight
+                    </h1>
+                    <p className="text-muted-foreground mt-1">Platform-wide telemetry for boutique client inquiries.</p>
+                </div>
+            </header>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center gap-4 bg-muted/20 p-4 rounded-xl border border-primary/10">
                     <div className="text-center px-6 border-r border-primary/10">

@@ -1,11 +1,12 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { Loader2, GraduationCap } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 /**
- * @fileOverview Executive Training Center Gateway.
+ * @fileOverview Executive Training Center Wrapper.
  * Uses dynamic import with SSR disabled to prevent build-time Firebase initialization errors.
+ * All UI and logic are isolated within the dynamic component.
  */
 
 const TrainingCenterContent = dynamic(
@@ -13,23 +14,15 @@ const TrainingCenterContent = dynamic(
   { 
     ssr: false,
     loading: () => (
-      <div className="flex h-96 w-full items-center justify-center">
+      <div className="flex h-screen items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     )
   }
 );
 
+export const dynamic = 'force-dynamic';
+
 export default function TrainingCenterPage() {
-    return (
-        <div className="space-y-8">
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                    <GraduationCap className="h-8 w-8 text-primary" />
-                    <h1 className="text-3xl font-bold font-headline uppercase tracking-tight">Mogul Academy</h1>
-                </div>
-            </div>
-            <TrainingCenterContent />
-        </div>
-    );
+    return <TrainingCenterContent />;
 }

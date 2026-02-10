@@ -33,7 +33,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
-import { PlayCircle, Crown, Loader2, Check, ExternalLink } from 'lucide-react';
+import { PlayCircle, Crown, Loader2, Check, ExternalLink, GraduationCap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 
@@ -60,7 +60,7 @@ const VideoCard = ({ video, onPlay, isWatched }: { video: TrainingModule, onPlay
         >
             <Card className="bg-card">
                  <div className="relative w-full aspect-video">
-                    {video.thumbnailUrl && <Image src={video.thumbnailUrl} alt={video.title} fill className="object-cover" />}
+                    {video.thumbnailUrl && <img src={video.thumbnailUrl} alt={video.title} className="w-full h-full object-cover" />}
                     <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/20 transition-all duration-300">
                         <PlayCircle className="h-16 w-16 text-white/70 group-hover:text-white group-hover:scale-110 transition-all duration-300" />
                     </div>
@@ -138,62 +138,104 @@ export function TrainingCenterContent() {
 
     if (isLoading) {
         return (
-            <div className="flex justify-center items-center h-96">
+            <div className="flex h-screen w-full items-center justify-center bg-background">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
             </div>
         )
     }
 
-    if (!canAccess) {
-        return (
-            <div className="flex items-center justify-center h-96">
-                <Card className="max-w-lg text-center p-8 border-primary bg-primary/10">
-                    <Crown className="h-16 w-16 text-primary mx-auto mb-4" />
-                    <h2 className="text-2xl font-bold font-headline text-primary">Unlock the Mogul Academy</h2>
-                    <p className="text-muted-foreground mt-2 mb-6">Gain exclusive access to masterclass tutorials, traffic secrets, and conversion strategies by upgrading your plan.</p>
-                    <Button onClick={() => router.push('/plan-selection')} className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-black">
-                        Upgrade to Mogul
-                    </Button>
-                </Card>
-            </div>
-        )
-    }
-
     return (
-        <div className="space-y-8">
-            <Dialog open={!!selectedVideo} onOpenChange={(open) => !open && setSelectedVideo(null)}>
-                <DialogContent className="max-w-4xl bg-card border-primary p-0 overflow-hidden">
-                   {selectedVideo && (
-                       <>
-                         <div className="aspect-video w-full bg-black">
-                            <iframe 
-                                src={selectedVideo.videoUrl} 
-                                title={selectedVideo.title}
-                                frameBorder="0" 
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                                allowFullScreen
-                                className="w-full h-full"
-                            ></iframe>
-                        </div>
-                         <div className="p-6 space-y-4">
-                             <DialogTitle className="text-2xl font-headline text-primary">{selectedVideo.title}</DialogTitle>
-                            <div className="flex items-center justify-between">
-                                <p className="text-sm text-muted-foreground">
-                                    <span className="font-semibold">{selectedVideo.category}</span> - {selectedVideo.difficulty}
-                                </p>
-                                {!completedLessons.includes(selectedVideo.id) && (
-                                     <Button onClick={() => handleMarkAsComplete(selectedVideo.id)} className="font-bold">
-                                        <Check className="mr-2 h-4 w-4" /> Mark as Completed
-                                    </Button>
-                                )}
-                            </div>
-                         </div>
-                       </>
-                   )}
-                </DialogContent>
-            </Dialog>
+        <div className="space-y-8 p-4 md:p-8 max-w-7xl mx-auto">
+            <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                    <GraduationCap className="h-8 w-8 text-primary" />
+                    <h1 className="text-3xl font-bold font-headline uppercase tracking-tight">Mogul Academy</h1>
+                </div>
+            </div>
 
-             <AlertDialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
+            {!canAccess ? (
+                <div className="flex items-center justify-center h-96">
+                    <Card className="max-w-lg text-center p-8 border-primary bg-primary/10">
+                        <Crown className="h-16 w-16 text-primary mx-auto mb-4" />
+                        <h2 className="text-2xl font-bold font-headline text-primary">Unlock the Mogul Academy</h2>
+                        <p className="text-muted-foreground mt-2 mb-6">Gain exclusive access to masterclass tutorials, traffic secrets, and conversion strategies by upgrading your plan.</p>
+                        <Button onClick={() => router.push('/plan-selection')} className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-black">
+                            Upgrade to Mogul
+                        </Button>
+                    </Card>
+                </div>
+            ) : (
+                <>
+                    <Dialog open={!!selectedVideo} onOpenChange={(open) => !open && setSelectedVideo(null)}>
+                        <DialogContent className="max-w-4xl bg-card border-primary p-0 overflow-hidden">
+                        {selectedVideo && (
+                            <>
+                                <div className="aspect-video w-full bg-black">
+                                    <iframe 
+                                        src={selectedVideo.videoUrl} 
+                                        title={selectedVideo.title}
+                                        frameBorder="0" 
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                        allowFullScreen
+                                        className="w-full h-full"
+                                    ></iframe>
+                                </div>
+                                <div className="p-6 space-y-4">
+                                    <DialogTitle className="text-2xl font-headline text-primary">{selectedVideo.title}</DialogTitle>
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-sm text-muted-foreground">
+                                            <span className="font-semibold">{selectedVideo.category}</span> - {selectedVideo.difficulty}
+                                        </p>
+                                        {!completedLessons.includes(selectedVideo.id) && (
+                                            <Button onClick={() => handleMarkAsComplete(selectedVideo.id)} className="font-bold">
+                                                <Check className="mr-2 h-4 w-4" /> Mark as Completed
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                        </DialogContent>
+                    </Dialog>
+
+                    <Card className="border-primary/50 overflow-hidden bg-slate-900/20">
+                        <CardContent className="p-6">
+                            <div className="flex items-center justify-between mb-3">
+                                <p className="text-xs font-black uppercase tracking-widest text-primary/60">Academy Progress</p>
+                                <span className="text-xs font-bold font-mono text-primary">{Math.round(progress)}% COMPLETE</span>
+                            </div>
+                            <Progress value={progress} className="h-2 bg-muted border border-primary/10" />
+                            <p className="text-[10px] text-right text-muted-foreground mt-2 uppercase font-medium">{completedLessons.length} of {trainingModules?.length || 0} lessons mastered</p>
+                        </CardContent>
+                    </Card>
+
+                    <Accordion type="multiple" defaultValue={categories.map(c => c.toLowerCase().replace(/ /g, '-'))} className="w-full space-y-6">
+                        {categories.map(category => (
+                            <AccordionItem key={category} value={category.toLowerCase().replace(/ /g, '-')} className="border-b-0">
+                                <Card className="border-primary/20 overflow-hidden bg-card/50">
+                                <AccordionTrigger className="px-6 py-5 bg-card/80 hover:no-underline hover:bg-muted/50 group">
+                                    <h2 className="text-xl font-bold font-headline group-hover:text-primary transition-colors">{category}</h2>
+                                </AccordionTrigger>
+                                <AccordionContent className="p-6">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {trainingModules?.filter(v => v.category === category).map(video => (
+                                            <VideoCard 
+                                                key={video.id} 
+                                                video={video}
+                                                onPlay={() => handlePlayVideo(video)}
+                                                isWatched={completedLessons.includes(video.id)}
+                                            />
+                                        ))}
+                                    </div>
+                                </AccordionContent>
+                                </Card>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
+                </>
+            )}
+
+            <AlertDialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
                 <AlertDialogContent className="bg-card border-primary">
                     <AlertDialogHeader>
                     <AlertDialogTitle className="text-primary font-headline text-2xl">Upgrade to Unlock</AlertDialogTitle>
@@ -209,41 +251,6 @@ export function TrainingCenterContent() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-
-            <Card className="border-primary/50 overflow-hidden bg-slate-900/20">
-                <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-3">
-                        <p className="text-xs font-black uppercase tracking-widest text-primary/60">Academy Progress</p>
-                        <span className="text-xs font-bold font-mono text-primary">{Math.round(progress)}% COMPLETE</span>
-                    </div>
-                    <Progress value={progress} className="h-2 bg-muted border border-primary/10" />
-                    <p className="text-[10px] text-right text-muted-foreground mt-2 uppercase font-medium">{completedLessons.length} of {trainingModules?.length || 0} lessons mastered</p>
-                </CardContent>
-            </Card>
-
-            <Accordion type="multiple" defaultValue={categories.map(c => c.toLowerCase().replace(/ /g, '-'))} className="w-full space-y-6">
-                {categories.map(category => (
-                    <AccordionItem key={category} value={category.toLowerCase().replace(/ /g, '-')} className="border-b-0">
-                        <Card className="border-primary/20 overflow-hidden bg-card/50">
-                        <AccordionTrigger className="px-6 py-5 bg-card/80 hover:no-underline hover:bg-muted/50 group">
-                            <h2 className="text-xl font-bold font-headline group-hover:text-primary transition-colors">{category}</h2>
-                        </AccordionTrigger>
-                        <AccordionContent className="p-6">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {trainingModules?.filter(v => v.category === category).map(video => (
-                                    <VideoCard 
-                                        key={video.id} 
-                                        video={video}
-                                        onPlay={() => handlePlayVideo(video)}
-                                        isWatched={completedLessons.includes(video.id)}
-                                    />
-                                ))}
-                            </div>
-                        </AccordionContent>
-                        </Card>
-                    </AccordionItem>
-                ))}
-            </Accordion>
         </div>
     );
 }
