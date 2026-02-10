@@ -16,7 +16,8 @@ import {
     Clock, 
     CheckCircle2, 
     History,
-    Search
+    Search,
+    User
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -99,7 +100,7 @@ export function SupportPortalContent() {
             <div className="text-center">
                 <SomaLogo className="h-12 w-12 mx-auto text-primary" />
                 <h1 className="text-4xl font-bold font-headline mt-4 text-primary">Executive Support Portal</h1>
-                <p className="mt-2 text-lg text-muted-foreground">Manage persistent client inquiries and boutique requests.</p>
+                <p className="mt-2 text-lg text-muted-foreground">Manage client inquiries and strategic requests for your boutique.</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -143,10 +144,12 @@ export function SupportPortalContent() {
                                                     <p className="text-sm font-bold text-slate-200 truncate">{ticket.subject}</p>
                                                 </div>
                                                 <p className="text-xs text-slate-500 line-clamp-1 opacity-70">{ticket.message}</p>
-                                                <p className="text-[10px] text-slate-600 mt-3 uppercase tracking-tighter flex items-center gap-1">
-                                                    <Clock className="h-3 w-3" />
-                                                    {ticket.createdAt ? format(ticket.createdAt.toDate ? ticket.createdAt.toDate() : new Date(ticket.createdAt), 'MMM d, h:mm a') : 'Pending'}
-                                                </p>
+                                                <div className="flex items-center gap-3 mt-3">
+                                                    <p className="text-[10px] text-slate-600 uppercase tracking-tighter flex items-center gap-1">
+                                                        <Clock className="h-3 w-3" />
+                                                        {ticket.createdAt ? format(ticket.createdAt.toDate ? ticket.createdAt.toDate() : new Date(ticket.createdAt), 'MMM d, h:mm a') : 'Pending'}
+                                                    </p>
+                                                </div>
                                             </div>
                                             {ticket.status === 'RESOLVED' && <CheckCircle2 className="h-4 w-4 text-green-500/50 shrink-0 mt-1" />}
                                         </button>
@@ -190,7 +193,9 @@ export function SupportPortalContent() {
                                 <ScrollArea className="flex-1 p-8 h-[400px]">
                                     <div className="space-y-6">
                                         <div className="bg-primary/5 border border-primary/10 p-6 rounded-2xl max-w-[85%]">
-                                            <p className="text-[10px] font-black uppercase text-primary/60 mb-2 tracking-widest">Initial Client Inquiry</p>
+                                            <p className="text-[10px] font-black uppercase text-primary/60 mb-2 tracking-widest flex items-center gap-2">
+                                                <User className="h-3 w-3" /> Initial Client Inquiry
+                                            </p>
                                             <p className="text-slate-200 leading-relaxed whitespace-pre-wrap">{selectedTicket.message}</p>
                                         </div>
 
@@ -245,7 +250,7 @@ export function SupportPortalContent() {
                             <div className="bg-primary/5 p-10 rounded-full mb-6">
                                 <MessageSquare className="h-20 w-20 text-primary/20" />
                             </div>
-                            <h3 className="text-2xl font-bold font-headline text-slate-400 uppercase tracking-tighter">Command Center</h3>
+                            <h3 className="text-2xl font-bold font-headline text-slate-400 uppercase tracking-tighter">Support Terminal</h3>
                             <p className="text-slate-500 max-w-sm mt-2">Select an inquiry from the inbox to begin client orchestration.</p>
                         </div>
                     )}
