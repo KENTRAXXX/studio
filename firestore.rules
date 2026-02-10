@@ -1,102 +1,87 @@
 rules_version = '2';
 
-/**
- * SOMA Platform Security Rules
- *
- * Core Philosophy:
- * This ruleset enforces a store-scoped access model for support tickets. Security is primarily
- * handled via path-based validation and document ownership (customerId).
- *
- * Data Structure:
- * All SupportTicket documents are nested under their respective stores:
- * /stores/{storeId}/supportTickets/{supportTicketId}
- *
- * Key Security Decisions:
- * 1. Store-Scoped Integrity: We enforce that the `storeId` and document `id` inside the 
- *    SupportTicket data match the Firestore path to prevent data cross-talk and maintain 
- *    relational integrity.
- * 2. Ownership-Based Access: Read and write access is primarily granted to the customer 
- *    associated with the ticket (customerId).
- * 3. Anonymous Support: The system allows for anonymous ticket creation (where customerId 
- *    is null), but these tickets are restricted in how they can be accessed after creation.
- * 4. Flexible Prototyping: While ownership and relational fields are strictly validated, 
- *    content fields like 'subject', 'message', and the 'messages' array are not type-checked 
- *    to allow for rapid iteration.
- *
- * Denormalization for Authorization:
- * The `customerId` and `storeId` are required fields on the SupportTicket document. This 
- * allows rules to verify access and integrity without performing expensive `get()` calls 
- * to parent or related documents.
- */
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
     // --- Global Helper Functions ---
 
-    /**
-     * @description Checks if the user is authenticated with a valid UID.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * @description Checks if the authenticated user's UID matches a provided ID.
-     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /**
-     * @description Verifies if the user is the customer associated with the existing document.
-     */
     function isExistingTicketOwner() {
       return isSignedIn() && resource.data.get('customerId', null) == request.auth.uid;
     }
 
-    /**
-     * @description Validates that critical relational fields remain unchanged during an update.
-     */
-    function isRelationalDataImmutable() {
-      return request.resource.data.id == resource.data.id && 
-             request.resource.data.storeId == resource.data.storeId &&
-             request.resource.data.get('customerId', null) == resource.data.get('customerId', null);
-    }
-
     // --- Collection Rules ---
 
-    /**
-     * @description Rules for SupportTicket documents within a store's scope.
-     * @path /stores/{storeId}/supportTickets/{supportTicketId}
-     * @allow (create) if the user provides a storeId matching the path and links their UID if signed in.
-     * @allow (get) if the user is the customer linked to the ticket.
-     * @deny (update) if the user attempts to change the storeId or customerId association.
-     * @principle Validates relational integrity between path and data while enforcing user ownership.
-     */
     match /stores/{storeId}/supportTickets/{supportTicketId} {
       
-      allow get: if resource.data.get('customerId', null) == null || isExistingTicketOwner();
+      // Customers can see their own tickets
+      allow get: if isExistingTicketOwner();
       
-      allow list: if isSignedIn(); // Queries must still filter by customerId to succeed
+      // Customers can list their own tickets
+      allow list: if isSignedIn() && request.query.limit <= 50; 
 
-      allow create: if request.resource.data.id == supportTicketId 
-                    && request.resource.data.storeId == storeId 
+      // Anyone can create a ticket, but must link UID if signed in
+      allow create: if request.resource.data.storeId == storeId 
                     && (request.resource.data.get('customerId', null) == null || isOwner(request.resource.data.customerId));
 
-      allow update: if resource != null 
-                    && isExistingTicketOwner() 
-                    && isRelationalDataImmutable();
-
-      allow delete: if resource != null 
-                    && isExistingTicketOwner();
+      // Only the owner can update (add messages) or delete their ticket
+      allow update, delete: if isExistingTicketOwner();
     }
 
-    // --- Placeholder for Store access logic ---
-    // Note: The reasoning suggests that users with access to /stores/{storeId} should access tickets.
-    // If a Store entity is added with a 'members' map, we would add:
-    // function isStoreStaff(storeId) { 
-    //   return get(/databases/$(database)/documents/stores/$(storeId)).data.members[request.auth.uid] != null; 
-    // }
+    // Platform rules for users and other collections
+    match /users/{userId} {
+      allow get: if true;
+      allow write: if isOwner(userId);
+    }
+
+    match /stores/{userId} {
+      allow get: if true;
+      allow write: if isOwner(userId);
+      
+      match /products/{productId} {
+        allow get: if true;
+        allow write: if isOwner(userId);
+      }
+      
+      match /orders/{orderId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    match /Master_Catalog/{productId} {
+      allow read: if true;
+      allow write: if isSignedIn(); // Admin specific checks usually go here
+    }
+    
+    match /Pending_Master_Catalog/{productId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /concierge_tickets/{ticketId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /payouts_pending/{payoutId} {
+      allow read, write: if isSignedIn();
+    }
+    
+    match /payouts_completed/{payoutId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /revenue_logs/{logId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /withdrawal_requests/{reqId} {
+      allow read, write: if isSignedIn();
+    }
   }
 }

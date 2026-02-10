@@ -4,16 +4,19 @@ import { useState, createContext, useContext, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { Search, ShoppingCart, X, Loader2, Mail, Instagram, Twitter, MessageSquare } from 'lucide-react';
-import { useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, collection, query, where, limit, or } from 'firebase/firestore';
+import { Search, ShoppingCart, X, Loader2, Mail, Instagram, Twitter, MessageSquare, Send, CheckCircle2 } from 'lucide-react';
+import { useFirestore, useDoc, useMemoFirebase, useCollection, useUser } from '@/firebase';
+import { doc, collection, query, where, limit, or, addDoc, serverTimestamp } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import SomaLogo from '@/components/logo';
 import { PlaceHolderImages, type ImagePlaceholder } from '@/lib/placeholder-images';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { formatCurrency } from '@/utils/format';
+import { useToast } from '@/hooks/use-toast';
 
 type CartItem = {
   product: any;
@@ -140,42 +143,112 @@ function CartSheet({storeId}: {storeId: string}) {
     );
 }
 
-function ContactSheet({ ownerEmail, trigger }: { ownerEmail?: string, trigger?: React.ReactNode }) {
+function ContactSheet({ storeId, ownerEmail, trigger }: { storeId: string, ownerEmail?: string, trigger?: React.ReactNode }) {
+    const { user } = useUser();
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
+    const [subject, setSubject] = useState('');
+    const [message, setMessage] = useState('');
+
+    const handleSubmitTicket = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!firestore || !storeId) return;
+
+        setIsSubmitting(true);
+        try {
+            const ticketsRef = collection(firestore, 'stores', storeId, 'supportTickets');
+            await addDoc(ticketsRef, {
+                subject,
+                message,
+                status: 'OPEN',
+                storeId,
+                customerId: user?.uid || null,
+                messages: [message],
+                createdAt: serverTimestamp(),
+            });
+
+            setIsSuccess(true);
+            toast({
+                title: 'Inquiry Dispatched',
+                description: 'Your strategic request has been logged in the boutique registry.',
+            });
+        } catch (error: any) {
+            toast({
+                variant: 'destructive',
+                title: 'Transmission Failed',
+                description: error.message,
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
-        <Sheet>
+        <Sheet onOpenChange={(open) => !open && setIsSuccess(false)}>
             <SheetTrigger asChild>
                 {trigger || <Button variant="link" className="text-sm text-muted-foreground hover:text-primary p-0 h-auto">Contact Us</Button>}
             </SheetTrigger>
-            <SheetContent className="bg-background border-primary/20">
+            <SheetContent className="bg-background border-primary/20 sm:max-w-md">
                 <SheetHeader>
                     <SheetTitle className="text-primary font-headline text-2xl">Boutique Support</SheetTitle>
                 </SheetHeader>
-                <div className="py-8 text-center space-y-6">
-                     <Mail className="h-12 w-12 text-primary mx-auto" aria-hidden="true" />
-                     <div className="space-y-2">
-                        <h3 className="font-bold text-lg text-slate-200 uppercase tracking-widest">Strategic Inquiry</h3>
-                        <p className="text-sm text-muted-foreground">Direct access to the curator of this boutique.</p>
-                        <div className="pt-4">
-                            {ownerEmail ? (
-                                <a 
-                                    href={`mailto:${ownerEmail}`} 
-                                    className="inline-flex items-center gap-2 font-bold text-primary text-lg hover:underline decoration-primary/30"
-                                >
-                                    {ownerEmail}
-                                </a>
-                            ) : (
-                                <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                            )}
+                
+                {isSuccess ? (
+                    <div className="py-20 text-center space-y-6 animate-in fade-in zoom-in duration-500">
+                        <div className="mx-auto h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+                            <CheckCircle2 className="h-10 w-10 text-primary" />
                         </div>
-                     </div>
-                     <Separator className="my-4 bg-primary/10"/>
-                     <div className="p-4 rounded-lg bg-primary/5 border border-primary/10 italic text-[10px] text-slate-500 leading-relaxed">
-                        <p>Our curation team typically responds to premium inquiries within 24 business hours.</p>
-                     </div>
-                     <div className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] pt-8">
-                        <p>Powered by <span className="font-black text-primary">SOMA Executive</span></p>
-                     </div>
-                </div>
+                        <div className="space-y-2">
+                            <h3 className="text-xl font-bold text-slate-200">Request Logged</h3>
+                            <p className="text-sm text-muted-foreground">The boutique curator has been notified of your inquiry.</p>
+                        </div>
+                        <Button variant="outline" onClick={() => setIsSuccess(false)} className="border-primary/20">Send Another</Button>
+                    </div>
+                ) : (
+                    <div className="py-8 space-y-8">
+                        <div className="text-center space-y-2">
+                            <Mail className="h-12 w-12 text-primary mx-auto opacity-50" aria-hidden="true" />
+                            <h3 className="font-bold text-lg text-slate-200 uppercase tracking-widest">Strategic Inquiry</h3>
+                            <p className="text-xs text-muted-foreground">Your request will be recorded in the store's executive ledger.</p>
+                        </div>
+
+                        <form onSubmit={handleSubmitTicket} className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Subject</label>
+                                <Input 
+                                    placeholder="e.g., Private Viewing Request" 
+                                    value={subject}
+                                    onChange={(e) => setSubject(e.target.value)}
+                                    required
+                                    className="bg-primary/5 border-primary/10"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Detailed Message</label>
+                                <Textarea 
+                                    placeholder="Please provide specifics regarding your inquiry..." 
+                                    value={message}
+                                    onChange={(e) => setMessage(e.target.value)}
+                                    required
+                                    className="min-h-[150px] bg-primary/5 border-primary/10 resize-none"
+                                />
+                            </div>
+                            <Button type="submit" disabled={isSubmitting} className="w-full h-12 btn-gold-glow bg-primary font-bold">
+                                {isSubmitting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}
+                                Transmit Inquiry
+                            </Button>
+                        </form>
+
+                        <Separator className="my-4 bg-primary/10"/>
+                        
+                        <div className="text-center">
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em]">Curator Direct</p>
+                            <p className="text-sm font-bold text-primary mt-1">{ownerEmail || 'registry@somatoday.com'}</p>
+                        </div>
+                    </div>
+                )}
             </SheetContent>
         </Sheet>
     )
@@ -191,14 +264,12 @@ export default function StoreLayout({
   const identifier = (params.storeId || params.domain || params.site) as string;
   const firestore = useFirestore();
 
-  // Robust Boutique Resolution: Supports UID, Custom Domain, or Slug
   const storeQuery = useMemoFirebase(() => {
     if (!firestore || !identifier) return null;
     
     const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
     const normalizedIdentifier = identifier.toLowerCase();
     
-    // Extract the slug if it's a platform subdomain
     let slug = normalizedIdentifier;
     if (normalizedIdentifier.endsWith(`.${rootDomain}`)) {
         slug = normalizedIdentifier.replace(`.${rootDomain}`, '');
@@ -222,8 +293,6 @@ export default function StoreLayout({
   const storeData = storeDocs?.[0];
   const storeId = storeData?.userId;
   
-  // NOTE: ownerRef might fail due to security rules for public users.
-  // We prioritize storeData.contactEmail which is mirror-saved for public access.
   const ownerRef = useMemoFirebase(() => {
     if (!firestore || !storeId) return null;
     return doc(firestore, 'users', storeId);
@@ -278,14 +347,17 @@ export default function StoreLayout({
                   />
                 </div>
                 
-                <ContactSheet 
-                    ownerEmail={contactEmail} 
-                    trigger={
-                        <Button variant="ghost" size="icon" className="text-primary hover:bg-primary/20">
-                            <MessageSquare className="h-6 w-6" />
-                        </Button>
-                    }
-                />
+                {storeId && (
+                    <ContactSheet 
+                        storeId={storeId}
+                        ownerEmail={contactEmail} 
+                        trigger={
+                            <Button variant="ghost" size="icon" className="text-primary hover:bg-primary/20">
+                                <MessageSquare className="h-6 w-6" />
+                            </Button>
+                        }
+                    />
+                )}
                 
                 <CartSheet storeId={storeId} />
               </div>
@@ -318,7 +390,7 @@ export default function StoreLayout({
               </div>
               <div className="flex gap-6">
                 <Link href="/legal/terms" className="text-sm text-muted-foreground hover:text-primary">Privacy Policy</Link>
-                <ContactSheet ownerEmail={contactEmail}/>
+                {storeId && <ContactSheet storeId={storeId} ownerEmail={contactEmail}/>}
               </div>
             </div>
           </footer>

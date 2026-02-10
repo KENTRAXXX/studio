@@ -20,19 +20,16 @@
         },
         "status": {
           "type": "string",
-          "description": "The current status of the support ticket (OPEN/RESOLVED).",
-          "format": "enum",
-          "items": {
-            "type": "string"
-          }
+          "enum": ["OPEN", "RESOLVED"],
+          "description": "The current status of the support ticket."
         },
         "storeId": {
           "type": "string",
-          "description": "Reference to Store. (Relationship: Store 1:N SupportTicket)"
+          "description": "Reference to Store."
         },
         "customerId": {
           "type": "string",
-          "description": "Reference to Customer. (Relationship: Customer 1:N SupportTicket). Optional if the user is not logged in."
+          "description": "Reference to Customer. Optional if the user is not logged in."
         },
         "messages": {
           "type": "array",
@@ -40,6 +37,10 @@
           "items": {
             "type": "string"
           }
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
         }
       },
       "required": [
@@ -66,20 +67,9 @@
           "schema": {
             "$ref": "#/backend/entities/SupportTicket"
           },
-          "description": "Represents a support ticket associated with a store.",
-          "params": [
-            {
-              "name": "storeId",
-              "description": "The ID of the store."
-            },
-            {
-              "name": "supportTicketId",
-              "description": "The ID of the support ticket."
-            }
-          ]
+          "description": "Represents a support ticket associated with a store."
         }
       }
-    ],
-    "reasoning": "The Firestore structure is designed to ensure authorization independence, clarity, and scalability. The core approach is to leverage path-based ownership and denormalization to avoid complex security rules that rely on `get()` calls. The `SupportTicket` model is structured under the `/stores/{storeId}/supportTickets/{supportTicketId}` path. This structure enables efficient querying and ensures that all support tickets within a store share the same security context. No `get()` calls are required because we assume that only users with access to the `/stores/{storeId}` document have access to the support tickets associated with that store.\n\nThis structure supports the required QAPs (Rules are not Filters) by allowing direct and secure `list` operations on the `/stores/{storeId}/supportTickets` collection, without needing to filter based on user roles or permissions."
+    ]
   }
 }
