@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -58,6 +58,18 @@ export default function ProfileSettingsPage() {
     const { data: products } = useCollection<any>(productsRef);
 
     const isBoutiqueReady = !!storeData?.storeName && (products?.length || 0) > 0;
+
+    const boutiqueUrl = useMemo(() => {
+        if (!storeData) return '#';
+        const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
+        if (storeData.customDomain && storeData.domainStatus === 'connected') {
+            return `https://${storeData.customDomain}`;
+        }
+        if (storeData.slug) {
+            return `https://${storeData.slug}.${rootDomain}`;
+        }
+        return `/store/${userProfile?.id}`;
+    }, [storeData, userProfile?.id]);
 
     const form = useForm<ProfileFormValues>({
         resolver: zodResolver(profileSchema),
@@ -189,7 +201,7 @@ export default function ProfileSettingsPage() {
                                         disabled={!isBoutiqueReady}
                                     >
                                         {isBoutiqueReady ? (
-                                            <Link href={`/store/${userProfile?.id}`} target="_blank">
+                                            <Link href={boutiqueUrl} target="_blank">
                                                 <ExternalLink className="mr-2 h-4 w-4" />
                                                 View My Boutique
                                             </Link>

@@ -46,6 +46,20 @@ export default function DashboardOverviewPage() {
         return orders?.reduce((acc, order) => acc + (order.total || 0), 0) || 0;
     }, [orders]);
 
+    // 4. Branded URL Resolution
+    const boutiqueUrl = useMemo(() => {
+        if (!storeData) return '#';
+        const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
+        
+        if (storeData.customDomain && storeData.domainStatus === 'connected') {
+            return `https://${storeData.customDomain}`;
+        }
+        if (storeData.slug) {
+            return `https://${storeData.slug}.${rootDomain}`;
+        }
+        return `/store/${user?.uid}`;
+    }, [storeData, user?.uid]);
+
     if (isLoading) {
         return (
             <div className="flex h-96 w-full items-center justify-center">
@@ -56,18 +70,17 @@ export default function DashboardOverviewPage() {
 
     if (!user) return null;
 
-    // 4. Payment Gatelock
+    // 5. Payment Gatelock
     if (userProfile && !userProfile.hasAccess) {
         return <CompletePaymentPrompt />;
     }
 
-    // 5. Special View for Suppliers (Sellers/Brands)
+    // 6. Special View for Suppliers (Sellers/Brands)
     if (userProfile?.planTier === 'SELLER' || userProfile?.planTier === 'BRAND') {
         return <DashboardController planTier={userProfile.planTier} />;
     }
 
-    // 6. INITIALIZATION STATE: If paid but no store yet
-    // Instead of an automatic useEffect redirect (which loops), we render a Welcome UI
+    // 7. INITIALIZATION STATE: If paid but no store yet
     if (!storeData) {
         const justLaunched = typeof window !== 'undefined' && sessionStorage.getItem('soma_just_launched') === 'true';
         
@@ -109,7 +122,7 @@ export default function DashboardOverviewPage() {
         );
     }
     
-    // 7. FULL OPERATIONAL STATE
+    // 8. FULL OPERATIONAL STATE
     return (
         <div className="space-y-8">
             <h1 className="text-3xl font-bold font-headline">Welcome, {userProfile?.displayName || (userProfile?.email ? userProfile.email.split('@')[0] : 'Mogul')}</h1>
@@ -161,7 +174,7 @@ export default function DashboardOverviewPage() {
                     <CardContent className="p-0 mt-4">
                         <p className="text-muted-foreground mb-6">Visit your live storefront and verify your visual identity.</p>
                         <Button asChild size="lg" className="h-12 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
-                            <Link href={storeData?.customDomain ? `https://${storeData.customDomain}` : `/store/${user?.uid}`} target="_blank">
+                            <Link href={boutiqueUrl} target="_blank">
                                 View My Store <ArrowRight className="ml-2 h-4 w-4" />
                             </Link>
                         </Button>
