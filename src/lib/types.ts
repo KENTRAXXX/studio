@@ -1,3 +1,4 @@
+
 export type PendingProduct = {
   id: string;
   productName: string;
