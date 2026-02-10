@@ -549,7 +549,7 @@ export default function MyStorePage() {
         ];
     }
     return [];
-  }, [storeType, storeName, logoFile, faviconFile, selectedProducts]);
+  }, [storeType, storeName, logoFile, faviconFile, selectedProducts, handleLaunch]);
 
   const currentStepComponent = step === 0 
     ? <ChoosePathStep onSelectPath={handlePathSelection} />

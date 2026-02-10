@@ -22,8 +22,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { CreditCard, Loader2, Lock } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Loader2 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { usePaystack } from '@/hooks/use-paystack';
 import { useToast } from '@/hooks/use-toast';
@@ -244,7 +243,7 @@ export default function CheckoutPage() {
                 {cart.map(item => (
                     <li key={item.product.id} className="flex justify-between items-center text-sm">
                         <span>{item.product.name} x {item.quantity}</span>
-                        <span className="font-medium">${(item.product.suggestedRetailPrice * item.quantity).toFixed(2)}</span>
+                        <span className="font-medium">${((item.product.suggestedRetailPrice || item.product.price) * item.quantity).toFixed(2)}</span>
                     </li>
                 ))}
             </ul>

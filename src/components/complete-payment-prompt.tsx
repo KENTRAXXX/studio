@@ -41,10 +41,10 @@ export function CompletePaymentPrompt() {
         const onPaystackSuccess = () => {
             toast({
                 title: 'Payment Successful!',
-                description: 'Your store is being provisioned. This may take a moment.',
+                description: 'Your access is being finalized. Welcome to the elite.',
             });
-            const redirectPath = (planTier === 'SELLER' || planTier === 'BRAND') ? '/backstage' : '/dashboard/my-store';
-            router.push(redirectPath);
+            // Direct to return page to show celebration and finalize sync
+            router.push('/backstage/return');
         };
 
         const onPaystackClose = () => {
