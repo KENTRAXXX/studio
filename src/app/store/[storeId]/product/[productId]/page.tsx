@@ -48,19 +48,33 @@ export default function ProductDetailPage() {
   // Resolve Store Owner Data for contact
   const storeQuery = useMemoFirebase(() => {
     if (!firestore || !rawStoreId) return null;
+    
+    const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
+    const normalizedIdentifier = rawStoreId.toLowerCase();
+    
+    // Extract the slug if it's a platform subdomain
+    let slug = normalizedIdentifier;
+    if (normalizedIdentifier.endsWith(`.${rootDomain}`)) {
+        slug = normalizedIdentifier.replace(`.${rootDomain}`, '');
+    }
+    if (slug.startsWith('www.')) {
+        slug = slug.replace('www.', '');
+    }
+
     return query(
         collection(firestore, 'stores'),
         or(
-            where('userId', '==', rawStoreId),
-            where('customDomain', '==', rawStoreId),
-            where('slug', '==', rawStoreId)
+            where('userId', '==', slug),
+            where('customDomain', '==', normalizedIdentifier),
+            where('slug', '==', slug)
         ),
         limit(1)
     );
   }, [firestore, rawStoreId]);
 
   const { data: storeDocs } = useCollection<any>(storeQuery);
-  const ownerId = storeDocs?.[0]?.userId;
+  const storeData = storeDocs?.[0];
+  const ownerId = storeData?.userId;
 
   const ownerRef = useMemoFirebase(() => {
     if (!firestore || !ownerId) return null;
@@ -68,6 +82,8 @@ export default function ProductDetailPage() {
   }, [firestore, ownerId]);
   const { data: ownerData } = useDoc<any>(ownerRef);
   
+  const contactEmail = storeData?.contactEmail || ownerData?.email;
+
   const [currentPrice, setCurrentPrice] = useState(0);
   const [compareAtPrice, setCompareAtPrice] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
@@ -352,12 +368,12 @@ export default function ProductDetailPage() {
                             <h3 className="font-bold text-lg text-slate-200 uppercase tracking-widest">Product Inquiry</h3>
                             <p className="text-xs text-muted-foreground">Direct curator access regarding <span className="text-primary font-bold">{product.name}</span>.</p>
                             <div className="pt-6">
-                                {ownerData?.email ? (
+                                {contactEmail ? (
                                     <a 
-                                        href={`mailto:${ownerData.email}?subject=Inquiry: ${product.name}`} 
+                                        href={`mailto:${contactEmail}?subject=Inquiry: ${product.name}`} 
                                         className="inline-flex items-center gap-2 font-bold text-primary text-lg hover:underline decoration-primary/30"
                                     >
-                                        {ownerData.email}
+                                        {contactEmail}
                                     </a>
                                 ) : (
                                     <Loader2 className="h-6 w-6 animate-spin mx-auto" />

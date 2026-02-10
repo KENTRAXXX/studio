@@ -479,6 +479,7 @@ export default function MyStorePage() {
             currency: 'USD',
             createdAt: new Date().toISOString(),
             storeName: storeName || "My SOMA Store",
+            contactEmail: user.email, // Mirror email for public contact sheets
             logoUrl: logoUrl,
             faviconUrl: faviconUrl,
             heroImageUrl: '',

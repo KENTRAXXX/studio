@@ -30,13 +30,25 @@ type StorefrontProduct = {
 };
 
 async function resolveBoutique(identifier: string) {
+    const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
+    const normalizedIdentifier = identifier.toLowerCase();
+    
+    // Extract the slug if it's a platform subdomain
+    let slug = normalizedIdentifier;
+    if (normalizedIdentifier.endsWith(`.${rootDomain}`)) {
+        slug = normalizedIdentifier.replace(`.${rootDomain}`, '');
+    }
+    if (slug.startsWith('www.')) {
+        slug = slug.replace('www.', '');
+    }
+
     const storesRef = collection(firestore, 'stores');
     const q = query(
         storesRef, 
         or(
-            where('userId', '==', identifier),
-            where('customDomain', '==', identifier),
-            where('slug', '==', identifier)
+            where('userId', '==', slug),
+            where('customDomain', '==', normalizedIdentifier),
+            where('slug', '==', slug)
         ),
         limit(1)
     );
@@ -147,7 +159,7 @@ export default async function StorefrontPage({ params }: { params: Promise<{ sto
   const heroImageUrl = storeData?.heroImageUrl || PlaceHolderImages.find(img => img.id === 'storefront-hero')?.imageUrl;
   
   return (
-    <div>
+    <div className="animate-in fade-in duration-1000">
       <StoreVisitorTracker storeId={storeData?.userId || identifier} />
       <HeroSection
         imageUrl={heroImageUrl}

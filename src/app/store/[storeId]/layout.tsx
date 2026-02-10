@@ -194,12 +194,25 @@ export default function StoreLayout({
   // Robust Boutique Resolution: Supports UID, Custom Domain, or Slug
   const storeQuery = useMemoFirebase(() => {
     if (!firestore || !identifier) return null;
+    
+    const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
+    const normalizedIdentifier = identifier.toLowerCase();
+    
+    // Extract the slug if it's a platform subdomain
+    let slug = normalizedIdentifier;
+    if (normalizedIdentifier.endsWith(`.${rootDomain}`)) {
+        slug = normalizedIdentifier.replace(`.${rootDomain}`, '');
+    }
+    if (slug.startsWith('www.')) {
+        slug = slug.replace('www.', '');
+    }
+
     return query(
         collection(firestore, 'stores'),
         or(
-            where('userId', '==', identifier),
-            where('customDomain', '==', identifier),
-            where('slug', '==', identifier)
+            where('userId', '==', slug),
+            where('customDomain', '==', normalizedIdentifier),
+            where('slug', '==', slug)
         ),
         limit(1)
     );
@@ -209,6 +222,8 @@ export default function StoreLayout({
   const storeData = storeDocs?.[0];
   const storeId = storeData?.userId;
   
+  // NOTE: ownerRef might fail due to security rules for public users.
+  // We prioritize storeData.contactEmail which is mirror-saved for public access.
   const ownerRef = useMemoFirebase(() => {
     if (!firestore || !storeId) return null;
     return doc(firestore, 'users', storeId);
@@ -218,6 +233,7 @@ export default function StoreLayout({
   const storeName = storeData?.storeName || "Boutique";
   const logoUrl = storeData?.logoUrl;
   const themeColors = storeData?.themeConfig?.colors;
+  const contactEmail = storeData?.contactEmail || ownerData?.email;
 
   const customStyles = themeColors ? {
     '--primary': themeColors.primary,
@@ -263,7 +279,7 @@ export default function StoreLayout({
                 </div>
                 
                 <ContactSheet 
-                    ownerEmail={ownerData?.email} 
+                    ownerEmail={contactEmail} 
                     trigger={
                         <Button variant="ghost" size="icon" className="text-primary hover:bg-primary/20">
                             <MessageSquare className="h-6 w-6" />
@@ -302,7 +318,7 @@ export default function StoreLayout({
               </div>
               <div className="flex gap-6">
                 <Link href="/legal/terms" className="text-sm text-muted-foreground hover:text-primary">Privacy Policy</Link>
-                <ContactSheet ownerEmail={ownerData?.email}/>
+                <ContactSheet ownerEmail={contactEmail}/>
               </div>
             </div>
           </footer>

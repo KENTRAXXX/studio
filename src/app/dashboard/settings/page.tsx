@@ -22,6 +22,7 @@ const settingsSchema = z.object({
   heroSubtitle: z.string().min(10, 'Hero subtitle must be at least 10 characters.'),
   logoUrl: z.string().url('Please enter a valid URL.').or(z.literal('')),
   faviconUrl: z.string().url('Please enter a valid URL.').or(z.literal('')),
+  contactEmail: z.string().email('Please enter a valid business contact email.').optional(),
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
@@ -33,6 +34,7 @@ type StoreData = {
     heroSubtitle?: string;
     logoUrl?: string;
     faviconUrl?: string;
+    contactEmail?: string;
 };
 
 const StorePreview = ({ formData }: { formData: Partial<SettingsFormValues> }) => {
@@ -88,6 +90,7 @@ export default function StoreSettingsPage() {
             heroSubtitle: '',
             logoUrl: '',
             faviconUrl: '',
+            contactEmail: '',
         },
     });
 
@@ -102,9 +105,10 @@ export default function StoreSettingsPage() {
                 heroSubtitle: storeData.heroSubtitle || '',
                 logoUrl: storeData.logoUrl || '',
                 faviconUrl: storeData.faviconUrl || '',
+                contactEmail: storeData.contactEmail || user?.email || '',
             });
         }
-    }, [storeData, form]);
+    }, [storeData, form, user]);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, field: 'logoUrl' | 'faviconUrl') => {
         const file = e.target.files?.[0];
@@ -218,6 +222,15 @@ export default function StoreSettingsPage() {
                                         </FormItem>
                                     )} />
                                 </div>
+
+                                <FormField control={form.control} name="contactEmail" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Business Contact Email</FormLabel>
+                                        <FormControl><Input placeholder="support@yourbrand.com" {...field} /></FormControl>
+                                        <FormDescription>The email address displayed to customers for support inquiries.</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
 
                                 <div className="grid md:grid-cols-2 gap-8 pt-4">
                                      <FormField control={form.control} name="logoUrl" render={({ field }) => (
