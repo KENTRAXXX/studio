@@ -70,7 +70,7 @@ export default function StoreSettingsPage() {
     const { user, loading: userLoading } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
-    const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
+    const ROOT_DOMAIN = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
 
     const logoInputRef = useRef<HTMLInputElement>(null);
     const faviconInputRef = useRef<HTMLInputElement>(null);

@@ -13,6 +13,7 @@ import { ProvisioningLoader } from '@/components/store/provisioning-loader';
 import Link from 'next/link';
 import DashboardController from './dashboard-controller';
 import { OnboardingChecklist } from '@/components/dashboard/OnboardingChecklist';
+import { getTier } from '@/lib/tiers';
 
 /**
  * @fileOverview The Executive Command Center.
@@ -52,7 +53,7 @@ export default function DashboardOverviewPage() {
         if (!storeData) return '#';
         if (typeof window === 'undefined') return '#';
 
-        const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
+        const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
         const protocol = window.location.protocol;
         
         if (storeData.customDomain && storeData.domainStatus === 'connected') {
@@ -127,9 +128,15 @@ export default function DashboardOverviewPage() {
     }
     
     // 8. FULL OPERATIONAL STATE
+    const tierConfig = getTier(userProfile?.planTier);
+    const greetingName = userProfile?.displayName || (userProfile?.email ? userProfile.email.split('@')[0] : 'Mogul');
+
     return (
         <div className="space-y-8">
-            <h1 className="text-3xl font-bold font-headline">Welcome, {userProfile?.displayName || (userProfile?.email ? userProfile.email.split('@')[0] : 'Mogul')}</h1>
+            <div className="flex flex-col gap-1">
+                <h1 className="text-3xl font-bold font-headline">Welcome, {greetingName}</h1>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-primary/60">{tierConfig.label} Access Active</p>
+            </div>
 
             <div className="grid gap-6 md:grid-cols-3">
                 <Card className="border-primary/50">

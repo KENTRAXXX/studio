@@ -63,7 +63,6 @@ const ChoosePathStep = ({ onSelectPath, planTier }: { onSelectPath: (path: 'MERC
                             <CardTitle>I want to dropship.</CardTitle>
                             <CardDescription>Sell products from the SOMA Luxury Catalog without holding inventory.</CardDescription>
                         </CardHeader>
-                    </Card>
                 )}
             </div>
         </motion.div>
@@ -283,7 +282,7 @@ const CollectionStep = ({ onBack, onLaunch, selectedProducts, setSelectedProduct
     );
 };
 
-const ProductUploadStep = ({ onBack, onLaunch }: { onBack: () => void, onLaunch: (firstProduct: any) => void }) => {
+const ProductUploadStep = ({ onBack, onLaunch }: { onBack: void, onLaunch: (firstProduct: any) => void }) => {
     const [productName, setProductName] = useState('');
     const [price, setPrice] = useState('');
     const [stock, setStock] = useState('');

@@ -43,21 +43,34 @@ type StorefrontProduct = {
 export default function TenantBoutiquePage() {
     const params = useParams();
     const router = useRouter();
-    // In robust multi-tenancy mode, 'domain' is the hostname or slug
+    // In multi-tenancy mode, 'domain' is the incoming hostname
     const identifier = params.domain as string; 
     
     const firestore = useFirestore();
 
-    // 1. Boutique Identity Resolution
+    // 1. Boutique Identity Resolution Logic
+    // Handles subdomains (deluxeinc.somatoday.com), custom domains (brand.com), and raw slugs
     const storeQuery = useMemoFirebase(() => {
         if (!firestore || !identifier) return null;
-        // Search by UID, Custom Domain, or Subdomain Slug
+        
+        const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
+        const normalizedIdentifier = identifier.toLowerCase();
+        
+        // Extract the slug if it's a platform subdomain
+        let slug = normalizedIdentifier;
+        if (normalizedIdentifier.endsWith(`.${rootDomain}`)) {
+            slug = normalizedIdentifier.replace(`.${rootDomain}`, '');
+        }
+        if (slug.startsWith('www.')) {
+            slug = slug.replace('www.', '');
+        }
+
         return query(
             collection(firestore, 'stores'),
             or(
-                where('userId', '==', identifier),
-                where('customDomain', '==', identifier),
-                where('slug', '==', identifier)
+                where('userId', '==', slug), // Direct UID match
+                where('customDomain', '==', normalizedIdentifier), // Full custom domain match
+                where('slug', '==', slug) // Normalized slug match
             ),
             limit(1)
         );
@@ -109,7 +122,9 @@ export default function TenantBoutiquePage() {
                     <Box className="h-16 w-16 text-primary opacity-20" />
                 </div>
                 <h1 className="text-3xl font-bold font-headline text-primary uppercase tracking-widest text-center">Boutique Not Found</h1>
-                <p className="text-muted-foreground text-center max-w-sm">The luxury storefront at "{identifier}" is not currently provisioned in the SOMA network.</p>
+                <p className="text-muted-foreground text-center max-w-sm">
+                    The boutique at "{identifier}" is not currently provisioned in our network.
+                </p>
                 <Button variant="outline" className="border-primary/50" onClick={() => router.push('/')}>
                     <ArrowLeft className="mr-2 h-4 w-4" /> Platform Home
                 </Button>
@@ -140,7 +155,7 @@ export default function TenantBoutiquePage() {
                     <div className="flex flex-col md:flex-row items-center md:items-end gap-8">
                         <div className="relative h-32 w-32 rounded-2xl overflow-hidden border-4 border-background bg-slate-950 shadow-2xl shrink-0">
                             {storeData.logoUrl || ownerProfile?.avatarUrl ? (
-                                <Image src={storeData.logoUrl || ownerProfile?.avatarUrl} alt={storeName} fill className="object-cover" />
+                                <img src={storeData.logoUrl || ownerProfile?.avatarUrl} alt={storeName} className="h-full w-full object-cover" />
                             ) : (
                                 <div className="h-full w-full flex items-center justify-center text-4xl font-bold text-primary bg-primary/10">
                                     {storeName.charAt(0)}
