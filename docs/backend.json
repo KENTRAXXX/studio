@@ -1,517 +1,85 @@
-
 {
-    "entities": {
-        "store": {
-            "title": "Store",
-            "description": "Represents a user's storefront configuration.",
-            "type": "object",
-            "properties": {
-                "template": {
-                    "type": "string",
-                    "description": "The selected template for the store.",
-                    "enum": ["minimalist", "gold-standard", "midnight-pro"]
-                },
-                "logoUrl": {
-                    "type": "string",
-                    "description": "URL of the store's logo."
-                },
-                "faviconUrl": {
-                    "type": "string",
-                    "description": "URL of the store's favicon."
-                },
-                "status": {
-                    "type": "string",
-                    "description": "The current status of the store.",
-                    "enum": ["Draft", "Live"]
-                }
-            },
-            "required": ["template", "status"]
+  "entities": {
+    "SupportTicket": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "SupportTicket",
+      "type": "object",
+      "description": "Represents a support ticket within the SOMA platform.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the support ticket."
         },
-        "clientStore": {
-            "title": "Client Store",
-            "description": "Represents a provisioned client store with its unique configuration.",
-            "type": "object",
-            "properties": {
-                "userId": {
-                    "type": "string",
-                    "description": "The ID of the user who owns the store."
-                },
-                "instanceId": {
-                    "type": "string",
-                    "description": "A unique identifier for the client store instance."
-                },
-                "theme": {
-                    "type": "string",
-                    "description": "The visual theme of the store.",
-                    "enum": ["Gold Standard", "Midnight Pro", "The Minimalist"]
-                },
-                "currency": {
-                    "type": "string",
-                    "description": "The default currency for the store.",
-                    "enum": ["USD", "EUR", "GBP"]
-                },
-                "createdAt": {
-                    "type": "string",
-                    "format": "date-time",
-                    "description": "The timestamp when the store was created."
-                },
-                "storeName": {
-                    "type": "string",
-                    "description": "The name of the client's store."
-                },
-                "logoUrl": {
-                    "type": "string",
-                    "description": "URL of the store's logo."
-                },
-                "heroImageUrl": {
-                    "type": "string",
-                    "description": "URL for the hero image on the storefront."
-                },
-                "heroTitle": {
-                    "type": "string",
-                    "description": "The main headline for the hero section."
-                },
-                "heroSubtitle": {
-                    "type": "string",
-                    "description": "The sub-headline for the hero section."
-                },
-                "visitorCount": {
-                    "type": "number",
-                    "description": "The number of visitors to the store."
-                },
-                "productViewCount": {
-                    "type": "number",
-                    "description": "Total views across all products."
-                }
-            },
-            "required": ["userId", "instanceId", "theme", "currency", "createdAt", "storeName"]
+        "subject": {
+          "type": "string",
+          "description": "Subject line of the support ticket."
         },
-        "storefrontProduct": {
-            "title": "Storefront Product",
-            "description": "A product available in a client's storefront.",
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "description": "The name of the product."
-                },
-                "suggestedRetailPrice": {
-                    "type": "number",
-                    "description": "The suggested retail price of the product."
-                },
-                "wholesalePrice": {
-                    "type": "number",
-                    "description": "The wholesale cost of the product, relevant for dropshipped items."
-                },
-                "description": {
-                    "type": "string",
-                    "description": "A detailed description of the product."
-                },
-                "imageUrl": {
-                    "type": "string",
-                    "description": "URL of the main product image."
-                },
-                "imageGallery": {
-                    "type": "array",
-                    "items": { "type": "string" },
-                    "description": "A collection of luxury visuals for the product gallery."
-                },
-                "colorOptions": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "name": { "type": "string" },
-                            "imageUrl": { "type": "string" }
-                        }
-                    }
-                },
-                "productType": {
-                    "type": "string",
-                    "description": "The type of the product.",
-                    "enum": ["INTERNAL", "EXTERNAL"]
-                },
-                "vendorId": {
-                    "type": "string",
-                    "description": "The ID of the user who owns/supplies the product."
-                },
-                 "isManagedBySoma": {
-                    "type": "boolean",
-                    "description": "True if the product is a dropshipped item from the SOMA catalog."
-                },
-                "categories": {
-                    "type": "array",
-                    "items": { "type": "string" }
-                },
-                "tags": {
-                    "type": "array",
-                    "items": { "type": "string" }
-                },
-                "viewCount": {
-                    "type": "number",
-                    "description": "Total views for this specific product."
-                },
-                "lastWeekViewCount": {
-                    "type": "number",
-                    "description": "Views for this product 7 days ago, used for trend calculation."
-                },
-                "isFeatured": {
-                    "type": "boolean",
-                    "description": "Indicates if the product is featured on the boutique homepage."
-                }
-            },
-            "required": ["name", "suggestedRetailPrice", "imageUrl", "productType", "vendorId"]
+        "message": {
+          "type": "string",
+          "description": "The initial message content of the support ticket."
         },
-        "trafficLog": {
-            "title": "Traffic Log",
-            "description": "Record of a visitor's source of entry.",
-            "type": "object",
-            "properties": {
-                "source": {
-                    "type": "string",
-                    "description": "The marketing source (e.g., Instagram, TikTok, Direct)."
-                },
-                "timestamp": {
-                    "type": "string",
-                    "format": "date-time"
-                }
-            },
-            "required": ["source", "timestamp"]
+        "status": {
+          "type": "string",
+          "description": "The current status of the support ticket (OPEN/RESOLVED).",
+          "format": "enum",
+          "items": {
+            "type": "string"
+          }
         },
-        "userProfile": {
-            "title": "User Profile",
-            "description": "Represents a user's profile information in Firestore.",
-            "type": "object",
-            "properties": {
-                "displayName": {
-                    "type": "string",
-                    "description": "The user's display name."
-                },
-                "email": {
-                    "type": "string",
-                    "format": "email",
-                    "description": "The user's email address."
-                },
-                "hasAccess": {
-                    "type": "boolean",
-                    "description": "Indicates if the user has paid for access to the platform."
-                },
-                "hasAcceptedTerms": {
-                    "type": "boolean",
-                    "description": "Indicates if the user has accepted the terms of service."
-                },
-                "userRole": {
-                    "type": "string",
-                    "description": "The role of the user within the platform.",
-                    "enum": ["ADMIN", "MOGUL", "SELLER"]
-                },
-                "plan": {
-                    "type": "string",
-                    "description": "The user's subscription plan.",
-                    "enum": ["monthly", "yearly", "lifetime", "free"]
-                },
-                "paidAt": {
-                    "type": "string",
-                    "format": "date-time",
-                    "description": "The timestamp when the user's payment was successfully processed."
-                },
-                "planTier": {
-                    "type": "string",
-                    "description": "The specific plan tier for the user, determining access level.",
-                    "enum": ["MERCHANT", "SCALER", "SELLER", "ENTERPRISE", "BRAND"]
-                },
-                "isVerifiedSeller": {
-                    "type": "boolean",
-                    "description": "Indicates if a user with the SELLER role has completed verification."
-                },
-                "status": {
-                    "type": "string",
-                    "description": "The current status of a user, often used for seller onboarding.",
-                    "enum": ["pending_review", "approved", "rejected", "action_required"]
-                },
-                "completedLessons": {
-                    "type": "array",
-                    "description": "An array of Training_Module IDs that the user has completed.",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "legalBusinessName": {
-                    "type": "string",
-                    "description": "The legal name of the seller's business."
-                },
-                "warehouseAddress": {
-                    "type": "string",
-                    "description": "The primary shipping address for the seller."
-                },
-                "taxId": {
-                    "type": "string",
-                    "description": "The seller's business tax identification number."
-                },
-                "contactPhone": {
-                    "type": "string",
-                    "description": "The contact phone number for the seller's business."
-                },
-                "activeReferralCount": {
-                    "type": "number",
-                    "description": "Number of users who have activated using this user's code."
-                },
-                "totalReferralEarnings": {
-                    "type": "number",
-                    "description": "Total gross earnings from the referral system."
-                },
-                "bankDetails": {
-                    "type": "object",
-                    "description": "The user's verified bank details for payouts. This should only be set after a first successful payout.",
-                    "properties": {
-                        "accountName": {
-                            "type": "string"
-                        },
-                        "accountNumber": {
-                            "type": "string"
-                        },
-                        "bankName": {
-                            "type": "string"
-                        },
-                        "iban": {
-                            "type": "string"
-                        },
-                        "swiftBic": {
-                            "type": "string"
-                        }
-                    },
-                    "required": [
-                        "accountName",
-                        "accountNumber",
-                        "bankName"
-                    ]
-                }
-            },
-            "required": ["email", "hasAccess", "userRole", "hasAcceptedTerms"]
+        "storeId": {
+          "type": "string",
+          "description": "Reference to Store. (Relationship: Store 1:N SupportTicket)"
         },
-        "adminAlert": {
-            "title": "Admin Alert",
-            "description": "An alert for administrators regarding a system event.",
-            "type": "object",
-            "properties": {
-                "flowName": {
-                    "type": "string",
-                    "description": "The name of the flow where the error occurred."
-                },
-                "userId": {
-                    "type": "string",
-                    "description": "The ID of the user related to the event."
-                },
-                "error": {
-                    "type": "string",
-                    "description": "The error message or details."
-                },
-                "timestamp": {
-                    "type": "string",
-                    "format": "date-time",
-                    "description": "When the alert was generated."
-                }
-            },
-            "required": ["flowName", "error", "timestamp"]
+        "customerId": {
+          "type": "string",
+          "description": "Reference to Customer. (Relationship: Customer 1:N SupportTicket). Optional if the user is not logged in."
         },
-        "payoutRecord": {
-            "title": "Payout Record",
-            "description": "A record of a pending payout for a Mogul or Seller.",
-            "type": "object",
-            "properties": {
-                "userId": { "type": "string" },
-                "amount": { "type": "number" },
-                "currency": { "type": "string" },
-                "status": { "type": "string", "enum": ["pending", "paid", "pending_maturity"] },
-                "orderId": { "type": "string" },
-                "paymentReference": { "type": "string" },
-                "createdAt": { "type": "string", "format": "date-time" }
-            },
-            "required": ["userId", "amount", "currency", "status", "orderId", "paymentReference", "createdAt"]
-        },
-        "revenueRecord": {
-            "title": "Revenue Record",
-            "description": "A log of platform revenue from a transaction or subscription.",
-            "type": "object",
-            "properties": {
-                "amount": { "type": "number" },
-                "currency": { "type": "string" },
-                "orderId": { "type": "string" },
-                "paymentReference": { "type": "string" },
-                "type": { "type": "string", "enum": ["TRANSACTION", "SUBSCRIPTION"] },
-                "createdAt": { "type": "string", "format": "date-time" }
-            },
-            "required": ["amount", "currency", "paymentReference", "type", "createdAt"]
-        },
-        "withdrawalRequest": {
-            "title": "Withdrawal Request",
-            "description": "A user's request to withdraw funds.",
-            "type": "object",
-            "properties": {
-                "userId": {
-                    "type": "string",
-                    "description": "The ID of the user making the request."
-                },
-                "amount": {
-                    "type": "number",
-                    "description": "The amount requested for withdrawal."
-                },
-                "bankDetails": {
-                    "type": "object",
-                    "properties": {
-                        "accountName": { "type": "string" },
-                        "accountNumber": { "type": "string" },
-                        "bankName": { "type": "string" },
-                        "iban": { "type": "string", "description": "International Bank Account Number, if applicable." },
-                        "swiftBic": { "type": "string", "description": "SWIFT or BIC code for international transfers." }
-                    },
-                    "required": ["accountName", "accountNumber", "bankName"]
-                },
-                "status": {
-                    "type": "string",
-                    "description": "The status of the withdrawal request.",
-                    "enum": ["awaiting-confirmation", "pending", "processing", "completed", "rejected"]
-                },
-                "confirmationToken": {
-                    "type": "string",
-                    "description": "A one-time token to confirm the withdrawal request."
-                },
-                "reason": {
-                    "type": "string",
-                    "description": "Reason for declining the request."
-                },
-                "createdAt": {
-                    "type": "string",
-                    "format": "date-time",
-                    "description": "The timestamp when the request was made."
-                },
-                "paidAt": {
-                    "type": "string",
-                    "format": "date-time",
-                    "description": "The timestamp when the request was paid."
-                }
-            },
-            "required": ["userId", "amount", "bankDetails", "status", "createdAt"]
-        },
-        "trainingModule": {
-            "title": "Training Module",
-            "description": "A single video lesson in the Mogul Training Center.",
-            "type": "object",
-            "properties": {
-                "title": { "type": "string" },
-                "duration": { "type": "number", "description": "Duration in minutes." },
-                "category": { "type": "string" },
-                "difficulty": { "type": "string", "enum": ["Beginner", "Intermediate", "Advanced", "Masterclass"] },
-                "thumbnailUrl": { "type": "string", "format": "uri" },
-                "videoUrl": { "type": "string", "format": "uri", "description": "URL for embedding (e.g., YouTube, Vimeo)." }
-            },
-            "required": ["title", "duration", "category", "difficulty", "thumbnailUrl", "videoUrl"]
-        },
-        "webhookLog": {
-            "title": "Webhook Log",
-            "description": "A record of an incoming webhook event from Paystack.",
-            "type": "object",
-            "properties": {
-                "eventType": { "type": "string" },
-                "payload": { "type": "object" },
-                "status": { "type": "string", "enum": ["success", "failed"] },
-                "errorMessage": { "type": "string" },
-                "timestamp": { "type": "string", "format": "date-time" }
-            },
-            "required": ["eventType", "payload", "status", "timestamp"]
-        },
-        "conciergeTicket": {
-            "title": "Concierge Ticket",
-            "description": "A high-priority message from a brand to SOMA Admin.",
-            "type": "object",
-            "properties": {
-                "brandId": { "type": "string" },
-                "brandName": { "type": "string" },
-                "subject": { "type": "string" },
-                "message": { "type": "string" },
-                "status": { "type": "string", "enum": ["open", "resolved"] },
-                "priority": { "type": "string", "enum": ["standard", "urgent"] },
-                "createdAt": { "type": "string", "format": "date-time" }
-            },
-            "required": ["brandId", "subject", "message", "status", "priority", "createdAt"]
-        },
-        "platformMetadata": {
-            "title": "Platform Metadata",
-            "description": "Global platform configuration and real-time intelligence.",
-            "type": "object",
-            "properties": {
-                "paystackBalance": {
-                    "type": "number",
-                    "description": "Current balance held in the Paystack gateway."
-                },
-                "lastSynced": {
-                    "type": "string",
-                    "format": "date-time",
-                    "description": "When the balance was last manually synchronized."
-                },
-                "syncedBy": {
-                    "type": "string",
-                    "description": "The email or ID of the admin who performed the sync."
-                }
-            },
-            "required": ["paystackBalance", "lastSynced"]
+        "messages": {
+          "type": "array",
+          "description": "Array of messages associated with the support ticket.",
+          "items": {
+            "type": "string"
+          }
         }
-    },
-    "auth": {
-        "providers": ["email-password"]
-    },
-    "firestore": {
-        "/stores/{storeId}": {
-            "schema": { "$ref": "#/entities/clientStore" },
-            "description": "Stores all the provisioned client storefronts."
-        },
-        "/stores/{storeId}/products/{productId}": {
-            "schema": { "$ref": "#/entities/storefrontProduct" },
-            "description": "Products for a specific client store."
-        },
-        "/stores/{storeId}/traffic_logs/{logId}": {
-            "schema": { "$ref": "#/entities/trafficLog" },
-            "description": "Acquisition source logs for store traffic."
-        },
-        "/users/{userId}": {
-            "schema": { "$ref": "#/entities/userProfile" },
-            "description": "Stores user profile information."
-        },
-        "/admin_alerts/{alertId}": {
-            "schema": { "$ref": "#/entities/adminAlert" },
-            "description": "Logs critical system errors for admin review."
-        },
-        "/payouts_pending/{payoutId}": {
-            "schema": { "$ref": "#/entities/payoutRecord" },
-            "description": "Tracks pending payouts for Sellers and Moguls."
-        },
-        "/payouts_completed/{payoutId}": {
-            "schema": { "$ref": "#/entities/payoutRecord" },
-            "description": "Tracks completed payouts for Sellers and Moguls."
-        },
-        "/revenue_logs/{revenueId}": {
-            "schema": { "$ref": "#/entities/revenueRecord" },
-            "description": "A log of all platform revenue."
-        },
-        "/withdrawal_requests/{withdrawalId}": {
-            "schema": { "$ref": "#/entities/withdrawalRequest" },
-            "description": "Stores user withdrawal requests."
-        },
-        "/Training_Modules/{moduleId}": {
-            "schema": { "$ref": "#/entities/trainingModule" },
-            "description": "Contains all available training videos for the Mogul Academy."
-        },
-        "/webhook_logs/{logId}": {
-            "schema": { "$ref": "#/entities/webhookLog" },
-            "description": "A log of all incoming Paystack webhook events."
-        },
-        "/concierge_tickets/{ticketId}": {
-            "schema": { "$ref": "#/entities/conciergeTicket" },
-            "description": "Strategic messages sent to the SOMA Founder/Support."
-        },
-        "/platform_metadata/{docId}": {
-            "schema": { "$ref": "#/entities/platformMetadata" },
-            "description": "Global platform state and configuration."
-        }
+      },
+      "required": [
+        "id",
+        "subject",
+        "message",
+        "status",
+        "storeId"
+      ]
     }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/stores/{storeId}/supportTickets/{supportTicketId}",
+        "definition": {
+          "entityName": "SupportTicket",
+          "schema": {
+            "$ref": "#/backend/entities/SupportTicket"
+          },
+          "description": "Represents a support ticket associated with a store.",
+          "params": [
+            {
+              "name": "storeId",
+              "description": "The ID of the store."
+            },
+            {
+              "name": "supportTicketId",
+              "description": "The ID of the support ticket."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to ensure authorization independence, clarity, and scalability. The core approach is to leverage path-based ownership and denormalization to avoid complex security rules that rely on `get()` calls. The `SupportTicket` model is structured under the `/stores/{storeId}/supportTickets/{supportTicketId}` path. This structure enables efficient querying and ensures that all support tickets within a store share the same security context. No `get()` calls are required because we assume that only users with access to the `/stores/{storeId}` document have access to the support tickets associated with that store.\n\nThis structure supports the required QAPs (Rules are not Filters) by allowing direct and secure `list` operations on the `/stores/{storeId}/supportTickets` collection, without needing to filter based on user roles or permissions."
+  }
 }
