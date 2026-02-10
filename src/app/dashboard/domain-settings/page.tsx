@@ -35,20 +35,17 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 
-type VerificationRecord = {
-    type: string;
-    name: string;
-    value: string;
-};
-
 type StoreData = {
     customDomain?: string;
     domainStatus?: 'unverified' | 'pending_dns' | 'connected';
-    ownershipRecord?: VerificationRecord;
-    sslValidationRecord?: VerificationRecord;
-    cfStatus?: string;
-    sslStatus?: string;
-    lastCfSync?: string;
+    dnsRecord?: {
+        type: string;
+        name: string;
+        value: string;
+    };
+    vercelVerified?: boolean;
+    vercelMisconfigured?: boolean;
+    lastVercelSync?: string;
 }
 
 export default function DomainSettingsPage() {
@@ -65,8 +62,6 @@ export default function DomainSettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
-
-  const ROOT_PROXY_TARGET = 'studio-770.pages.dev';
 
   useEffect(() => {
     if (storeData?.customDomain && !hasSetInitial) {
@@ -101,25 +96,19 @@ export default function DomainSettingsPage() {
             })
         });
 
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            throw new Error('Server returned an invalid response format. Please ensure Cloudflare environment variables are correctly configured in your Pages dashboard.');
-        }
-
         const result = await response.json();
-
         if (!response.ok) throw new Error(result.error || 'Registration failed');
 
         toast({
-            title: 'Registry Sync Initiated',
-            description: 'Verification records generated. Please update your DNS.',
+            title: 'Vercel Project Synced',
+            description: 'Domain attached. Please update your DNS records.',
             action: <Zap className="h-4 w-4 text-primary" />
         });
     } catch (error: any) {
         toast({ 
             variant: 'destructive', 
             title: 'Provisioning Error', 
-            description: error.message || 'An unexpected error occurred. Please check system logs.' 
+            description: error.message || 'An unexpected error occurred.' 
         });
     } finally {
         setIsSaving(false);
@@ -133,15 +122,13 @@ export default function DomainSettingsPage() {
           await updateDoc(storeRef, {
               customDomain: null,
               domainStatus: 'unverified',
-              ownershipRecord: null,
-              sslValidationRecord: null,
-              cfStatus: null,
-              sslStatus: null,
-              cfHostnameId: null
+              dnsRecord: null,
+              vercelVerified: false,
+              vercelMisconfigured: false
           });
           setDomainInput('');
           setHasSetInitial(false);
-          toast({ title: 'Domain Disconnected', description: 'Registry records have been cleared.' });
+          toast({ title: 'Domain Disconnected', description: 'Vercel attachment records cleared.' });
       } catch (error: any) {
           toast({ variant: 'destructive', title: 'Error', description: error.message });
       } finally {
@@ -155,11 +142,6 @@ export default function DomainSettingsPage() {
     
     try {
         const response = await fetch(`/api/check-domain-status?storeId=${user.uid}`);
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            throw new Error('Handshake failed: Invalid response from diagnostic API.');
-        }
-
         const result = await response.json();
 
         if (!response.ok) throw new Error(result.error || 'Status check failed');
@@ -167,19 +149,19 @@ export default function DomainSettingsPage() {
         if (result.status === 'connected') {
             toast({
                 title: 'Boutique Live!',
-                description: 'Domain verification successful.',
+                description: 'Domain verified by Vercel Edge.',
                 className: 'bg-green-600 border-green-600 text-white'
             });
         } else {
             toast({
                 title: 'Check Complete',
-                description: `Current status: ${result.cfData?.status || 'Pending'}. Propagation takes time.`,
+                description: result.vercelData?.misconfigured ? 'DNS Misconfigured. Please verify records.' : 'Awaiting DNS propagation...',
             });
         }
     } catch (error: any) {
          toast({
             variant: 'destructive',
-            title: 'Handshake Error',
+            title: 'Verification Error',
             description: error.message
         });
     } finally {
@@ -200,8 +182,8 @@ export default function DomainSettingsPage() {
                 <Globe className="h-8 w-8 text-primary" />
             </div>
             <div>
-                <h1 className="text-3xl font-bold font-headline">Custom Domain Control</h1>
-                <p className="text-muted-foreground mt-1 text-sm">Orchestrate your global web presence via Cloudflare for SaaS.</p>
+                <h1 className="text-3xl font-bold font-headline">Vercel Custom Domains</h1>
+                <p className="text-muted-foreground mt-1 text-sm">Attach and verify your unique web identity via Vercel Edge.</p>
             </div>
         </div>
         
@@ -215,7 +197,7 @@ export default function DomainSettingsPage() {
                     className="border-primary/20 hover:bg-primary/5"
                 >
                     {isCheckingStatus ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                    Refresh Status
+                    Refresh Vercel Status
                 </Button>
                 <Button 
                     variant="ghost" 
@@ -235,16 +217,16 @@ export default function DomainSettingsPage() {
         <CardHeader className="flex flex-row items-center gap-4">
             <ShieldCheck className="h-10 w-10 text-primary" />
             <div>
-                <CardTitle className="text-primary text-xl">SOMA Authority Proxy</CardTitle>
-                <CardDescription className="text-primary/80 font-medium">Use the generated records below to link your registrar to our global edge network.</CardDescription>
+                <CardTitle className="text-primary text-xl">Vercel Edge Resolver</CardTitle>
+                <CardDescription className="text-primary/80 font-medium">Use these records to point your domain to our Vercel infrastructure.</CardDescription>
             </div>
         </CardHeader>
       </Card>
 
       <Card className="border-primary/50 overflow-hidden bg-slate-900/20">
         <CardHeader className="bg-muted/30 border-b border-primary/10">
-          <CardTitle>Step 1: Domain Mapping</CardTitle>
-          <CardDescription>Enter your root domain (e.g., brand.com) or a subdomain (e.g., shop.brand.com).</CardDescription>
+          <CardTitle>Step 1: Domain Attachment</CardTitle>
+          <CardDescription>Enter your root domain (brand.com) or subdomain (shop.brand.com).</CardDescription>
         </CardHeader>
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row items-end gap-4">
@@ -259,35 +241,35 @@ export default function DomainSettingsPage() {
                 />
             </div>
              <Button onClick={handleSave} disabled={isSaving || domainStatus === 'connected' || !domainInput} className="h-12 px-8 btn-gold-glow bg-primary font-bold">
-                {isSaving ? <Loader2 className="animate-spin" /> : 'Register with Cloudflare'}
+                {isSaving ? <Loader2 className="animate-spin" /> : 'Connect to Vercel'}
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {(domainStatus === 'pending_dns' || domainStatus === 'connected') && (
+      {(domainStatus === 'pending_dns' || domainStatus === 'connected' || storeData?.vercelMisconfigured) && (
         <Card className={cn(
             "border-primary overflow-hidden bg-slate-900/40",
-            domainStatus === 'pending_dns' && "card-gold-pulse"
+            (domainStatus === 'pending_dns' || storeData?.vercelMisconfigured) && "card-gold-pulse"
         )}>
             <CardHeader className="bg-primary/5 border-b border-primary/10">
                 <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2 text-primary font-headline">
-                        <AlertTriangle className="text-primary h-5 w-5"/> 
-                        Step 2: DNS Protocol Sync
+                        <AlertTriangle className={cn("h-5 w-5", storeData?.vercelMisconfigured ? "text-destructive" : "text-primary")}/> 
+                        Step 2: DNS Configuration
                     </CardTitle>
-                    {storeData?.lastCfSync && (
-                        <p className="text-[10px] font-mono text-muted-foreground uppercase">Last Sync: {new Date(storeData.lastCfSync).toLocaleTimeString()}</p>
+                    {storeData?.lastVercelSync && (
+                        <p className="text-[10px] font-mono text-muted-foreground uppercase">Last Sync: {new Date(storeData.lastVercelSync).toLocaleTimeString()}</p>
                     )}
                 </div>
                 <CardDescription className="text-slate-300">
-                    Add these specific records at your registrar to authorize SSL and traffic routing.
+                    Update these records at your registrar (GoDaddy, Namecheap, etc) to point to Vercel.
                 </CardDescription>
             </CardHeader>
             <CardContent className="pt-6 space-y-8">
                 <div className="space-y-4">
                     <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400">
-                        <ShieldAlert className="h-3.5 w-3.5" /> Domain Ownership (Required)
+                        <ShieldAlert className="h-3.5 w-3.5" /> Required DNS Record
                     </div>
                     <div className="rounded-xl border border-primary/20 bg-black/40 overflow-hidden">
                         <Table>
@@ -295,25 +277,31 @@ export default function DomainSettingsPage() {
                                 <TableRow className="border-primary/10">
                                     <TableHead className="text-primary font-bold text-[10px]">TYPE</TableHead>
                                     <TableHead className="text-primary font-bold text-[10px]">HOST / NAME</TableHead>
-                                    <TableHead className="text-primary font-bold text-[10px]">VALUE / CONTENT</TableHead>
+                                    <TableHead className="text-primary font-bold text-[10px]">VALUE / TARGET</TableHead>
                                     <TableHead className="text-right"></TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 <TableRow className="border-transparent">
-                                    <TableCell><Badge variant="outline" className="border-primary/50 text-primary">TXT</Badge></TableCell>
+                                    <TableCell>
+                                        <Badge variant="outline" className="border-primary/50 text-primary">
+                                            {storeData?.dnsRecord?.type || (domainInput.split('.').length > 2 ? 'CNAME' : 'A')}
+                                        </Badge>
+                                    </TableCell>
                                     <TableCell className="font-mono text-xs text-slate-200">
-                                        {storeData?.ownershipRecord?.name || '---'}
+                                        {storeData?.dnsRecord?.name || (domainInput.split('.').length > 2 ? domainInput.split('.')[0] : '@')}
                                     </TableCell>
                                     <TableCell className="max-w-xs">
-                                        <code className="text-[10px] text-primary break-all">{storeData?.ownershipRecord?.value || 'Generating...'}</code>
+                                        <code className="text-[10px] text-primary font-bold">
+                                            {storeData?.dnsRecord?.value || (domainInput.split('.').length > 2 ? 'cname.vercel-dns.com' : '76.76.21.21')}
+                                        </code>
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <Button 
                                             variant="ghost" 
                                             size="icon" 
                                             className="h-8 w-8 hover:bg-primary/10"
-                                            onClick={() => storeData?.ownershipRecord && copyToClipboard(storeData.ownershipRecord.value, 'TXT')}
+                                            onClick={() => copyToClipboard(storeData?.dnsRecord?.value || (domainInput.split('.').length > 2 ? 'cname.vercel-dns.com' : '76.76.21.21'), 'DNS')}
                                         >
                                             <Copy className="h-3 w-3" />
                                         </Button>
@@ -323,57 +311,20 @@ export default function DomainSettingsPage() {
                         </Table>
                     </div>
                 </div>
-
-                <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400">
-                        <Clock className="h-3.5 w-3.5" /> Traffic Routing & SSL Handshake
-                    </div>
-                    <div className="rounded-xl border border-primary/20 bg-black/40 overflow-hidden">
-                        <Table>
-                            <TableHeader className="bg-primary/5">
-                                <TableRow className="border-primary/10">
-                                    <TableHead className="text-primary font-bold text-[10px]">TYPE</TableHead>
-                                    <TableHead className="text-primary font-bold text-[10px]">HOST / NAME</TableHead>
-                                    <TableHead className="text-primary font-bold text-[10px]">TARGET / DESTINATION</TableHead>
-                                    <TableHead className="text-right"></TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                <TableRow className="border-primary/5">
-                                    <TableCell><Badge variant="outline" className="border-primary/50 text-primary">CNAME</Badge></TableCell>
-                                    <TableCell className="font-mono text-xs text-slate-200">@ or shop</TableCell>
-                                    <TableCell className="font-mono text-xs text-primary font-bold tracking-wider">{ROOT_PROXY_TARGET}</TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10" onClick={() => copyToClipboard(ROOT_PROXY_TARGET, 'CNAME')}>
-                                            <Copy className="h-3 w-3" />
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                                {storeData?.sslValidationRecord && (
-                                    <TableRow className="border-transparent">
-                                        <TableCell><Badge variant="outline" className="border-primary/50 text-primary">{storeData.sslValidationRecord.type}</Badge></TableCell>
-                                        <TableCell className="font-mono text-xs text-slate-200 truncate max-w-[150px]">{storeData.sslValidationRecord.name}</TableCell>
-                                        <TableCell className="max-w-xs"><code className="text-[10px] text-primary break-all">{storeData.sslValidationRecord.value}</code></TableCell>
-                                        <TableCell className="text-right">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10" onClick={() => copyToClipboard(storeData.sslValidationRecord!.value, 'SSL Record')}>
-                                                <Copy className="h-3 w-3" />
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </div>
                 
                 <div className="p-6 rounded-xl bg-primary/5 border border-primary/20 flex flex-col sm:flex-row items-center justify-between gap-6">
                     <div className="space-y-1">
-                        <p className="text-sm font-bold text-slate-200">Global DNS Propagation</p>
-                        <p className="text-xs text-muted-foreground leading-relaxed">Propagation status: <span className="text-primary font-bold">{storeData?.cfStatus || 'Pending'}</span></p>
+                        <p className="text-sm font-bold text-slate-200">Edge Verification Status</p>
+                        <p className={cn(
+                            "text-xs font-bold leading-relaxed",
+                            storeData?.vercelVerified ? "text-green-500" : "text-yellow-500"
+                        )}>
+                            {storeData?.vercelVerified ? 'VERIFIED' : 'PENDING PROPAGATION'}
+                        </p>
                     </div>
                      <Button onClick={checkStatus} disabled={isCheckingStatus} className="w-full sm:w-auto h-12 px-8 btn-gold-glow bg-primary font-bold">
                         {isCheckingStatus ? <Loader2 className="animate-spin mr-2 h-4 w-4"/> : <CheckCircle2 className="mr-2 h-4 w-4"/>}
-                        Check Verification Status
+                        Verify DNS Readiness
                     </Button>
                 </div>
             </CardContent>
@@ -385,12 +336,12 @@ export default function DomainSettingsPage() {
             <CardHeader className="bg-green-500/10 border-b border-green-500/20">
                 <CardTitle className="flex items-center gap-2 text-green-400">
                     <CheckCircle2 className="h-5 w-5"/> 
-                    Boutique Infrastructure Verified
+                    Identity Globally Resolved
                 </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
                  <p className="text-slate-300 leading-relaxed">
-                    Identity confirmed. Your executive storefront is correctly resolving via the Cloudflare Edge.
+                    Success. Your custom domain is now live on the Vercel Edge.
                     <br />
                     <Link href={`https://${storeData?.customDomain || domainInput}`} target="_blank" className="inline-flex items-center font-black text-primary hover:text-primary/80 mt-4 text-lg tracking-tight uppercase">
                         {storeData?.customDomain || domainInput} 
@@ -406,9 +357,9 @@ export default function DomainSettingsPage() {
               <LinkIcon className="h-5 w-5" />
           </div>
           <div>
-              <h4 className="text-sm font-bold text-slate-200 mb-1 uppercase tracking-widest">SaaS Provider Note</h4>
+              <h4 className="text-sm font-bold text-slate-200 mb-1 uppercase tracking-widest">Vercel Proxy Note</h4>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                  Verification records are provided by the SOMA SaaS Engine. We use CNAME-based validation to automatically manage your SSL certificates. Do not remove the TXT ownership record after verification, as it is required for continuous certificate renewal.
+                  SSL certificates are automatically generated and managed by Vercel. Once DNS propagation is complete (usually 5-15 minutes), your store will automatically serve traffic over HTTPS.
               </p>
           </div>
       </div>

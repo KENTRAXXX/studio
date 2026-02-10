@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { initializeApp, getApps } from 'firebase/app';
 import { doc, updateDoc, getFirestore, getDoc } from 'firebase/firestore';
 import { firebaseConfig } from '@/firebase/config';
+import { verifyDomain, getProjectDomain, getDomainConfig } from '@/lib/vercel-domains';
 
 /**
- * @fileOverview API route to poll Cloudflare for the latest custom hostname status.
+ * @fileOverview API route to poll Vercel for the latest custom hostname status.
  */
 
 const getDb = () => {
@@ -19,14 +20,6 @@ export async function GET(request: NextRequest) {
 
   if (!storeId) {
     return NextResponse.json({ error: 'storeId is required' }, { status: 400 });
-  }
-
-  const CLOUDFLARE_EMAIL = process.env.CLOUDFLARE_EMAIL;
-  const CLOUDFLARE_API_KEY = process.env.CLOUDFLARE_API_KEY;
-  const CLOUDFLARE_ZONE_ID = process.env.CLOUDFLARE_ZONE_ID;
-
-  if (!CLOUDFLARE_EMAIL || !CLOUDFLARE_API_KEY || !CLOUDFLARE_ZONE_ID) {
-    return NextResponse.json({ error: 'System configuration error: Missing Cloudflare credentials.' }, { status: 500 });
   }
 
   try {
@@ -45,44 +38,26 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No custom domain configured for this store' }, { status: 400 });
     }
 
-    // Fetch live status from Cloudflare
-    const cfResponse = await fetch(
-      `https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/custom_hostnames?hostname=${hostname}`,
-      {
-        method: 'GET',
-        headers: {
-          'X-Auth-Email': CLOUDFLARE_EMAIL,
-          'X-Auth-Key': CLOUDFLARE_API_KEY,
-          'Content-Type': 'application/json',
-        }
-      }
-    );
+    // 1. Attempt to trigger verification on Vercel
+    await verifyDomain(hostname).catch(console.error);
 
-    const contentType = cfResponse.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-        throw new Error(`Cloudflare API returned non-JSON response (${cfResponse.status}).`);
-    }
-
-    const cfData = await cfResponse.json();
-
-    if (!cfResponse.ok || !cfData.result?.[0]) {
-      throw new Error(cfData.errors?.[0]?.message || 'Failed to fetch status from Cloudflare');
-    }
-
-    const cfResult = cfData.result[0];
+    // 2. Fetch live status from Vercel Project
+    const projectDomain = await getProjectDomain(hostname);
     
     let internalStatus: 'pending_dns' | 'connected' | 'unverified' = 'pending_dns';
-    if (cfResult.status === 'active' && cfResult.ssl?.status === 'active') {
+    
+    // Vercel domain is fully ready when 'verified' is true AND 'misconfigured' is false
+    if (projectDomain.verified && !projectDomain.misconfigured) {
       internalStatus = 'connected';
+    } else if (projectDomain.misconfigured) {
+      internalStatus = 'unverified';
     }
 
     const updatedInfo = {
       domainStatus: internalStatus,
-      ownershipRecord: cfResult.ownership_verification || null,
-      sslValidationRecord: cfResult.ssl?.validation_records?.[0] || null,
-      cfStatus: cfResult.status,
-      sslStatus: cfResult.ssl?.status,
-      lastCfSync: new Date().toISOString()
+      vercelVerified: projectDomain.verified,
+      vercelMisconfigured: projectDomain.misconfigured,
+      lastVercelSync: new Date().toISOString()
     };
 
     await updateDoc(storeRef, updatedInfo);
@@ -90,7 +65,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       status: internalStatus,
-      cfData: cfResult 
+      vercelData: projectDomain 
     });
 
   } catch (error: any) {
