@@ -3,7 +3,6 @@
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { useUserProfile } from '@/firebase/user-profile-provider';
@@ -143,7 +142,7 @@ export function TrainingCenterContent() {
 
     if (isLoading) {
         return (
-            <div className="flex h-screen w-full items-center justify-center bg-background">
+            <div className="flex h-96 w-full items-center justify-center">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
             </div>
         )
