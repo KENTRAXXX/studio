@@ -16,7 +16,7 @@ import { createClientStore } from '@/ai/flows/create-client-store';
 import { Progress } from '@/components/ui/progress';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { useUser, useFirestore, useUserProfile, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useUserProfile, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, doc, setDoc, updateDoc, writeBatch, query, where, limit, getDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
@@ -429,15 +429,28 @@ export default function MyStorePage() {
   const { userProfile } = useUserProfile();
   const firestore = useFirestore();
 
+  // CHECK FOR EXISTING STORE (Persistence Gatelock)
+  const storeRef = useMemoFirebase(() => user && firestore ? doc(firestore, 'stores', user.uid) : null, [firestore, user]);
+  const { data: storeData, loading: storeLoading } = useDoc<any>(storeRef);
+
+  useEffect(() => {
+    // If a store already exists and we are not in the middle of launching, redirect to dashboard.
+    if (!storeLoading && storeData && !isLaunching) {
+        router.replace('/dashboard');
+    }
+  }, [storeData, storeLoading, router, isLaunching]);
+
   const handleLaunch = async (firstProduct?: any) => {
     if (!user || !firestore || !storeType || !userProfile) return;
     
-    sessionStorage.setItem('soma_just_launched', 'true');
     setIsLaunching(true);
+    // Set flag to prevent Dashboard redirect during provisioning gap
+    if (typeof window !== 'undefined') {
+        sessionStorage.setItem('soma_just_launched', 'true');
+    }
 
     try {
         const userId = user.uid; 
-        const storeRef = doc(firestore, 'stores', userId);
         const userRef = doc(firestore, 'users', userId);
         
         const logoUrl = logoFile ? `/uploads/${logoFile.name}` : '';
@@ -482,9 +495,10 @@ export default function MyStorePage() {
             status: 'Live',
         };
 
-        await setDoc(storeRef, storeConfig).catch(async (err) => {
+        const targetStoreRef = doc(firestore, 'stores', userId);
+        await setDoc(targetStoreRef, storeConfig).catch(async (err) => {
             const permissionError = new FirestorePermissionError({
-                path: storeRef.path,
+                path: targetStoreRef.path,
                 operation: 'create',
                 requestResourceData: storeConfig,
             } satisfies SecurityRuleContext);
@@ -494,14 +508,14 @@ export default function MyStorePage() {
 
         // 3. Handle Product Selection / Upload (SYNC FROM LIVE MASTER CATALOG)
         if (storeType === 'MERCHANT' && firstProduct) {
-            const productsRef = collection(storeRef, 'products');
+            const productsRef = collection(targetStoreRef, 'products');
             const productDocRef = doc(productsRef);
             await setDoc(productDocRef, {
                 ...firstProduct,
                 vendorId: userId,
             });
         } else if (storeType === 'DROPSHIP') {
-            const productsRef = collection(storeRef, 'products');
+            const productsRef = collection(targetStoreRef, 'products');
             const batch = writeBatch(firestore);
             
             for (const productId of selectedProducts) {
@@ -535,7 +549,9 @@ export default function MyStorePage() {
 
     } catch (error: any) {
         setIsLaunching(false);
-        sessionStorage.removeItem('soma_just_launched');
+        if (typeof window !== 'undefined') {
+            sessionStorage.removeItem('soma_just_launched');
+        }
         toast({
             variant: "destructive",
             title: 'Launch Failed',
@@ -584,6 +600,14 @@ export default function MyStorePage() {
   const currentStepComponent = step === 0 
     ? <ChoosePathStep onSelectPath={handlePathSelection} planTier={userProfile?.planTier} />
     : wizardSteps[step - 1];
+
+  if (storeLoading && !isLaunching) {
+      return (
+          <div className="flex h-96 w-full items-center justify-center">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          </div>
+      );
+  }
 
   return (
     <div className="space-y-8">

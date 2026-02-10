@@ -53,9 +53,10 @@ export default function DashboardOverviewPage() {
     useEffect(() => {
         if (isLoading || !user) return;
 
+        // Check if we literally JUST launched to prevent loop during provision sync
         const justLaunched = typeof window !== 'undefined' && sessionStorage.getItem('soma_just_launched') === 'true';
         
-        // GATELOCK: Admins do not need a store instance
+        // GATELOCK: Ensure Merchants/Scalers have a store record.
         if (userProfile?.hasAccess && userProfile?.userRole !== 'ADMIN' && !storeData && !justLaunched) {
             const isSupplier = userProfile.planTier === 'SELLER' || userProfile.planTier === 'BRAND';
             if (!isSupplier) {
