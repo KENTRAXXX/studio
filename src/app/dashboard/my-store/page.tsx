@@ -18,8 +18,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useUser, useFirestore, useUserProfile, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, doc, setDoc, updateDoc, writeBatch, query, where, limit, getDoc } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import { getTier } from '@/lib/tiers';
 
 const progressSteps = [
@@ -63,6 +61,7 @@ const ChoosePathStep = ({ onSelectPath, planTier }: { onSelectPath: (path: 'MERC
                             <CardTitle>I want to dropship.</CardTitle>
                             <CardDescription>Sell products from the SOMA Luxury Catalog without holding inventory.</CardDescription>
                         </CardHeader>
+                    </Card>
                 )}
             </div>
         </motion.div>
@@ -282,7 +281,7 @@ const CollectionStep = ({ onBack, onLaunch, selectedProducts, setSelectedProduct
     );
 };
 
-const ProductUploadStep = ({ onBack, onLaunch }: { onBack: void, onLaunch: (firstProduct: any) => void }) => {
+const ProductUploadStep = ({ onBack, onLaunch }: { onBack: () => void, onLaunch: (firstProduct: any) => void }) => {
     const [productName, setProductName] = useState('');
     const [price, setPrice] = useState('');
     const [stock, setStock] = useState('');
