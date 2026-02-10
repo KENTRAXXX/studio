@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useCollection, useFirestore } from '@/firebase';
+import { useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 
 import {
   Card,
@@ -31,7 +31,11 @@ export default function MasterAdminPage() {
     const [loading, setLoading] = useState(true);
     const firestore = useFirestore();
 
-    const withdrawalRequestsRef = firestore ? query(collection(firestore, 'withdrawal_requests')) : null;
+    const withdrawalRequestsRef = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'withdrawal_requests'));
+    }, [firestore]);
+
     const { data: withdrawalRequests, loading: withdrawalsLoading } = useCollection(withdrawalRequestsRef);
 
     useEffect(() => {
