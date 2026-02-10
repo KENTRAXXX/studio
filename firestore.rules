@@ -42,7 +42,8 @@ service cloud.firestore {
     }
 
     match /stores/{userId} {
-      allow get: if true;
+      // Allow public read (get and list) so boutiques can be resolved by slug/domain
+      allow read: if true;
       allow write: if isOwner(userId);
       
       match /products/{productId} {
