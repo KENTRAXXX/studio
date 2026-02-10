@@ -34,7 +34,7 @@ async function resolveHostname(hostname: string, baseUrl: string): Promise<strin
             if (data.storeId) return data.storeId;
         }
     } catch (e) {
-        console.error(`Multi-tenancy resolution error for ${currentHost}:`, e);
+        console.error(`[SOMA Middleware] Multi-tenancy resolution error for ${currentHost}:`, e);
     }
     
     return null;
@@ -68,12 +68,17 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // EXECUTION TRACE: Log the incoming hostname for Vercel diagnostic monitoring
+  console.log(`[SOMA Middleware] Resolving: ${currentHost}${path}`);
+
   const tenantId = await resolveHostname(currentHost, request.url);
   
   if (tenantId) {
-    // Internally rewrite to the [domain] route while maintaining the branded URL in the address bar.
+    // REWRITE: Internally map to the [domain] route while maintaining the branded URL.
     // Rewrites from 'deluxeinc.somatoday.com/product/123' to '/tenantUID/product/123'
-    return NextResponse.rewrite(new URL(`/${tenantId}${path}${url.search}`, request.url));
+    const rewriteUrl = new URL(`/${tenantId}${path}${url.search}`, request.url);
+    console.log(`[SOMA Middleware] Rewriting ${currentHost} -> ${rewriteUrl.pathname}`);
+    return NextResponse.rewrite(rewriteUrl);
   }
   
   return NextResponse.next();

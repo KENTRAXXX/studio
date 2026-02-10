@@ -35,6 +35,8 @@ export async function GET(request: NextRequest) {
   const detectedRoot = hostHeader.split('.').slice(-2).join('.');
   const ROOT_DOMAIN = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || detectedRoot || 'somatoday.com').toLowerCase();
 
+  console.log(`[SOMA Resolver] Domain: ${currentHost} | Root: ${ROOT_DOMAIN}`);
+
   // Extract the slug (subdomain prefix) if the request is coming via the platform domain
   let slug = currentHost;
   if (currentHost.endsWith(`.${ROOT_DOMAIN}`)) {
@@ -64,6 +66,7 @@ export async function GET(request: NextRequest) {
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
+      console.warn(`[SOMA Resolver] No boutique found for: ${currentHost} (slug: ${slug})`);
       return NextResponse.json({ storeId: null }, { status: 404 });
     }
 
@@ -82,16 +85,20 @@ export async function GET(request: NextRequest) {
 
     const tier = getTier(userData.planTier);
     
-    // Admins always bypass entitlement checks
+    // Check if the currentHost is exactly the root or www (handled by middleware but here for safety)
     const isPlatformRoot = currentHost === ROOT_DOMAIN || currentHost === `www.${ROOT_DOMAIN}`;
-    if (!isPlatformRoot && !tier.features.customDomains && userData.userRole !== 'ADMIN') {
+    
+    // Entitlement check: allow platform subdomains for all Moguls, restrict custom domains by tier
+    const isCustomDomain = currentHost !== `${slug}.${ROOT_DOMAIN}` && !isPlatformRoot;
+    if (isCustomDomain && !tier.features.customDomains && userData.userRole !== 'ADMIN') {
+        console.warn(`[SOMA Resolver] Tier '${userData.planTier}' unauthorized for custom domain: ${currentHost}`);
         return NextResponse.json({ error: 'Plan tier unauthorized for branded routing' }, { status: 403 });
     }
 
-    // Critical: Returns the storeId which maps to /[domain]/ route
+    console.log(`[SOMA Resolver] Success: ${currentHost} -> ${userId}`);
     return NextResponse.json({ storeId: userId });
   } catch (error) {
-    console.error(`Boutique resolution error for '${domain}':`, error);
+    console.error(`[SOMA Resolver] Internal error for '${domain}':`, error);
     return NextResponse.json({ error: 'Internal server error during domain handshake' }, { status: 500 });
   }
 }
