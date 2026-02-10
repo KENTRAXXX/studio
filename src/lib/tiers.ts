@@ -86,7 +86,7 @@ export const TIER_REGISTRY: Record<PlanTier, TierConfig> = {
         features: {
             dropshipping: false,
             privateInventory: false,
-            customDomains: false,
+            customDomains: true, // Enabled for premium Brands
             analytics: 'advanced',
             academyAccess: false
         }

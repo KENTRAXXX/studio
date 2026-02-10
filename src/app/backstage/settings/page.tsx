@@ -43,6 +43,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { uploadToCloudinary } from '@/lib/utils/upload-image';
+import { CustomDomainSettings } from '@/components/backstage/CustomDomainSettings';
 
 export default function BackstageSettingsPage() {
   const auth = useAuth();
@@ -342,6 +343,10 @@ export default function BackstageSettingsPage() {
                 </div>
             </CardContent>
             </Card>
+
+            {userProfile?.planTier === 'BRAND' && (
+                <CustomDomainSettings />
+            )}
 
             <Card className="border-primary/20 bg-slate-900/30">
             <CardHeader>
