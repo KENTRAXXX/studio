@@ -17,6 +17,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Separator } from '@/components/ui/separator';
 import { formatCurrency } from '@/utils/format';
 import { useToast } from '@/hooks/use-toast';
+import { sendSupportTicketCustomerEmail } from '@/ai/flows/send-support-ticket-customer-email';
+import { sendSupportTicketOwnerEmail } from '@/ai/flows/send-support-ticket-owner-email';
 
 type CartItem = {
   product: any;
@@ -143,14 +145,24 @@ function CartSheet({storeId}: {storeId: string}) {
     );
 }
 
-function ContactSheet({ storeId, ownerEmail, trigger }: { storeId: string, ownerEmail?: string, trigger?: React.ReactNode }) {
+function ContactSheet({ storeId, storeName, ownerEmail, trigger }: { storeId: string, storeName: string, ownerEmail?: string, trigger?: React.ReactNode }) {
     const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
+    
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
     const [subject, setSubject] = useState('');
     const [message, setMessage] = useState('');
+
+    useEffect(() => {
+        if (user) {
+            setName(user.displayName || '');
+            setEmail(user.email || '');
+        }
+    }, [user]);
 
     const handleSubmitTicket = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -158,16 +170,39 @@ function ContactSheet({ storeId, ownerEmail, trigger }: { storeId: string, owner
 
         setIsSubmitting(true);
         try {
+            const bundledMessage = `Customer: ${name}\nEmail: ${email}\n\n${message}`;
+            
             const ticketsRef = collection(firestore, 'stores', storeId, 'supportTickets');
-            await addDoc(ticketsRef, {
+            const ticketDoc = await addDoc(ticketsRef, {
                 subject,
-                message,
+                message: bundledMessage,
                 status: 'OPEN',
                 storeId,
                 customerId: user?.uid || null,
-                messages: [message],
+                messages: [bundledMessage],
                 createdAt: serverTimestamp(),
             });
+
+            // Trigger Notifications
+            const storeUrl = typeof window !== 'undefined' ? window.location.origin : `https://somatoday.com/store/${storeId}`;
+            
+            await sendSupportTicketCustomerEmail({
+                to: email,
+                customerName: name,
+                storeName: storeName,
+                ticketId: ticketDoc.id,
+                storeUrl: storeUrl
+            });
+
+            if (ownerEmail) {
+                await sendSupportTicketOwnerEmail({
+                    to: ownerEmail,
+                    customerName: name,
+                    customerEmail: email,
+                    subject: subject,
+                    storeName: storeName
+                });
+            }
 
             setIsSuccess(true);
             toast({
@@ -202,7 +237,7 @@ function ContactSheet({ storeId, ownerEmail, trigger }: { storeId: string, owner
                         </div>
                         <div className="space-y-2">
                             <h3 className="text-xl font-bold text-slate-200">Request Logged</h3>
-                            <p className="text-sm text-muted-foreground">The boutique curator has been notified of your inquiry.</p>
+                            <p className="text-sm text-muted-foreground">The boutique curator has been notified. Check your email for a reference ID.</p>
                         </div>
                         <Button variant="outline" onClick={() => setIsSuccess(false)} className="border-primary/20">Send Another</Button>
                     </div>
@@ -215,6 +250,31 @@ function ContactSheet({ storeId, ownerEmail, trigger }: { storeId: string, owner
                         </div>
 
                         <form onSubmit={handleSubmitTicket} className="space-y-4">
+                            {!user && (
+                                <>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Your Name</label>
+                                        <Input 
+                                            placeholder="John Doe" 
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
+                                            required
+                                            className="bg-primary/5 border-primary/10"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Email Address</label>
+                                        <Input 
+                                            type="email"
+                                            placeholder="john@example.com" 
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            required
+                                            className="bg-primary/5 border-primary/10"
+                                        />
+                                    </div>
+                                </>
+                            )}
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Subject</label>
                                 <Input 
@@ -244,8 +304,8 @@ function ContactSheet({ storeId, ownerEmail, trigger }: { storeId: string, owner
                         <Separator className="my-4 bg-primary/10"/>
                         
                         <div className="text-center">
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em]">Curator Direct</p>
-                            <p className="text-sm font-bold text-primary mt-1">{ownerEmail || 'registry@somatoday.com'}</p>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em]">Boutique Authority</p>
+                            <p className="text-sm font-bold text-primary mt-1">{storeName}</p>
                         </div>
                     </div>
                 )}
@@ -350,6 +410,7 @@ export default function StoreLayout({
                 {storeId && (
                     <ContactSheet 
                         storeId={storeId}
+                        storeName={storeName}
                         ownerEmail={contactEmail} 
                         trigger={
                             <Button variant="ghost" size="icon" className="text-primary hover:bg-primary/20">
@@ -390,7 +451,7 @@ export default function StoreLayout({
               </div>
               <div className="flex gap-6">
                 <Link href="/legal/terms" className="text-sm text-muted-foreground hover:text-primary">Privacy Policy</Link>
-                {storeId && <ContactSheet storeId={storeId} ownerEmail={contactEmail}/>}
+                {storeId && <ContactSheet storeId={storeId} storeName={storeName} ownerEmail={contactEmail}/>}
               </div>
             </div>
           </footer>

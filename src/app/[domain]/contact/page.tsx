@@ -15,7 +15,7 @@ import {
     serverTimestamp,
     getDocs
 } from 'firebase/firestore';
-import { useFirestore, useMemoFirebase } from '@/firebase';
+import { useFirestore } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,6 +43,8 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { sendSupportTicketCustomerEmail } from '@/ai/flows/send-support-ticket-customer-email';
+import { sendSupportTicketOwnerEmail } from '@/ai/flows/send-support-ticket-owner-email';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,6 +67,7 @@ export default function TenantContactPage() {
     const [isSuccess, setIsSuccess] = useState(false);
     const [storeId, setStoreId] = useState<string | null>(null);
     const [storeName, setStoreName] = useState('Boutique');
+    const [ownerEmail, setOwnerEmail] = useState<string | null>(null);
     const [isResolving, setIsResolving] = useState(true);
 
     // 1. Resolve Boutique Identity
@@ -99,6 +102,7 @@ export default function TenantContactPage() {
                     const data = snap.docs[0].data();
                     setStoreId(data.userId);
                     setStoreName(data.storeName || 'Boutique');
+                    setOwnerEmail(data.contactEmail || null);
                 }
             } catch (error) {
                 console.error("Failed to resolve boutique:", error);
@@ -131,7 +135,7 @@ export default function TenantContactPage() {
             const bundledMessage = `Customer: ${data.name}\nEmail: ${data.email}\n\n${data.message}`;
 
             const ticketsRef = collection(firestore, 'stores', storeId, 'supportTickets');
-            await addDoc(ticketsRef, {
+            const ticketDoc = await addDoc(ticketsRef, {
                 subject: data.subject,
                 message: bundledMessage,
                 status: 'OPEN',
@@ -139,6 +143,27 @@ export default function TenantContactPage() {
                 messages: [bundledMessage],
                 createdAt: serverTimestamp(),
             });
+
+            // Trigger Notifications
+            const storeUrl = typeof window !== 'undefined' ? window.location.origin : `https://${identifier}`;
+            
+            await sendSupportTicketCustomerEmail({
+                to: data.email,
+                customerName: data.name,
+                storeName: storeName,
+                ticketId: ticketDoc.id,
+                storeUrl: storeUrl
+            });
+
+            if (ownerEmail) {
+                await sendSupportTicketOwnerEmail({
+                    to: ownerEmail,
+                    customerName: data.name,
+                    customerEmail: data.email,
+                    subject: data.subject,
+                    storeName: storeName
+                });
+            }
 
             setIsSuccess(true);
             toast({
@@ -190,9 +215,9 @@ export default function TenantContactPage() {
                                         <CheckCircle2 className="h-16 w-16 text-primary animate-pulse" />
                                     </div>
                                     <h2 className="text-3xl font-bold font-headline text-primary">Inquiry Secured</h2>
-                                    <p className="text-muted-foreground max-w-md mx-auto">
+                                    <p className="text-muted-foreground max-md mx-auto">
                                         Your request has been transmitted directly to the boutique ledger. 
-                                        The curator will respond via email shortly.
+                                        You will receive a confirmation email with a reference ID shortly.
                                     </p>
                                     <Button asChild size="lg" className="mt-4 btn-gold-glow" onClick={() => router.push('/')}>
                                         <Link href="/">Return to Boutique</Link>
