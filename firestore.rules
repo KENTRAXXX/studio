@@ -12,6 +12,10 @@ service cloud.firestore {
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
+    
+    function isAdmin() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userRole == 'ADMIN';
+    }
 
     function isExistingTicketOwner() {
       return isSignedIn() && resource.data.get('customerId', null) == request.auth.uid;
@@ -21,18 +25,21 @@ service cloud.firestore {
 
     match /stores/{storeId}/supportTickets/{supportTicketId} {
       
-      // Customers can see their own tickets
-      allow get: if isExistingTicketOwner();
+      // Access granted to the customer who created it, the store owner, or an admin
+      allow get: if isExistingTicketOwner() || isOwner(storeId) || isAdmin();
       
-      // Customers can list their own tickets
-      allow list: if isSignedIn() && request.query.limit <= 50; 
+      // List tickets: Customers can list their own, store owners see all in their store, admins see all
+      allow list: if (isSignedIn() && request.query.limit <= 50) || isOwner(storeId) || isAdmin(); 
 
-      // Anyone can create a ticket, but must link UID if signed in
+      // Anyone can create a ticket. If signed in, we can optionally link customerId
       allow create: if request.resource.data.storeId == storeId 
                     && (request.resource.data.get('customerId', null) == null || isOwner(request.resource.data.customerId));
 
-      // Only the owner can update (add messages) or delete their ticket
-      allow update, delete: if isExistingTicketOwner();
+      // Customer can add messages to their ticket. Store owner can reply. Admin can update status.
+      allow update: if isExistingTicketOwner() || isOwner(storeId) || isAdmin();
+      
+      // Only Admin or Store Owner can delete
+      allow delete: if isOwner(storeId) || isAdmin();
     }
 
     // Platform rules for users and other collections

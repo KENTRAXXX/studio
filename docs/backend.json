@@ -20,12 +20,15 @@
         },
         "status": {
           "type": "string",
-          "enum": ["OPEN", "RESOLVED"],
+          "enum": [
+            "OPEN",
+            "RESOLVED"
+          ],
           "description": "The current status of the support ticket."
         },
         "storeId": {
           "type": "string",
-          "description": "Reference to Store."
+          "description": "Reference to Store (UID of the owner)."
         },
         "customerId": {
           "type": "string",

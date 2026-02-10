@@ -13,3 +13,14 @@ export type PendingProduct = {
   categories: string[];
   tags: string[];
 };
+
+export type SupportTicket = {
+  id: string;
+  subject: string;
+  message: string;
+  status: 'OPEN' | 'RESOLVED';
+  storeId: string;
+  customerId?: string;
+  messages: string[];
+  createdAt: any; // Firestore Timestamp or ISO string
+};
