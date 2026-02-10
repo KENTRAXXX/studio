@@ -30,10 +30,10 @@ type StorefrontProduct = {
 };
 
 export async function generateMetadata(
-  { params }: { params: { storeId: string } },
+  { params }: { params: { storeId?: string; domain?: string } },
   parent: ResolvingMetadata
 ): Promise<Metadata> {
-  const storeId = params.storeId;
+  const storeId = params.storeId || params.domain;
   const isDemoMode = storeId === 'demo';
 
   if (isDemoMode) {
@@ -96,8 +96,8 @@ async function getProducts(storeId: string): Promise<StorefrontProduct[]> {
 }
 
 
-export default async function StorefrontPage({ params }: { params: { storeId: string } }) {
-  const storeId = params.storeId;
+export default async function StorefrontPage({ params }: { params: { storeId?: string; domain?: string } }) {
+  const storeId = params.storeId || params.domain;
   if (!storeId) {
     notFound();
   }

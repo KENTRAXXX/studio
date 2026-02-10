@@ -123,7 +123,7 @@ function CartSheet({storeId}: {storeId: string}) {
                                     <span>{formatCurrency(Math.round(getCartTotal() * 100))}</span>
                                 </div>
                                 <Button asChild className="w-full h-12 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
-                                    <Link href={`/store/${storeId}/checkout`}>Checkout</Link>
+                                    <Link href={storeId ? `/store/${storeId}/checkout` : '/checkout'}>Checkout</Link>
                                 </Button>
                             </div>
                         </>
@@ -177,12 +177,12 @@ export default function StoreLayout({
   children: React.ReactNode;
 }) {
   const params = useParams();
-  const storeId = params.storeId as string;
+  const rawStoreId = (params.storeId || params.domain) as string;
   const firestore = useFirestore();
 
   const storeRef = useMemoFirebase(() => {
-    return firestore && storeId ? doc(firestore, 'stores', storeId) : null;
-  }, [firestore, storeId]);
+    return firestore && rawStoreId ? doc(firestore, 'stores', rawStoreId) : null;
+  }, [firestore, rawStoreId]);
   const { data: storeData, loading: storeLoading } = useDoc<any>(storeRef);
   
   const ownerRef = useMemoFirebase(() => {
@@ -195,7 +195,6 @@ export default function StoreLayout({
   const logoUrl = storeData?.logoUrl;
   const themeColors = storeData?.themeConfig?.colors;
 
-  // Injection of CSS variables based on store's theme configuration
   const customStyles = themeColors ? {
     '--primary': themeColors.primary,
     '--background': themeColors.background,
@@ -215,7 +214,7 @@ export default function StoreLayout({
         >
           <header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-sm border-b border-primary/20">
             <div className="container mx-auto flex h-20 items-center justify-between px-4 sm:px-6 lg:px-8">
-              <Link href={`/store/${storeId}`} className="flex items-center gap-2 group">
+              <Link href={rawStoreId ? `/store/${rawStoreId}` : '/'} className="flex items-center gap-2 group">
                 {storeLoading ? (
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 ) : logoUrl ? (
@@ -238,7 +237,7 @@ export default function StoreLayout({
                     className="h-10 w-full rounded-md border border-primary/30 bg-transparent pl-10 pr-4 text-sm placeholder:text-muted-foreground focus:ring-primary"
                   />
                 </div>
-                <CartSheet storeId={storeId} />
+                <CartSheet storeId={rawStoreId} />
               </div>
             </div>
           </header>
