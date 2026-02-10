@@ -22,8 +22,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { CreditCard, Loader2, Lock } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Loader2 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { usePaystack } from '@/hooks/use-paystack';
 import { useToast } from '@/hooks/use-toast';
@@ -116,7 +115,7 @@ const ShippingStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => vo
         <div className="border border-primary/50 rounded-lg p-4 flex justify-between items-center bg-card">
           <div>
             <p className="font-semibold">Standard Shipping</p>
-            <p className="text-sm text-muted-foreground">Arrives in 5-7 business days</p>
+            <p className="text-sm text-muted-foreground">Arrives in 3-21 days (depending on location)</p>
           </div>
           <p className="font-bold text-primary">${shippingPrice.toFixed(2)}</p>
         </div>
@@ -164,7 +163,12 @@ const PaymentStep = ({ onBack, storeId, checkoutData }: { onBack: () => void; st
       },
       (reference) => {
          const orderId = `SOMA-${reference.trxref.slice(-6).toUpperCase()}`;
-         router.push(`/store/${storeId}/checkout/order-confirmation?orderId=${orderId}`);
+         // Dynamic routing for custom domains vs platform links
+         const params = new URLSearchParams(window.location.search);
+         const isCustomDomain = !window.location.pathname.startsWith('/store');
+         const confirmationPath = isCustomDomain ? '/checkout/order-confirmation' : `/store/${storeId}/checkout/order-confirmation`;
+         
+         router.push(`${confirmationPath}?orderId=${orderId}`);
       },
       () => {
         toast({ variant: 'default', title: 'Payment Canceled', description: 'Your payment was not completed.' });
@@ -201,7 +205,7 @@ const PaymentStep = ({ onBack, storeId, checkoutData }: { onBack: () => void; st
 
 export default function CheckoutPage() {
   const params = useParams();
-  const storeId = params.storeId as string;
+  const rawStoreId = (params.storeId || params.domain) as string;
   const [currentStep, setCurrentStep] = useState(0);
   const [checkoutData, setCheckoutData] = useState<Partial<AddressFormValues>>({});
   const { cart, getCartTotal } = useCart();
@@ -233,7 +237,7 @@ export default function CheckoutPage() {
             <AnimatePresence mode="wait">
                 {currentStep === 0 && <InformationStep onNext={handleNext} setCheckoutData={updateCheckoutData} />}
                 {currentStep === 1 && <ShippingStep onNext={handleNext} onBack={handleBack} />}
-                {currentStep === 2 && <PaymentStep onBack={handleBack} storeId={storeId} checkoutData={checkoutData} />}
+                {currentStep === 2 && <PaymentStep onBack={handleBack} storeId={rawStoreId} checkoutData={checkoutData} />}
             </AnimatePresence>
           </div>
         </main>
@@ -244,7 +248,7 @@ export default function CheckoutPage() {
                 {cart.map(item => (
                     <li key={item.product.id} className="flex justify-between items-center text-sm">
                         <span>{item.product.name} x {item.quantity}</span>
-                        <span className="font-medium">${(item.product.suggestedRetailPrice * item.quantity).toFixed(2)}</span>
+                        <span className="font-medium">${((item.product.suggestedRetailPrice || item.product.price) * item.quantity).toFixed(2)}</span>
                     </li>
                 ))}
             </ul>

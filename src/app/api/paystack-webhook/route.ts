@@ -6,14 +6,7 @@ import { firebaseConfig } from '@/firebase/config';
 import { sendOrderEmail } from '@/ai/flows/send-order-email';
 import { sendReferralActivatedEmail } from '@/ai/flows/send-referral-activated-email';
 import { formatCurrency } from '@/utils/format';
-
-const basePrices: Record<string, number> = {
-    MERCHANT: 19.99,
-    SCALER: 29.00,
-    SELLER: 0,
-    ENTERPRISE: 33.33,
-    BRAND: 21.00,
-};
+import { getTier, PlanTier } from '@/lib/tiers';
 
 const getDb = () => {
     const apps = getApps();
@@ -36,15 +29,12 @@ async function logWebhookEvent(eventType: string, payload: any, status: 'success
     }
 }
 
-function getCommissionRate(activeCount: number): number {
+function getReferralCommissionRate(activeCount: number): number {
     if (activeCount >= 51) return 0.20;
     if (activeCount >= 21) return 0.15;
     return 0.10;
 }
 
-/**
- * Verifies the Paystack signature using the Web Crypto API.
- */
 async function verifyPaystackSignature(payload: string, signature: string, secret: string): Promise<boolean> {
     const encoder = new TextEncoder();
     const keyData = encoder.encode(secret);
@@ -123,9 +113,9 @@ async function executePaymentSplit(eventData: any) {
                         throw new Error(`Vendor profile for ${vendorId} not found.`);
                     }
                     const vendorData = vendorSnap.data();
+                    const vendorTier = getTier(vendorData.planTier);
 
-                    const commissionRate = vendorData.planTier === 'BRAND' ? 0.03 : 0.09;
-                    const platformFee = wholesalePrice * commissionRate;
+                    const platformFee = wholesalePrice * vendorTier.commissionRate;
                     const sellerPayout = wholesalePrice - platformFee;
 
                     if (sellerPayout > 0) {
@@ -278,14 +268,18 @@ export async function POST(req: Request) {
                     if (referrerSnap.exists() && referrerSnap.data().hasAccess === true) {
                         const referrerData = referrerSnap.data();
                         const currentActiveCount = referrerData.activeReferralCount || 0;
-                        const commissionRate = getCommissionRate(currentActiveCount);
+                        const referralCommissionRate = getReferralCommissionRate(currentActiveCount);
                         
-                        const tier = userData.planTier || planTier;
+                        const tierId = (userData.planTier || planTier) as PlanTier;
+                        const tier = getTier(tierId);
+                        
+                        // Reference prices for rewards
+                        const basePrices: Record<string, number> = { MERCHANT: 19.99, SCALER: 29.00, SELLER: 0, ENTERPRISE: 33.33, BRAND: 21.00 };
                         const interval = userData.plan || plan;
-                        const basePrice = basePrices[tier] || 0;
-                        const totalCost = interval === 'yearly' ? basePrice * 10 : basePrice;
+                        const basePrice = basePrices[tierId] || 0;
+                        const totalPlanCost = interval === 'yearly' ? basePrice * 10 : basePrice;
                         
-                        const referralReward = totalCost * commissionRate;
+                        const referralReward = totalPlanCost * referralCommissionRate;
 
                         if (referralReward > 0) {
                             const payoutRef = doc(collection(firestore, 'payouts_pending'));
@@ -297,7 +291,7 @@ export async function POST(req: Request) {
                                 type: 'referral_reward',
                                 referredUserId: userId,
                                 createdAt: new Date().toISOString(),
-                                description: `${commissionRate * 100}% Referral Reward for ${userData.email || 'New User'} activation.`
+                                description: `${referralCommissionRate * 100}% Referral Reward for ${userData.email || 'New User'} activation.`
                             });
 
                             transaction.update(referrerRef, {

@@ -108,24 +108,24 @@ function SignUpForm() {
         if (!isFreePlan) {
             toast({
               title: 'Identity Provisioned',
-              description: "Finalizing your empire's secure payment uplink...",
+              description: "Directing to secure payment handshake...",
             });
         }
 
         const onPaystackSuccess = async () => {
-          // Optimistically update status to improve UX while webhook processes
+          // Optimistic update to bridge the gap until the webhook hits
           if (firestore && user.user.uid) {
               try {
                   const userRef = doc(firestore, 'users', user.user.uid);
                   await updateDoc(userRef, { hasAccess: true });
               } catch (e) {
-                  console.error("Optimistic access update failed:", e);
+                  console.error("Status sync failed:", e);
               }
           }
 
           toast({
-            title: isFreePlan ? 'Account Created!' : 'Payment Successful!',
-            description: isFreePlan ? "Welcome to the elite." : 'Your luxury store is being provisioned across our global edge.',
+            title: isFreePlan ? 'Access Finalized' : 'Activation Complete',
+            description: 'Your strategic hub is being prepared.',
           });
           
           router.push('/backstage/return');
@@ -134,8 +134,8 @@ function SignUpForm() {
         const onPaystackClose = () => {
           toast({
             variant: 'default',
-            title: 'Payment Deferred',
-            description: 'Your account is created, but payment is required for full activation.',
+            title: 'Action Required',
+            description: 'Payment is required to complete portal activation.',
           });
           router.push('/backstage/return');
         };
@@ -145,7 +145,6 @@ function SignUpForm() {
             return;
         }
 
-        // Wrap payment initialization in a try/catch to handle API failures gracefully
         try {
             await initializePayment({
                 email: data.email,
@@ -165,18 +164,16 @@ function SignUpForm() {
               onPaystackClose
             );
             
-            // If we get here, the Paystack modal has been triggered successfully
             setIsSuccess(true);
         } catch (error: any) {
-            // Error is already toasted by usePaystack, we just need to ensure the form stays interactive
-            console.error("Signup payment flow error:", error);
+            console.error("Signup failure:", error);
         }
       },
       onError: (err) => {
         toast({
           variant: 'destructive',
-          title: 'Sign Up Failed',
-          description: err.message || 'An unexpected error occurred during account creation.',
+          title: 'Provisioning Error',
+          description: err.message || 'Account creation encountered a logic barrier.',
         });
       },
     });
@@ -184,7 +181,7 @@ function SignUpForm() {
 
   const isPending = isSigningUp || isInitializing;
   const isFreePlan = (planTier === 'SELLER' && interval === 'free') || planTier === 'ADMIN';
-  const buttonText = isFreePlan ? 'Create Admin Account' : 'Confirm Plan & Continue to Pay';
+  const buttonText = isFreePlan ? 'Establish Admin Identity' : 'Confirm & Proceed to Payment';
 
   return (
       <div className="w-full max-w-lg">

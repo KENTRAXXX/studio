@@ -30,15 +30,16 @@ import {
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { storeId, productId } = params;
+  const rawStoreId = (params.storeId || params.domain) as string;
+  const productId = params.productId as string;
   const { toast } = useToast();
   const { addToCart } = useCart();
   const firestore = useFirestore();
   const { userProfile, loading: profileLoading } = useUserProfile();
 
   const productRef = useMemoFirebase(() => {
-    return firestore ? doc(firestore, `stores/${storeId}/products/${productId}`) : null;
-  }, [firestore, storeId, productId]);
+    return firestore ? doc(firestore, `stores/${rawStoreId}/products/${productId}`) : null;
+  }, [firestore, rawStoreId, productId]);
   const { data: product, loading: productLoading } = useDoc<any>(productRef);
   
   const [currentPrice, setCurrentPrice] = useState(0);
@@ -118,7 +119,7 @@ export default function ProductDetailPage() {
     setIsBuyingNow(true);
     const productWithCurrentPrice = { ...product, suggestedRetailPrice: currentPrice, selectedColor };
     addToCart(productWithCurrentPrice);
-    router.push(`/store/${storeId}/checkout`);
+    router.push(rawStoreId ? `/store/${rawStoreId}/checkout` : '/checkout');
   };
   
   const handlePriceSave = async () => {
@@ -147,8 +148,8 @@ export default function ProductDetailPage() {
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16">
-      <ProductViewTracker storeId={storeId as string} productId={productId as string} />
-      <Link href={`/store/${storeId}`} className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-8 transition-colors">
+      <ProductViewTracker storeId={rawStoreId} productId={productId} />
+      <Link href={rawStoreId ? `/store/${rawStoreId}` : '/'} className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-8 transition-colors">
         <ArrowLeft className="mr-2 h-4 w-4" /> Back to Collection
       </Link>
 

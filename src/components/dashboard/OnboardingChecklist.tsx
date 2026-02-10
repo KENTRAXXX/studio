@@ -74,6 +74,18 @@ export function OnboardingChecklist() {
         return { items, progress, completedCount };
     }, [userProfile, storeData, products]);
 
+    const boutiqueUrl = useMemo(() => {
+        if (!storeData) return '';
+        const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
+        if (storeData.customDomain && storeData.domainStatus === 'connected') {
+            return `https://${storeData.customDomain}`;
+        }
+        if (storeData.slug) {
+            return `https://${storeData.slug}.${rootDomain}`;
+        }
+        return `https://${rootDomain}/store/${user?.uid}`;
+    }, [storeData, user?.uid]);
+
     const triggerGoldConfetti = () => {
         const duration = 5 * 1000;
         const animationEnd = Date.now() + duration;
@@ -129,12 +141,8 @@ export function OnboardingChecklist() {
     };
 
     const handleCopyLink = () => {
-        const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'localhost:9002';
-        const url = storeData?.customDomain 
-            ? `https://${storeData.customDomain}` 
-            : `https://${rootDomain}/store/${user?.uid}`;
-        
-        navigator.clipboard.writeText(url);
+        if (!boutiqueUrl) return;
+        navigator.clipboard.writeText(boutiqueUrl);
         toast({
             title: 'Link Secured',
             description: 'Boutique URL copied to clipboard.',
@@ -190,10 +198,12 @@ export function OnboardingChecklist() {
 
                     <DialogFooter className="sm:justify-center">
                         <Button 
-                            onClick={handleMarkAsLive} 
+                            asChild
                             className="w-full h-16 text-xl btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-black"
                         >
-                            ENTER MY EMPIRE <ExternalLink className="ml-2 h-5 w-5" />
+                            <Link href={boutiqueUrl} target="_blank">
+                                ENTER MY EMPIRE <ExternalLink className="ml-2 h-5 w-5" />
+                            </Link>
                         </Button>
                     </DialogFooter>
                 </DialogContent>

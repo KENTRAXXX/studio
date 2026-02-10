@@ -10,6 +10,7 @@ import { Loader2, Crown, Rocket } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
+import { getTier } from '@/lib/tiers';
 
 export default function BackstageReturnPage() {
   const { user, loading: userLoading } = useUser();
@@ -20,13 +21,10 @@ export default function BackstageReturnPage() {
   const [statusMessage, setStatusMessage] = useState('Verifying payment integrity...');
   const [isFinalizing, setIsFinalizing] = useState(false);
 
-  // Determine the friendly label for the user's role
   const tierLabel = useMemo(() => {
     if (!userProfile) return 'Mogul';
-    if (userProfile.userRole === 'ADMIN') return 'Administrator';
-    if (userProfile.planTier === 'BRAND') return 'Brand';
-    if (userProfile.planTier === 'SELLER') return 'Seller';
-    return 'Mogul';
+    const tier = getTier(userProfile.planTier);
+    return tier.label;
   }, [userProfile]);
 
   useEffect(() => {
@@ -34,7 +32,6 @@ export default function BackstageReturnPage() {
 
     const userRef = doc(firestore, 'users', user.uid);
     
-    // Listen for real-time updates to the hasAccess field
     const unsubscribe = onSnapshot(
       userRef, 
       (snapshot) => {
@@ -43,10 +40,10 @@ export default function BackstageReturnPage() {
           setIsFinalizing(true);
           setStatusMessage(`${tierLabel} access granted. Welcome to the elite.`);
           
-          // Trigger gold confetti celebration
+          // Trigger celebration
           const duration = 3 * 1000;
           const animationEnd = Date.now() + duration;
-          const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+          const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
 
           const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
@@ -72,19 +69,19 @@ export default function BackstageReturnPage() {
             });
           }, 250);
 
-          // Redirect to appropriate dashboard based on role/tier
-          let destination = '/dashboard';
-          if (data.userRole === 'ADMIN') {
-              destination = '/admin';
-          } else if (data.planTier === 'SELLER' || data.planTier === 'BRAND') {
-              destination = '/backstage';
+          // Deterministic Portal Routing via Tier Registry
+          const tierConfig = getTier(data.planTier);
+          const destination = `/${tierConfig.portal}`;
+
+          // Cleanup temporary provisioning state
+          if (typeof window !== 'undefined') {
+              sessionStorage.removeItem('soma_just_launched');
           }
 
           setTimeout(() => {
             router.push(destination);
           }, 3000);
         } else {
-            // Progress simulation for better UX
             setTimeout(() => setStatusMessage(`Finalizing your ${tierLabel} status...`), 2000);
             setTimeout(() => setStatusMessage('Syncing Master Catalog permissions...'), 4000);
         }
@@ -99,7 +96,7 @@ export default function BackstageReturnPage() {
     );
 
     return () => unsubscribe();
-  }, [user, userLoading, firestore, router, tierLabel, userProfile]);
+  }, [user, userLoading, firestore, router, tierLabel]);
 
   const isLoading = userLoading || profileLoading;
 
@@ -163,7 +160,7 @@ export default function BackstageReturnPage() {
                 <Rocket className="h-16 w-16 text-primary" />
               </div>
               <h1 className="text-4xl font-bold font-headline text-primary drop-shadow-lg">Access Finalized</h1>
-              <p className="text-xl text-muted-foreground tracking-wide">Redirecting to your Dashboard...</p>
+              <p className="text-xl text-muted-foreground tracking-wide">Redirecting to your Hub...</p>
             </motion.div>
           )}
         </AnimatePresence>

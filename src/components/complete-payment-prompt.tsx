@@ -1,18 +1,20 @@
 'use client';
 
 import { usePaystack } from '@/hooks/use-paystack';
-import { useUserProfile } from '@/firebase';
+import { useUserProfile, useFirestore } from '@/firebase';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { doc, updateDoc } from 'firebase/firestore';
 
 type PlanInterval = 'monthly' | 'yearly' | 'lifetime' | 'free';
 type PlanTier = 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND';
 
 export function CompletePaymentPrompt() {
     const { userProfile } = useUserProfile();
+    const firestore = useFirestore();
     const { initializePayment, isInitializing } = usePaystack();
     const { toast } = useToast();
     const router = useRouter();
@@ -38,20 +40,30 @@ export function CompletePaymentPrompt() {
 
 
     const handleRetryPayment = async () => {
-        const onPaystackSuccess = () => {
+        const onPaystackSuccess = async () => {
+            // Optimistic update to trigger Handshake observer
+            if (firestore && userProfile.id) {
+                try {
+                    const userRef = doc(firestore, 'users', userProfile.id);
+                    await updateDoc(userRef, { hasAccess: true });
+                } catch (e) {
+                    console.error("Optimistic status sync failed:", e);
+                }
+            }
+
             toast({
-                title: 'Payment Successful!',
-                description: 'Your store is being provisioned. This may take a moment.',
+                title: 'Payment Confirmed',
+                description: 'Finalizing your executive credentials...',
             });
-            const redirectPath = (planTier === 'SELLER' || planTier === 'BRAND') ? '/backstage' : '/dashboard/my-store';
-            router.push(redirectPath);
+            
+            router.push('/backstage/return');
         };
 
         const onPaystackClose = () => {
             toast({
                 variant: 'default',
-                title: 'Payment Incomplete',
-                description: 'Your payment was not completed. You can try again at any time from your dashboard.',
+                title: 'Activation Postponed',
+                description: 'Payment is required to unlock your strategic tools.',
             });
         };
 

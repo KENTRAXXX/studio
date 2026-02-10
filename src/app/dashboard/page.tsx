@@ -6,7 +6,7 @@ import { useUser, useFirestore, useCollection, useDoc, useUserProfile, useMemoFi
 import { collection, doc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Loader2, Store, DollarSign, Users, ArrowRight } from "lucide-react";
+import { CheckCircle2, Loader2, Store, DollarSign, Users, ArrowRight, Rocket, Sparkles } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { CompletePaymentPrompt } from '@/components/complete-payment-prompt';
 import { ProvisioningLoader } from '@/components/store/provisioning-loader';
@@ -14,25 +14,22 @@ import Link from 'next/link';
 import DashboardController from './dashboard-controller';
 import { OnboardingChecklist } from '@/components/dashboard/OnboardingChecklist';
 
+/**
+ * @fileOverview The Executive Command Center.
+ * Hardened to prevent redirect loops between the Wizard and the Dashboard.
+ */
 export default function DashboardOverviewPage() {
     const { user, loading: userLoading } = useUser();
     const { userProfile, loading: profileLoading } = useUserProfile();
     const firestore = useFirestore();
     const router = useRouter();
 
-    // HANDSHAKE: If user is logged out, stop rendering dashboard components immediately
+    // 1. Session Protection
     if (!userLoading && !user) {
         return null;
     }
 
-    // Redirect Admins to the specialized /admin layout
-    useEffect(() => {
-        if (!profileLoading && userProfile?.userRole === 'ADMIN') {
-            router.push('/admin');
-        }
-    }, [userProfile, profileLoading, router]);
-
-    // Data fetching for overview metrics
+    // 2. Data Synchronization
     const storeRef = useMemoFirebase(() => user && firestore ? doc(firestore, 'stores', user.uid) : null, [user, firestore]);
     const { data: storeData, loading: storeLoading } = useDoc<any>(storeRef);
 
@@ -44,32 +41,24 @@ export default function DashboardOverviewPage() {
 
     const isLoading = userLoading || profileLoading || storeLoading || ordersLoading || productsLoading;
     
-    // Calculations
+    // 3. Analytics Aggregation
     const totalSales = useMemo(() => {
         return orders?.reduce((acc, order) => acc + (order.total || 0), 0) || 0;
     }, [orders]);
 
-    // HANDSHAKE: If they have paid, but the store doesn't exist yet, redirect to the Launch Wizard
-    useEffect(() => {
-        if (isLoading || !user) return;
-
-        const justLaunched = typeof window !== 'undefined' && sessionStorage.getItem('soma_just_launched') === 'true';
+    // 4. Branded URL Resolution
+    const boutiqueUrl = useMemo(() => {
+        if (!storeData) return '#';
+        const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
         
-        // GATELOCK: Admins do not need a store instance
-        if (userProfile?.hasAccess && userProfile?.userRole !== 'ADMIN' && !storeData && !justLaunched) {
-            const isSupplier = userProfile.planTier === 'SELLER' || userProfile.planTier === 'BRAND';
-            if (!isSupplier) {
-                router.push('/dashboard/my-store');
-            }
+        if (storeData.customDomain && storeData.domainStatus === 'connected') {
+            return `https://${storeData.customDomain}`;
         }
-    }, [isLoading, userProfile, storeData, router, user]);
-
-    // Cleanup logic: If the store data arrives, clear the "just launched" flag
-    useEffect(() => {
-        if (storeData && typeof window !== 'undefined') {
-            sessionStorage.removeItem('soma_just_launched');
+        if (storeData.slug) {
+            return `https://${storeData.slug}.${rootDomain}`;
         }
-    }, [storeData]);
+        return `/store/${user?.uid}`;
+    }, [storeData, user?.uid]);
 
     if (isLoading) {
         return (
@@ -79,26 +68,61 @@ export default function DashboardOverviewPage() {
         );
     }
 
-    // Safety: If no user is present (e.g. during logout transition), don't render anything
-    if (!user) {
-        return null;
-    }
+    if (!user) return null;
 
-    // If the user hasn't paid, show payment prompt.
+    // 5. Payment Gatelock
     if (userProfile && !userProfile.hasAccess) {
         return <CompletePaymentPrompt />;
     }
 
-    // Special view for Sellers and Brands handled by DashboardController
+    // 6. Special View for Suppliers (Sellers/Brands)
     if (userProfile?.planTier === 'SELLER' || userProfile?.planTier === 'BRAND') {
         return <DashboardController planTier={userProfile.planTier} />;
     }
 
-    // Provisioning check (fallback while sync triggers)
+    // 7. INITIALIZATION STATE: If paid but no store yet
     if (!storeData) {
-        return <ProvisioningLoader />;
+        const justLaunched = typeof window !== 'undefined' && sessionStorage.getItem('soma_just_launched') === 'true';
+        
+        if (justLaunched) {
+            return <ProvisioningLoader />;
+        }
+
+        return (
+            <div className="max-w-4xl mx-auto space-y-10 py-12">
+                <header className="text-center space-y-4">
+                    <div className="mx-auto bg-primary/10 rounded-full p-4 border border-primary/20 w-fit">
+                        <Sparkles className="h-12 w-12 text-primary animate-pulse" />
+                    </div>
+                    <h1 className="text-4xl font-bold font-headline text-white tracking-tight">Your Empire Awaits</h1>
+                    <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+                        Your strategic credentials have been verified. Complete the launch sequence to initialize your luxury storefront.
+                    </p>
+                </header>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <OnboardingChecklist />
+                    
+                    <Card className="border-primary bg-primary/5 flex flex-col items-center justify-center text-center p-8 shadow-gold-glow">
+                        <Rocket className="h-16 w-16 text-primary mb-6" />
+                        <CardTitle className="font-headline text-2xl text-white">Initialize Storefront</CardTitle>
+                        <CardContent className="p-0 mt-4 space-y-6">
+                            <p className="text-slate-300 text-sm leading-relaxed">
+                                Deploy your high-fidelity theme and synchronize your initial product collection from the SOMA Global Registry.
+                            </p>
+                            <Button asChild size="lg" className="w-full h-14 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest">
+                                <Link href="/dashboard/my-store">
+                                    Start Launch Wizard <ArrowRight className="ml-2 h-5 w-5" />
+                                </Link>
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        );
     }
     
+    // 8. FULL OPERATIONAL STATE
     return (
         <div className="space-y-8">
             <h1 className="text-3xl font-bold font-headline">Welcome, {userProfile?.displayName || (userProfile?.email ? userProfile.email.split('@')[0] : 'Mogul')}</h1>
@@ -145,12 +169,12 @@ export default function DashboardOverviewPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                  {!userProfile?.live && <OnboardingChecklist />}
 
-                <Card className="border-primary/50 flex flex-col items-center justify-center text-center p-8">
+                <Card className="border-primary/50 flex flex-col items-center justify-center text-center p-8 bg-slate-900/20">
                     <CardTitle className="font-headline text-2xl">Ready to sell?</CardTitle>
                     <CardContent className="p-0 mt-4">
-                        <p className="text-muted-foreground mb-6">Visit your live storefront and see your changes.</p>
+                        <p className="text-muted-foreground mb-6">Visit your live storefront and verify your visual identity.</p>
                         <Button asChild size="lg" className="h-12 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
-                            <Link href={storeData?.customDomain ? `https://${storeData.customDomain}` : `/store/${user?.uid}`} target="_blank">
+                            <Link href={boutiqueUrl} target="_blank">
                                 View My Store <ArrowRight className="ml-2 h-4 w-4" />
                             </Link>
                         </Button>
