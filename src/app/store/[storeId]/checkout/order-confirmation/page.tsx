@@ -10,7 +10,7 @@ import SomaLogo from '@/components/logo';
 export default function OrderConfirmationPage() {
     const searchParams = useSearchParams();
     const params = useParams();
-    const storeId = params.storeId as string;
+    const storeId = (params.storeId || params.domain) as string;
     const orderId = searchParams.get('orderId');
 
     if (!orderId) {
@@ -42,7 +42,7 @@ export default function OrderConfirmationPage() {
                         You will receive an email confirmation shortly with your order details and tracking information.
                     </p>
                     <Button asChild size="lg" className="mt-6 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
-                        <Link href={`/store/${storeId}`}>Continue Shopping</Link>
+                        <Link href={params.domain ? '/' : `/store/${storeId}`}>Continue Shopping</Link>
                     </Button>
                 </CardContent>
             </Card>

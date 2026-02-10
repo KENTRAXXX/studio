@@ -163,7 +163,12 @@ const PaymentStep = ({ onBack, storeId, checkoutData }: { onBack: () => void; st
       },
       (reference) => {
          const orderId = `SOMA-${reference.trxref.slice(-6).toUpperCase()}`;
-         router.push(`/store/${storeId}/checkout/order-confirmation?orderId=${orderId}`);
+         // Dynamic routing for custom domains vs platform links
+         const params = new URLSearchParams(window.location.search);
+         const isCustomDomain = !window.location.pathname.startsWith('/store');
+         const confirmationPath = isCustomDomain ? '/checkout/order-confirmation' : `/store/${storeId}/checkout/order-confirmation`;
+         
+         router.push(`${confirmationPath}?orderId=${orderId}`);
       },
       () => {
         toast({ variant: 'default', title: 'Payment Canceled', description: 'Your payment was not completed.' });
@@ -200,7 +205,7 @@ const PaymentStep = ({ onBack, storeId, checkoutData }: { onBack: () => void; st
 
 export default function CheckoutPage() {
   const params = useParams();
-  const storeId = params.storeId as string;
+  const rawStoreId = (params.storeId || params.domain) as string;
   const [currentStep, setCurrentStep] = useState(0);
   const [checkoutData, setCheckoutData] = useState<Partial<AddressFormValues>>({});
   const { cart, getCartTotal } = useCart();
@@ -232,7 +237,7 @@ export default function CheckoutPage() {
             <AnimatePresence mode="wait">
                 {currentStep === 0 && <InformationStep onNext={handleNext} setCheckoutData={updateCheckoutData} />}
                 {currentStep === 1 && <ShippingStep onNext={handleNext} onBack={handleBack} />}
-                {currentStep === 2 && <PaymentStep onBack={handleBack} storeId={storeId} checkoutData={checkoutData} />}
+                {currentStep === 2 && <PaymentStep onBack={handleBack} storeId={rawStoreId} checkoutData={checkoutData} />}
             </AnimatePresence>
           </div>
         </main>

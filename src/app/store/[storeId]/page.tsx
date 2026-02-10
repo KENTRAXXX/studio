@@ -30,11 +30,12 @@ type StorefrontProduct = {
 };
 
 export async function generateMetadata(
-  { params }: { params: { storeId?: string; domain?: string } },
+  { params }: { params: Promise<{ storeId?: string; domain?: string; site?: string }> },
   parent: ResolvingMetadata
 ): Promise<Metadata> {
-  const storeId = params.storeId || params.domain;
-  const isDemoMode = storeId === 'demo';
+  const resolvedParams = await params;
+  const siteId = resolvedParams.storeId || resolvedParams.domain || resolvedParams.site;
+  const isDemoMode = siteId === 'demo';
 
   if (isDemoMode) {
     return {
@@ -43,7 +44,7 @@ export async function generateMetadata(
     }
   }
   
-  if (!storeId) {
+  if (!siteId) {
     return {
         title: 'SOMA Store',
         description: 'Luxury goods and fine wares.'
@@ -51,7 +52,7 @@ export async function generateMetadata(
   }
 
   try {
-    const storeRef = doc(firestore, 'stores', storeId);
+    const storeRef = doc(firestore, 'stores', siteId);
     const storeSnap = await getDoc(storeRef);
     const storeData = storeSnap.data();
 
@@ -77,15 +78,15 @@ export async function generateMetadata(
 }
 
 
-async function getStoreData(storeId: string) {
-    const storeRef = doc(firestore, 'stores', storeId);
+async function getStoreData(siteId: string) {
+    const storeRef = doc(firestore, 'stores', siteId);
     const storeSnap = await getDoc(storeRef);
     return storeSnap.data();
 }
 
-async function getProducts(storeId: string): Promise<StorefrontProduct[]> {
+async function getProducts(siteId: string): Promise<StorefrontProduct[]> {
     const productsQuery = query(
-        collection(firestore, `stores/${storeId}/products`),
+        collection(firestore, `stores/${siteId}/products`),
         orderBy('name')
     );
     const productsSnap = await getDocs(productsQuery);
@@ -96,13 +97,15 @@ async function getProducts(storeId: string): Promise<StorefrontProduct[]> {
 }
 
 
-export default async function StorefrontPage({ params }: { params: { storeId?: string; domain?: string } }) {
-  const storeId = params.storeId || params.domain;
-  if (!storeId) {
+export default async function StorefrontPage({ params }: { params: Promise<{ storeId?: string; domain?: string; site?: string }> }) {
+  const resolvedParams = await params;
+  const siteId = resolvedParams.storeId || resolvedParams.domain || resolvedParams.site;
+  
+  if (!siteId) {
     notFound();
   }
 
-  const isDemoMode = storeId === 'demo';
+  const isDemoMode = siteId === 'demo';
 
   let storeData;
   let products;
@@ -121,8 +124,8 @@ export default async function StorefrontPage({ params }: { params: { storeId?: s
   } else {
     try {
         [storeData, products] = await Promise.all([
-            getStoreData(storeId),
-            getProducts(storeId)
+            getStoreData(siteId),
+            getProducts(siteId)
         ]);
     } catch (error) {
         console.error("Failed to fetch storefront data:", error);
@@ -135,7 +138,7 @@ export default async function StorefrontPage({ params }: { params: { storeId?: s
   
   return (
     <div>
-      <StoreVisitorTracker storeId={storeId} />
+      <StoreVisitorTracker storeId={siteId} />
       <HeroSection
         imageUrl={heroImageUrl}
         title={heroTitle}
@@ -144,7 +147,7 @@ export default async function StorefrontPage({ params }: { params: { storeId?: s
 
       <section id="products" className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <h2 className="text-3xl font-bold text-center font-headline mb-10">Featured Products</h2>
-        <ProductGrid products={products || []} storeId={storeId} />
+        <ProductGrid products={products || []} storeId={siteId} />
       </section>
     </div>
   );
