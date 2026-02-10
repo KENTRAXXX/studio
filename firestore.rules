@@ -4,89 +4,91 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isRole(role) {
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userRole == role;
+    // --- Global Helper Functions ---
+
+    function isSignedIn() {
+      return request.auth != null;
     }
 
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userRole == 'ADMIN';
+    }
+
+    function isExistingTicketOwner() {
+      return isSignedIn() && resource.data.get('customerId', null) == request.auth.uid;
+    }
+
+    // --- Collection Rules ---
+
+    match /stores/{storeId}/supportTickets/{supportTicketId} {
+      // Access granted to the customer who created it, the store owner, or an admin
+      allow get: if isExistingTicketOwner() || isOwner(storeId) || isAdmin();
+      
+      // List tickets: Customers can list their own, store owners see all in their store, admins see all
+      allow list: if (isSignedIn() && request.query.limit <= 50) || isOwner(storeId) || isAdmin(); 
+
+      // Anyone can create a ticket. If signed in, we can optionally link customerId
+      allow create: if request.resource.data.storeId == storeId 
+                    && (request.resource.data.get('customerId', null) == null || isOwner(request.resource.data.customerId));
+
+      // Customer can add messages to their ticket. Store owner can reply. Admin can update status.
+      allow update: if isExistingTicketOwner() || isOwner(storeId) || isAdmin();
+      
+      // Only Admin or Store Owner can delete
+      allow delete: if isOwner(storeId) || isAdmin();
+    }
+
+    // Platform rules for users and other collections
     match /users/{userId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth.uid == userId;
-      // Allow authenticated owners to update their own profile fields safely
-      allow update: if request.auth.uid == userId || isRole('ADMIN');
-      allow delete: if isRole('ADMIN');
+      allow get: if true;
+      allow write: if isOwner(userId);
     }
 
-    match /stores/{storeId} {
-      allow read;
-      allow write: if request.auth.uid == storeId || isRole('ADMIN');
-
+    match /stores/{userId} {
+      allow read: if true;
+      allow write: if isOwner(userId);
+      
       match /products/{productId} {
-        allow read;
-        allow write: if request.auth.uid == storeId || isRole('ADMIN');
+        allow get: if true;
+        allow write: if isOwner(userId);
       }
       
       match /orders/{orderId} {
-        allow read: if request.auth.uid == storeId || isRole('ADMIN');
-        allow create: if true; // Allow customers to create orders
+        allow read, write: if isOwner(userId);
       }
+    }
+
+    match /Master_Catalog/{productId} {
+      allow read: if true;
+      allow write: if isSignedIn();
     }
     
     match /Pending_Master_Catalog/{productId} {
-        allow read: if isRole('ADMIN') || (request.auth != null && resource.data.vendorId == request.auth.uid);
-        allow create: if request.auth != null && (isRole('SELLER') || isRole('MOGUL'));
-        allow update: if isRole('ADMIN');
-    }
-    
-    match /Master_Catalog/{productId} {
-        allow read: if request.auth != null;
-        allow write: if isRole('ADMIN');
-    }
-    
-     match /Training_Modules/{moduleId} {
-        allow read: if request.auth != null;
-        allow write: if isRole('ADMIN');
-    }
-
-    match /payouts_pending/{payoutId} {
-      allow read: if request.auth != null && (request.auth.uid == resource.data.userId || isRole('ADMIN'));
-      allow create: if false; 
-      allow update: if isRole('ADMIN');
-    }
-    
-     match /payouts_completed/{payoutId} {
-      allow read: if request.auth != null && (request.auth.uid == resource.data.userId || isRole('ADMIN'));
-      allow create: if false; 
-    }
-    
-    match /revenue_logs/{revenueId} {
-        allow read: if isRole('ADMIN');
-        allow create: if false; 
-    }
-    
-    match /withdrawal_requests/{reqId} {
-        allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-        allow read: if request.auth != null && (request.auth.uid == resource.data.userId || isRole('ADMIN'));
-        allow update: if isRole('ADMIN');
-    }
-    
-    match /admin_alerts/{alertId} {
-        allow read: if isRole('ADMIN');
-        allow write: if true; 
-    }
-
-    match /webhook_logs/{logId} {
-        allow read: if isRole('ADMIN');
-        allow create: if true; // Webhook function hits this
+      allow read, write: if isSignedIn();
     }
 
     match /concierge_tickets/{ticketId} {
-        allow create: if request.auth != null && request.auth.uid == request.resource.data.brandId;
-        allow read: if request.auth != null && (request.auth.uid == resource.data.brandId || isRole('ADMIN'));
-        allow update: if isRole('ADMIN');
+      allow read, write: if isSignedIn();
     }
 
-    match /platform_metadata/{docId} {
-        allow read, write: if isRole('ADMIN');
+    match /payouts_pending/{payoutId} {
+      allow read, write: if isSignedIn();
+    }
+    
+    match /payouts_completed/{payoutId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /revenue_logs/{logId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /withdrawal_requests/{reqId} {
+      allow read, write: if isSignedIn();
     }
   }
 }

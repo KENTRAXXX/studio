@@ -13,10 +13,11 @@ import { ProvisioningLoader } from '@/components/store/provisioning-loader';
 import Link from 'next/link';
 import DashboardController from './dashboard-controller';
 import { OnboardingChecklist } from '@/components/dashboard/OnboardingChecklist';
+import { getTier } from '@/lib/tiers';
 
 /**
  * @fileOverview The Executive Command Center.
- * Hardened to prevent redirect loops between the Wizard and the Dashboard.
+ * Orchestrates boutique management and platform navigation.
  */
 export default function DashboardOverviewPage() {
     const { user, loading: userLoading } = useUser();
@@ -47,15 +48,19 @@ export default function DashboardOverviewPage() {
     }, [orders]);
 
     // 4. Branded URL Resolution
+    // Prioritizes Custom Domain -> Subdomain -> Fallback internal path
     const boutiqueUrl = useMemo(() => {
         if (!storeData) return '#';
-        const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
+        if (typeof window === 'undefined') return '#';
+
+        const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
+        const protocol = window.location.protocol;
         
         if (storeData.customDomain && storeData.domainStatus === 'connected') {
-            return `https://${storeData.customDomain}`;
+            return `${protocol}//${storeData.customDomain}`;
         }
         if (storeData.slug) {
-            return `https://${storeData.slug}.${rootDomain}`;
+            return `${protocol}//${storeData.slug}.${rootDomain}`;
         }
         return `/store/${user?.uid}`;
     }, [storeData, user?.uid]);
@@ -95,7 +100,7 @@ export default function DashboardOverviewPage() {
                         <Sparkles className="h-12 w-12 text-primary animate-pulse" />
                     </div>
                     <h1 className="text-4xl font-bold font-headline text-white tracking-tight">Your Empire Awaits</h1>
-                    <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+                    <p className="text-muted-foreground text-lg max-xl mx-auto leading-relaxed">
                         Your strategic credentials have been verified. Complete the launch sequence to initialize your luxury storefront.
                     </p>
                 </header>
@@ -123,9 +128,15 @@ export default function DashboardOverviewPage() {
     }
     
     // 8. FULL OPERATIONAL STATE
+    const tierConfig = getTier(userProfile?.planTier);
+    const greetingName = userProfile?.displayName || (userProfile?.email ? userProfile.email.split('@')[0] : 'Mogul');
+
     return (
         <div className="space-y-8">
-            <h1 className="text-3xl font-bold font-headline">Welcome, {userProfile?.displayName || (userProfile?.email ? userProfile.email.split('@')[0] : 'Mogul')}</h1>
+            <div className="flex flex-col gap-1">
+                <h1 className="text-3xl font-bold font-headline">Welcome, {greetingName}</h1>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-primary/60">{tierConfig.label} Access Active</p>
+            </div>
 
             <div className="grid gap-6 md:grid-cols-3">
                 <Card className="border-primary/50">
@@ -170,10 +181,10 @@ export default function DashboardOverviewPage() {
                  {!userProfile?.live && <OnboardingChecklist />}
 
                 <Card className="border-primary/50 flex flex-col items-center justify-center text-center p-8 bg-slate-900/20">
-                    <CardTitle className="font-headline text-2xl">Ready to sell?</CardTitle>
+                    <CardTitle className="font-headline text-2xl text-white">Ready to sell?</CardTitle>
                     <CardContent className="p-0 mt-4">
                         <p className="text-muted-foreground mb-6">Visit your live storefront and verify your visual identity.</p>
-                        <Button asChild size="lg" className="h-12 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+                        <Button asChild size="lg" className="h-14 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-black">
                             <Link href={boutiqueUrl} target="_blank">
                                 View My Store <ArrowRight className="ml-2 h-4 w-4" />
                             </Link>

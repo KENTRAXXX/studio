@@ -18,8 +18,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useUser, useFirestore, useUserProfile, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, doc, setDoc, updateDoc, writeBatch, query, where, limit, getDoc } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import { getTier } from '@/lib/tiers';
 
 const progressSteps = [
@@ -481,6 +479,7 @@ export default function MyStorePage() {
             currency: 'USD',
             createdAt: new Date().toISOString(),
             storeName: storeName || "My SOMA Store",
+            contactEmail: user.email, // Mirror email for public contact sheets
             logoUrl: logoUrl,
             faviconUrl: faviconUrl,
             heroImageUrl: '',

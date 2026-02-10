@@ -27,11 +27,18 @@ import {
 } from "lucide-react";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { cn } from '@/lib/utils';
-import { subDays, isSameDay, format } from 'date-fns';
+import { subDays, isSameDay, format, isValid } from 'date-fns';
 import { formatCurrency } from '@/utils/format';
 import { getTier } from '@/lib/tiers';
 
-// Mock data for sparklines
+// Helper to safely parse dates from Strings or Firestore Timestamps
+const safeParseDate = (dateVal: any) => {
+    if (!dateVal) return new Date();
+    if (dateVal.toDate) return dateVal.toDate();
+    const d = new Date(dateVal);
+    return isValid(d) ? d : new Date();
+};
+
 const sparklineData = [
     { value: 400 }, { value: 300 }, { value: 500 }, { value: 450 }, 
     { value: 600 }, { value: 550 }, { value: 700 }, { value: 800 }
@@ -127,8 +134,8 @@ const EarningsOverview = ({ pendingDocs, completedDocs }: { pendingDocs: any[], 
         const allDocs = [...(pendingDocs || []), ...(completedDocs || [])];
 
         allDocs.forEach(doc => {
-            const docDate = doc.createdAt ? new Date(doc.createdAt) : null;
-            if (!docDate) return;
+            if (!doc.createdAt) return;
+            const docDate = safeParseDate(doc.createdAt);
 
             const dayMatch = last7Days.find(day => isSameDay(day.fullDate, docDate));
             if (dayMatch) {
@@ -189,7 +196,7 @@ const EarningsOverview = ({ pendingDocs, completedDocs }: { pendingDocs: any[], 
                             axisLine={false} 
                             tickLine={false} 
                             tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }}
-                            tickFormatter={(val) => formatCurrency(val * 100)}
+                            tickFormatter={(val) => formatCurrency((val || 0) * 100)}
                         />
                         <Tooltip 
                             contentStyle={{ 
@@ -198,7 +205,7 @@ const EarningsOverview = ({ pendingDocs, completedDocs }: { pendingDocs: any[], 
                                 borderRadius: '8px'
                             }}
                             itemStyle={{ color: 'hsl(var(--primary))', fontWeight: 'bold' }}
-                            formatter={(val: number) => [formatCurrency(Math.round(val * 100)), 'Revenue']}
+                            formatter={(val: number) => [formatCurrency(Math.round((val || 0) * 100)), 'Revenue']}
                         />
                         <Line 
                             type="monotone" 
