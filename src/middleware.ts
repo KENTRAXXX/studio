@@ -15,13 +15,7 @@ async function resolveHostname(hostname: string, baseUrl: string): Promise<strin
         currentHost === 'localhost' ||
         currentHost === '127.0.0.1';
 
-    // We do NOT resolve the root platform domains or technical Vercel/Firebase suffixes
-    const isTechnicalSuffix = 
-        currentHost.endsWith('.vercel.app') ||
-        currentHost.endsWith('.web.app') ||
-        currentHost.endsWith('.firebaseapp.com');
-
-    if (isPlatformRoot || (isTechnicalSuffix && !currentHost.includes('.' + ROOT_DOMAIN))) {
+    if (isPlatformRoot) {
         return null;
     }
 
@@ -30,7 +24,9 @@ async function resolveHostname(hostname: string, baseUrl: string): Promise<strin
         const origin = new URL(baseUrl).origin;
         // Hit our internal API which checks slugs, custom domains, and UIDs
         const resolveUrl = new URL(`/api/resolve-domain?domain=${currentHost}`, origin);
-        const response = await fetch(resolveUrl);
+        const response = await fetch(resolveUrl, {
+            next: { revalidate: 300 } // Cache resolution for 5 minutes at the edge
+        });
         
         if (response.ok) {
             const data = await response.json();
@@ -67,7 +63,7 @@ export async function middleware(request: NextRequest) {
     path.startsWith('/legal') ||
     path.startsWith('/payout-confirmed') ||
     path.startsWith('/access-denied') ||
-    path.startsWith('/store') // Internal store route for debugging
+    path.startsWith('/store') // Internal store route for debugging/fallback
   ) {
     return NextResponse.next();
   }
@@ -76,7 +72,7 @@ export async function middleware(request: NextRequest) {
   
   if (tenantId) {
     // Internally rewrite to the [domain] route while maintaining the branded URL in the address bar.
-    // Rewrites from 'deluxeinc.somatoday.com/' to '/[tenantId]/'
+    // Rewrites from 'deluxeinc.somatoday.com/product/123' to '/tenantUID/product/123'
     return NextResponse.rewrite(new URL(`/${tenantId}${path}${url.search}`, request.url));
   }
   

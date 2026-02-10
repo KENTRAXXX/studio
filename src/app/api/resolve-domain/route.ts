@@ -24,21 +24,26 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const domain = searchParams.get('domain');
   
-  // Platform Domain Detection
-  const hostHeader = request.headers.get('host') || '';
-  const detectedRoot = hostHeader.split('.').slice(-2).join('.');
-  const ROOT_DOMAIN = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || detectedRoot || 'somatoday.com').toLowerCase();
-
   if (!domain) {
     return NextResponse.json({ error: 'Domain parameter is required' }, { status: 400 });
   }
 
   const currentHost = domain.toLowerCase();
   
+  // Platform Domain Detection
+  const hostHeader = request.headers.get('host') || '';
+  const detectedRoot = hostHeader.split('.').slice(-2).join('.');
+  const ROOT_DOMAIN = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || detectedRoot || 'somatoday.com').toLowerCase();
+
   // Extract the slug (subdomain prefix) if the request is coming via the platform domain
   let slug = currentHost;
   if (currentHost.endsWith(`.${ROOT_DOMAIN}`)) {
       slug = currentHost.replace(`.${ROOT_DOMAIN}`, '');
+  }
+
+  // Handle www. prefixes for both custom domains and platform subdomains
+  if (slug.startsWith('www.')) {
+      slug = slug.replace('www.', '');
   }
 
   try {
@@ -77,7 +82,7 @@ export async function GET(request: NextRequest) {
 
     const tier = getTier(userData.planTier);
     
-    // If it's a subdomain or custom domain, verify the tier allows it (Admins always bypass)
+    // Admins always bypass entitlement checks
     const isPlatformRoot = currentHost === ROOT_DOMAIN || currentHost === `www.${ROOT_DOMAIN}`;
     if (!isPlatformRoot && !tier.features.customDomains && userData.userRole !== 'ADMIN') {
         return NextResponse.json({ error: 'Plan tier unauthorized for branded routing' }, { status: 403 });
