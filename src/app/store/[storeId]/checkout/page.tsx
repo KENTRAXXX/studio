@@ -115,7 +115,7 @@ const ShippingStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => vo
         <div className="border border-primary/50 rounded-lg p-4 flex justify-between items-center bg-card">
           <div>
             <p className="font-semibold">Standard Shipping</p>
-            <p className="text-sm text-muted-foreground">Arrives in 5-7 business days</p>
+            <p className="text-sm text-muted-foreground">Arrives in 3-21 days (depending on location)</p>
           </div>
           <p className="font-bold text-primary">${shippingPrice.toFixed(2)}</p>
         </div>
