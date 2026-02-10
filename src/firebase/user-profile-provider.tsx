@@ -7,6 +7,7 @@ import { useUser } from './auth/use-user';
 import { useFirestore } from './provider';
 import { useDoc } from './firestore/use-doc';
 import { useMemoFirebase } from '../lib/use-memo-firebase';
+import { getTier } from '@/lib/tiers';
 
 type UserProfile = {
   id?: string;
@@ -115,64 +116,57 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
     const isReturnPage = pathname === '/backstage/return';
     const isPayoutConfirmedPage = pathname === '/payout-confirmed';
 
-    // 1. AUTH GUARD: If not logged in and not on a public or legal route, redirect to home
+    // 1. AUTH GUARD: Basic presence
     if (!user && !isPublicRoute && !isLegalPage) {
       router.push('/');
       return;
     }
 
     if (userProfile) {
-       // 2. Check if account is disabled
+       // 2. Account Disability Lock
        if (userProfile.isDisabled && !isAccessDeniedPage) {
          router.push('/access-denied');
          return;
        }
 
-       // 3. ADMIN BYPASS & ROUTING
+       // 3. ADMIN BYPASS
        if (userProfile.userRole === 'ADMIN') {
            if (pathname === '/dashboard') {
                router.push('/admin');
            }
-           return; // Admins bypass all other platform gatelocks
+           return;
        }
       
-       // 4. PAYMENT GATELOCK (Non-Admins)
-       // If they haven't paid, restrict them to the portal root where the prompt is.
+       // 4. ACCESS & PAYMENT GATELOCK
+       // Non-admin users who haven't paid are pinned to the portal roots
        if (!userProfile.hasAccess && !isPublicRoute && !isLegalPage && !isReturnPage && !isPayoutConfirmedPage && !isAccessDeniedPage) {
            const isBasePortal = pathname === '/dashboard' || pathname === '/backstage';
            if (!isBasePortal) {
-               const target = (userProfile.planTier === 'SELLER' || userProfile.planTier === 'BRAND') ? '/backstage' : '/dashboard';
-               router.push(target);
+               const tier = getTier(userProfile.planTier);
+               router.push(`/${tier.portal}`);
                return;
            }
        }
 
-       // 5. TERMS GATELOCK
+       // 5. PORTAL SENTINEL: Enforce strict tier-to-portal mapping
+       const tierConfig = getTier(userProfile.planTier);
+       const isAtCorrectPortal = pathname.startsWith(`/${tierConfig.portal}`);
+       
+       if (userProfile.hasAccess && !isAtCorrectPortal && !isPublicRoute && !isLegalPage && !isReturnPage) {
+           router.push(`/${tierConfig.portal}`);
+           return;
+       }
+
+       // 6. TERMS GATELOCK
        if (userProfile.hasAcceptedTerms === false && !isLegalPage && !isPublicRoute && !isPendingReviewPage && !isReturnPage) {
          router.push('/legal/terms');
          return;
        }
 
-       // 6. STATUS GUARD (Pending Review)
-       const isDashboardOrBackstage = pathname.startsWith('/dashboard') || pathname.startsWith('/backstage');
-       if (userProfile.status === 'pending_review' && isDashboardOrBackstage && !isPendingReviewPage && !isPublicRoute && !isLegalPage && !isReturnPage) {
+       // 7. STATUS GUARD (Pending Review)
+       if (userProfile.status === 'pending_review' && (pathname.startsWith('/dashboard') || pathname.startsWith('/backstage')) && !isPendingReviewPage && !isPublicRoute && !isLegalPage && !isReturnPage) {
           router.push('/backstage/pending-review');
           return;
-       }
-
-       // 7. PORTAL SEGREGATION: Prevent cross-portal access
-       // Moguls (Scalers, Merchants, Enterprise) should not access /admin or /backstage
-       const isMogulTier = ['MERCHANT', 'SCALER', 'ENTERPRISE'].includes(userProfile.planTier || '');
-       if (isMogulTier && (pathname.startsWith('/admin') || pathname.startsWith('/backstage')) && !isPublicRoute) {
-           router.push('/dashboard');
-           return;
-       }
-
-       // Suppliers (Sellers/Brands) should be directed to /backstage if they hit /dashboard sub-pages
-       const isSellerTier = ['SELLER', 'BRAND'].includes(userProfile.planTier || '');
-       if (isSellerTier && pathname.startsWith('/dashboard') && pathname !== '/dashboard' && !isPublicRoute) {
-           router.push('/backstage');
-           return;
        }
     }
 
@@ -184,9 +178,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
   }), [userProfile, userLoading, profileLoading, user]);
 
   return (
-    <div 
-        className="min-h-screen bg-background text-foreground selection:bg-primary/30"
-    >
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary/30">
         <UserProfileContext.Provider value={value}>
         {children}
         </UserProfileContext.Provider>

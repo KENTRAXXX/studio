@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -21,7 +20,6 @@ import { Badge } from '@/components/ui/badge';
 import { 
     DollarSign, 
     Percent, 
-    Banknote, 
     Loader2, 
     Wallet, 
     Landmark, 
@@ -30,12 +28,11 @@ import {
     Info, 
     ArrowUpRight, 
     ArrowDownLeft,
-    Filter,
-    AlertTriangle,
-    Clock
+    Clock,
+    AlertTriangle
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
-import { addDays, format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { WithdrawalModal } from '@/components/WithdrawalModal';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -47,6 +44,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from '@/lib/utils';
+import { getTier } from '@/lib/tiers';
 
 type Payout = {
     id: string;
@@ -102,7 +100,6 @@ export default function BackstageFinancesPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeFilter, setActiveFilter] = useState<'all' | 'sales' | 'withdrawals'>('all');
 
-    // Pagination States
     const [payoutsList, setPayoutsList] = useState<Payout[]>([]);
     const [withdrawalsHistory, setWithdrawalsHistory] = useState<Withdrawal[]>([]);
     const [lastPayoutVisible, setLastPayoutVisible] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
@@ -111,14 +108,6 @@ export default function BackstageFinancesPage() {
     const [isLoadingInitial, setIsLoadingInitial] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-    // Guard: Redirect if pending review
-    useEffect(() => {
-        if (!profileLoading && userProfile?.status === 'pending_review') {
-            router.push('/backstage/pending-review');
-        }
-    }, [userProfile, profileLoading, router]);
-
-    // Balance Calculation Query - ONLY MATURED FUNDS
     const pendingPayoutsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return query(
@@ -128,7 +117,6 @@ export default function BackstageFinancesPage() {
         );
     }, [firestore, user]);
 
-    // Maturity Feedback Query
     const maturityQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return query(
@@ -141,14 +129,12 @@ export default function BackstageFinancesPage() {
     const { data: allPendingPayouts, loading: balanceLoading } = useCollection<Payout>(pendingPayoutsQuery);
     const { data: allMaturityPayouts, loading: maturityLoading } = useCollection<Payout>(maturityQuery);
     
-    // Initial Data Fetch
     useEffect(() => {
         if (!firestore || !user) return;
 
         const fetchInitialData = async () => {
             setIsLoadingInitial(true);
             try {
-                // Fetch Sales
                 const payoutsQ = query(
                     collection(firestore, 'payouts_pending'),
                     where('userId', '==', user.uid),
@@ -160,7 +146,6 @@ export default function BackstageFinancesPage() {
                 setPayoutsList(payouts);
                 setLastPayoutVisible(payoutsSnap.docs[payoutsSnap.docs.length - 1] || null);
 
-                // Fetch Withdrawals
                 const withdrawalsQ = query(
                     collection(firestore, 'withdrawal_requests'),
                     where('userId', '==', user.uid),
@@ -225,7 +210,6 @@ export default function BackstageFinancesPage() {
         }
     };
 
-    // Derived Display List
     const filteredHistory = useMemo(() => {
         let list: Transaction[] = [];
         if (activeFilter === 'sales') list = payoutsList;
@@ -249,10 +233,12 @@ export default function BackstageFinancesPage() {
         const total = allPendingPayouts?.reduce((acc, doc) => acc + (doc.amount || 0), 0) || 0;
         const maturity = allMaturityPayouts?.reduce((acc, doc) => acc + (doc.amount || 0), 0) || 0;
         
-        // Tiered Fee Logic
-        const rate = userProfile?.planTier === 'BRAND' ? 0.03 : 0.09;
+        const tier = getTier(userProfile?.planTier);
+        const rate = tier.commissionRate;
         const payoutPercentage = 1 - rate;
-        const fees = (total + maturity) > 0 ? ((total + maturity) / payoutPercentage) * rate : 0;
+        const fees = (total + maturity) > 0 && payoutPercentage > 0 
+            ? ((total + maturity) / payoutPercentage) * rate 
+            : 0;
         
         return { totalEarned: total, pendingMaturity: maturity, platformFees: fees, commissionRate: rate };
     }, [allPendingPayouts, allMaturityPayouts, userProfile]);

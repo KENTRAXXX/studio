@@ -39,78 +39,14 @@ import {
   Package,
   User,
   ImageIcon,
-  FolderOpen,
-  Warehouse,
-  MessageSquare,
   LogOut,
   Palette,
-  ShieldCheck,
-  Landmark,
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
 import { useAuth } from '@/firebase';
 import { Button } from '@/components/ui/button';
-
-const scalerNavItems = [
-  { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
-  { href: '/dashboard/profile-settings', icon: User, label: 'Profile' },
-  { href: '/dashboard/storefront-settings', icon: Palette, label: 'Visual Identity' },
-  { href: '/dashboard/settings', icon: Settings, label: 'Store Settings' },
-  { href: '/dashboard/product-catalog', icon: Boxes, label: 'Global Product Catalog' },
-  { href: '/dashboard/marketing', icon: ImageIcon, label: 'Marketing Toolkit' },
-  { href: '/dashboard/my-orders', icon: ShoppingBag, label: 'My Orders' },
-  { href: '/dashboard/training-center', icon: GraduationCap, label: 'Training Center' },
-  { href: '/dashboard/domain-settings', icon: Globe, label: 'Domain Settings' },
-  { href: '/dashboard/analytics', icon: BarChart2, label: 'Analytics' },
-  { href: '/dashboard/wallet', icon: Wallet, label: 'SOMA Wallet' },
-  { href: '/dashboard/referrals', icon: Globe, label: 'Referrals' },
-  { href: '/dashboard/accessibility-checker', icon: Accessibility, label: 'A11y Checker' },
-];
-
-const enterpriseNavItems = [
-  { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
-  { href: '/dashboard/profile-settings', icon: User, label: 'Profile' },
-  { href: '/dashboard/storefront-settings', icon: Palette, label: 'Visual Identity' },
-  { href: '/dashboard/settings', icon: Settings, label: 'Store Settings' },
-  { href: '/dashboard/product-catalog', icon: Boxes, label: 'Global Product Catalog' },
-  { href: '/dashboard/marketing', icon: ImageIcon, label: 'Marketing Toolkit' },
-  { href: '/dashboard/my-private-inventory', icon: Package, label: 'My Private Inventory' },
-  { href: '/dashboard/my-orders', icon: ShoppingBag, label: 'My Orders' },
-  { href: '/dashboard/training-center', icon: GraduationCap, label: 'Training Center' },
-  { href: '/dashboard/domain-settings', icon: Globe, label: 'Domain Settings' },
-  { href: '/dashboard/analytics', icon: BarChart2, label: 'Analytics' },
-  { href: '/dashboard/wallet', icon: Wallet, label: 'SOMA Wallet' },
-  { href: '/dashboard/referrals', icon: Globe, label: 'Referrals' },
-  { href: '/dashboard/accessibility-checker', icon: Accessibility, label: 'A11y Checker' },
-];
-
-const merchantNavItems = [
-  { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
-  { href: '/dashboard/profile-settings', icon: User, label: 'Profile' },
-  { href: '/dashboard/storefront-settings', icon: Palette, label: 'Visual Identity' },
-  { href: '/dashboard/settings', icon: Settings, label: 'Store Settings' },
-  { href: '/dashboard/marketing', icon: ImageIcon, label: 'Marketing Toolkit' },
-  { href: '/dashboard/my-private-inventory', icon: Package, label: 'My Private Inventory' },
-  { href: '/dashboard/my-orders', icon: ShoppingBag, label: 'My Orders' },
-  { href: '/dashboard/domain-settings', icon: Globe, label: 'Domain Settings' },
-  { href: '/dashboard/analytics', icon: BarChart2, label: 'Analytics' },
-  { href: '/dashboard/wallet', icon: Wallet, label: 'SOMA Wallet' },
-  { href: '/dashboard/referrals', icon: Globe, label: 'Referrals' },
-  { href: '/dashboard/accessibility-checker', icon: Accessibility, label: 'A11y Checker' },
-];
-
-const sellerNavItems = [
-    { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
-    { href: '/backstage/inventory', icon: Warehouse, label: 'Inventory Manager' },
-    { href: '/backstage/finances', icon: Landmark, label: 'Finances & Payouts' },
-    { href: '/backstage/analytics', icon: BarChart2, label: 'Insights & Analytics' },
-    { href: '/backstage/marketing-assets', icon: FolderOpen, label: 'Brand Assets' },
-    { href: '/backstage/add-product', icon: Package, label: 'Add Product' },
-    { href: '/backstage/concierge', icon: MessageSquare, label: 'Concierge' },
-    { href: '/backstage/settings', icon: Settings, label: 'Account Settings' },
-    { href: '/backstage', icon: ShieldCheck, label: 'Onboarding Status' },
-];
+import { getTier } from '@/lib/tiers';
 
 export default function DashboardLayout({
   children,
@@ -135,43 +71,42 @@ export default function DashboardLayout({
   const currentNavItems = useMemo(() => {
     if (!userProfile) return [];
 
-    if (userProfile.userRole === 'ADMIN') {
-        return [];
-    }
-
-    // Strict Gatelock: If no access, only show Overview
+    // GATELOCK: Unpaid users only see Overview
     if (!userProfile.hasAccess) {
-        return [
-            { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
-            ...(userProfile.planTier === 'SELLER' || userProfile.planTier === 'BRAND' 
-                ? [{ href: '/backstage', icon: ShieldCheck, label: 'Onboarding Status' }]
-                : []
-            )
-        ];
+        return [{ href: '/dashboard', icon: LayoutDashboard, label: 'Overview' }];
     }
 
-    const isPendingReview = userProfile.status === 'pending_review';
+    const tier = getTier(userProfile.planTier);
+    
+    // Core navigation available to all Moguls
+    const items = [
+        { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
+        { href: '/dashboard/profile-settings', icon: User, label: 'Profile' },
+        { href: '/dashboard/storefront-settings', icon: Palette, label: 'Visual Identity' },
+        { href: '/dashboard/settings', icon: Settings, label: 'Store Settings' },
+        { href: '/dashboard/my-orders', icon: ShoppingBag, label: 'My Orders' },
+        { href: '/dashboard/domain-settings', icon: Globe, label: 'Domain Settings' },
+        { href: '/dashboard/analytics', icon: BarChart2, label: 'Analytics' },
+        { href: '/dashboard/wallet', icon: Wallet, label: 'SOMA Wallet' },
+        { href: '/dashboard/referrals', icon: Globe, label: 'Referrals' },
+        { href: '/dashboard/accessibility-checker', icon: Accessibility, label: 'A11y Checker' },
+    ];
 
-    switch (userProfile.planTier) {
-        case 'MERCHANT':
-            return merchantNavItems;
-        case 'SCALER':
-            return scalerNavItems;
-        case 'ENTERPRISE':
-            return enterpriseNavItems;
-        case 'SELLER':
-        case 'BRAND':
-            if (isPendingReview) {
-                return sellerNavItems.filter(item => 
-                    item.href === '/dashboard' || 
-                    item.href === '/backstage' || 
-                    item.href === '/backstage/concierge'
-                );
-            }
-            return sellerNavItems;
-        default:
-            return [];
+    // Entitlement-based injection
+    if (tier.features.dropshipping) {
+        items.splice(4, 0, { href: '/dashboard/product-catalog', icon: Boxes, label: 'Global Catalog' });
+        items.splice(5, 0, { href: '/dashboard/marketing', icon: ImageIcon, label: 'Marketing Toolkit' });
     }
+
+    if (tier.features.privateInventory) {
+        items.splice(4, 0, { href: '/dashboard/my-private-inventory', icon: Package, label: 'Private Inventory' });
+    }
+
+    if (tier.features.academyAccess) {
+        items.splice(7, 0, { href: '/dashboard/training-center', icon: GraduationCap, label: 'Mogul Academy' });
+    }
+
+    return items;
   }, [userProfile]);
 
   return (

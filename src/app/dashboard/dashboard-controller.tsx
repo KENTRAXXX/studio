@@ -19,7 +19,6 @@ import {
     ShieldCheck, 
     TrendingUp, 
     BarChart3, 
-    Clock, 
     Sparkles, 
     Users, 
     MessageSquare, 
@@ -30,6 +29,7 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tool
 import { cn } from '@/lib/utils';
 import { subDays, isSameDay, format } from 'date-fns';
 import { formatCurrency } from '@/utils/format';
+import { getTier } from '@/lib/tiers';
 
 // Mock data for sparklines
 const sparklineData = [
@@ -506,30 +506,38 @@ const HybridDashboardView = () => (
 
 
 export default function DashboardController({ planTier }: { planTier?: string, isDemo?: boolean }) {
-    switch (planTier) {
-        case 'ADMIN':
-            return <AdminOverview />;
-        case 'MERCHANT':
-            return <div className="max-w-lg mx-auto"><PrivateInventoryCard /></div>;
-        case 'SCALER':
-            return <div className="max-w-lg mx-auto"><DropshipCatalogCard /></div>;
-        case 'ENTERPRISE':
-            return <HybridDashboardView />;
-        case 'SELLER':
-        case 'BRAND':
-            return <SupplierUploadView planTier={planTier} />;
-        default:
-             return (
-                <Card className="border-destructive/50 text-center flex flex-col items-center justify-center h-96 bg-destructive/5">
-                    <CardHeader>
-                        <CardTitle className="text-2xl font-headline text-destructive">Identity Discrepancy</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground mt-2 max-w-sm mx-auto leading-relaxed">
-                           Your current plan configuration '{planTier}' is not provisioned for this hub. Contact SOMA Concierge for reassignment.
-                        </p>
-                    </CardContent>
-                </Card>
-            );
+    const tier = getTier(planTier);
+
+    if (planTier === 'ADMIN') {
+        return <AdminOverview />;
     }
+
+    if (tier.portal === 'backstage') {
+        return <SupplierUploadView planTier={planTier || 'SELLER'} />;
+    }
+
+    if (tier.features.dropshipping && tier.features.privateInventory) {
+        return <HybridDashboardView />;
+    }
+
+    if (tier.features.dropshipping) {
+        return <div className="max-w-lg mx-auto"><DropshipCatalogCard /></div>;
+    }
+
+    if (tier.features.privateInventory) {
+        return <div className="max-w-lg mx-auto"><PrivateInventoryCard /></div>;
+    }
+
+    return (
+        <Card className="border-destructive/50 text-center flex flex-col items-center justify-center h-96 bg-destructive/5">
+            <CardHeader>
+                <CardTitle className="text-2xl font-headline text-destructive">Identity Discrepancy</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <p className="text-muted-foreground mt-2 max-w-sm mx-auto leading-relaxed">
+                    Your current plan configuration '{planTier}' is not provisioned for this hub. Contact SOMA Concierge for reassignment.
+                </p>
+            </CardContent>
+        </Card>
+    );
 }
