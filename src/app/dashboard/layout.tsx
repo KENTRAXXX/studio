@@ -41,7 +41,9 @@ import {
   ImageIcon,
   LogOut,
   Palette,
-  Landmark
+  Landmark,
+  Warehouse,
+  FolderOpen
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
