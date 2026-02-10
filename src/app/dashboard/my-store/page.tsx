@@ -20,6 +20,7 @@ import { useUser, useFirestore, useUserProfile, useCollection, useMemoFirebase }
 import { collection, doc, setDoc, updateDoc, writeBatch, query, where, limit, getDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
+import { getTier } from '@/lib/tiers';
 
 const progressSteps = [
     { progress: 25, message: 'Securing your custom domain...' },
@@ -28,7 +29,11 @@ const progressSteps = [
     { progress: 100, message: 'Store Live!' },
 ];
 
-const ChoosePathStep = ({ onSelectPath }: { onSelectPath: (path: 'MERCHANT' | 'DROPSHIP') => void }) => {
+const ChoosePathStep = ({ onSelectPath, planTier }: { onSelectPath: (path: 'MERCHANT' | 'DROPSHIP') => void, planTier?: string }) => {
+    const tier = getTier(planTier);
+    const canDropship = tier.features.dropshipping;
+    const canMerchant = tier.features.privateInventory;
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -38,21 +43,28 @@ const ChoosePathStep = ({ onSelectPath }: { onSelectPath: (path: 'MERCHANT' | 'D
         >
             <h2 className="text-2xl font-bold font-headline text-primary mb-2">Choose Your Path</h2>
             <p className="text-muted-foreground mb-8">How do you want to build your empire?</p>
-            <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-                <Card onClick={() => onSelectPath('MERCHANT')} className="cursor-pointer hover:border-primary/80 hover:shadow-lg transition-all duration-200 bg-card/50">
-                    <CardHeader className="items-center">
-                        <ShoppingBag className="h-12 w-12 text-primary mb-4" />
-                        <CardTitle>I have my own products.</CardTitle>
-                        <CardDescription>Sell your own unique goods. You manage inventory and fulfillment.</CardDescription>
-                    </CardHeader>
-                </Card>
-                <Card onClick={() => onSelectPath('DROPSHIP')} className="cursor-pointer hover:border-primary/80 hover:shadow-lg transition-all duration-200 bg-card/50">
-                     <CardHeader className="items-center">
-                        <Boxes className="h-12 w-12 text-primary mb-4" />
-                        <CardTitle>I want to dropship.</CardTitle>
-                        <CardDescription>Sell products from the SOMA Luxury Catalog without holding inventory.</CardDescription>
-                    </CardHeader>
-                </Card>
+            <div className={cn(
+                "grid gap-6 max-w-2xl mx-auto",
+                canDropship && canMerchant ? "md:grid-cols-2" : "md:grid-cols-1 max-w-sm"
+            )}>
+                {canMerchant && (
+                    <Card onClick={() => onSelectPath('MERCHANT')} className="cursor-pointer hover:border-primary/80 hover:shadow-lg transition-all duration-200 bg-card/50">
+                        <CardHeader className="items-center">
+                            <ShoppingBag className="h-12 w-12 text-primary mb-4" />
+                            <CardTitle>I have my own products.</CardTitle>
+                            <CardDescription>Sell your own unique goods. You manage inventory and fulfillment.</CardDescription>
+                        </CardHeader>
+                    </Card>
+                )}
+                {canDropship && (
+                    <Card onClick={() => onSelectPath('DROPSHIP')} className="cursor-pointer hover:border-primary/80 hover:shadow-lg transition-all duration-200 bg-card/50">
+                         <CardHeader className="items-center">
+                            <Boxes className="h-12 w-12 text-primary mb-4" />
+                            <CardTitle>I want to dropship.</CardTitle>
+                            <CardDescription>Sell products from the SOMA Luxury Catalog without holding inventory.</CardDescription>
+                        </CardHeader>
+                    </Card>
+                )}
             </div>
         </motion.div>
     );
@@ -552,7 +564,7 @@ export default function MyStorePage() {
   }, [storeType, storeName, logoFile, faviconFile, selectedProducts, handleLaunch]);
 
   const currentStepComponent = step === 0 
-    ? <ChoosePathStep onSelectPath={handlePathSelection} />
+    ? <ChoosePathStep onSelectPath={handlePathSelection} planTier={userProfile?.planTier} />
     : wizardSteps[step - 1];
 
   return (
