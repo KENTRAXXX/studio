@@ -100,7 +100,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (userLoading || profileLoading) return;
 
-    // Routes that are accessible without being logged in
+    // 1. PUBLIC ROUTE WHITELIST
     const isPublicRoute = 
       pathname === '/' || 
       pathname === '/login' ||
@@ -112,60 +112,67 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       
     const isLegalPage = pathname.startsWith('/legal');
     const isAccessDeniedPage = pathname === '/access-denied';
-    const isPendingReviewPage = pathname === '/backstage/pending-review';
     const isReturnPage = pathname === '/backstage/return';
     const isPayoutConfirmedPage = pathname === '/payout-confirmed';
 
-    // 1. AUTH GUARD: Basic presence
+    // 2. AUTH GUARD: Basic presence
     if (!user && !isPublicRoute && !isLegalPage) {
       router.push('/');
       return;
     }
 
     if (userProfile) {
-       // 2. Account Disability Lock
+       // 3. ACCOUNT DISABILITY LOCK
        if (userProfile.isDisabled && !isAccessDeniedPage) {
          router.push('/access-denied');
          return;
        }
 
-       // 3. ADMIN BYPASS
+       // 4. ADMIN BYPASS
        if (userProfile.userRole === 'ADMIN') {
-           if (pathname === '/dashboard') {
+           if (pathname.startsWith('/dashboard') || pathname.startsWith('/backstage')) {
                router.push('/admin');
            }
            return;
        }
       
-       // 4. ACCESS & PAYMENT GATELOCK
-       // Non-admin users who haven't paid are pinned to the portal roots
+       // 5. SUBSCRIPTION & PAYMENT GATELOCK
+       // If they haven't paid, they are pinned to their portal root.
        if (!userProfile.hasAccess && !isPublicRoute && !isLegalPage && !isReturnPage && !isPayoutConfirmedPage && !isAccessDeniedPage) {
-           const isBasePortal = pathname === '/dashboard' || pathname === '/backstage';
-           if (!isBasePortal) {
-               const tier = getTier(userProfile.planTier);
-               router.push(`/${tier.portal}`);
+           const tier = getTier(userProfile.planTier);
+           const portalRoot = `/${tier.portal}`;
+           if (pathname !== portalRoot) {
+               router.push(portalRoot);
                return;
            }
        }
 
-       // 5. PORTAL SENTINEL: Enforce strict tier-to-portal mapping
+       // 6. PORTAL SENTINEL: HARD RBAC ISOLATION
+       // Verifies the user is in the correct portal (Dashboard vs Backstage) based on Tier Registry
        const tierConfig = getTier(userProfile.planTier);
        const isAtCorrectPortal = pathname.startsWith(`/${tierConfig.portal}`);
        
-       if (userProfile.hasAccess && !isAtCorrectPortal && !isPublicRoute && !isLegalPage && !isReturnPage) {
+       if (userProfile.hasAccess && !isAtCorrectPortal && !isPublicRoute && !isLegalPage && !isReturnPage && !isAccessDeniedPage) {
+           // Clear any local storage flags from previous role sessions
+           if (typeof window !== 'undefined') {
+               sessionStorage.removeItem('soma_just_launched');
+           }
            router.push(`/${tierConfig.portal}`);
            return;
        }
 
-       // 6. TERMS GATELOCK
-       if (userProfile.hasAcceptedTerms === false && !isLegalPage && !isPublicRoute && !isPendingReviewPage && !isReturnPage) {
+       // 7. TERMS GATELOCK
+       if (userProfile.hasAcceptedTerms === false && !isLegalPage && !isPublicRoute && !isReturnPage && !isAccessDeniedPage) {
          router.push('/legal/terms');
          return;
        }
 
-       // 7. STATUS GUARD (Pending Review)
-       if (userProfile.status === 'pending_review' && (pathname.startsWith('/dashboard') || pathname.startsWith('/backstage')) && !isPendingReviewPage && !isPublicRoute && !isLegalPage && !isReturnPage) {
-          router.push('/backstage/pending-review');
+       // 8. STATUS GUARD (Supplier Verification Queue)
+       if (userProfile.status === 'pending_review' && !isReturnPage && !isPublicRoute && !isLegalPage) {
+          const isAtPendingPage = pathname === '/backstage/pending-review';
+          if (!isAtPendingPage) {
+              router.push('/backstage/pending-review');
+          }
           return;
        }
     }

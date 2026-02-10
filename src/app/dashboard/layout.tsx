@@ -41,6 +41,7 @@ import {
   ImageIcon,
   LogOut,
   Palette,
+  Landmark
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
@@ -71,12 +72,16 @@ export default function DashboardLayout({
   const currentNavItems = useMemo(() => {
     if (!userProfile) return [];
 
-    // GATELOCK: Unpaid users only see Overview
+    // GATELOCK: Circuit breaker for incorrect portal access
+    const tier = getTier(userProfile.planTier);
+    if (tier.portal !== 'dashboard' && userProfile.userRole !== 'ADMIN') {
+        return [];
+    }
+
+    // Unpaid users only see Overview
     if (!userProfile.hasAccess) {
         return [{ href: '/dashboard', icon: LayoutDashboard, label: 'Overview' }];
     }
-
-    const tier = getTier(userProfile.planTier);
     
     // Core navigation available to all Moguls
     const items = [
@@ -108,6 +113,12 @@ export default function DashboardLayout({
 
     return items;
   }, [userProfile]);
+
+  // Circuit breaker: Prevent rendering any dashboard UI for non-Moguls
+  const tier = getTier(userProfile?.planTier);
+  if (userProfile && tier.portal !== 'dashboard' && userProfile.userRole !== 'ADMIN') {
+      return null;
+  }
 
   return (
     <SidebarProvider>
