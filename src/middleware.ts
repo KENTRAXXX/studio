@@ -8,35 +8,33 @@ async function resolveHostname(hostname: string, baseUrl: string): Promise<strin
     const ROOT_DOMAIN = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
     const currentHost = hostname.toLowerCase();
     
-    // 1. Root & Platform Domain check: Skip resolution for system domains
+    // 1. Root & Platform Domain check: Skip resolution for the primary platform entry points
     const isPlatformRoot = 
         currentHost === ROOT_DOMAIN || 
         currentHost === `www.${ROOT_DOMAIN}` || 
         currentHost === 'localhost' ||
         currentHost === '127.0.0.1';
 
-    const isPlatformSuffix = 
+    // We do NOT resolve the root platform domains or technical Vercel/Firebase suffixes
+    const isTechnicalSuffix = 
         currentHost.endsWith('.vercel.app') ||
         currentHost.endsWith('.web.app') ||
         currentHost.endsWith('.firebaseapp.com');
 
-    if (isPlatformRoot || isPlatformSuffix) {
-        // If it's a subdomain of the platform domain (not www), we need to resolve it via API
-        if (currentHost.endsWith(`.${ROOT_DOMAIN}`) && currentHost !== `www.${ROOT_DOMAIN}`) {
-            // Fall through to API resolution
-        } else {
-            return null;
-        }
+    if (isPlatformRoot || (isTechnicalSuffix && !currentHost.includes('.' + ROOT_DOMAIN))) {
+        return null;
     }
 
     // 2. Custom Domain or Platform Subdomain Resolution via Resolver API
     try {
         const origin = new URL(baseUrl).origin;
-        // The API handles mapping slugs (deluxeinc) or custom domains (brand.com) to store UIDs
+        // Hit our internal API which checks slugs, custom domains, and UIDs
         const resolveUrl = new URL(`/api/resolve-domain?domain=${currentHost}`, origin);
         const response = await fetch(resolveUrl);
+        
         if (response.ok) {
             const data = await response.json();
+            // We return the storeId (the Firestore document UID)
             if (data.storeId) return data.storeId;
         }
     } catch (e) {
@@ -55,7 +53,7 @@ export async function middleware(request: NextRequest) {
   // Clean hostname (remove port if present)
   const currentHost = hostname.split(':')[0].toLowerCase();
 
-  // System Paths Protection - Never rewrite these
+  // System Paths Protection - Never rewrite these. They belong to the Platform Hub.
   const path = url.pathname;
   if (
     path.startsWith('/api') || 
@@ -69,17 +67,17 @@ export async function middleware(request: NextRequest) {
     path.startsWith('/legal') ||
     path.startsWith('/payout-confirmed') ||
     path.startsWith('/access-denied') ||
-    path.startsWith('/store') // Internal store route
+    path.startsWith('/store') // Internal store route for debugging
   ) {
     return NextResponse.next();
   }
 
-  const tenantIdentifier = await resolveHostname(currentHost, request.url);
+  const tenantId = await resolveHostname(currentHost, request.url);
   
-  if (tenantIdentifier) {
-    // Internally rewrite to the domain route while maintaining the browser URL
-    // Rewrites to /[UID]/path
-    return NextResponse.rewrite(new URL(`/${tenantIdentifier}${path}${url.search}`, request.url));
+  if (tenantId) {
+    // Internally rewrite to the [domain] route while maintaining the branded URL in the address bar.
+    // Rewrites from 'deluxeinc.somatoday.com/' to '/[tenantId]/'
+    return NextResponse.rewrite(new URL(`/${tenantId}${path}${url.search}`, request.url));
   }
   
   return NextResponse.next();

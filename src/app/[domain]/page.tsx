@@ -3,47 +3,26 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useDoc, useFirestore, useUserProfile, useCollection, useUser, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, where, collectionGroup, setDoc } from 'firebase/firestore';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useDoc, useFirestore, useCollection, useUser, useMemoFirebase } from '@/firebase';
+import { doc, collection, query } from 'firebase/firestore';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { 
     ShieldCheck, 
-    MessageSquare, 
     Loader2, 
     ArrowLeft,
     Box,
-    Check,
     Star,
     Truck,
-    CheckCircle2,
     Activity,
-    Zap,
-    ShoppingBag
+    Zap
 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { formatCurrency } from '@/utils/format';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { HeroSection } from '@/components/store/hero-section';
 import { ProductGrid } from '@/components/store/product-grid';
 import { StoreVisitorTracker } from '@/components/store/visitor-tracker';
-
-const StarRating = ({ rating }: { rating: number }) => (
-    <div className="flex gap-0.5">
-        {[1, 2, 3, 4, 5].map((star) => (
-            <Star 
-                key={star} 
-                className={cn(
-                    "h-3 w-3", 
-                    star <= rating ? "fill-primary text-primary" : "text-slate-700"
-                )} 
-            />
-        ))}
-    </div>
-);
 
 type StorefrontProduct = {
     id: string;
@@ -57,20 +36,23 @@ type StorefrontProduct = {
     isManagedBySoma: boolean;
 };
 
+/**
+ * @fileOverview Tenant Boutique Root
+ * Handles the high-fidelity rendering for custom domains and subdomains.
+ */
 export default function TenantBoutiquePage() {
     const params = useParams();
     const router = useRouter();
-    const domainIdentifier = params.domain as string; 
+    // In multi-tenancy mode, 'domain' is rewritten to the storeId (UID)
+    const storeId = params.domain as string; 
     
-    const { user } = useUser();
     const firestore = useFirestore();
-    const { toast } = useToast();
 
     // 1. Data Synchronization
     const storeRef = useMemoFirebase(() => {
-        if (!firestore || !domainIdentifier) return null;
-        return doc(firestore, 'stores', domainIdentifier);
-    }, [firestore, domainIdentifier]);
+        if (!firestore || !storeId) return null;
+        return doc(firestore, 'stores', storeId);
+    }, [firestore, storeId]);
 
     const { data: storeData, loading: storeLoading } = useDoc<any>(storeRef);
 
@@ -82,9 +64,9 @@ export default function TenantBoutiquePage() {
     const { data: ownerProfile, loading: ownerLoading } = useDoc<any>(ownerRef);
 
     const productsQuery = useMemoFirebase(() => {
-        if (!firestore || !domainIdentifier) return null;
-        return query(collection(firestore, `stores/${domainIdentifier}/products`));
-    }, [firestore, domainIdentifier]);
+        if (!firestore || !storeId) return null;
+        return query(collection(firestore, `stores/${storeId}/products`));
+    }, [firestore, storeId]);
 
     const { data: products, loading: productsLoading } = useCollection<StorefrontProduct>(productsQuery);
 
@@ -115,9 +97,9 @@ export default function TenantBoutiquePage() {
                 <div className="bg-primary/10 p-6 rounded-full">
                     <Box className="h-16 w-16 text-primary opacity-20" />
                 </div>
-                <h1 className="text-3xl font-bold font-headline text-primary uppercase tracking-widest">Boutique Suspended</h1>
+                <h1 className="text-3xl font-bold font-headline text-primary uppercase tracking-widest text-center">Boutique Suspended</h1>
                 <p className="text-muted-foreground text-center max-w-sm">This luxury storefront is currently undergoing maintenance or has been deactivated by the SOMA network.</p>
-                <Button variant="outline" className="border-primary/50" onClick={() => router.push('/')}>
+                <Button variant="outline" className="border-primary/50" onClick={() => window.location.href = 'https://somatoday.com'}>
                     <ArrowLeft className="mr-2 h-4 w-4" /> Platform Home
                 </Button>
             </div>
@@ -125,13 +107,12 @@ export default function TenantBoutiquePage() {
     }
 
     const storeName = storeData.storeName || "Elite Boutique";
-    const heroTitle = storeData.heroTitle || "Luxury Redefined";
     const heroSubtitle = storeData.heroSubtitle || "Curated masterpieces for the discerning individual.";
     const heroImageUrl = storeData.heroImageUrl || PlaceHolderImages.find(img => img.id === 'storefront-hero')?.imageUrl;
 
     return (
         <div className="min-h-screen bg-background text-foreground selection:bg-primary/30">
-            <StoreVisitorTracker storeId={domainIdentifier} />
+            <StoreVisitorTracker storeId={storeId} />
             
             {/* Elite Brand Header */}
             <div className="relative h-[400px] w-full overflow-hidden">
@@ -239,7 +220,7 @@ export default function TenantBoutiquePage() {
                         </div>
                     </div>
 
-                    <ProductGrid products={products || []} storeId={domainIdentifier} />
+                    <ProductGrid products={products || []} storeId={storeId} />
                 </section>
             </main>
         </div>

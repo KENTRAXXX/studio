@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const domain = searchParams.get('domain');
   
-  // Dynamic Root Domain detection to support Vercel Previews and Localhost
+  // Platform Domain Detection
   const hostHeader = request.headers.get('host') || '';
   const detectedRoot = hostHeader.split('.').slice(-2).join('.');
   const ROOT_DOMAIN = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || detectedRoot || 'somatoday.com').toLowerCase();
@@ -35,23 +35,23 @@ export async function GET(request: NextRequest) {
 
   const currentHost = domain.toLowerCase();
   
-  // Isolate the slug if it's a subdomain of the root
+  // Extract the slug (subdomain prefix) if the request is coming via the platform domain
   let slug = currentHost;
   if (currentHost.endsWith(`.${ROOT_DOMAIN}`)) {
-      slug = currentHost.substring(0, currentHost.length - ROOT_DOMAIN.length - 1);
+      slug = currentHost.replace(`.${ROOT_DOMAIN}`, '');
   }
 
   try {
     const firestore = getDb();
     const storesRef = collection(firestore, 'stores');
     
-    // Search by Custom Domain OR Slug OR Store ID
+    // Search strategy: Check customDomain, unique slug, or raw UID
     const q = query(
         storesRef, 
         or(
             where('customDomain', '==', currentHost),
             where('slug', '==', slug),
-            where('userId', '==', slug) // Support raw UID as subdomain
+            where('userId', '==', slug)
         ),
         limit(1)
     );
@@ -66,24 +66,25 @@ export async function GET(request: NextRequest) {
     const storeData = storeDoc.data();
     const userId = storeData.userId;
 
-    // Entitlement Validation
+    // Entitlement Validation: Ensure the user's tier permits white-label routing
     const userRef = doc(firestore, 'users', userId);
     const userSnap = await getDoc(userRef);
     const userData = userSnap.data();
 
     if (!userData) {
-        return NextResponse.json({ error: 'Store owner profile not found' }, { status: 404 });
+        return NextResponse.json({ error: 'Identity context lost' }, { status: 404 });
     }
 
     const tier = getTier(userData.planTier);
     
-    // Only premium tiers can resolve non-www subdomains or custom domains
-    if (!tier.features.customDomains && userData.userRole !== 'ADMIN') {
+    // If it's a subdomain or custom domain, verify the tier allows it (Admins always bypass)
+    const isPlatformRoot = currentHost === ROOT_DOMAIN || currentHost === `www.${ROOT_DOMAIN}`;
+    if (!isPlatformRoot && !tier.features.customDomains && userData.userRole !== 'ADMIN') {
         return NextResponse.json({ error: 'Plan tier unauthorized for branded routing' }, { status: 403 });
     }
 
-    // CRITICAL: Returns the storeDoc.id (the UID) which maps to /[domain]/ route
-    return NextResponse.json({ storeId: storeDoc.id });
+    // Critical: Returns the storeId which maps to /[domain]/ route
+    return NextResponse.json({ storeId: userId });
   } catch (error) {
     console.error(`Boutique resolution error for '${domain}':`, error);
     return NextResponse.json({ error: 'Internal server error during domain handshake' }, { status: 500 });
