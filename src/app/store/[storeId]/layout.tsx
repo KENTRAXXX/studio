@@ -5,8 +5,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { Search, ShoppingCart, X, Loader2, Mail, Instagram, Twitter } from 'lucide-react';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, collection, query, where, limit, or } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import SomaLogo from '@/components/logo';
@@ -177,18 +177,31 @@ export default function StoreLayout({
   children: React.ReactNode;
 }) {
   const params = useParams();
-  const rawStoreId = (params.storeId || params.domain) as string;
+  const identifier = (params.storeId || params.domain || params.site) as string;
   const firestore = useFirestore();
 
-  const storeRef = useMemoFirebase(() => {
-    return firestore && rawStoreId ? doc(firestore, 'stores', rawStoreId) : null;
-  }, [firestore, rawStoreId]);
-  const { data: storeData, loading: storeLoading } = useDoc<any>(storeRef);
+  // Robust Boutique Resolution: Supports UID, Custom Domain, or Slug
+  const storeQuery = useMemoFirebase(() => {
+    if (!firestore || !identifier) return null;
+    return query(
+        collection(firestore, 'stores'),
+        or(
+            where('userId', '==', identifier),
+            where('customDomain', '==', identifier),
+            where('slug', '==', identifier)
+        ),
+        limit(1)
+    );
+  }, [firestore, identifier]);
+
+  const { data: storeDocs, loading: storeLoading } = useCollection<any>(storeQuery);
+  const storeData = storeDocs?.[0];
+  const storeId = storeData?.userId;
   
   const ownerRef = useMemoFirebase(() => {
-    if (!firestore || !storeData?.userId) return null;
-    return doc(firestore, 'users', storeData.userId);
-  }, [firestore, storeData?.userId]);
+    if (!firestore || !storeId) return null;
+    return doc(firestore, 'users', storeId);
+  }, [firestore, storeId]);
   const { data: ownerData } = useDoc<any>(ownerRef);
 
   const storeName = storeData?.storeName || "SOMA Store";
@@ -214,7 +227,7 @@ export default function StoreLayout({
         >
           <header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-sm border-b border-primary/20">
             <div className="container mx-auto flex h-20 items-center justify-between px-4 sm:px-6 lg:px-8">
-              <Link href={rawStoreId ? `/store/${rawStoreId}` : '/'} className="flex items-center gap-2 group">
+              <Link href={identifier ? (params.domain ? '/' : `/store/${identifier}`) : '/'} className="flex items-center gap-2 group">
                 {storeLoading ? (
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 ) : logoUrl ? (
@@ -237,7 +250,7 @@ export default function StoreLayout({
                     className="h-10 w-full rounded-md border border-primary/30 bg-transparent pl-10 pr-4 text-sm placeholder:text-muted-foreground focus:ring-primary"
                   />
                 </div>
-                <CartSheet storeId={rawStoreId} />
+                <CartSheet storeId={storeId} />
               </div>
             </div>
           </header>

@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useDoc, useFirestore, useCollection, useUser, useMemoFirebase } from '@/firebase';
-import { doc, collection, query } from 'firebase/firestore';
+import { doc, collection, query, where, limit, or } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -38,28 +38,39 @@ type StorefrontProduct = {
 
 /**
  * @fileOverview Tenant Boutique Root
- * Handles the high-fidelity rendering for custom domains and subdomains.
+ * Handles high-fidelity rendering for hostnames passed via middleware rewrite.
  */
 export default function TenantBoutiquePage() {
     const params = useParams();
     const router = useRouter();
-    // In multi-tenancy mode, 'domain' is rewritten to the storeId (UID)
-    const storeId = params.domain as string; 
+    // In robust multi-tenancy mode, 'domain' is the hostname or slug
+    const identifier = params.domain as string; 
     
     const firestore = useFirestore();
 
-    // 1. Data Synchronization
-    const storeRef = useMemoFirebase(() => {
-        if (!firestore || !storeId) return null;
-        return doc(firestore, 'stores', storeId);
-    }, [firestore, storeId]);
+    // 1. Boutique Identity Resolution
+    const storeQuery = useMemoFirebase(() => {
+        if (!firestore || !identifier) return null;
+        // Search by UID, Custom Domain, or Subdomain Slug
+        return query(
+            collection(firestore, 'stores'),
+            or(
+                where('userId', '==', identifier),
+                where('customDomain', '==', identifier),
+                where('slug', '==', identifier)
+            ),
+            limit(1)
+        );
+    }, [firestore, identifier]);
 
-    const { data: storeData, loading: storeLoading } = useDoc<any>(storeRef);
+    const { data: storeDocs, loading: storeLoading } = useCollection<any>(storeQuery);
+    const storeData = storeDocs?.[0];
+    const storeId = storeData?.userId;
 
     const ownerRef = useMemoFirebase(() => {
-        if (!firestore || !storeData?.userId) return null;
-        return doc(firestore, 'users', storeData.userId);
-    }, [firestore, storeData?.userId]);
+        if (!firestore || !storeId) return null;
+        return doc(firestore, 'users', storeId);
+    }, [firestore, storeId]);
 
     const { data: ownerProfile, loading: ownerLoading } = useDoc<any>(ownerRef);
 
@@ -97,9 +108,9 @@ export default function TenantBoutiquePage() {
                 <div className="bg-primary/10 p-6 rounded-full">
                     <Box className="h-16 w-16 text-primary opacity-20" />
                 </div>
-                <h1 className="text-3xl font-bold font-headline text-primary uppercase tracking-widest text-center">Boutique Suspended</h1>
-                <p className="text-muted-foreground text-center max-w-sm">This luxury storefront is currently undergoing maintenance or has been deactivated by the SOMA network.</p>
-                <Button variant="outline" className="border-primary/50" onClick={() => window.location.href = 'https://somatoday.com'}>
+                <h1 className="text-3xl font-bold font-headline text-primary uppercase tracking-widest text-center">Boutique Not Found</h1>
+                <p className="text-muted-foreground text-center max-w-sm">The luxury storefront at "{identifier}" is not currently provisioned in the SOMA network.</p>
+                <Button variant="outline" className="border-primary/50" onClick={() => router.push('/')}>
                     <ArrowLeft className="mr-2 h-4 w-4" /> Platform Home
                 </Button>
             </div>
