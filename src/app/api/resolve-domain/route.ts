@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirestore, collection, query, where, getDocs, limit, doc, getDoc } from 'firebase/firestore';
+import { getFirestore, collection, query, where, getDocs, limit, doc, getDoc, or } from 'firebase/firestore';
 import { initializeApp, getApps } from 'firebase/app';
 import { firebaseConfig } from '@/firebase/config';
 import { getTier } from '@/lib/tiers';
@@ -14,23 +14,44 @@ function getDb() {
 }
 
 /**
- * Resolves a custom domain (or registered subdomain) to a SOMA storeId.
- * Enforces tier-based access control to protect premium features.
+ * Resolves a hostname or subdomain slug to a SOMA storeId.
+ * Supports:
+ * 1. Full Custom Domains (brand.com)
+ * 2. Branded Subdomains (deluxeinc.somatoday.com)
+ * 3. Raw Store IDs ([UID].somatoday.com)
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const domain = searchParams.get('domain');
+  const ROOT_DOMAIN = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
 
   if (!domain) {
     return NextResponse.json({ error: 'Domain parameter is required' }, { status: 400 });
+  }
+
+  const currentHost = domain.toLowerCase();
+  
+  // Isolate the slug if it's a subdomain of the root
+  let slug = currentHost;
+  if (currentHost.endsWith(`.${ROOT_DOMAIN}`)) {
+      slug = currentHost.substring(0, currentHost.length - ROOT_DOMAIN.length - 1);
   }
 
   try {
     const firestore = getDb();
     const storesRef = collection(firestore, 'stores');
     
-    // Check for a custom domain mapping in Firestore
-    const q = query(storesRef, where('customDomain', '==', domain.toLowerCase()), limit(1));
+    // Search by Custom Domain OR Slug OR Store ID
+    const q = query(
+        storesRef, 
+        or(
+            where('customDomain', '==', currentHost),
+            where('slug', '==', slug),
+            where('userId', '==', slug) // Support raw UID as subdomain
+        ),
+        limit(1)
+    );
+    
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
@@ -41,7 +62,7 @@ export async function GET(request: NextRequest) {
     const storeData = storeDoc.data();
     const userId = storeData.userId;
 
-    // Validate tier entitlement: Only specific tiers can utilize custom domains/subdomains
+    // Entitlement Validation
     const userRef = doc(firestore, 'users', userId);
     const userSnap = await getDoc(userRef);
     const userData = userSnap.data();
@@ -52,10 +73,9 @@ export async function GET(request: NextRequest) {
 
     const tier = getTier(userData.planTier);
     
-    // Entitlement Check: Ensure the user's plan supports white-labeled domains
+    // Only premium tiers can resolve non-www subdomains or custom domains
     if (!tier.features.customDomains && userData.userRole !== 'ADMIN') {
-        console.warn(`Unauthorized domain resolution: Tier ${tier.id} does not support custom domains.`);
-        return NextResponse.json({ error: 'Plan tier unauthorized for custom domains' }, { status: 403 });
+        return NextResponse.json({ error: 'Plan tier unauthorized for branded routing' }, { status: 403 });
     }
 
     return NextResponse.json({ storeId: storeDoc.id });

@@ -13,8 +13,8 @@ async function resolveHostname(hostname: string, baseUrl: string): Promise<strin
         return null;
     }
 
-    // 2. Custom Domain / Registered Subdomain Resolution via Tier-Aware API
-    // This handles 'my-brand.com' OR explicitly registered subdomains like 'exclusive.somatoday.com'
+    // 2. Custom Domain / Subdomain Resolution via Tier-Aware API
+    // This handles 'my-brand.com' OR subdomains like 'deluxeinc.somatoday.com'
     try {
         const resolveUrl = new URL(`/api/resolve-domain?domain=${currentHost}`, baseUrl);
         const response = await fetch(resolveUrl);
@@ -26,13 +26,13 @@ async function resolveHostname(hostname: string, baseUrl: string): Promise<strin
         console.error(`Multi-tenancy resolution error for ${currentHost}:`, e);
     }
 
-    // 3. Deterministic Subdomain Fallback (e.g. [storeId].somatoday.com)
-    // Allows instant access via SOMA-provided subdomains without explicit registration
+    // 3. Subdomain Check: If not found in API, check if it's a direct subdomain of the root
     if (currentHost.endsWith(`.${ROOT_DOMAIN}`)) {
-        // Extract everything before the root domain
         const subdomain = currentHost.substring(0, currentHost.length - ROOT_DOMAIN.length - 1);
         if (subdomain && subdomain !== 'www') {
-            return subdomain;
+            // We still need to verify if this subdomain exists as a slug or storeId
+            // The API handles both, so we pass it through
+            return subdomain; 
         }
     }
     
@@ -48,7 +48,7 @@ export async function middleware(request: NextRequest) {
   // Clean hostname (remove port if present)
   const currentHost = hostname.split(':')[0].toLowerCase();
 
-  // System Paths Protection: Never rewrite internal or administrative routes
+  // System Paths Protection
   const path = url.pathname;
   if (
     path.startsWith('/api') || 
@@ -66,12 +66,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Resolve and Rewrite
   const tenantIdentifier = await resolveHostname(currentHost, request.url);
   
   if (tenantIdentifier) {
-    // Rewrite to /[domain] dynamic route internally
-    // The browser URL remains 'xxxx.somatoday.com'
     return NextResponse.rewrite(new URL(`/${tenantIdentifier}${path}${url.search}`, request.url));
   }
   
@@ -80,7 +77,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Match all paths except static assets and standard icons
     '/((?!_next/static|_next/image|favicon.ico|assets|logo.svg).*)',
   ],
 };

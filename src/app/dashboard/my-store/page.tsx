@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Rocket, UploadCloud, ChevronRight, ChevronLeft, ShoppingBag, Boxes, Loader2 } from 'lucide-react';
+import { Rocket, UploadCloud, ChevronRight, ChevronLeft, ShoppingBag, Boxes, Loader2, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { createClientStore } from '@/ai/flows/create-client-store';
@@ -23,7 +23,7 @@ import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/e
 import { getTier } from '@/lib/tiers';
 
 const progressSteps = [
-    { progress: 25, message: 'Securing your custom domain...' },
+    { progress: 25, message: 'Securing your unique subdomain...' },
     { progress: 50, message: 'Syncing with Master Warehouse...' },
     { progress: 75, message: 'Optimizing luxury theme assets...' },
     { progress: 100, message: 'Store Live!' },
@@ -71,6 +71,9 @@ const ChoosePathStep = ({ onSelectPath, planTier }: { onSelectPath: (path: 'MERC
 };
 
 const NameStep = ({ storeName, setStoreName, onNext }: { storeName: string, setStoreName: (name: string) => void, onNext: () => void }) => {
+    const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
+    const slug = storeName.toLowerCase().replace(/[^a-z0-9]/g, '');
+
     return (
         <motion.div
             initial={{ opacity: 0, x: 50 }}
@@ -81,17 +84,28 @@ const NameStep = ({ storeName, setStoreName, onNext }: { storeName: string, setS
             <div className="space-y-6">
                 <div>
                     <h2 className="text-2xl font-bold font-headline text-primary">Name Your Empire</h2>
-                    <p className="text-muted-foreground">This will be displayed on your invoices and storefront.</p>
+                    <p className="text-muted-foreground">This will define your brand identity and initial web address.</p>
                 </div>
-                <div className="space-y-2">
-                    <Label htmlFor="store-name" className="text-base">Store Name</Label>
-                    <Input 
-                        id="store-name"
-                        value={storeName}
-                        onChange={(e) => setStoreName(e.target.value)}
-                        placeholder="e.g., 'Elegance & Co.'"
-                        className="border-primary/50 focus-visible:ring-primary h-12 text-lg"
-                    />
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="store-name" className="text-base">Store Name</Label>
+                        <Input 
+                            id="store-name"
+                            value={storeName}
+                            onChange={(e) => setStoreName(e.target.value)}
+                            placeholder="e.g., 'Deluxe Inc'"
+                            className="border-primary/50 focus-visible:ring-primary h-12 text-lg"
+                        />
+                    </div>
+                    {storeName && (
+                        <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 flex items-center gap-3">
+                            <Globe className="h-4 w-4 text-primary" />
+                            <div className="text-xs">
+                                <p className="text-muted-foreground uppercase font-bold tracking-widest text-[8px]">Instant Web Address</p>
+                                <p className="font-mono text-primary font-bold">{slug}.{ROOT_DOMAIN}</p>
+                            </div>
+                        </div>
+                    )}
                 </div>
                 <div className="flex justify-end">
                     <Button size="lg" className="h-12" onClick={onNext} disabled={!storeName}>
@@ -432,6 +446,9 @@ export default function MyStorePage() {
         const planTier = userProfile.planTier || (storeType === 'MERCHANT' ? 'MERCHANT' : 'SCALER');
         const userRole = (planTier === 'SELLER' || planTier === 'BRAND') ? 'SELLER' : 'MOGUL';
 
+        // Generate Subdomain Slug
+        const slug = storeName.toLowerCase().replace(/[^a-z0-9]/g, '') || userId.slice(0, 8);
+
         // 1. Update User Profile
         await updateDoc(userRef, {
             hasAccess: true,
@@ -452,6 +469,7 @@ export default function MyStorePage() {
         const storeConfig = {
             userId: userId,
             instanceId: crypto.randomUUID(),
+            slug: slug, // Instant Subdomain
             theme: 'Gold Standard',
             currency: 'USD',
             createdAt: new Date().toISOString(),
