@@ -79,7 +79,7 @@ function CartSheet({storeId}: {storeId: string}) {
     return (
         <Sheet>
             <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative text-primary-foreground hover:bg-primary/20 hover:text-primary">
+                <Button variant="ghost" size="icon" className="relative text-primary hover:bg-primary/20">
                     <ShoppingCart className="h-6 w-6" aria-label={`Shopping Cart, ${cart.reduce((acc, item) => acc + item.quantity, 0)} items`} />
                     {cart.length > 0 && (
                         <span className="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
