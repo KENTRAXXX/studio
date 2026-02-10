@@ -52,7 +52,7 @@ export async function middleware(request: NextRequest) {
   // Clean hostname (remove port if present)
   const currentHost = hostname.split(':')[0].toLowerCase();
 
-  // System Paths Protection
+  // System Paths Protection - Never rewrite these
   const path = url.pathname;
   if (
     path.startsWith('/api') || 
@@ -65,7 +65,8 @@ export async function middleware(request: NextRequest) {
     path.startsWith('/plan-selection') ||
     path.startsWith('/legal') ||
     path.startsWith('/payout-confirmed') ||
-    path.startsWith('/access-denied')
+    path.startsWith('/access-denied') ||
+    path.startsWith('/store') // Internal store route
   ) {
     return NextResponse.next();
   }
