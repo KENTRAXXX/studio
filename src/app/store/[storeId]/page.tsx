@@ -34,6 +34,7 @@ export async function generateMetadata(
   parent: ResolvingMetadata
 ): Promise<Metadata> {
   const resolvedParams = await params;
+  // Resolve siteId from all possible tenant parameters
   const siteId = resolvedParams.storeId || resolvedParams.domain || resolvedParams.site;
   const isDemoMode = siteId === 'demo';
 
@@ -99,6 +100,7 @@ async function getProducts(siteId: string): Promise<StorefrontProduct[]> {
 
 export default async function StorefrontPage({ params }: { params: Promise<{ storeId?: string; domain?: string; site?: string }> }) {
   const resolvedParams = await params;
+  // Support both internal /store/[storeId] and rewritten /[domain] routes
   const siteId = resolvedParams.storeId || resolvedParams.domain || resolvedParams.site;
   
   if (!siteId) {

@@ -14,8 +14,8 @@ function getDb() {
 }
 
 /**
- * Resolves a custom domain to a SOMA storeId by querying Firestore.
- * Enforces tier-based access control from src/lib/tiers.ts.
+ * Resolves a custom domain (or registered subdomain) to a SOMA storeId.
+ * Enforces tier-based access control to protect premium features.
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -28,6 +28,8 @@ export async function GET(request: NextRequest) {
   try {
     const firestore = getDb();
     const storesRef = collection(firestore, 'stores');
+    
+    // Check for a custom domain mapping in Firestore
     const q = query(storesRef, where('customDomain', '==', domain.toLowerCase()), limit(1));
     const querySnapshot = await getDocs(q);
 
@@ -39,27 +41,26 @@ export async function GET(request: NextRequest) {
     const storeData = storeDoc.data();
     const userId = storeData.userId;
 
-    // Validate tier entitlement
+    // Validate tier entitlement: Only specific tiers can utilize custom domains/subdomains
     const userRef = doc(firestore, 'users', userId);
     const userSnap = await getDoc(userRef);
     const userData = userSnap.data();
 
     if (!userData) {
-        return NextResponse.json({ error: 'Owner not found' }, { status: 404 });
+        return NextResponse.json({ error: 'Store owner profile not found' }, { status: 404 });
     }
 
     const tier = getTier(userData.planTier);
     
-    // Only Scalers, Merchants, and Enterprise (and Admins) can resolve custom domains
-    const allowedTiers = ['SCALER', 'MERCHANT', 'ENTERPRISE', 'ADMIN'];
-    if (!allowedTiers.includes(tier.id)) {
-        console.warn(`Unauthorized domain resolution attempt for domain ${domain} by tier ${tier.id}`);
-        return NextResponse.json({ error: 'Tier not authorized for custom domains' }, { status: 403 });
+    // Entitlement Check: Ensure the user's plan supports white-labeled domains
+    if (!tier.features.customDomains && userData.userRole !== 'ADMIN') {
+        console.warn(`Unauthorized domain resolution: Tier ${tier.id} does not support custom domains.`);
+        return NextResponse.json({ error: 'Plan tier unauthorized for custom domains' }, { status: 403 });
     }
 
     return NextResponse.json({ storeId: storeDoc.id });
   } catch (error) {
-    console.error(`Error resolving domain '${domain}':`, error);
-    return NextResponse.json({ error: 'Internal server error during domain resolution' }, { status: 500 });
+    console.error(`Boutique resolution error for '${domain}':`, error);
+    return NextResponse.json({ error: 'Internal server error during domain handshake' }, { status: 500 });
   }
 }
