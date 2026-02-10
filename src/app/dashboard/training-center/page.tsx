@@ -37,6 +37,8 @@ import { GraduationCap, PlayCircle, Crown, Loader2, Check, ExternalLink } from '
 import { AnimatePresence, motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 
+export const dynamic = 'force-dynamic';
+
 type TrainingModule = {
   id: string;
   title: string;

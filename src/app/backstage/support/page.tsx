@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -24,6 +23,8 @@ import { useToast } from '@/hooks/use-toast';
 import SomaLogo from '@/components/logo';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+
+export const dynamic = 'force-dynamic';
 
 type SupportTicket = {
     id: string;

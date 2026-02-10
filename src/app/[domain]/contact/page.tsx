@@ -44,6 +44,8 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
+export const dynamic = 'force-dynamic';
+
 const contactSchema = z.object({
   name: z.string().min(2, 'Please provide your name.'),
   email: z.string().email('A valid email address is required for follow-up.'),
@@ -192,7 +194,7 @@ export default function TenantContactPage() {
                                         Your request has been transmitted directly to the boutique ledger. 
                                         The curator will respond via email shortly.
                                     </p>
-                                    <Button asChild size="lg" className="mt-4 btn-gold-glow">
+                                    <Button asChild size="lg" className="mt-4 btn-gold-glow" onClick={() => router.push('/')}>
                                         <Link href="/">Return to Boutique</Link>
                                     </Button>
                                 </CardContent>
@@ -291,7 +293,9 @@ export default function TenantContactPage() {
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <Send className="mr-3 h-6 w-6" />
+                                                        <span className="mr-3 flex items-center justify-center">
+                                                            <Send className="h-6 w-6" />
+                                                        </span>
                                                         Transmit to curator
                                                     </>
                                                 )}
