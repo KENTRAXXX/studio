@@ -1,11 +1,10 @@
 'use client';
 
-import { Suspense, useTransition, useEffect } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +24,7 @@ import SomaLogo from '@/components/logo';
 import { useSignUp } from '@/hooks/use-signup';
 import { usePaystack } from '@/hooks/use-paystack';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Eye, EyeOff, Loader2, ShieldCheck, Lock, Globe, User, MessageSquare, Landmark, FileText } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ShieldCheck, Lock, Globe, User, MessageSquare, Landmark, FileText, CheckCircle2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -56,8 +55,7 @@ type FormValues = z.infer<typeof formSchema>;
 type PlanInterval = 'monthly' | 'yearly' | 'lifetime' | 'free';
 type PlanTier = 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND' | 'ADMIN' | 'AMBASSADOR';
 
-
-function SignUpForm() {
+function SignUpFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -75,6 +73,7 @@ function SignUpForm() {
   
   const isAmbassador = planTier === 'AMBASSADOR';
   const isFreePlan = (planTier === 'SELLER' && interval === 'free') || planTier === 'ADMIN' || planTier === 'AMBASSADOR';
+  const needsBoutiqueConfig = ['MERCHANT', 'SCALER', 'ENTERPRISE'].includes(planTier);
   
   const planName = {
     MERCHANT: 'Merchant',
@@ -116,7 +115,6 @@ function SignUpForm() {
   }, [refParam, form]);
 
   const onSubmit = (data: FormValues) => {
-    // GATELOCK: Executive Authorization Check
     if (planTier === 'ADMIN') {
         const systemSecret = process.env.NEXT_PUBLIC_ADMIN_GATE_CODE;
         if (!systemSecret || data.adminCode !== systemSecret) {
@@ -129,7 +127,6 @@ function SignUpForm() {
         }
     }
 
-    // Capture system metadata
     const metadata = {
         signupTimestamp: new Date().toISOString(),
         utmSource: searchParams.get('utm_source') || 'Direct',
@@ -270,7 +267,7 @@ function SignUpForm() {
                                         />
                                     </div>
 
-                                    {!isAmbassador && planTier !== 'ADMIN' && (
+                                    {needsBoutiqueConfig && (
                                         <div className="space-y-6 pt-4 border-t border-white/5">
                                             <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-widest">
                                                 <Globe className="h-4 w-4" /> Boutique Configuration
@@ -553,7 +550,6 @@ function SignUpForm() {
   )
 }
 
-
 export default function SignUpPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-black gold-mesh-gradient p-4 sm:p-6">
@@ -563,7 +559,7 @@ export default function SignUpPage() {
         <p className="mt-2 text-lg text-muted-foreground">Synchronize your identity with the SOMA ecosystem.</p>
       </div>
       <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
-         <SignUpForm />
+         <SignUpFormContent />
       </Suspense>
     </div>
   );

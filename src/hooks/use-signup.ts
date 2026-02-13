@@ -22,6 +22,7 @@ type SignUpCredentials = {
   bankName?: string;
   accountNumber?: string;
   accountHolderName?: string;
+  governmentId?: string;
   metadata?: any;
 };
 
@@ -69,8 +70,8 @@ export function useSignUp() {
             // Record the successful lead conversion for the ambassador
             const referrerRef = doc(firestore, 'users', referredBy);
             await updateDoc(referrerRef, {
-                referralSignups: increment(1)
-            });
+                "ambassadorData.referralSignups": increment(1)
+            }).catch(console.error);
         }
       }
 
@@ -133,6 +134,7 @@ export function useSignUp() {
           newUserProfile.ambassadorData = {
               socialHandle: credentials.socialHandle || '',
               targetAudience: credentials.targetAudience || '',
+              governmentId: credentials.governmentId || '',
               payoutDetails: {
                   bankName: credentials.bankName || '',
                   accountNumber: credentials.accountNumber || '',
