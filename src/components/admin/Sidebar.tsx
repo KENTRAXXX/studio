@@ -60,14 +60,14 @@ export function AdminSidebar({ onLogout }: { onLogout: () => void }) {
   return (
     <Sidebar className="border-r border-primary/10">
       <SidebarHeader className="p-6 border-b border-primary/10">
-        <div className="flex items-center gap-3">
-          <SomaLogo className="h-7 w-7 text-primary" aria-hidden="true" />
+        <Link href="/admin" className="flex items-center gap-3 group">
+          <SomaLogo className="h-7 w-7 text-primary transition-transform group-hover:scale-110" aria-hidden="true" />
           <div className="flex flex-col">
-            <span className="font-headline font-bold text-lg text-primary tracking-tighter uppercase leading-none">SomaDS</span>
+            <span className="font-headline font-bold text-lg text-primary tracking-tighter uppercase leading-none transition-opacity group-hover:opacity-80">SomaDS</span>
             <span className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] mt-1">Executive Suite</span>
           </div>
           <Badge className="ml-auto bg-primary text-primary-foreground text-[9px] font-black h-5 px-1.5 rounded-full border-none shadow-gold-glow">ADMIN</Badge>
-        </div>
+        </Link>
       </SidebarHeader>
 
       <SidebarContent className="px-2 py-4">

@@ -107,6 +107,11 @@ export default function TenantBoutiquePage() {
 
     const isLoading = storeLoading || ownerLoading || productsLoading;
 
+    const handlePlatformHome = () => {
+        const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
+        window.location.href = `https://${rootDomain}`;
+    };
+
     if (isLoading) {
         return (
             <div className="flex h-screen items-center justify-center bg-background">
@@ -125,7 +130,7 @@ export default function TenantBoutiquePage() {
                 <p className="text-muted-foreground text-center max-w-sm">
                     The boutique at "{identifier}" is not currently provisioned in our network.
                 </p>
-                <Button variant="outline" className="border-primary/50" onClick={() => router.push('/')}>
+                <Button variant="outline" className="border-primary/50" onClick={handlePlatformHome}>
                     <ArrowLeft className="mr-2 h-4 w-4" /> Platform Home
                 </Button>
             </div>
