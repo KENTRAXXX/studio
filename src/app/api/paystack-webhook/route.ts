@@ -263,6 +263,7 @@ export async function POST(req: Request) {
                         const referrerData = referrerSnap.data();
                         
                         // SOMA Ambassador Program: Flat $5.00 reward
+                        // Restrict referral rewards exclusively to the AMBASSADOR role
                         const isAmbassador = referrerData.userRole === 'AMBASSADOR';
                         const referralReward = isAmbassador ? 5 : 0; 
 
@@ -276,7 +277,7 @@ export async function POST(req: Request) {
                                 type: 'ambassador_bounty',
                                 referredUserId: userId,
                                 createdAt: new Date().toISOString(),
-                                description: `Flat $5.00 Ambassador Reward for recruiting ${userData.email || 'New User'}.`
+                                description: `Flat $5.00 Ambassador Reward for recruiting ${userData.fullName || 'New User'}.`
                             });
 
                             transaction.update(referrerRef, {
@@ -287,7 +288,7 @@ export async function POST(req: Request) {
                             emailData = {
                                 to: referrerData.email,
                                 referrerName: referrerData.displayName || referrerData.email.split('@')[0],
-                                protegeName: userData.displayName || userData.email.split('@')[0],
+                                protegeName: userData.fullName || userData.email.split('@')[0],
                                 creditAmount: formatCurrency(Math.round(referralReward * 100))
                             };
                         }

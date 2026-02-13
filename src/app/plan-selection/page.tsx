@@ -4,10 +4,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, Building, Gem, Rocket, ShoppingBag, ShieldCheck, Tag, Loader2 } from "lucide-react";
+import { Check, Building, Gem, Rocket, ShoppingBag, ShieldCheck, Tag, Loader2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SomaLogo from "@/components/logo";
 import { Badge } from "@/components/ui/badge";
+import { useFirestore } from "@/firebase";
+import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
 
 type Interval = 'monthly' | 'yearly';
 
@@ -78,9 +80,27 @@ function PlanSelectionContent() {
     const [interval, setInterval] = useState<Interval>('monthly');
     const router = useRouter();
     const searchParams = useSearchParams();
+    const firestore = useFirestore();
     
     const referralCode = searchParams.get('ref');
     const isDiscounted = !!referralCode;
+
+    // Click Tracking Logic
+    useEffect(() => {
+        if (referralCode && firestore) {
+            const trackClick = async () => {
+                const referralQuery = query(collection(firestore, 'users'), where('referralCode', '==', referralCode.toUpperCase()));
+                const querySnapshot = await getDocs(referralQuery);
+                if (!querySnapshot.empty) {
+                    const referrerRef = doc(firestore, 'users', querySnapshot.docs[0].id);
+                    await updateDoc(referrerRef, {
+                        "ambassadorData.referralClicks": increment(1)
+                    }).catch(console.error);
+                }
+            };
+            trackClick();
+        }
+    }, [referralCode, firestore]);
 
     const handleConfirm = () => {
         const plan = plans.find(p => p.id === selectedPlan);
@@ -99,10 +119,14 @@ function PlanSelectionContent() {
                 <h1 className="text-4xl font-bold font-headline mt-4 text-primary">Choose Your Empire's Foundation</h1>
                 <p className="mt-2 text-lg text-muted-foreground">Select a plan that scales with your ambition.</p>
                 {isDiscounted && (
-                    <div className="mt-4 flex items-center justify-center gap-2 text-green-500 font-bold bg-green-500/10 py-2 px-4 rounded-full border border-green-500/20 max-w-fit mx-auto">
-                        <Tag className="h-4 w-4" />
-                        <span>Ambassador Code Applied: 20% Discount Unlocked</span>
-                    </div>
+                    <motion.div 
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-4 flex items-center justify-center gap-2 text-green-500 font-bold bg-green-500/10 py-2 px-4 rounded-full border border-green-500/20 max-w-fit mx-auto"
+                    >
+                        <Sparkles className="h-4 w-4" />
+                        <span>Ambassador Deal: 20% Discount Unlocked</span>
+                    </motion.div>
                 )}
             </div>
 
@@ -136,7 +160,7 @@ function PlanSelectionContent() {
                              <Badge className="absolute top-3 left-3 bg-green-500/20 text-green-400 border-green-500/50">Save 15%</Badge>
                         )}
                         {isDiscounted && plan.id !== 'SELLER' && (
-                             <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground font-black">AMBASSADOR DEAL</Badge>
+                             <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground font-black">20% DISCOUNT APPLIED</Badge>
                         )}
                         <CardHeader className="text-center items-center">
                             <div className="bg-primary/10 rounded-full p-4 mb-4 border border-primary/20">

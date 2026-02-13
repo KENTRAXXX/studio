@@ -19,22 +19,35 @@ import {
   FormMessage,
   FormDescription,
 } from '@/components/ui/form';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import SomaLogo from '@/components/logo';
 import { useSignUp } from '@/hooks/use-signup';
 import { usePaystack } from '@/hooks/use-paystack';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Eye, EyeOff, Loader2, ShieldCheck, Lock } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ShieldCheck, Lock, Globe, User, MessageSquare, Landmark } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
+  fullName: z.string().min(2, 'Legal name is required.'),
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
+  phoneNumber: z.string().min(10, 'WhatsApp number is required for alerts.').optional(),
+  storeName: z.string().min(2, 'Store name is required.').optional(),
+  desiredSubdomain: z.string().min(2, 'Subdomain is required.').optional(),
+  niche: z.string().optional(),
   referralCode: z.string().optional(),
   adminCode: z.string().optional(),
+  // Ambassador specific
+  ambassadorCode: z.string().min(3, 'Unique handle is required.').optional(),
+  socialHandle: z.string().optional(),
+  targetAudience: z.string().optional(),
+  bankName: z.string().optional(),
+  accountNumber: z.string().optional(),
+  accountHolderName: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -60,6 +73,8 @@ function SignUpForm() {
   const interval = (searchParams.get('interval') as PlanInterval) || 'monthly';
   const refParam = searchParams.get('ref');
   
+  const isAmbassador = planTier === 'AMBASSADOR';
+  
   const planName = {
     MERCHANT: 'Merchant',
     SCALER: 'Scaler',
@@ -74,10 +89,21 @@ function SignUpForm() {
     resolver: zodResolver(formSchema),
     mode: 'onBlur',
     defaultValues: {
+      fullName: '',
       email: '',
       password: '',
+      phoneNumber: '',
+      storeName: '',
+      desiredSubdomain: '',
+      niche: 'Luxury',
       referralCode: '',
       adminCode: '',
+      ambassadorCode: '',
+      socialHandle: '',
+      targetAudience: '',
+      bankName: '',
+      accountNumber: '',
+      accountHolderName: '',
     },
   });
 
@@ -104,7 +130,16 @@ function SignUpForm() {
         }
     }
 
-    signUp({ ...data, planTier: planTier, plan: interval }, {
+    // Capture system metadata
+    const metadata = {
+        signupTimestamp: new Date().toISOString(),
+        utmSource: searchParams.get('utm_source') || 'Direct',
+        utmMedium: searchParams.get('utm_medium') || 'Organic',
+        utmCampaign: searchParams.get('utm_campaign') || 'Standard',
+        deviceType: typeof window !== 'undefined' && window.innerWidth < 768 ? 'Mobile' : 'Desktop',
+    };
+
+    signUp({ ...data, planTier: planTier, plan: interval, metadata }, {
       onSuccess: async (user) => {
         if (!isFreePlan) {
             toast({
@@ -114,7 +149,6 @@ function SignUpForm() {
         }
 
         const onPaystackSuccess = async () => {
-          // Optimistic update to bridge the gap until the webhook hits
           if (firestore && user.user.uid) {
               try {
                   const userRef = doc(firestore, 'users', user.user.uid);
@@ -181,11 +215,10 @@ function SignUpForm() {
   };
 
   const isPending = isSigningUp || isInitializing;
-  const isFreePlan = (planTier === 'SELLER' && interval === 'free') || planTier === 'ADMIN' || planTier === 'AMBASSADOR';
   const buttonText = isFreePlan ? 'Establish Identity' : 'Confirm & Proceed to Payment';
 
   return (
-      <div className="w-full max-w-lg">
+      <div className="w-full max-w-2xl">
         <AnimatePresence mode="wait">
             {!isSuccess ? (
                  <motion.div
@@ -202,19 +235,139 @@ function SignUpForm() {
                         <CardContent>
                             <Form {...form}>
                                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                                    <FormField
-                                        control={form.control}
-                                        name="email"
-                                        render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Email Address</FormLabel>
-                                            <FormControl>
-                                            <Input placeholder="executive@somatoday.com" {...field} className="bg-black/20 border-primary/20" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                        )}
-                                    />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <FormField
+                                            control={form.control}
+                                            name="fullName"
+                                            render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Full Name</FormLabel>
+                                                <FormControl>
+                                                <Input placeholder="John Doe" {...field} className="bg-black/20 border-primary/20" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="email"
+                                            render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Email Address</FormLabel>
+                                                <FormControl>
+                                                <Input placeholder="executive@somatoday.com" {...field} className="bg-black/20 border-primary/20" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                            )}
+                                        />
+                                    </div>
+
+                                    {!isAmbassador && planTier !== 'ADMIN' && (
+                                        <div className="space-y-6 pt-4 border-t border-white/5">
+                                            <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-widest">
+                                                <Globe className="h-4 w-4" /> Boutique Configuration
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="storeName"
+                                                    render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Store Name</FormLabel>
+                                                        <FormControl>
+                                                        <Input placeholder="Deluxe Emporium" {...field} className="bg-black/20 border-primary/20" />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={form.control}
+                                                    name="phoneNumber"
+                                                    render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>WhatsApp Number</FormLabel>
+                                                        <FormControl>
+                                                        <Input placeholder="+1555..." {...field} className="bg-black/20 border-primary/20" />
+                                                        </FormControl>
+                                                        <FormDescription>For real-time order alerts.</FormDescription>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                    )}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {isAmbassador && (
+                                        <div className="space-y-6 pt-4 border-t border-white/5">
+                                            <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-widest">
+                                                <CheckCircle2 className="h-4 w-4" /> Marketer Vetting
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="ambassadorCode"
+                                                    render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Unique Handle</FormLabel>
+                                                        <FormControl>
+                                                        <Input placeholder="SOMA_KING" {...field} className="bg-black/20 border-primary/20 font-mono" />
+                                                        </FormControl>
+                                                        <FormDescription>Your custom link suffix.</FormDescription>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={form.control}
+                                                    name="socialHandle"
+                                                    render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Social Portfolio</FormLabel>
+                                                        <FormControl>
+                                                        <Input placeholder="@handle (IG/X/TikTok)" {...field} className="bg-black/20 border-primary/20" />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                    )}
+                                                />
+                                            </div>
+                                            <FormField
+                                                control={form.control}
+                                                name="targetAudience"
+                                                render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Target Audience</FormLabel>
+                                                    <FormControl>
+                                                    <Textarea placeholder="Who will you be marketing to?" {...field} className="bg-black/20 border-primary/20 h-20" />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                                )}
+                                            />
+                                            
+                                            <div className="space-y-4 pt-2">
+                                                <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-widest">
+                                                    <Landmark className="h-3.5 w-3.5" /> Payout Destination
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                    <FormField control={form.control} name="bankName" render={({ field }) => (
+                                                        <FormItem><FormControl><Input placeholder="Bank/Mobile Money" {...field} className="bg-black/20 border-primary/20 text-xs" /></FormControl></FormItem>
+                                                    )} />
+                                                    <FormField control={form.control} name="accountNumber" render={({ field }) => (
+                                                        <FormItem><FormControl><Input placeholder="Acct Number" {...field} className="bg-black/20 border-primary/20 text-xs" /></FormControl></FormItem>
+                                                    )} />
+                                                    <FormField control={form.control} name="accountHolderName" render={({ field }) => (
+                                                        <FormItem><FormControl><Input placeholder="Holder Name" {...field} className="bg-black/20 border-primary/20 text-xs" /></FormControl></FormItem>
+                                                    )} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <FormField
                                         control={form.control}
                                         name="password"

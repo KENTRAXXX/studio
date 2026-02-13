@@ -339,7 +339,7 @@ function SneakPeek() {
                             <Link href="/plan-selection">Claim Your Lifetime Access</Link>
                         </Button>
                         <Button asChild size="lg" variant="outline" className="h-12 text-lg w-full sm:w-auto border-primary/50 text-primary hover:bg-primary/10">
-                            <Link href="https://ambassador.somatoday.com">
+                            <Link href={`https://ambassador.${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com'}`}>
                                 <Award className="mr-2 h-5 w-5" /> Become an Ambassador
                             </Link>
                         </Button>

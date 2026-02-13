@@ -1,15 +1,28 @@
 'use client';
 import { useState } from 'react';
 import { createUserWithEmailAndPassword, UserCredential } from 'firebase/auth';
-import { doc, setDoc, query, collection, where, getDocs } from 'firebase/firestore';
+import { doc, setDoc, query, collection, where, getDocs, increment, updateDoc } from 'firebase/firestore';
 import { useAuth, useFirestore } from '@/firebase';
 
 type SignUpCredentials = {
+  fullName: string;
   email: string;
   password: string;
-  planTier: 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND' | 'ADMIN';
+  planTier: 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND' | 'ADMIN' | 'AMBASSADOR';
   plan: 'monthly' | 'yearly' | 'lifetime' | 'free';
   referralCode?: string;
+  // Metadata & Role specific
+  phoneNumber?: string;
+  storeName?: string;
+  desiredSubdomain?: string;
+  niche?: string;
+  ambassadorCode?: string;
+  socialHandle?: string;
+  targetAudience?: string;
+  bankName?: string;
+  accountNumber?: string;
+  accountHolderName?: string;
+  metadata?: any;
 };
 
 type UseSignUpOptions = {
@@ -51,10 +64,14 @@ export function useSignUp() {
       if (credentials.referralCode) {
         const referralQuery = query(collection(firestore, 'users'), where('referralCode', '==', credentials.referralCode.toUpperCase()));
         const querySnapshot = await getDocs(referralQuery);
-        if (querySnapshot.empty) {
-            throw new Error('Invalid referral code.');
+        if (!querySnapshot.empty) {
+            referredBy = querySnapshot.docs[0].id;
+            // Record the successful lead conversion for the ambassador
+            const referrerRef = doc(firestore, 'users', referredBy);
+            await updateDoc(referrerRef, {
+                referralSignups: increment(1)
+            });
         }
-        referredBy = querySnapshot.docs[0].id;
       }
 
       const userCredential = await createUserWithEmailAndPassword(
@@ -64,21 +81,21 @@ export function useSignUp() {
       );
 
       const user = userCredential.user;
-      
       const userDocRef = doc(firestore, 'users', user.uid);
       
       // Determine Role
-      let userRole: 'ADMIN' | 'SELLER' | 'MOGUL';
+      let userRole: 'ADMIN' | 'SELLER' | 'MOGUL' | 'AMBASSADOR';
       if (credentials.planTier === 'ADMIN') {
         userRole = 'ADMIN';
+      } else if (credentials.planTier === 'AMBASSADOR') {
+        userRole = 'AMBASSADOR';
       } else if (credentials.planTier === 'SELLER' || credentials.planTier === 'BRAND') {
         userRole = 'SELLER';
       } else {
         userRole = 'MOGUL';
       }
       
-      // If it's a free seller plan or an admin, we grant access immediately since there is no payment webhook.
-      const isFreeTier = (credentials.planTier === 'SELLER' && credentials.plan === 'free') || credentials.planTier === 'ADMIN';
+      const isFreeTier = (credentials.planTier === 'SELLER' && credentials.plan === 'free') || credentials.planTier === 'ADMIN' || credentials.planTier === 'AMBASSADOR';
 
       // Default status mapping
       const statusMap = {
@@ -88,22 +105,49 @@ export function useSignUp() {
           SCALER: 'approved',
           ENTERPRISE: 'approved',
           SELLER: 'pending_review',
-          BRAND: 'pending_review'
+          BRAND: 'pending_review',
+          AMBASSADOR: 'approved'
       };
 
       const newUserProfile: any = {
+        fullName: credentials.fullName,
         email: user.email,
         hasAccess: isFreeTier,
         hasAcceptedTerms: false,
         userRole: userRole,
         planTier: credentials.planTier,
         plan: credentials.plan,
-        referralCode: generateReferralCode(6),
-        status: statusMap[credentials.planTier as keyof typeof statusMap] || 'approved'
+        referralCode: credentials.ambassadorCode?.toUpperCase() || generateReferralCode(6),
+        status: statusMap[credentials.planTier as keyof typeof statusMap] || 'approved',
+        createdAt: new Date().toISOString(),
+        systemMetadata: credentials.metadata || {},
       };
 
       if (referredBy) {
         newUserProfile.referredBy = referredBy;
+        newUserProfile.referralStatus = 'pending';
+      }
+
+      // Add role specific data
+      if (userRole === 'AMBASSADOR') {
+          newUserProfile.ambassadorData = {
+              socialHandle: credentials.socialHandle || '',
+              targetAudience: credentials.targetAudience || '',
+              payoutDetails: {
+                  bankName: credentials.bankName || '',
+                  accountNumber: credentials.accountNumber || '',
+                  accountHolderName: credentials.accountHolderName || ''
+              },
+              referralClicks: 0,
+              referralSignups: 0
+          };
+      } else {
+          newUserProfile.businessData = {
+              phoneNumber: credentials.phoneNumber || '',
+              storeName: credentials.storeName || '',
+              desiredSubdomain: credentials.desiredSubdomain || '',
+              niche: credentials.niche || 'Luxury'
+          };
       }
 
       await setDoc(userDocRef, newUserProfile);

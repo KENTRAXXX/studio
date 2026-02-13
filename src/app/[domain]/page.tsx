@@ -227,12 +227,20 @@ function AmbassadorPortal() {
                             </Card>
                             <Card className="border-primary/10 bg-slate-900/40 backdrop-blur-sm group hover:border-primary/30 transition-all">
                                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                    <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Strategic Recruits</CardTitle>
+                                    <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Recruit Activity</CardTitle>
                                     <Users className="h-4 w-4 text-primary" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-4xl font-bold text-slate-100 font-mono tracking-tighter">{userProfile?.activeReferralCount || 0}</div>
-                                    <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-2 font-bold">Paid Conversions</p>
+                                    <div className="flex justify-between items-end">
+                                        <div>
+                                            <div className="text-4xl font-bold text-slate-100 font-mono tracking-tighter">{userProfile?.ambassadorData?.referralSignups || 0}</div>
+                                            <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-2 font-bold">Paid Conversions</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-xl font-bold text-slate-400 font-mono tracking-tighter">{userProfile?.ambassadorData?.referralClicks || 0}</div>
+                                            <p className="text-[10px] text-slate-600 uppercase tracking-widest mt-1 font-bold">Link Clicks</p>
+                                        </div>
+                                    </div>
                                 </CardContent>
                             </Card>
                             <Card className="border-primary/10 bg-slate-900/40 backdrop-blur-sm group hover:border-primary/30 transition-all">
