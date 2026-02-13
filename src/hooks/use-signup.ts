@@ -98,7 +98,7 @@ export function useSignUp() {
       
       const isFreeTier = (credentials.planTier === 'SELLER' && credentials.plan === 'free') || credentials.planTier === 'ADMIN' || credentials.planTier === 'AMBASSADOR';
 
-      // Default status mapping
+      // Default status mapping: Ambassadors now require review for KYC/Vetting
       const statusMap = {
           ADMIN: 'approved',
           MOGUL: 'approved',
@@ -107,7 +107,7 @@ export function useSignUp() {
           ENTERPRISE: 'approved',
           SELLER: 'pending_review',
           BRAND: 'pending_review',
-          AMBASSADOR: 'approved'
+          AMBASSADOR: 'pending_review'
       };
 
       const newUserProfile: any = {
@@ -134,7 +134,7 @@ export function useSignUp() {
           newUserProfile.ambassadorData = {
               socialHandle: credentials.socialHandle || '',
               targetAudience: credentials.targetAudience || '',
-              governmentIdUrl: credentials.governmentId || '', // Store as URL
+              governmentIdUrl: credentials.governmentId || '', 
               payoutDetails: {
                   bankName: credentials.bankName || '',
                   accountNumber: credentials.accountNumber || '',

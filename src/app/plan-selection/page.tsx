@@ -8,7 +8,7 @@ import { Check, Building, Gem, Rocket, ShoppingBag, ShieldCheck, Loader2, Sparkl
 import { cn } from "@/lib/utils";
 import SomaLogo from "@/components/logo";
 import { Badge } from "@/components/ui/badge";
-import { useFirestore } from "@/firebase";
+import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
 import { motion } from "framer-motion";
 
@@ -86,6 +86,15 @@ function PlanSelectionContent() {
     
     const referralCode = searchParams.get('ref');
 
+    // Dynamic Platform Config Listener
+    const configRef = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return doc(firestore, 'platform_metadata', 'config');
+    }, [firestore]);
+    const { data: config } = useDoc<any>(configRef);
+
+    const discountMultiplier = config?.recruitDiscount ? (1 - (config.recruitDiscount / 100)) : 0.8;
+
     // Click Tracking & Role Validation Logic
     useEffect(() => {
         if (referralCode && firestore) {
@@ -93,7 +102,7 @@ function PlanSelectionContent() {
                 const referralQuery = query(
                     collection(firestore, 'users'), 
                     where('referralCode', '==', referralCode.toUpperCase()),
-                    where('userRole', '==', 'AMBASSADOR') // Restrict discount to Marketer role
+                    where('userRole', '==', 'AMBASSADOR') 
                 );
                 const querySnapshot = await getDocs(referralQuery);
                 if (!querySnapshot.empty) {
@@ -131,7 +140,7 @@ function PlanSelectionContent() {
                         className="mt-4 flex items-center justify-center gap-2 text-green-500 font-bold bg-green-500/10 py-2 px-4 rounded-full border border-green-500/20 max-w-fit mx-auto"
                     >
                         <Sparkles className="h-4 w-4" />
-                        <span>Ambassador Deal: 20% Discount Unlocked</span>
+                        <span>Ambassador Deal: {config?.recruitDiscount || 20}% Discount Unlocked</span>
                     </motion.div>
                 )}
             </div>
@@ -151,7 +160,7 @@ function PlanSelectionContent() {
                     const isYearly = !plan.pricing.free && interval === 'yearly';
                     
                     const basePrice = priceInfo.price;
-                    const finalPrice = isReferralValid && plan.id !== 'SELLER' ? basePrice * 0.8 : basePrice;
+                    const finalPrice = isReferralValid && plan.id !== 'SELLER' ? basePrice * discountMultiplier : basePrice;
 
                     return (
                     <Card 
@@ -166,7 +175,7 @@ function PlanSelectionContent() {
                              <Badge className="absolute top-3 left-3 bg-green-500/20 text-green-400 border-green-500/50">Save 15%</Badge>
                         )}
                         {isReferralValid && plan.id !== 'SELLER' && (
-                             <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground font-black">20% DISCOUNT APPLIED</Badge>
+                             <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground font-black">{config?.recruitDiscount || 20}% DISCOUNT APPLIED</Badge>
                         )}
                         <CardHeader className="text-center items-center">
                             <div className="bg-primary/10 rounded-full p-4 mb-4 border border-primary/20">

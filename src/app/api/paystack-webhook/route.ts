@@ -247,6 +247,10 @@ export async function POST(req: Request) {
         try {
             let emailData: { to: string, referrerName: string, protegeName: string, creditAmount: string } | null = null;
 
+            // Fetch dynamic bounty from config
+            const configSnap = await getDoc(doc(firestore, 'platform_metadata', 'config'));
+            const dynamicBounty = configSnap.data()?.ambassadorBounty ?? 5;
+
             await runTransaction(firestore, async (transaction) => {
                 const userRef = doc(firestore, "users", userId);
                 const userSnap = await transaction.get(userRef);
@@ -262,10 +266,9 @@ export async function POST(req: Request) {
                     if (referrerSnap.exists() && referrerSnap.data().hasAccess === true) {
                         const referrerData = referrerSnap.data();
                         
-                        // SOMA Ambassador Program: Flat $5.00 reward
-                        // Restrict referral rewards exclusively to the AMBASSADOR role
+                        // SOMA Ambassador Program: Dynamic Reward
                         const isAmbassador = referrerData.userRole === 'AMBASSADOR';
-                        const referralReward = isAmbassador ? 5 : 0; 
+                        const referralReward = isAmbassador ? dynamicBounty : 0; 
 
                         if (referralReward > 0) {
                             const payoutRef = doc(collection(firestore, 'payouts_pending'));
@@ -274,10 +277,10 @@ export async function POST(req: Request) {
                                 amount: referralReward,
                                 currency: 'USD',
                                 status: 'pending_maturity',
-                                type: 'ambassador_bounty',
+                                type: 'referral_reward',
                                 referredUserId: userId,
                                 createdAt: new Date().toISOString(),
-                                description: `Flat $5.00 Ambassador Reward for recruiting ${userData.fullName || 'New User'}.`
+                                description: `Flat ${formatCurrency(Math.round(referralReward * 100))} Ambassador Reward for recruiting ${userData.fullName || 'New User'}.`
                             });
 
                             transaction.update(referrerRef, {
