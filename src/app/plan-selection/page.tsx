@@ -1,10 +1,11 @@
 'use client';
+
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, Rocket, ShoppingBag, Building, Tag } from "lucide-react";
+import { Check, Rocket, ShoppingBag, Building, Tag, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SomaLogo from "@/components/logo";
 import { Badge } from "@/components/ui/badge";
@@ -67,7 +68,7 @@ function PlanSelectionContent() {
         if (ambassadorCode) url += `&ref=${ambassadorCode}`;
 
         router.push(url);
-    }
+    };
 
     return (
         <div className="flex flex-col items-center min-h-screen bg-background p-4 sm:p-6">
@@ -161,13 +162,5 @@ export default function PlanSelectionPage() {
         }>
             <PlanSelectionContent />
         </Suspense>
-    );
-}
-
-function Loader2({ className }: { className?: string }) {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={cn("animate-spin", className)}>
-            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-        </svg>
     );
 }
