@@ -87,7 +87,7 @@ function SignUpForm() {
     if (refParam) {
       form.setValue('referralCode', refParam.toUpperCase());
     } 
-    // Priority 2: Persistent Cookie
+    // Priority 2: Persistent Cookie (Set in Plan Selection)
     else if (typeof document !== 'undefined') {
         const match = document.cookie.match(new RegExp('(^| )soma_referral_code=([^;]+)'));
         if (match) {
@@ -333,7 +333,7 @@ function SignUpForm() {
                             </Form>
                         </CardContent>
                     </Card>
-                </motion.div>
+                 </motion.div>
             ) : (
                  <motion.div
                     key="redirecting"

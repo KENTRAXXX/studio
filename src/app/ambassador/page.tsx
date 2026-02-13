@@ -7,6 +7,11 @@ import { motion } from 'framer-motion';
 import { Megaphone, DollarSign, Zap, Globe, Share2, ShieldCheck, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
+/**
+ * @fileOverview SOMA Ambassador Landing Page
+ * Following the Bridge Pattern to keep the page file lightweight for the build worker.
+ */
+
 export default function AmbassadorLandingPage() {
     return (
         <div className="min-h-screen bg-black gold-mesh-gradient text-white selection:bg-primary/30">

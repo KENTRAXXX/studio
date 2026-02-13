@@ -16,6 +16,7 @@ export default function SupportPage() {
 
   useEffect(() => {
     // Only import the component once we are safely in the browser
+    // This stops the build worker from evaluating the component's import tree
     import('@/components/backstage/SupportDashboard').then((mod) => {
       setComponent(() => mod.SupportDashboard);
     });
