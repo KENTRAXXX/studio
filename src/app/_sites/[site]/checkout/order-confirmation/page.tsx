@@ -4,10 +4,11 @@ import { useSearchParams, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Loader2 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
+import { Suspense } from 'react';
 
-export default function OrderConfirmationPage() {
+function OrderConfirmationContent() {
     const searchParams = useSearchParams();
     const orderId = searchParams.get('orderId');
 
@@ -45,5 +46,17 @@ export default function OrderConfirmationPage() {
                 </CardContent>
             </Card>
         </div>
+    );
+}
+
+export default function OrderConfirmationPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex h-screen w-full items-center justify-center bg-background">
+                <Loader2 className="h-12 w-12 animate-spin text-primary opacity-20" />
+            </div>
+        }>
+            <OrderConfirmationContent />
+        </Suspense>
     );
 }

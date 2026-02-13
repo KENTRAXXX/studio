@@ -4,12 +4,10 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import SomaLogo from '@/components/logo';
 import { motion } from 'framer-motion';
-import { Megaphone, DollarSign, Zap, Globe, Share2, ShieldCheck, ArrowRight, TrendingUp } from 'lucide-react';
+import { Megaphone, DollarSign, Zap, Globe, Share2, ShieldCheck, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function AmbassadorLandingPage() {
-    const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
-
     return (
         <div className="min-h-screen bg-black gold-mesh-gradient text-white selection:bg-primary/30">
             {/* Header */}

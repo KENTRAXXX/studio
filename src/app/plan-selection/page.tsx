@@ -1,10 +1,10 @@
 'use client';
-import { useState, useEffect } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, Star, Building, Gem, Rocket, ShoppingBag, ShieldCheck, Tag } from "lucide-react";
+import { Check, Rocket, ShoppingBag, Building, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SomaLogo from "@/components/logo";
 import { Badge } from "@/components/ui/badge";
@@ -50,7 +50,7 @@ const plans = [
     }
 ];
 
-export default function PlanSelectionPage() {
+function PlanSelectionContent() {
     const [selectedPlan, setSelectedPlan] = useState('SCALER');
     const [interval, setInterval] = useState<Interval>('monthly');
     const router = useRouter();
@@ -149,5 +149,25 @@ export default function PlanSelectionPage() {
                 All plans include custom domain mapping and unlimited product imports.
             </p>
         </div>
+    );
+}
+
+export default function PlanSelectionPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex h-screen w-full items-center justify-center bg-background">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+        }>
+            <PlanSelectionContent />
+        </Suspense>
+    );
+}
+
+function Loader2({ className }: { className?: string }) {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={cn("animate-spin", className)}>
+            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+        </svg>
     );
 }
