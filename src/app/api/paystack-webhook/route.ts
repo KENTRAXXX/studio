@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { createClientStore } from '@/ai/flows/create-client-store';
 import { initializeApp, getApps } from 'firebase/app';
-import { getFirestore, doc, getDoc, collection, addDoc, runTransaction, query, where, increment } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, collection, addDoc, runTransaction, increment } from 'firebase/firestore';
 import { firebaseConfig } from '@/firebase/config';
 import { sendOrderEmail } from '@/ai/flows/send-order-email';
 import { sendReferralActivatedEmail } from '@/ai/flows/send-referral-activated-email';
 import { formatCurrency } from '@/utils/format';
-import { getTier, PlanTier } from '@/lib/tiers';
+import { getTier } from '@/lib/tiers';
 
 const getDb = () => {
     const apps = getApps();
@@ -25,7 +25,7 @@ async function logWebhookEvent(eventType: string, payload: any, status: 'success
             timestamp: new Date().toISOString()
         });
     } catch (e) {
-        console.error("Critical: Failed to log webhook event to Firestore", e);
+        console.error("Critical: Failed to log webhook event", e);
     }
 }
 
@@ -33,20 +33,9 @@ async function verifyPaystackSignature(payload: string, signature: string, secre
     const encoder = new TextEncoder();
     const keyData = encoder.encode(secret);
     const bodyData = encoder.encode(payload);
-
-    const cryptoKey = await crypto.subtle.importKey(
-        'raw',
-        keyData,
-        { name: 'HMAC', hash: 'SHA-512' },
-        false,
-        ['sign']
-    );
-
+    const cryptoKey = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-512' }, false, ['sign']);
     const signatureBuffer = await crypto.subtle.sign('HMAC', cryptoKey, bodyData);
-    const generatedHash = Array.from(new Uint8Array(signatureBuffer))
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
-
+    const generatedHash = Array.from(new Uint8Array(signatureBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
     return generatedHash === signature;
 }
 
@@ -56,59 +45,38 @@ async function executePaymentSplit(eventData: any) {
     const { cart, storeId, shippingAddress } = metadata;
 
     if (!cart || !storeId || !reference) {
-        const error = 'Missing cart, storeId, or reference in webhook metadata for product sale.';
-        await logWebhookEvent('charge.success', eventData, 'failed', error);
-        throw new Error(error);
+        throw new Error('Missing metadata for product sale.');
     }
 
-    try {
-        const orderId = `SOMA-${reference.slice(-6).toUpperCase()}`;
+    const orderId = `SOMA-${reference.slice(-6).toUpperCase()}`;
 
-        await runTransaction(firestore, async (transaction) => {
-            const ordersRef = collection(firestore, `stores/${storeId}/orders`);
-            const orderDocRef = doc(ordersRef, orderId);
-            const orderSnap = await transaction.get(orderDocRef);
+    await runTransaction(firestore, async (transaction) => {
+        const orderDocRef = doc(firestore, `stores/${storeId}/orders`, orderId);
+        const orderSnap = await transaction.get(orderDocRef);
+        if (orderSnap.exists()) return;
+        
+        let totalWholesaleCost = 0;
+        const payoutDocs: any[] = [];
+        const revenueDocs: any[] = [];
+        const processedCart: any[] = [];
+
+        for (const item of cart) {
+            const productRef = doc(firestore, `stores/${storeId}/products/${item.id}`);
+            const productSnap = await transaction.get(productRef);
+            if (!productSnap.exists()) continue;
             
-            if (orderSnap.exists()) {
-                console.log(`Order with reference ${reference} has already been processed. Skipping.`);
-                return;
-            }
+            const productData = productSnap.data();
+            const wholesalePrice = productData.wholesalePrice || 0;
+            const vendorId = productData.vendorId;
+
+            totalWholesaleCost += wholesalePrice * item.quantity;
+            processedCart.push({ ...item, price: productData.suggestedRetailPrice, wholesalePrice });
             
-            let totalWholesaleCost = 0;
-            const payoutDocs: any[] = [];
-            const revenueDocs: any[] = [];
-            const processedCart: any[] = [];
-
-            for (const item of cart) {
-                const productRef = doc(firestore, `stores/${storeId}/products/${item.id}`);
-                const productSnap = await transaction.get(productRef);
-
-                if (!productSnap.exists()) {
-                    throw new Error(`Product with ID ${item.id} not found in store ${storeId}.`);
-                }
-                const productData = productSnap.data();
-                
-                const wholesalePrice = productData.wholesalePrice || 0;
-                const retailPrice = productData.suggestedRetailPrice || 0;
-                const vendorId = productData.vendorId;
-
-                totalWholesaleCost += wholesalePrice * item.quantity;
-                
-                processedCart.push({
-                    ...item,
-                    price: retailPrice,
-                    wholesalePrice: wholesalePrice
-                });
-                
-                if (vendorId !== 'admin' && productData.isManagedBySoma) { 
-                    const vendorRef = doc(firestore, "users", vendorId);
-                    const vendorSnap = await transaction.get(vendorRef);
-                    if (!vendorSnap.exists()) {
-                        throw new Error(`Vendor profile for ${vendorId} not found.`);
-                    }
-                    const vendorData = vendorSnap.data();
-                    const vendorTier = getTier(vendorData.planTier);
-
+            if (vendorId !== 'admin' && productData.isManagedBySoma) { 
+                const vendorRef = doc(firestore, "users", vendorId);
+                const vendorSnap = await transaction.get(vendorRef);
+                if (vendorSnap.exists()) {
+                    const vendorTier = getTier(vendorSnap.data().planTier);
                     const platformFee = wholesalePrice * vendorTier.commissionRate;
                     const sellerPayout = wholesalePrice - platformFee;
 
@@ -116,235 +84,111 @@ async function executePaymentSplit(eventData: any) {
                         payoutDocs.push({
                             userId: vendorId,
                             amount: sellerPayout * item.quantity,
-                            currency: 'USD',
                             status: 'pending',
                             orderId,
-                            paymentReference: reference,
                             createdAt: new Date().toISOString(),
                             productName: productData.name,
-                            quantity: item.quantity,
-                            shippingCity: shippingAddress?.city || 'Unknown',
-                            shippingCountry: shippingAddress?.country || 'Unknown'
+                            quantity: item.quantity
                         });
                     }
-                    if(platformFee > 0) {
-                        revenueDocs.push({
-                            amount: platformFee * item.quantity,
-                            currency: 'USD',
-                            type: 'TRANSACTION',
-                            orderId,
-                            paymentReference: reference,
-                            createdAt: new Date().toISOString()
-                        });
+                    if (platformFee > 0) {
+                        revenueDocs.push({ amount: platformFee * item.quantity, type: 'TRANSACTION', orderId, createdAt: new Date().toISOString() });
                     }
                 }
             }
+        }
 
-            const totalPaid = amount / 100;
-            const mogulProfit = totalPaid - totalWholesaleCost;
-            
-            if (mogulProfit > 0) {
-                payoutDocs.push({
-                    userId: storeId,
-                    amount: mogulProfit,
-                    currency: 'USD',
-                    status: 'pending',
-                    orderId,
-                    paymentReference: reference,
-                    createdAt: new Date().toISOString(),
-                    productName: 'Store Profit Aggregation',
-                    quantity: 1,
-                    shippingCity: shippingAddress?.city || 'Unknown',
-                    shippingCountry: shippingAddress?.country || 'Unknown'
-                });
-            }
-
-            transaction.set(orderDocRef, {
+        const mogulProfit = (amount / 100) - totalWholesaleCost;
+        if (mogulProfit > 0) {
+            payoutDocs.push({
+                userId: storeId,
+                amount: mogulProfit,
+                status: 'pending',
                 orderId,
-                status: "Pending",
-                cart: processedCart,
                 createdAt: new Date().toISOString(),
-                total: totalPaid,
-                customer: customer,
-                shippingAddress: shippingAddress || null,
-                paymentReference: reference,
-                paymentStatus: 'processed'
+                productName: 'Store Profit Aggregation'
             });
+        }
 
-            const payoutsRef = collection(firestore, 'payouts_pending');
-            payoutDocs.forEach(payoutData => {
-                const newPayoutRef = doc(payoutsRef);
-                transaction.set(newPayoutRef, payoutData);
-            });
-
-            const revenueRef = collection(firestore, 'revenue_logs');
-            revenueDocs.forEach(revenueData => {
-                const newRevenueRef = doc(revenueRef);
-                transaction.set(newRevenueRef, revenueData);
-            });
-
-        });
-        
-        const storeRef = doc(firestore, 'stores', storeId);
-        const storeSnap = await getDoc(storeRef);
-        const storeName = storeSnap.data()?.storeName || 'SOMA Store';
-
-        await sendOrderEmail({
-            to: customer.email,
-            orderId: orderId,
-            status: 'Pending',
-            storeName: storeName
+        transaction.set(orderDocRef, {
+            orderId, status: "Pending", cart: processedCart, createdAt: new Date().toISOString(),
+            total: amount / 100, customer, shippingAddress, paymentReference: reference
         });
 
-        await logWebhookEvent('charge.success', eventData, 'success');
-
-    } catch (error: any) {
-        console.error(`Failed to execute payment split for reference ${reference}:`, error);
-        await logWebhookEvent('charge.success', eventData, 'failed', error.message);
-        const alertsRef = collection(firestore, 'admin_alerts');
-        await addDoc(alertsRef, {
-            flowName: 'executePaymentSplit',
-            paymentReference: reference,
-            error: error.message || 'An unknown transaction error occurred',
-            timestamp: new Date().toISOString()
-        });
-    }
+        payoutDocs.forEach(p => transaction.set(doc(collection(firestore, 'payouts_pending')), p));
+        revenueDocs.forEach(r => transaction.set(doc(collection(firestore, 'revenue_logs')), r));
+    });
 }
-
 
 export async function POST(req: Request) {
   const secret = process.env.PAYSTACK_SECRET_KEY;
-  if (!secret) {
-    return NextResponse.json({ error: 'Internal Server Error: Paystack secret not configured.' }, { status: 500 });
-  }
+  if (!secret) return NextResponse.json({ error: 'Secret not configured' }, { status: 500 });
   
   const rawBody = await req.text();
-  const paystackSignature = req.headers.get('x-paystack-signature') || req.headers.get('x-stack-signature');
-  
-  if (paystackSignature) {
-    const isValid = await verifyPaystackSignature(rawBody, paystackSignature, secret);
-    if (!isValid) {
-        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
-    }
+  const signature = req.headers.get('x-paystack-signature');
+  if (signature && !(await verifyPaystackSignature(rawBody, signature, secret))) {
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
 
   const event = JSON.parse(rawBody);
-
   if (event.event === 'charge.success') {
     const { metadata, customer, reference, amount } = event.data;
+    if (!metadata) return NextResponse.json({ status: 'success' });
 
-    if (!metadata) {
-        await logWebhookEvent(event.event, event.data, 'failed', 'Missing metadata in charge.success event.');
-        return NextResponse.json({ status: 'success', message: 'Event acknowledged, no metadata.' });
-    }
-
-    const { userId, plan, cart, storeId, planTier } = metadata;
+    const { userId, cart, storeId, planTier } = metadata;
 
     if (cart && storeId) {
         await executePaymentSplit(event.data);
     } else if (userId) {
         const firestore = getDb();
         try {
-            let emailData: { to: string, referrerName: string, protegeName: string, creditAmount: string } | null = null;
-
+            let emailData: any = null;
             await runTransaction(firestore, async (transaction) => {
                 const userRef = doc(firestore, "users", userId);
                 const userSnap = await transaction.get(userRef);
+                if (!userSnap.exists()) return;
                 
-                if (!userSnap.exists()) throw new Error("User document not found during activation.");
-                const userData = userSnap.data();
-
-                const referredBy = userData.referredBy;
+                const referredBy = userSnap.data().referredBy;
                 if (referredBy) {
                     const referrerRef = doc(firestore, "users", referredBy);
                     const referrerSnap = await transaction.get(referrerRef);
-                    
-                    if (referrerSnap.exists() && referrerSnap.data().hasAccess === true) {
-                        const referrerData = referrerSnap.data();
-                        
-                        // AMBASSADOR REWARD PROTOCOL: Flat $5 for marketers
-                        if (referrerData.planTier === 'AMBASSADOR') {
-                            const rewardAmount = 5.00;
-                            const payoutRef = doc(collection(firestore, 'payouts_pending'));
-                            
-                            transaction.set(payoutRef, {
-                                userId: referredBy,
-                                amount: rewardAmount,
-                                currency: 'USD',
-                                status: 'pending_maturity',
-                                type: 'ambassador_reward',
-                                referredUserId: userId,
-                                createdAt: new Date().toISOString(),
-                                description: `Ambassador Conversion: ${userData.email || 'New User'} activation.`
-                            });
-
-                            transaction.update(referrerRef, {
-                                activeReferralCount: increment(1),
-                                totalReferralEarnings: increment(rewardAmount)
-                            });
-
-                            emailData = {
-                                to: referrerData.email,
-                                referrerName: referrerData.displayName || referrerData.email.split('@')[0],
-                                protegeName: userData.displayName || userData.email.split('@')[0],
-                                creditAmount: formatCurrency(Math.round(rewardAmount * 100))
-                            };
-                        }
+                    if (referrerSnap.exists() && referrerSnap.data().planTier === 'AMBASSADOR') {
+                        const rewardAmount = 5.00;
+                        const payoutRef = doc(collection(firestore, 'payouts_pending'));
+                        transaction.set(payoutRef, {
+                            userId: referredBy,
+                            amount: rewardAmount,
+                            status: 'pending_maturity',
+                            type: 'ambassador_reward',
+                            referredUserId: userId,
+                            createdAt: new Date().toISOString(),
+                            description: `Ambassador Conversion: ${userSnap.data().email} activation.`
+                        });
+                        transaction.update(referrerRef, {
+                            activeReferralCount: increment(1),
+                            totalReferralEarnings: increment(rewardAmount)
+                        });
+                        emailData = {
+                            to: referrerSnap.data().email,
+                            referrerName: referrerSnap.data().displayName || 'Partner',
+                            protegeName: userSnap.data().email.split('@')[0],
+                            creditAmount: formatCurrency(500)
+                        };
                     }
                 }
-
-                transaction.update(userRef, {
-                    hasAccess: true,
-                    paidAt: new Date().toISOString(),
-                });
-
-                const revenueRef = doc(collection(firestore, 'revenue_logs'));
-                transaction.set(revenueRef, {
-                    amount: amount / 100,
-                    currency: 'USD',
-                    type: 'SUBSCRIPTION',
-                    userId: userId,
-                    paymentReference: reference,
-                    createdAt: new Date().toISOString()
-                });
+                transaction.update(userRef, { hasAccess: true, paidAt: new Date().toISOString() });
+                transaction.set(doc(collection(firestore, 'revenue_logs')), { amount: amount / 100, type: 'SUBSCRIPTION', userId, createdAt: new Date().toISOString() });
             });
 
-            if (emailData) {
-                await sendReferralActivatedEmail(emailData).catch(err => {
-                    console.error("Failed to send referral activation email:", err);
-                });
+            if (emailData) await sendReferralActivatedEmail(emailData).catch(console.error);
+            if (planTier !== 'SELLER' && planTier !== 'BRAND' && planTier !== 'AMBASSADOR') {
+                await createClientStore({ userId, email: customer.email, storeName: 'Your SOMA Store' });
             }
-
-            const isSupplierTier = planTier === 'SELLER' || planTier === 'BRAND';
-            const isAmbassadorTier = planTier === 'AMBASSADOR';
-            
-            if (!isSupplierTier && !isAmbassadorTier) {
-                await createClientStore({
-                    userId,
-                    email: customer.email,
-                    storeName: 'Your SOMA Store',
-                });
-            }
-
             await logWebhookEvent(event.event, event.data, 'success');
-            
         } catch (error: any) {
-            console.error(`Failed to handle signup success for ${userId}:`, error);
             await logWebhookEvent(event.event, event.data, 'failed', error.message);
-            const alertsRef = collection(firestore, 'admin_alerts');
-            await addDoc(alertsRef, {
-                flowName: 'paystackWebhook_signupSuccess',
-                userId: userId,
-                error: error.message || 'An unknown error occurred',
-                timestamp: new Date().toISOString()
-            });
         }
-    } else {
-        await logWebhookEvent(event.event, event.data, 'failed', 'Missing userId in metadata. Manual fix required.');
     }
-  } else {
-      await logWebhookEvent(event.event, event.data, 'success');
   }
-
   return NextResponse.json({ status: 'success' });
 }

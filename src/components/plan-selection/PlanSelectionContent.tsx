@@ -62,7 +62,6 @@ export function PlanSelectionContent() {
 
     // AMBASSADOR PERSISTENCE PROTOCOL:
     // If a referral code is present, lock it in a cookie for 30 days.
-    // This ensures commission attribution even if they leave and return.
     useEffect(() => {
         if (ambassadorCode) {
             document.cookie = `soma_referral_code=${ambassadorCode.toUpperCase()}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;

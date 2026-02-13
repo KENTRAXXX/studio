@@ -80,11 +80,9 @@ export function SignUpFormContent() {
   });
 
   useEffect(() => {
-    // Priority 1: URL Parameter
     if (refParam) {
       form.setValue('referralCode', refParam.toUpperCase());
     } 
-    // Priority 2: Persistent Cookie (Set in Plan Selection)
     else if (typeof document !== 'undefined') {
         const match = document.cookie.match(new RegExp('(^| )soma_referral_code=([^;]+)'));
         if (match) {
@@ -110,13 +108,6 @@ export function SignUpFormContent() {
 
     signUp({ ...data, planTier: planTier, plan: interval }, {
       onSuccess: async (user) => {
-        if (!isFreePlan) {
-            toast({
-              title: 'Identity Provisioned',
-              description: "Directing to secure payment handshake...",
-            });
-        }
-
         const onPaystackSuccess = async () => {
           if (firestore && user.user.uid) {
               try {
@@ -126,21 +117,12 @@ export function SignUpFormContent() {
                   console.error("Status sync failed:", e);
               }
           }
-
-          toast({
-            title: isFreePlan ? 'Access Finalized' : 'Activation Complete',
-            description: 'Your strategic hub is being prepared.',
-          });
-          
+          toast({ title: 'Access Finalized', description: 'Your strategic hub is being prepared.' });
           router.push('/backstage/return');
         };
 
         const onPaystackClose = () => {
-          toast({
-            variant: 'default',
-            title: 'Action Required',
-            description: 'Payment is required to complete portal activation.',
-          });
+          toast({ variant: 'default', title: 'Action Required', description: 'Payment required to complete activation.' });
           router.push('/backstage/return');
         };
 
@@ -169,18 +151,13 @@ export function SignUpFormContent() {
               onPaystackSuccess,
               onPaystackClose
             );
-            
             setIsSuccess(true);
         } catch (error: any) {
             console.error("Signup failure:", error);
         }
       },
       onError: (err) => {
-        toast({
-          variant: 'destructive',
-          title: 'Provisioning Error',
-          description: err.message || 'Account creation encountered a logic barrier.',
-        });
+        toast({ variant: 'destructive', title: 'Provisioning Error', description: err.message });
       },
     });
   };
@@ -199,12 +176,7 @@ export function SignUpFormContent() {
 
       <AnimatePresence mode="wait">
         {!isSuccess ? (
-          <motion.div
-            key="form"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-          >
+          <motion.div key="form" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
             <Card className="border-primary/50 bg-card/50 backdrop-blur-md">
               <CardHeader>
                 <CardTitle className="text-2xl font-headline text-primary">Establish My Legacy: {planName}</CardTitle>
@@ -243,7 +215,7 @@ export function SignUpFormContent() {
                               <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors focus:outline-none"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary focus:outline-none"
                               >
                                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                               </button>
@@ -274,13 +246,12 @@ export function SignUpFormContent() {
                                 <button
                                   type="button"
                                   onClick={() => setShowAdminCode(!showAdminCode)}
-                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors focus:outline-none"
+                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary focus:outline-none"
                                 >
                                   {showAdminCode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                 </button>
                               </div>
                             </FormControl>
-                            <FormDescription>Administrator registration requires system-level authorization.</FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -313,21 +284,14 @@ export function SignUpFormContent() {
                       <Checkbox 
                         id="terms" 
                         checked={agreedToTerms}
-                        onCheckedChange={(checked) => {
-                          startTransition(() => {
-                            setAgreedToTerms(checked as boolean)
-                          });
-                        }}
+                        onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
                       />
-                      <label
-                        htmlFor="terms"
-                        className="text-xs font-medium leading-none text-muted-foreground peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        I agree to the SOMA Terms of Service, Privacy Policy, and No-Refund Standard.
+                      <label htmlFor="terms" className="text-xs font-medium leading-none text-muted-foreground">
+                        I agree to the SOMA Terms of Service and Privacy Policy.
                       </label>
                     </div>
                     
-                    <Button type="submit" disabled={isPending || !agreedToTerms} className="w-full h-14 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed font-bold">
+                    <Button type="submit" disabled={isPending || !agreedToTerms} className="w-full h-14 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
                       {isPending ? (
                         <><Loader2 className="animate-spin mr-2 h-5 w-5" /> Orchestrating Session...</>
                       ) : buttonText}
@@ -338,12 +302,7 @@ export function SignUpFormContent() {
             </Card>
           </motion.div>
         ) : (
-          <motion.div
-            key="redirecting"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-          >
+          <motion.div key="redirecting" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
             <Card className="border-primary/50 bg-primary/5">
               <CardContent className="p-12 text-center space-y-6">
                 <div className="relative mx-auto w-fit">

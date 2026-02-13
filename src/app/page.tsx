@@ -14,10 +14,6 @@ import { useToastWithRandomCity } from '@/hooks/use-toast-with-random-city';
 import { LiveFeedTicker } from '@/components/ui/live-feed-ticker';
 import { useUser } from '@/firebase';
 
-/**
- * Constants for deterministic growth calculation.
- * Using a fixed launch date: July 1, 2024.
- */
 const LAUNCH_DATE = new Date('2024-07-01T00:00:00Z');
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
@@ -29,10 +25,8 @@ function LiveCounter() {
     const calculateStoreCount = () => {
       const now = new Date();
       const daysSinceLaunch = Math.max(0, (now.getTime() - LAUNCH_DATE.getTime()) / MS_PER_DAY);
-      
       const initialStores = 184;
-      const growthPerDay = 12.4; // Stable average growth
-      
+      const growthPerDay = 12.4;
       return Math.floor(initialStores + (daysSinceLaunch * growthPerDay));
     };
     
@@ -40,7 +34,7 @@ function LiveCounter() {
 
     const updateCount = () => {
         setCount((prev) => (prev || 0) + 1);
-        const randomInterval = Math.random() * (600000 - 300000) + 300000; // 5 to 10 minutes
+        const randomInterval = Math.random() * (600000 - 300000) + 300000;
         timerRef.current = setTimeout(updateCount, randomInterval);
     };
 
@@ -50,7 +44,6 @@ function LiveCounter() {
         if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
-
 
   return (
     <div className="inline-flex items-center gap-2 rounded-full border border-primary/50 bg-primary/10 px-4 py-1.5 text-sm">
@@ -91,60 +84,43 @@ function PlatformPulse() {
     const [isGlowing, setIsGlowing] = useState(false);
     const { showRandomCityToast } = useToastWithRandomCity();
 
-
     useEffect(() => {
         const getDeterministicValues = () => {
             const now = new Date();
             const daysSinceLaunch = Math.max(0, (now.getTime() - LAUNCH_DATE.getTime()) / MS_PER_DAY);
-
-            // Baseline figures from July 1, 2024
             const initialSales = 4455321.98;
             const initialSellers = 127;
             const initialBrands = 89;
-
-            // Stable growth rates
             const salesGrowthPerDay = 32450.50;
             const sellersGrowthPerDay = 8.2;
             const brandsGrowthPerDay = 2.1;
-
             const currentSales = initialSales + (daysSinceLaunch * salesGrowthPerDay);
             const currentSellers = Math.floor(initialSellers + (daysSinceLaunch * sellersGrowthPerDay));
             const currentBrands = Math.floor(initialBrands + (daysSinceLaunch * brandsGrowthPerDay));
-            
             return { currentSales, currentSellers, currentBrands };
         };
-
         const values = getDeterministicValues();
         setInitialValues(values);
         setGlobalSalesSum(values.currentSales);
     }, []);
 
-
     useEffect(() => {
         if (globalSalesSum === null) return;
-
         const updateSales = () => {
             const saleAmount = Math.random() * (185.00 - 14.50) + 14.50;
             setGlobalSalesSum(prev => (prev || 0) + saleAmount);
-            
-            // Only show pop-up toasts for anonymous visitors to reduce annoyance for logged-in users
             if (!user) {
                 showRandomCityToast(saleAmount);
             }
-
             setIsGlowing(true);
-            setTimeout(() => setIsGlowing(false), 2000); // Glow duration
-
+            setTimeout(() => setIsGlowing(false), 2000);
             const randomInterval = Math.random() * (15000 - 8000) + 8000;
             timerRef.current = setTimeout(updateSales, randomInterval);
         };
-        
         timerRef.current = setTimeout(updateSales, Math.random() * (15000 - 5000) + 5000);
-        
         return () => {
             if (timerRef.current) clearTimeout(timerRef.current);
         };
-
     }, [globalSalesSum, showRandomCityToast, user]);
 
     return (
@@ -291,7 +267,7 @@ function SneakPeek() {
                         <div className="h-full w-full rounded-2xl overflow-hidden bg-black">
                              <Image 
                                 src="https://picsum.photos/seed/store-mockup/400/800" 
-                                alt="Visual representation of a live SOMA boutique on a mobile device"
+                                alt="Live boutique mockup"
                                 width={400}
                                 height={800}
                                 className="object-cover w-full h-full"
@@ -343,7 +319,6 @@ function SneakPeek() {
         </section>
     );
 }
-
 
 export default function Home() {
   const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
