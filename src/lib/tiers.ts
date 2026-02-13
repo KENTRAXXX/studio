@@ -25,7 +25,7 @@ export const TIER_REGISTRY: Record<PlanTier, TierConfig> = {
         id: 'MERCHANT',
         label: 'Merchant',
         portal: 'dashboard',
-        commissionRate: 0, // Merchants pay SaaS fee, 0% platform commission on private stock
+        commissionRate: 0,
         entitlements: ['private_inventory', 'domain_management', 'basic_analytics'],
         features: {
             dropshipping: false,
@@ -39,7 +39,7 @@ export const TIER_REGISTRY: Record<PlanTier, TierConfig> = {
         id: 'SCALER',
         label: 'Scaler',
         portal: 'dashboard',
-        commissionRate: 0.03, // SOMA takes 3% on dropship wholesale
+        commissionRate: 0.03,
         entitlements: ['dropshipping', 'academy', 'advanced_analytics'],
         features: {
             dropshipping: true,
@@ -67,7 +67,7 @@ export const TIER_REGISTRY: Record<PlanTier, TierConfig> = {
         id: 'SELLER',
         label: 'Seller',
         portal: 'backstage',
-        commissionRate: 0.09, // Free tier sellers pay 9% commission
+        commissionRate: 0.09,
         entitlements: ['supplier_portal', 'inventory_sync'],
         features: {
             dropshipping: false,
@@ -81,12 +81,12 @@ export const TIER_REGISTRY: Record<PlanTier, TierConfig> = {
         id: 'BRAND',
         label: 'Brand',
         portal: 'backstage',
-        commissionRate: 0.03, // Paid brands pay reduced 3% commission
+        commissionRate: 0.03,
         entitlements: ['supplier_portal', 'inventory_sync', 'marketing_portal', 'concierge'],
         features: {
             dropshipping: false,
             privateInventory: false,
-            customDomains: false, // BRAND tier is restricted to Master Catalog submission
+            customDomains: false,
             analytics: 'advanced',
             academyAccess: false
         }

@@ -34,6 +34,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Special handling for ambassador subdomain
+  if (currentHost === `ambassador.${rootDomain}`) {
+      const rewriteUrl = new URL(`/ambassador${path}${url.search}`, request.url);
+      return NextResponse.rewrite(rewriteUrl);
+  }
+
   // 3. Perform the Rewrite: If the hostname is NOT the root domain
   if (currentHost !== rootDomain && currentHost !== `www.${rootDomain}`) {
     console.log('Middleware Path:', currentHost, 'Rewriting to:', `/[domain]${path}`);

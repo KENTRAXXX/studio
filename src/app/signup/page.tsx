@@ -24,7 +24,7 @@ import SomaLogo from '@/components/logo';
 import { useSignUp } from '@/hooks/use-signup';
 import { usePaystack } from '@/hooks/use-paystack';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Eye, EyeOff, Loader2, ShieldCheck, Lock } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ShieldCheck, Lock, Smartphone, Globe, Layers, User, Briefcase, CreditCard } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -33,6 +33,17 @@ import { cn } from '@/lib/utils';
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
+  displayName: z.string().min(2, 'Full name is required.'),
+  // Merchant specific
+  storeName: z.string().optional(),
+  desiredSubdomain: z.string().optional(),
+  niche: z.string().optional(),
+  phone: z.string().optional(),
+  // Ambassador specific
+  socialHandle: z.string().optional(),
+  payoutMethod: z.string().optional(),
+  ambassadorId: z.string().optional(),
+  // General
   referralCode: z.string().optional(),
   adminCode: z.string().optional(),
 });
@@ -60,6 +71,9 @@ function SignUpForm() {
   const interval = (searchParams.get('interval') as PlanInterval) || 'monthly';
   const refParam = searchParams.get('ref');
   
+  const isAmbassador = planTier === 'AMBASSADOR';
+  const isMerchant = ['MERCHANT', 'SCALER', 'ENTERPRISE', 'SELLER', 'BRAND'].includes(planTier);
+
   const planName = {
     MERCHANT: 'Merchant',
     SCALER: 'Scaler',
@@ -76,6 +90,14 @@ function SignUpForm() {
     defaultValues: {
       email: '',
       password: '',
+      displayName: '',
+      storeName: '',
+      desiredSubdomain: '',
+      niche: '',
+      phone: '',
+      socialHandle: '',
+      payoutMethod: '',
+      ambassadorId: '',
       referralCode: '',
       adminCode: '',
     },
@@ -104,7 +126,24 @@ function SignUpForm() {
         }
     }
 
-    signUp({ ...data, planTier: planTier, plan: interval }, {
+    const signupData = {
+        ...data,
+        planTier,
+        plan: interval,
+        // Role-specific bundles
+        roleData: isAmbassador ? {
+            socialHandle: data.socialHandle,
+            payoutMethod: data.payoutMethod,
+            ambassadorId: data.ambassadorId,
+        } : {
+            storeName: data.storeName,
+            desiredSubdomain: data.desiredSubdomain,
+            niche: data.niche,
+            phone: data.phone,
+        }
+    };
+
+    signUp(signupData, {
       onSuccess: async (user) => {
         if (!isFreePlan) {
             toast({
@@ -197,24 +236,85 @@ function SignUpForm() {
                     <Card className="border-primary/50 bg-card/50 backdrop-blur-md">
                         <CardHeader>
                             <CardTitle className="text-2xl font-headline text-primary">Establish My Legacy: {planName}</CardTitle>
-                            <CardDescription>Enter your executive credentials to initialize your SOMA boutique.</CardDescription>
+                            <CardDescription>Enter your executive credentials to initialize your SOMA profile.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <Form {...form}>
                                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                                    <FormField
-                                        control={form.control}
-                                        name="email"
-                                        render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Email Address</FormLabel>
-                                            <FormControl>
-                                            <Input placeholder="executive@somatoday.com" {...field} className="bg-black/20 border-primary/20" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                        )}
-                                    />
+                                    <div className="grid grid-cols-1 gap-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="displayName"
+                                            render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Full Name</FormLabel>
+                                                <FormControl>
+                                                <Input placeholder="John Doe" {...field} className="bg-black/20 border-primary/20" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="email"
+                                            render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Email Address</FormLabel>
+                                                <FormControl>
+                                                <Input placeholder="executive@somatoday.com" {...field} className="bg-black/20 border-primary/20" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                            )}
+                                        />
+                                    </div>
+
+                                    {isMerchant && (
+                                        <div className="space-y-4 pt-4 border-t border-white/5">
+                                            <h3 className="text-xs font-black uppercase text-primary tracking-widest flex items-center gap-2">
+                                                <Briefcase className="h-3 w-3" /> Boutique Parameters
+                                            </h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <FormField control={form.control} name="storeName" render={({ field }) => (
+                                                    <FormItem><FormLabel>Store Name</FormLabel><FormControl><Input placeholder="Empire Luxury" {...field} className="bg-black/20" /></FormControl></FormItem>
+                                                )} />
+                                                <FormField control={form.control} name="desiredSubdomain" render={({ field }) => (
+                                                    <FormItem><FormLabel>Desired Subdomain</FormLabel><FormControl><Input placeholder="empire" {...field} className="bg-black/20" /></FormControl></FormItem>
+                                                )} />
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <FormField control={form.control} name="niche" render={({ field }) => (
+                                                    <FormItem><FormLabel>Primary Niche</FormLabel><FormControl><Input placeholder="Luxury Watches" {...field} className="bg-black/20" /></FormControl></FormItem>
+                                                )} />
+                                                <FormField control={form.control} name="phone" render={({ field }) => (
+                                                    <FormItem><FormLabel>WhatsApp Number</FormLabel><FormControl><Input placeholder="+123..." {...field} className="bg-black/20" /></FormControl></FormItem>
+                                                )} />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {isAmbassador && (
+                                        <div className="space-y-4 pt-4 border-t border-white/5">
+                                            <h3 className="text-xs font-black uppercase text-primary tracking-widest flex items-center gap-2">
+                                                <Smartphone className="h-3 w-3" /> Marketer Credentials
+                                            </h3>
+                                            <div className="grid grid-cols-1 gap-4">
+                                                <FormField control={form.control} name="socialHandle" render={({ field }) => (
+                                                    <FormItem><FormLabel>Social Handle / Portfolio</FormLabel><FormControl><Input placeholder="@handle or website" {...field} className="bg-black/20" /></FormControl><FormDescription>Where will you market SomaDS?</FormDescription></FormItem>
+                                                )} />
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <FormField control={form.control} name="payoutMethod" render={({ field }) => (
+                                                        <FormItem><FormLabel>Payout Destination</FormLabel><FormControl><Input placeholder="Bank / Mobile Money" {...field} className="bg-black/20" /></FormControl></FormItem>
+                                                    )} />
+                                                    <FormField control={form.control} name="ambassadorId" render={({ field }) => (
+                                                        <FormItem><FormLabel>Ambassador ID</FormLabel><FormControl><Input placeholder="SOMA_MARKETER" {...field} className="bg-black/20" /></FormControl></FormItem>
+                                                    )} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <FormField
                                         control={form.control}
                                         name="password"
@@ -357,7 +457,10 @@ export default function SignUpPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-black gold-mesh-gradient p-4 sm:p-6">
       <div className="text-center mb-10">
-        <SomaLogo className="h-12 w-12 mx-auto" />
+        <Link href="/" className="inline-flex items-center gap-2 mb-6">
+            <SomaLogo className="h-12 w-12 mx-auto" />
+            <span className="font-headline text-3xl font-bold text-primary tracking-widest uppercase">SOMA</span>
+        </Link>
         <h1 className="text-4xl font-bold font-headline mt-4 text-white tracking-tight">Executive Provisioning</h1>
         <p className="mt-2 text-lg text-muted-foreground">Synchronize your identity with the SOMA ecosystem.</p>
       </div>
