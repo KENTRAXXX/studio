@@ -7,6 +7,7 @@ import { useUser } from './auth/use-user';
 import { useFirestore } from './provider';
 import { useDoc } from './firestore/use-doc';
 import { useMemoFirebase } from '../lib/use-memo-firebase';
+import { getTier } from '@/lib/tiers';
 
 type UserProfile = {
   id?: string;
@@ -99,65 +100,83 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (userLoading || profileLoading) return;
 
-    // Routes that are accessible without being logged in
+    // 1. PUBLIC ROUTE WHITELIST
+    // Expanded to include root-level product and checkout paths for custom domains
     const isPublicRoute = 
       pathname === '/' || 
       pathname === '/login' ||
       pathname.startsWith('/signup') || 
       pathname.startsWith('/plan-selection') || 
       pathname.startsWith('/store') || 
-      pathname.startsWith('/api');
+      pathname.startsWith('/brand') || 
+      pathname.startsWith('/api') ||
+      pathname.startsWith('/product') ||
+      pathname.startsWith('/checkout') ||
+      pathname === '/payout-confirmed' ||
+      pathname === '/access-denied';
       
     const isLegalPage = pathname.startsWith('/legal');
-    const isAccessDeniedPage = pathname === '/access-denied';
-    const isPendingReviewPage = pathname === '/backstage/pending-review';
     const isReturnPage = pathname === '/backstage/return';
 
-    // 1. AUTH GUARD: If not logged in and not on a public or legal route, redirect to home
+    // 2. AUTH GUARD: Basic presence
     if (!user && !isPublicRoute && !isLegalPage) {
       router.push('/');
       return;
     }
 
     if (userProfile) {
-       // 2. Check if account is disabled
-       if (userProfile.isDisabled && !isAccessDeniedPage) {
+       // 3. ACCOUNT DISABILITY LOCK
+       if (userProfile.isDisabled && pathname !== '/access-denied') {
          router.push('/access-denied');
          return;
        }
+
+       // 4. ADMIN BYPASS
+       if (userProfile.userRole === 'ADMIN') {
+           if (pathname.startsWith('/dashboard') || pathname.startsWith('/backstage')) {
+               router.push('/admin');
+           }
+           return;
+       }
       
-       // 3. Check if terms have been accepted (bypass for Admins)
-       if (userProfile.userRole !== 'ADMIN' && userProfile.hasAcceptedTerms === false && !isLegalPage && !isPublicRoute && !isPendingReviewPage && !isReturnPage) {
+       // 5. SUBSCRIPTION & PAYMENT GATELOCK
+       // If they haven't paid, they are pinned to their portal root.
+       if (!userProfile.hasAccess && !isPublicRoute && !isLegalPage && !isReturnPage) {
+           const tier = getTier(userProfile.planTier);
+           const portalRoot = `/${tier.portal}`;
+           if (pathname !== portalRoot) {
+               router.push(portalRoot);
+               return;
+           }
+       }
+
+       // 6. PORTAL SENTINEL: HARD RBAC ISOLATION
+       // Verifies the user is in the correct portal (Dashboard vs Backstage) based on Tier Registry
+       const tierConfig = getTier(userProfile.planTier);
+       const isAtCorrectPortal = pathname.startsWith(`/${tierConfig.portal}`);
+       
+       if (userProfile.hasAccess && !isAtCorrectPortal && !isPublicRoute && !isLegalPage && !isReturnPage) {
+           // Clear any local storage flags from previous role sessions
+           if (typeof window !== 'undefined') {
+               sessionStorage.removeItem('soma_just_launched');
+           }
+           router.push(`/${tierConfig.portal}`);
+           return;
+       }
+
+       // 7. TERMS GATELOCK
+       if (userProfile.hasAcceptedTerms === false && !isLegalPage && !isPublicRoute && !isReturnPage) {
          router.push('/legal/terms');
          return;
        }
 
-       // 4. Status Guard: If pending review, lock to the status page (Bypass for Admins)
-       const isDashboardOrBackstage = pathname.startsWith('/dashboard') || pathname.startsWith('/backstage');
-       if (userProfile.userRole !== 'ADMIN' && userProfile.status === 'pending_review' && isDashboardOrBackstage && !isPendingReviewPage && !isPublicRoute && !isLegalPage && !isReturnPage) {
-          router.push('/backstage/pending-review');
+       // 8. STATUS GUARD (Supplier Verification Queue)
+       if (userProfile.status === 'pending_review' && !isReturnPage && !isPublicRoute && !isLegalPage) {
+          const isAtPendingPage = pathname === '/backstage/pending-review';
+          if (!isAtPendingPage) {
+              router.push('/backstage/pending-review');
+          }
           return;
-       }
-
-       // 5. Admin Routing: If admin hits dashboard root, push them to /admin
-       if (userProfile.userRole === 'ADMIN' && pathname === '/dashboard') {
-           router.push('/admin');
-           return;
-       }
-
-       // 6. Role-Based Segregation: Prevent cross-portal access
-       // Moguls (Scalers, Merchants, Enterprise) should not access /admin or /backstage manually
-       const isMogulTier = ['MERCHANT', 'SCALER', 'ENTERPRISE'].includes(userProfile.planTier || '');
-       if (isMogulTier && (pathname.startsWith('/admin') || pathname.startsWith('/backstage')) && !isPublicRoute) {
-           router.push('/dashboard');
-           return;
-       }
-
-       // Sellers/Brands should not access /admin or /dashboard manually (other than overview)
-       const isSellerTier = ['SELLER', 'BRAND'].includes(userProfile.planTier || '');
-       if (isSellerTier && pathname.startsWith('/admin') && !isPublicRoute) {
-           router.push('/backstage');
-           return;
        }
     }
 
@@ -169,9 +188,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
   }), [userProfile, userLoading, profileLoading, user]);
 
   return (
-    <div 
-        className="min-h-screen bg-background text-foreground selection:bg-primary/30"
-    >
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary/30">
         <UserProfileContext.Provider value={value}>
         {children}
         </UserProfileContext.Provider>

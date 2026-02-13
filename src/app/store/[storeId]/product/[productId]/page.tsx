@@ -5,10 +5,10 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { notFound, useParams, useRouter } from 'next/navigation';
-import { ShoppingBag, Check, Loader2, DollarSign, TrendingUp, ArrowLeft, Palette } from 'lucide-react';
+import { ShoppingBag, Check, Loader2, DollarSign, TrendingUp, ArrowLeft, Palette, MessageSquare } from 'lucide-react';
 import { useCart } from '../../layout';
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, updateDoc, collection, query, where, limit, or } from 'firebase/firestore';
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -26,20 +26,47 @@ import {
   CarouselPrevious,
   type CarouselApi
 } from "@/components/ui/carousel";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Mail } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { storeId, productId } = params;
+  const rawStoreId = (params.storeId || params.domain || params.site) as string;
+  const productId = params.productId as string;
   const { toast } = useToast();
   const { addToCart } = useCart();
   const firestore = useFirestore();
   const { userProfile, loading: profileLoading } = useUserProfile();
 
   const productRef = useMemoFirebase(() => {
-    return firestore ? doc(firestore, `stores/${storeId}/products/${productId}`) : null;
-  }, [firestore, storeId, productId]);
+    return firestore ? doc(firestore, `stores/${rawStoreId}/products/${productId}`) : null;
+  }, [firestore, rawStoreId, productId]);
   const { data: product, loading: productLoading } = useDoc<any>(productRef);
+
+  // Resolve Store Owner Data for contact
+  const storeQuery = useMemoFirebase(() => {
+    if (!firestore || !rawStoreId) return null;
+    return query(
+        collection(firestore, 'stores'),
+        or(
+            where('userId', '==', rawStoreId),
+            where('customDomain', '==', rawStoreId),
+            where('slug', '==', rawStoreId)
+        ),
+        limit(1)
+    );
+  }, [firestore, rawStoreId]);
+
+  const { data: storeDocs } = useCollection<any>(storeQuery);
+  const ownerId = storeDocs?.[0]?.userId;
+
+  const ownerRef = useMemoFirebase(() => {
+    if (!firestore || !ownerId) return null;
+    return doc(firestore, 'users', ownerId);
+  }, [firestore, ownerId]);
+  const { data: ownerData } = useDoc<any>(ownerRef);
   
   const [currentPrice, setCurrentPrice] = useState(0);
   const [compareAtPrice, setCompareAtPrice] = useState(0);
@@ -118,7 +145,7 @@ export default function ProductDetailPage() {
     setIsBuyingNow(true);
     const productWithCurrentPrice = { ...product, suggestedRetailPrice: currentPrice, selectedColor };
     addToCart(productWithCurrentPrice);
-    router.push(`/store/${storeId}/checkout`);
+    router.push(rawStoreId ? `/store/${rawStoreId}/checkout` : '/checkout');
   };
   
   const handlePriceSave = async () => {
@@ -147,8 +174,8 @@ export default function ProductDetailPage() {
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16">
-      <ProductViewTracker storeId={storeId as string} productId={productId as string} />
-      <Link href={`/store/${storeId}`} className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-8 transition-colors">
+      <ProductViewTracker storeId={rawStoreId} productId={productId} />
+      <Link href={rawStoreId ? (params.domain ? '/' : `/store/${rawStoreId}`) : '/'} className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-8 transition-colors">
         <ArrowLeft className="mr-2 h-4 w-4" /> Back to Collection
       </Link>
 
@@ -295,14 +322,55 @@ export default function ProductDetailPage() {
             <p className="text-muted-foreground text-lg leading-relaxed">{product.description}</p>
           </div>
           
-          <div className="flex flex-col sm:flex-row gap-4 pt-4">
-            <Button size="lg" className="h-14 text-lg flex-1 border-primary/20 hover:border-primary/50" variant="outline" onClick={handleAddToCart}>
-              <ShoppingBag className="mr-2 h-5 w-5" />
-              Add to Cart
-            </Button>
-            <Button size="lg" className="h-14 text-lg flex-1 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold" onClick={handleBuyNow} disabled={isBuyingNow}>
-              {isBuyingNow ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Finalizing...</> : "Secure Acquisition"}
-            </Button>
+          <div className="flex flex-col gap-4 pt-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+                <Button size="lg" className="h-14 text-lg flex-1 border-primary/20 hover:border-primary/50" variant="outline" onClick={handleAddToCart}>
+                <ShoppingBag className="mr-2 h-5 w-5" />
+                Add to Cart
+                </Button>
+                <Button size="lg" className="h-14 text-lg flex-1 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold" onClick={handleBuyNow} disabled={isBuyingNow}>
+                {isBuyingNow ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Finalizing...</> : "Secure Acquisition"}
+                </Button>
+            </div>
+            
+            <Sheet>
+                <SheetTrigger asChild>
+                    <Button variant="ghost" className="text-slate-400 hover:text-primary font-bold h-12 gap-2">
+                        <MessageSquare className="h-4 w-4" />
+                        Inquire About This Piece
+                    </Button>
+                </SheetTrigger>
+                <SheetContent className="bg-background border-primary/20">
+                    <SheetHeader>
+                        <SheetTitle className="text-primary font-headline text-2xl">Boutique Support</SheetTitle>
+                    </SheetHeader>
+                    <div className="py-8 text-center space-y-6">
+                        <div className="mx-auto h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+                            <Mail className="h-8 w-8 text-primary" />
+                        </div>
+                        <div className="space-y-2">
+                            <h3 className="font-bold text-lg text-slate-200 uppercase tracking-widest">Product Inquiry</h3>
+                            <p className="text-xs text-muted-foreground">Direct curator access regarding <span className="text-primary font-bold">{product.name}</span>.</p>
+                            <div className="pt-6">
+                                {ownerData?.email ? (
+                                    <a 
+                                        href={`mailto:${ownerData.email}?subject=Inquiry: ${product.name}`} 
+                                        className="inline-flex items-center gap-2 font-bold text-primary text-lg hover:underline decoration-primary/30"
+                                    >
+                                        {ownerData.email}
+                                    </a>
+                                ) : (
+                                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                                )}
+                            </div>
+                        </div>
+                        <Separator className="my-4 bg-primary/10"/>
+                        <p className="text-[10px] text-slate-500 italic leading-relaxed">
+                            Contact the boutique curator for private viewings, shipping logistics, or detailed provenance questions.
+                        </p>
+                    </div>
+                </SheetContent>
+            </Sheet>
           </div>
 
           <div className="grid grid-cols-2 gap-6 pt-8 border-t border-border/50">

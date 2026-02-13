@@ -44,7 +44,7 @@ import {
   Geography, 
   Marker 
 } from "react-simple-maps";
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { formatCurrency } from '@/utils/format';
 import { cn } from '@/lib/utils';
 import {
@@ -97,7 +97,7 @@ type OrderProduct = {
 type Order = {
   id: string;
   total: number;
-  createdAt: string;
+  createdAt: any;
   cart: OrderProduct[];
   shippingAddress?: {
       city?: string;
@@ -120,13 +120,25 @@ type StoreData = {
     customDomain?: string;
 }
 
+const safeParseDate = (dateVal: any) => {
+    if (!dateVal) return new Date();
+    if (dateVal.toDate) return dateVal.toDate();
+    const d = new Date(dateVal);
+    return isValid(d) ? d : new Date();
+};
+
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
+    const isDateLabel = typeof label === 'string' && label.includes('-');
     return (
       <div className="bg-background/80 backdrop-blur-sm p-2 border border-primary/50 rounded-lg shadow-lg">
-        <p className="label font-bold text-primary">{label.includes('-') ? format(new Date(label), 'PPP') : label}</p>
+        <p className="label font-bold text-primary">
+            {isDateLabel ? format(new Date(label), 'PPP') : label}
+        </p>
         <p className="intro text-sm text-foreground">
-            {payload[0].name === 'total' ? `Sales : ${formatCurrency(Math.round(payload[0].value * 100))}` : `Visits : ${payload[0].value}`}
+            {payload[0].name === 'total' 
+                ? `Sales : ${formatCurrency(Math.round((payload[0].value || 0) * 100))}` 
+                : `Visits : ${payload[0].value || 0}`}
         </p>
       </div>
     );
@@ -209,15 +221,15 @@ export default function AnalyticsPage() {
       };
     }
 
-    const revenue = orders.reduce((acc, order) => acc + order.total, 0);
+    const revenue = orders.reduce((acc, order) => acc + (order.total || 0), 0);
     const orderCount = orders.length;
     
     const profit = orders.reduce((acc, order) => {
-        const orderCost = order.cart.reduce((itemAcc, item) => {
+        const orderCost = order.cart?.reduce((itemAcc, item) => {
             const cost = item.wholesalePrice ?? item.price * 0.7;
-            return itemAcc + (cost * item.quantity);
-        }, 0);
-        return acc + (order.total - orderCost);
+            return itemAcc + (cost * (item.quantity || 1));
+        }, 0) || 0;
+        return acc + ((order.total || 0) - orderCost);
     }, 0);
 
     const visitors = storeData?.visitorCount || 0;
@@ -225,8 +237,9 @@ export default function AnalyticsPage() {
     const aov = orderCount > 0 ? revenue / orderCount : 0;
 
     const dailySales = orders.reduce((acc, order) => {
-        const date = format(new Date(order.createdAt), 'yyyy-MM-dd');
-        acc[date] = (acc[date] || 0) + order.total;
+        const dateObj = safeParseDate(order.createdAt);
+        const dateStr = format(dateObj, 'yyyy-MM-dd');
+        acc[dateStr] = (acc[dateStr] || 0) + (order.total || 0);
         return acc;
     }, {} as Record<string, number>);
 
@@ -268,8 +281,8 @@ export default function AnalyticsPage() {
 
     const salesMap: Record<string, number> = {};
     orders.forEach(order => {
-        order.cart.forEach(item => {
-            salesMap[item.id] = (salesMap[item.id] || 0) + item.quantity;
+        order.cart?.forEach(item => {
+            salesMap[item.id] = (salesMap[item.id] || 0) + (item.quantity || 1);
         });
     });
 
@@ -435,14 +448,16 @@ export default function AnalyticsPage() {
                               {orders.slice(0, 10).map((order) => (
                                   <div key={order.id} className="p-4 hover:bg-white/5 transition-colors group">
                                       <div className="flex justify-between items-start mb-1">
-                                          <p className="text-[10px] font-mono text-primary font-bold">{order.id}</p>
-                                          <p className="text-[9px] text-slate-500 font-bold uppercase">{format(new Date(order.createdAt), 'HH:mm:ss')}</p>
+                                          <p className="text-[10px] font-mono text-primary font-bold">{order.orderId || '---'}</p>
+                                          <p className="text-[9px] text-slate-500 font-bold uppercase">
+                                              {order.createdAt ? format(safeParseDate(order.createdAt), 'HH:mm:ss') : '--:--:--'}
+                                          </p>
                                       </div>
                                       <p className="text-sm font-bold text-slate-200 group-hover:text-primary transition-colors">
                                           {order.shippingAddress?.city || 'Global Client'}
                                       </p>
                                       <p className="text-[10px] text-slate-500 font-medium">
-                                          {order.cart.length} Luxury Assets • {formatCurrency(Math.round(order.total * 100))}
+                                          {(order.cart?.length || 0)} Luxury Assets • {formatCurrency(Math.round((order.total || 0) * 100))}
                                       </p>
                                   </div>
                               ))}
@@ -562,7 +577,10 @@ export default function AnalyticsPage() {
                                 fontSize={10}
                                 tickLine={false}
                                 axisLine={false}
-                                tickFormatter={(str) => format(new Date(str), "MMM d")}
+                                tickFormatter={(str) => {
+                                    const d = new Date(str);
+                                    return isValid(d) ? format(d, "MMM d") : str;
+                                }}
                                 dy={10}
                             />
                             <YAxis 

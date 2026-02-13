@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { initializeApp, getApps } from 'firebase/app';
-import { doc, updateDoc, getFirestore } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, getFirestore } from 'firebase/firestore';
 import { firebaseConfig } from '@/firebase/config';
+import { addDomainToVercel } from '@/lib/vercel-domains';
+import { getTier } from '@/lib/tiers';
 
 /**
- * @fileOverview API route to register custom hostnames via Cloudflare API
- * and sync verification records to Firestore.
+ * @fileOverview API route to register custom hostnames via Vercel API.
+ * Flow: Auth Check -> Tier Check -> Vercel Call -> Database Link.
  */
 
 const getDb = () => {
@@ -27,77 +29,62 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing domain or storeId' }, { status: 400 });
     }
 
-    const CLOUDFLARE_EMAIL = process.env.CLOUDFLARE_EMAIL;
-    const CLOUDFLARE_API_KEY = process.env.CLOUDFLARE_API_KEY;
-    const CLOUDFLARE_ZONE_ID = process.env.CLOUDFLARE_ZONE_ID;
-
-    if (!CLOUDFLARE_EMAIL || !CLOUDFLARE_API_KEY || !CLOUDFLARE_ZONE_ID) {
-      console.error("Missing Cloudflare API credentials in environment.");
-      return NextResponse.json({ 
-          error: 'Platform configuration incomplete. Ensure CLOUDFLARE_EMAIL, CLOUDFLARE_API_KEY, and CLOUDFLARE_ZONE_ID are set in Pages Secrets.' 
-      }, { status: 500 });
-    }
-
-    // 1. Register with Cloudflare Custom Hostnames API
-    const cfResponse = await fetch(
-      `https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/custom_hostnames`,
-      {
-        method: 'POST',
-        headers: {
-          'X-Auth-Email': CLOUDFLARE_EMAIL,
-          'X-Auth-Key': CLOUDFLARE_API_KEY,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          hostname: domain.toLowerCase(),
-          ssl: {
-            method: 'txt',
-            type: 'dv',
-          },
-        }),
-      }
-    );
-
-    const contentType = cfResponse.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-        const errorText = await cfResponse.text();
-        console.error('Cloudflare non-JSON response:', errorText);
-        throw new Error(`Cloudflare API returned non-JSON response (${cfResponse.status}). Check credentials.`);
-    }
-
-    const cfData = await cfResponse.json();
-
-    if (!cfResponse.ok) {
-      // If hostname already exists (1406), we still want to proceed to fetch its details or handle it
-      if (cfData.errors?.[0]?.code !== 1406) {
-        throw new Error(cfData.errors?.[0]?.message || 'Cloudflare API failure');
-      }
-    }
-
-    // 2. Map domain to storeId in KV_BINDING for the middleware
-    const kv = (process.env as any).KV_BINDING;
-    if (kv) {
-      await kv.put(`domain:${domain.toLowerCase()}`, storeId).catch((e: any) => console.error("KV put failed:", e));
-    }
-
-    // 3. Update Firestore status with verification details
     const firestore = getDb();
+
+    // 1. Auth & Tier Check: Verify user exists and is allowed to have a custom domain
+    const userRef = doc(firestore, 'users', storeId);
+    const userSnap = await getDoc(userRef);
+    const userData = userSnap.data();
+
+    if (!userSnap.exists() || !userData) {
+        return NextResponse.json({ error: 'Identity not found.' }, { status: 404 });
+    }
+
+    if (!userData.hasAccess) {
+        return NextResponse.json({ error: 'Subscription required for custom domain mapping.' }, { status: 403 });
+    }
+
+    const tier = getTier(userData.planTier);
+    if (!tier.features.customDomains && userData.userRole !== 'ADMIN') {
+        return NextResponse.json({ 
+            error: `Your current tier (${tier.label}) does not support custom domains. Please upgrade to Scaler or Enterprise.` 
+        }, { status: 403 });
+    }
+
+    // 2. Vercel Call: Register with Vercel Project Domains API
+    try {
+        await addDomainToVercel(domain);
+    } catch (e: any) {
+        console.error("Vercel Domain Add Error:", e);
+        return NextResponse.json({ 
+            error: `Vercel Integration Error: ${e.message}` 
+        }, { status: 500 });
+    }
+
+    // 3. Database: Link the domain to the store record
     const storeRef = doc(firestore, 'stores', storeId);
     
+    const isSubdomain = domain.split('.').length > 2;
+    const dnsTarget = isSubdomain ? 'cname.vercel-dns.com' : '76.76.21.21';
+    const dnsType = isSubdomain ? 'CNAME' : 'A';
+
     const verificationInfo = {
-      customDomain: domain.toLowerCase(),
+      customDomain: domain.toLowerCase().trim(),
       domainStatus: 'pending_dns',
-      cfHostnameId: cfData.result?.id || 'existing',
-      ownershipRecord: cfData.result?.ownership_verification || null,
-      sslValidationRecord: cfData.result?.ssl?.validation_records?.[0] || null,
-      lastCfSync: new Date().toISOString()
+      vercelVerified: false,
+      dnsRecord: {
+          type: dnsType,
+          name: isSubdomain ? domain.split('.')[0] : '@',
+          value: dnsTarget
+      },
+      lastVercelSync: new Date().toISOString()
     };
 
     await updateDoc(storeRef, verificationInfo);
 
     return NextResponse.json({ 
       success: true, 
-      message: 'Domain registered and verification records synced.',
+      message: 'Domain registered on Vercel and records synchronized.',
       data: verificationInfo
     });
 

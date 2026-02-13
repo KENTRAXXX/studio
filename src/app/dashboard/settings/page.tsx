@@ -9,14 +9,15 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Settings, Loader2, Save, Eye, UploadCloud, X } from 'lucide-react';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
+import { Settings, Loader2, Save, Eye, UploadCloud, X, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import SomaLogo from '@/components/logo';
 import { uploadToCloudinary } from '@/lib/utils/upload-image';
 
 const settingsSchema = z.object({
   storeName: z.string().min(3, 'Store name must be at least 3 characters.'),
+  slug: z.string().min(3, 'Subdomain slug must be at least 3 characters.').regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers, and hyphens.'),
   heroTitle: z.string().min(5, 'Hero title must be at least 5 characters.'),
   heroSubtitle: z.string().min(10, 'Hero subtitle must be at least 10 characters.'),
   logoUrl: z.string().url('Please enter a valid URL.').or(z.literal('')),
@@ -27,6 +28,7 @@ type SettingsFormValues = z.infer<typeof settingsSchema>;
 
 type StoreData = {
     storeName?: string;
+    slug?: string;
     heroTitle?: string;
     heroSubtitle?: string;
     logoUrl?: string;
@@ -68,6 +70,7 @@ export default function StoreSettingsPage() {
     const { user, loading: userLoading } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
+    const ROOT_DOMAIN = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
 
     const logoInputRef = useRef<HTMLInputElement>(null);
     const faviconInputRef = useRef<HTMLInputElement>(null);
@@ -80,6 +83,7 @@ export default function StoreSettingsPage() {
         mode: 'onBlur',
         defaultValues: {
             storeName: '',
+            slug: '',
             heroTitle: '',
             heroSubtitle: '',
             logoUrl: '',
@@ -93,6 +97,7 @@ export default function StoreSettingsPage() {
         if (storeData) {
             form.reset({
                 storeName: storeData.storeName || '',
+                slug: storeData.slug || '',
                 heroTitle: storeData.heroTitle || '',
                 heroSubtitle: storeData.heroSubtitle || '',
                 logoUrl: storeData.logoUrl || '',
@@ -183,18 +188,36 @@ export default function StoreSettingsPage() {
                 <Card className="lg:col-span-2 border-primary/50">
                     <CardHeader>
                         <CardTitle>General Settings</CardTitle>
-                        <CardDescription>Update your store's branding and hero section content.</CardDescription>
+                        <CardDescription>Update your store's branding and web identity.</CardDescription>
                     </CardHeader>
                     <CardContent>
                          <Form {...form}>
                             <form onSubmit={form.handleSubmit(handleUpdate)} className="space-y-8">
-                                <FormField control={form.control} name="storeName" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Store Name</FormLabel>
-                                        <FormControl><Input placeholder="Elegance & Co." {...field} /></FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <FormField control={form.control} name="storeName" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Store Name</FormLabel>
+                                            <FormControl><Input placeholder="Elegance & Co." {...field} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+
+                                    <FormField control={form.control} name="slug" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Boutique Subdomain</FormLabel>
+                                            <div className="flex flex-col gap-2">
+                                                <FormControl>
+                                                    <div className="relative">
+                                                        <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                        <Input placeholder="your-brand" {...field} className="pl-10 h-10 font-mono" />
+                                                    </div>
+                                                </FormControl>
+                                                <p className="text-[10px] font-mono text-muted-foreground">Address: {field.value || '...'}.{ROOT_DOMAIN}</p>
+                                            </div>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                </div>
 
                                 <div className="grid md:grid-cols-2 gap-8 pt-4">
                                      <FormField control={form.control} name="logoUrl" render={({ field }) => (
@@ -293,9 +316,9 @@ export default function StoreSettingsPage() {
                                     </FormItem>
                                 )} />
                                 <div className="flex justify-end pt-4">
-                                    <Button type="submit" disabled={form.formState.isSubmitting} className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+                                    <Button type="submit" disabled={form.formState.isSubmitting} className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
                                         {form.formState.isSubmitting ? <Loader2 className="animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
-                                        Save Changes
+                                        Synchronize Storefront
                                     </Button>
                                 </div>
                             </form>

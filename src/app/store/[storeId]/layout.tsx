@@ -4,9 +4,9 @@ import { useState, createContext, useContext, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { Search, ShoppingCart, X, Loader2, Mail, Instagram, Twitter } from 'lucide-react';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { Search, ShoppingCart, X, Loader2, Mail, Instagram, Twitter, MessageSquare } from 'lucide-react';
+import { useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, collection, query, where, limit, or } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import SomaLogo from '@/components/logo';
@@ -79,7 +79,7 @@ function CartSheet({storeId}: {storeId: string}) {
     return (
         <Sheet>
             <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative text-primary-foreground hover:bg-primary/20 hover:text-primary">
+                <Button variant="ghost" size="icon" className="relative text-primary hover:bg-primary/20">
                     <ShoppingCart className="h-6 w-6" aria-label={`Shopping Cart, ${cart.reduce((acc, item) => acc + item.quantity, 0)} items`} />
                     {cart.length > 0 && (
                         <span className="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
@@ -123,7 +123,7 @@ function CartSheet({storeId}: {storeId: string}) {
                                     <span>{formatCurrency(Math.round(getCartTotal() * 100))}</span>
                                 </div>
                                 <Button asChild className="w-full h-12 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
-                                    <Link href={`/store/${storeId}/checkout`}>Checkout</Link>
+                                    <Link href={storeId ? `/store/${storeId}/checkout` : '/checkout'}>Checkout</Link>
                                 </Button>
                             </div>
                         </>
@@ -140,29 +140,40 @@ function CartSheet({storeId}: {storeId: string}) {
     );
 }
 
-function ContactSheet({ ownerEmail }: { ownerEmail?: string }) {
+function ContactSheet({ ownerEmail, trigger }: { ownerEmail?: string, trigger?: React.ReactNode }) {
     return (
         <Sheet>
             <SheetTrigger asChild>
-                <Button variant="link" className="text-sm text-muted-foreground hover:text-primary p-0 h-auto">Contact Us</Button>
+                {trigger || <Button variant="link" className="text-sm text-muted-foreground hover:text-primary p-0 h-auto">Contact Us</Button>}
             </SheetTrigger>
             <SheetContent className="bg-background border-primary/20">
                 <SheetHeader>
-                    <SheetTitle className="text-primary font-headline text-2xl">Contact Us</SheetTitle>
+                    <SheetTitle className="text-primary font-headline text-2xl">Boutique Support</SheetTitle>
                 </SheetHeader>
                 <div className="py-8 text-center space-y-6">
                      <Mail className="h-12 w-12 text-primary mx-auto" aria-hidden="true" />
-                     <div>
-                        <h3 className="font-semibold">Have a question?</h3>
-                        <p className="text-muted-foreground">Reach out to the store owner directly at:</p>
-                        {ownerEmail ?
-                            <a href={`mailto:${ownerEmail}`} className="font-bold text-primary text-lg">{ownerEmail}</a>
-                            : <Loader2 className="h-6 w-6 animate-spin mx-auto mt-2" />
-                        }
+                     <div className="space-y-2">
+                        <h3 className="font-bold text-lg text-slate-200 uppercase tracking-widest">Strategic Inquiry</h3>
+                        <p className="text-sm text-muted-foreground">Direct access to the curator of this boutique.</p>
+                        <div className="pt-4">
+                            {ownerEmail ? (
+                                <a 
+                                    href={`mailto:${ownerEmail}`} 
+                                    className="inline-flex items-center gap-2 font-bold text-primary text-lg hover:underline decoration-primary/30"
+                                >
+                                    {ownerEmail}
+                                </a>
+                            ) : (
+                                <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                            )}
+                        </div>
                      </div>
-                     <Separator className="my-4 bg-primary/20"/>
-                     <div className="text-xs text-muted-foreground">
-                        <p>Support Powered by <span className="font-bold text-primary">SOMA</span></p>
+                     <Separator className="my-4 bg-primary/10"/>
+                     <div className="p-4 rounded-lg bg-primary/5 border border-primary/10 italic text-[10px] text-slate-500 leading-relaxed">
+                        <p>Our curation team typically responds to premium inquiries within 24 business hours.</p>
+                     </div>
+                     <div className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] pt-8">
+                        <p>Powered by <span className="font-black text-primary">SOMA Executive</span></p>
                      </div>
                 </div>
             </SheetContent>
@@ -177,25 +188,37 @@ export default function StoreLayout({
   children: React.ReactNode;
 }) {
   const params = useParams();
-  const storeId = params.storeId as string;
+  const identifier = (params.storeId || params.domain || params.site) as string;
   const firestore = useFirestore();
 
-  const storeRef = useMemoFirebase(() => {
-    return firestore && storeId ? doc(firestore, 'stores', storeId) : null;
-  }, [firestore, storeId]);
-  const { data: storeData, loading: storeLoading } = useDoc<any>(storeRef);
+  // Robust Boutique Resolution: Supports UID, Custom Domain, or Slug
+  const storeQuery = useMemoFirebase(() => {
+    if (!firestore || !identifier) return null;
+    return query(
+        collection(firestore, 'stores'),
+        or(
+            where('userId', '==', identifier),
+            where('customDomain', '==', identifier),
+            where('slug', '==', identifier)
+        ),
+        limit(1)
+    );
+  }, [firestore, identifier]);
+
+  const { data: storeDocs, loading: storeLoading } = useCollection<any>(storeQuery);
+  const storeData = storeDocs?.[0];
+  const storeId = storeData?.userId;
   
   const ownerRef = useMemoFirebase(() => {
-    if (!firestore || !storeData?.userId) return null;
-    return doc(firestore, 'users', storeData.userId);
-  }, [firestore, storeData?.userId]);
+    if (!firestore || !storeId) return null;
+    return doc(firestore, 'users', storeId);
+  }, [firestore, storeId]);
   const { data: ownerData } = useDoc<any>(ownerRef);
 
-  const storeName = storeData?.storeName || "SOMA Store";
+  const storeName = storeData?.storeName || "Boutique";
   const logoUrl = storeData?.logoUrl;
   const themeColors = storeData?.themeConfig?.colors;
 
-  // Injection of CSS variables based on store's theme configuration
   const customStyles = themeColors ? {
     '--primary': themeColors.primary,
     '--background': themeColors.background,
@@ -215,7 +238,7 @@ export default function StoreLayout({
         >
           <header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-sm border-b border-primary/20">
             <div className="container mx-auto flex h-20 items-center justify-between px-4 sm:px-6 lg:px-8">
-              <Link href={`/store/${storeId}`} className="flex items-center gap-2 group">
+              <Link href={identifier ? (params.domain ? '/' : `/store/${identifier}`) : '/'} className="flex items-center gap-2 group">
                 {storeLoading ? (
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 ) : logoUrl ? (
@@ -229,15 +252,25 @@ export default function StoreLayout({
                     {storeLoading ? 'Loading...' : storeName}
                 </h1>
               </Link>
-              <div className="flex items-center gap-4">
-                <div className="relative hidden md:block">
+              <div className="flex items-center gap-2 md:gap-4">
+                <div className="relative hidden lg:block">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" aria-hidden="true" />
                   <input
                     placeholder="Search products..."
                     aria-label="Search products"
-                    className="h-10 w-full rounded-md border border-primary/30 bg-transparent pl-10 pr-4 text-sm placeholder:text-muted-foreground focus:ring-primary"
+                    className="h-10 w-full min-w-[200px] rounded-md border border-primary/30 bg-transparent pl-10 pr-4 text-sm placeholder:text-muted-foreground focus:ring-primary"
                   />
                 </div>
+                
+                <ContactSheet 
+                    ownerEmail={ownerData?.email} 
+                    trigger={
+                        <Button variant="ghost" size="icon" className="text-primary hover:bg-primary/20">
+                            <MessageSquare className="h-6 w-6" />
+                        </Button>
+                    }
+                />
+                
                 <CartSheet storeId={storeId} />
               </div>
             </div>

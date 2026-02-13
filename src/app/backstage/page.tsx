@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { uploadToCloudinary } from '@/lib/utils/upload-image';
 import { AddressSearch, type AddressResult } from '@/components/ui/address-search';
+import { CompletePaymentPrompt } from '@/components/complete-payment-prompt';
 
 // Lazy load the map component to ensure edge compatibility and prevent SSR errors
 const SomaMap = dynamic(() => import('@/components/ui/soma-map'), { 
@@ -109,7 +110,7 @@ export default function BackstagePage() {
   useEffect(() => {
     const isLoading = profileLoading || userLoading;
     if (!isLoading && userProfile) {
-        // GATELOCK: Admins should not be in the supplier onboarding backstage
+        // GATELOCK: Admins do not belong here
         if (userProfile.userRole === 'ADMIN') {
             router.push('/admin');
             return;
@@ -206,7 +207,7 @@ export default function BackstagePage() {
                 taxId: data.taxId,
                 contactPhone: data.contactPhone,
                 governmentIdUrl: data.governmentIdUrl,
-                isPhoneVerified: true, // Manual verification for prototype
+                isPhoneVerified: true, 
                 latitude: data.latitude,
                 longitude: data.longitude,
             },
@@ -238,6 +239,15 @@ export default function BackstagePage() {
 
   // Session guard for logout
   if (!user) return null;
+
+  // Payment Gatelock: Brands must pay before onboarding
+  if (userProfile && !userProfile.hasAccess) {
+      return (
+          <div className="flex flex-col items-center justify-center min-h-[60vh] p-6">
+              <CompletePaymentPrompt />
+          </div>
+      );
+  }
   
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 sm:p-6">
