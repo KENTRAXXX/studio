@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -38,6 +38,16 @@ export default function LoginPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [signupLink, setSignupLink] = useState('/plan-selection');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hostname = window.location.hostname.toLowerCase();
+      if (hostname.startsWith('ambassador.')) {
+        setSignupLink('/signup?planTier=AMBASSADOR&interval=free');
+      }
+    }
+  }, []);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -143,7 +153,7 @@ export default function LoginPage() {
               Don't have an account yet?
             </p>
             <Button asChild variant="outline" className="w-full border-primary/30 text-primary hover:bg-primary/10">
-                <Link href="/plan-selection">
+                <Link href={signupLink}>
                     Claim Your Access <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
             </Button>
