@@ -18,7 +18,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  AlertTriangle
+  AlertTriangle,
+  Loader2
 } from 'lucide-react';
 import { useUserProfile } from '@/firebase/user-profile-provider';
 import { useAuth } from '@/firebase';
@@ -52,7 +53,11 @@ export default function AdminLayout({
   };
 
   if (profileLoading) {
-    return null;
+    return (
+        <div className="flex h-screen w-full items-center justify-center bg-background">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+    );
   }
 
   if (!userProfile) {

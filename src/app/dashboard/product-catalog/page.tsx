@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
-import { Gem, Loader2, Check, Warehouse, Sparkles, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Gem, Loader2, Check, Warehouse, Sparkles, Search, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -70,6 +70,7 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
 
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [syncingId, setSyncingId] = useState<string | null>(null);
 
   // AUTH GUARD: Only Scaler and Enterprise can access dropshipping catalog
   useEffect(() => {
@@ -134,6 +135,7 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
       return;
     }
 
+    setSyncingId(product.id);
     const newProductRef = doc(firestore, 'stores', user.uid, 'products', product.id);
     
     const productDataToSync = {
@@ -156,8 +158,10 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
           title: 'Asset Synchronized',
           description: `${product.name} has been added to your boutique.`,
         });
+        setSyncingId(null);
       })
       .catch(async (serverError) => {
+        setSyncingId(null);
         const permissionError = new FirestorePermissionError({
           path: newProductRef.path,
           operation: 'write',
@@ -175,10 +179,14 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
     return diffInHours <= 48;
   };
 
-  const isLoading = isDemo ? false : (catalogLoading || profileLoading || userProductsLoading);
+  const isLoading = isDemo ? false : (catalogLoading || profileLoading);
 
   if (isLoading) {
-    return null;
+    return (
+        <div className="flex h-96 w-full items-center justify-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+    );
   }
 
   return (
@@ -241,6 +249,7 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
                             <TableBody>
                             {paginatedCatalog.map((product) => {
                             const isSynced = syncedProducts.has(product.id);
+                            const isSyncing = syncingId === product.id;
                             const isNew = checkIfNew(product.approvedAt);
                             const wholesale = product.masterCost || 0;
                             const retail = product.retailPrice || 0;
@@ -314,8 +323,10 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
                                         variant="outline"
                                         size="sm"
                                         onClick={() => handleSync(product)}
+                                        disabled={isSyncing || userProductsLoading}
                                         className="border-primary/20 hover:border-primary/50"
                                     >
+                                        {isSyncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
                                         Sync Item
                                     </Button>
                                 )}
