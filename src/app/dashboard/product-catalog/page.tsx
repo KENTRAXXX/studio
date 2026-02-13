@@ -388,3 +388,4 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
     </div>
   );
 }
+import Link from 'next/link';
