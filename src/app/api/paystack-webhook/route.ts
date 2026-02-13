@@ -29,12 +29,6 @@ async function logWebhookEvent(eventType: string, payload: any, status: 'success
     }
 }
 
-function getReferralCommissionRate(activeCount: number): number {
-    if (activeCount >= 51) return 0.20;
-    if (activeCount >= 21) return 0.15;
-    return 0.10;
-}
-
 async function verifyPaystackSignature(payload: string, signature: string, secret: string): Promise<boolean> {
     const encoder = new TextEncoder();
     const keyData = encoder.encode(secret);
@@ -267,43 +261,33 @@ export async function POST(req: Request) {
                     
                     if (referrerSnap.exists() && referrerSnap.data().hasAccess === true) {
                         const referrerData = referrerSnap.data();
-                        const currentActiveCount = referrerData.activeReferralCount || 0;
-                        const referralCommissionRate = getReferralCommissionRate(currentActiveCount);
                         
-                        const tierId = (userData.planTier || planTier) as PlanTier;
-                        const tier = getTier(tierId);
-                        
-                        // Reference prices for rewards
-                        const basePrices: Record<string, number> = { MERCHANT: 19.99, SCALER: 29.00, SELLER: 0, ENTERPRISE: 33.33, BRAND: 21.00 };
-                        const interval = userData.plan || plan;
-                        const basePrice = basePrices[tierId] || 0;
-                        const totalPlanCost = interval === 'yearly' ? basePrice * 10 : basePrice;
-                        
-                        const referralReward = totalPlanCost * referralCommissionRate;
-
-                        if (referralReward > 0) {
+                        // AMBASSADOR REWARD PROTOCOL: Flat $5 for marketers
+                        if (referrerData.planTier === 'AMBASSADOR') {
+                            const rewardAmount = 5.00;
                             const payoutRef = doc(collection(firestore, 'payouts_pending'));
+                            
                             transaction.set(payoutRef, {
                                 userId: referredBy,
-                                amount: referralReward,
+                                amount: rewardAmount,
                                 currency: 'USD',
                                 status: 'pending_maturity',
-                                type: 'referral_reward',
+                                type: 'ambassador_reward',
                                 referredUserId: userId,
                                 createdAt: new Date().toISOString(),
-                                description: `${referralCommissionRate * 100}% Referral Reward for ${userData.email || 'New User'} activation.`
+                                description: `Ambassador Conversion: ${userData.email || 'New User'} activation.`
                             });
 
                             transaction.update(referrerRef, {
                                 activeReferralCount: increment(1),
-                                totalReferralEarnings: increment(referralReward)
+                                totalReferralEarnings: increment(rewardAmount)
                             });
 
                             emailData = {
                                 to: referrerData.email,
                                 referrerName: referrerData.displayName || referrerData.email.split('@')[0],
                                 protegeName: userData.displayName || userData.email.split('@')[0],
-                                creditAmount: formatCurrency(Math.round(referralReward * 100))
+                                creditAmount: formatCurrency(Math.round(rewardAmount * 100))
                             };
                         }
                     }
@@ -332,7 +316,9 @@ export async function POST(req: Request) {
             }
 
             const isSupplierTier = planTier === 'SELLER' || planTier === 'BRAND';
-            if (!isSupplierTier) {
+            const isAmbassadorTier = planTier === 'AMBASSADOR';
+            
+            if (!isSupplierTier && !isAmbassadorTier) {
                 await createClientStore({
                     userId,
                     email: customer.email,

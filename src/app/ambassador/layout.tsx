@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import {
   SidebarProvider,
   Sidebar,
@@ -28,20 +28,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   LayoutDashboard,
-  Settings,
-  Boxes,
-  Globe,
-  BarChart2,
-  Accessibility,
+  Megaphone,
   Wallet,
-  ShoppingBag,
-  GraduationCap,
-  Package,
-  User,
-  ImageIcon,
+  Users,
   LogOut,
-  Palette,
-  Megaphone
+  Settings,
+  Globe,
+  Share2
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
@@ -49,7 +42,7 @@ import { useAuth } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { getTier } from '@/lib/tiers';
 
-export default function DashboardLayout({
+export default function AmbassadorLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -57,6 +50,7 @@ export default function DashboardLayout({
   const { userProfile } = useUserProfile();
   const auth = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -69,74 +63,61 @@ export default function DashboardLayout({
     }
   };
 
-  const currentNavItems = useMemo(() => {
-    if (!userProfile) return [];
+  const navItems = [
+    { href: '/ambassador', icon: LayoutDashboard, label: 'Overview' },
+    { href: '/ambassador/dashboard', icon: Share2, label: 'Marketing Kit' },
+    { href: '/ambassador/wallet', icon: Wallet, label: 'Earnings' },
+    { href: '/ambassador/settings', icon: Settings, label: 'Settings' },
+  ];
 
-    // GATELOCK: Circuit breaker for incorrect portal access
-    const tier = getTier(userProfile.planTier);
-    if (tier.portal !== 'dashboard' && userProfile.userRole !== 'ADMIN') {
-        return [];
-    }
+  // Access Control: Public ambassador pages are fine, but dashboard requires role
+  if (userProfile && userProfile.planTier !== 'AMBASSADOR' && userProfile.userRole !== 'ADMIN' && pathname !== '/ambassador') {
+      return (
+          <div className="flex h-screen items-center justify-center bg-black text-center p-6">
+              <div className="max-w-md space-y-6">
+                  <Megaphone className="h-16 w-16 text-primary mx-auto opacity-20" />
+                  <h1 className="text-3xl font-bold font-headline text-primary">Ambassador Access Required</h1>
+                  <p className="text-muted-foreground">You are currently logged in as a {userProfile.planTier}. To access the marketing portal, please establish an Ambassador identity.</p>
+                  <Button asChild className="btn-gold-glow">
+                      <Link href="/ambassador">Join the Program</Link>
+                  </Button>
+              </div>
+          </div>
+      );
+  }
 
-    // Unpaid users only see Overview
-    if (!userProfile.hasAccess) {
-        return [{ href: '/dashboard', icon: LayoutDashboard, label: 'Overview' }];
-    }
-    
-    // Core navigation available to all Moguls
-    const items = [
-        { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
-        { href: '/dashboard/profile-settings', icon: User, label: 'Profile' },
-        { href: '/dashboard/storefront-settings', icon: Palette, label: 'Visual Identity' },
-        { href: '/dashboard/settings', icon: Settings, label: 'Store Settings' },
-        { href: '/dashboard/my-orders', icon: ShoppingBag, label: 'My Orders' },
-        { href: '/dashboard/domain-settings', icon: Globe, label: 'Domain Settings' },
-        { href: '/dashboard/analytics', icon: BarChart2, label: 'Analytics' },
-        { href: '/dashboard/wallet', icon: Wallet, label: 'SOMA Wallet' },
-        { href: '/dashboard/accessibility-checker', icon: Accessibility, label: 'A11y Checker' },
-    ];
+  // If not logged in and on a dashboard subroute, redirect to ambassador home
+  if (!userProfile && pathname !== '/ambassador') {
+      return (
+          <div className="flex h-screen items-center justify-center bg-black">
+              <Link href="/ambassador" className="text-primary hover:underline">Return to Ambassador Portal</Link>
+          </div>
+      );
+  }
 
-    // Entitlement-based injection
-    if (tier.features.dropshipping) {
-        items.splice(4, 0, { href: '/dashboard/product-catalog', icon: Boxes, label: 'Global Catalog' });
-        items.splice(5, 0, { href: '/dashboard/marketing', icon: ImageIcon, label: 'Marketing Toolkit' });
-    }
-
-    if (tier.features.privateInventory) {
-        items.splice(4, 0, { href: '/dashboard/my-private-inventory', icon: Package, label: 'Private Inventory' });
-    }
-
-    if (tier.features.academyAccess) {
-        items.splice(7, 0, { href: '/dashboard/training-center', icon: GraduationCap, label: 'Mogul Academy' });
-    }
-
-    // AMBASSADOR LINK (For Moguls who want to join)
-    items.push({ href: '/ambassador', icon: Megaphone, label: 'Earn as Ambassador' });
-
-    return items;
-  }, [userProfile]);
-
-  // Circuit breaker: Prevent rendering any dashboard UI for non-Moguls
-  const tier = getTier(userProfile?.planTier);
-  if (userProfile && tier.portal !== 'dashboard' && userProfile.userRole !== 'ADMIN') {
-      return null;
+  // Landing page for ambassador doesn't need sidebar
+  if (pathname === '/ambassador') {
+      return <div className="min-h-screen bg-black">{children}</div>;
   }
 
   return (
     <SidebarProvider>
       <Sidebar>
-        <SidebarHeader>
+        <SidebarHeader className="p-6">
           <div className="flex items-center gap-2">
             <SomaLogo className="h-6 w-6 text-primary" aria-hidden="true" />
-            <span className="font-headline font-bold text-xl text-primary uppercase tracking-tighter">SomaDS</span>
+            <div className="flex flex-col">
+                <span className="font-headline font-bold text-xl text-primary uppercase tracking-tighter leading-none">SomaDS</span>
+                <span className="text-[8px] text-muted-foreground uppercase tracking-widest font-black mt-1">Marketer Suite</span>
+            </div>
           </div>
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
-            {currentNavItems.map((item) => (
+            {navItems.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <Link href={item.href}>
-                  <SidebarMenuButton tooltip={item.label}>
+                  <SidebarMenuButton isActive={pathname === item.href} tooltip={item.label}>
                     <item.icon aria-hidden="true" />
                     <span>{item.label}</span>
                   </SidebarMenuButton>
@@ -188,6 +169,7 @@ export default function DashboardLayout({
         <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
             <SidebarTrigger className="md:hidden" />
             <div className="flex-1">
+                <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Ambassador Performance Ledger</span>
             </div>
         </header>
         <main id="main-content" className="flex-1 p-4 sm:p-6" tabIndex={-1}>

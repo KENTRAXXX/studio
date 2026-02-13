@@ -3,12 +3,12 @@
  * Single Source of Truth for platform economics, feature entitlements, and routing.
  */
 
-export type PlanTier = 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND' | 'ADMIN';
+export type PlanTier = 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND' | 'ADMIN' | 'AMBASSADOR';
 
 export interface TierConfig {
     id: PlanTier;
     label: string;
-    portal: 'dashboard' | 'backstage' | 'admin';
+    portal: 'dashboard' | 'backstage' | 'admin' | 'ambassador';
     commissionRate: number; // The percentage SOMA takes (0.03 = 3%)
     entitlements: string[];
     features: {
@@ -88,6 +88,20 @@ export const TIER_REGISTRY: Record<PlanTier, TierConfig> = {
             privateInventory: false,
             customDomains: false, // BRAND tier is restricted to Master Catalog submission
             analytics: 'advanced',
+            academyAccess: false
+        }
+    },
+    AMBASSADOR: {
+        id: 'AMBASSADOR',
+        label: 'Ambassador',
+        portal: 'ambassador',
+        commissionRate: 0,
+        entitlements: ['marketing_tools', 'payouts'],
+        features: {
+            dropshipping: false,
+            privateInventory: false,
+            customDomains: false,
+            analytics: 'basic',
             academyAccess: false
         }
     },
