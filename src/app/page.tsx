@@ -363,7 +363,7 @@ export default function Home() {
           <span className="font-headline font-bold text-xl text-primary tracking-tighter uppercase transition-opacity group-hover:opacity-80">SomaDS</span>
         </Link>
         <div className="flex items-center gap-4">
-            <Button variant="ghost" asChild className="font-headline text-primary hover:text-primary/80 hover:bg-primary/5 hidden md:flex">
+            <Button variant="ghost" asChild className="font-headline text-primary hover:text-primary/80 hover:bg-primary/5">
                 <Link href={ambassadorUrl}>Become an Ambassador</Link>
             </Button>
             <Button variant="ghost" asChild className="font-headline text-primary hover:text-primary/80 hover:bg-primary/5">

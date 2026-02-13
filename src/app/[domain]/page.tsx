@@ -24,7 +24,8 @@ import {
     Users,
     Link as LinkIcon,
     Copy,
-    Rocket
+    Rocket,
+    ExternalLink
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -33,10 +34,12 @@ import { StoreVisitorTracker } from '@/components/store/visitor-tracker';
 import { useUserProfile } from '@/firebase/user-profile-provider';
 import Link from 'next/link';
 import { formatCurrency } from '@/utils/format';
+import SomaLogo from '@/components/logo';
 
 /**
  * @fileOverview Ambassador Portal UI
  * Rendered when domain is 'ambassador'
+ * Features a landing state for prospects and a command center for active partners.
  */
 function AmbassadorPortal() {
     const { user } = useUser();
@@ -53,123 +56,158 @@ function AmbassadorPortal() {
         toast({ title: 'Link Secured', description: 'Your personalized marketing link is ready.' });
     };
 
-    if (profileLoading) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
+    if (profileLoading) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
 
-    if (!user) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-black text-center p-6">
-                <Award className="h-16 w-16 text-primary mb-6" />
-                <h1 className="text-4xl font-bold font-headline text-white mb-4">The Marketer Role</h1>
-                <p className="text-slate-400 max-w-md mb-8">Earn a flat $5.00 for every paid Mogul you bring to the SOMA ecosystem. No inventory, pure performance.</p>
-                <div className="flex gap-4">
-                    <Button asChild size="lg" className="btn-gold-glow">
-                        <Link href="/signup?planTier=AMBASSADOR&interval=free">Join as Ambassador</Link>
-                    </Button>
-                    <Button asChild variant="outline" size="lg">
-                        <Link href="/login">Partner Sign In</Link>
-                    </Button>
-                </div>
-            </div>
-        );
-    }
+    const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
 
     return (
-        <div className="max-w-6xl mx-auto space-y-10 py-12 px-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold font-headline text-primary flex items-center gap-3">
-                        <Award className="h-8 w-8" />
-                        Ambassador Command Center
-                    </h1>
-                    <p className="text-slate-500">Track your yield and scale your marketing reach.</p>
-                </div>
-                <div className="flex items-center gap-3 bg-primary/10 p-3 rounded-xl border border-primary/20">
-                    <div className="text-right">
-                        <p className="text-[10px] font-black text-primary/60 uppercase tracking-widest">Commission Tier</p>
-                        <p className="text-xl font-bold font-mono text-primary">$5.00 FLAT</p>
-                    </div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="border-primary/20 bg-slate-900/50">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Marketing Yield</CardTitle>
-                        <DollarSign className="h-4 w-4 text-primary" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-slate-200">
-                            {formatCurrency(Math.round((userProfile?.totalReferralEarnings || 0) * 100))}
-                        </div>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Lifetime Accrued Rewards</p>
-                    </CardContent>
-                </Card>
-                <Card className="border-primary/20 bg-slate-900/50">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Paid Conversions</CardTitle>
-                        <Users className="h-4 w-4 text-primary" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-slate-200">{userProfile?.activeReferralCount || 0}</div>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Strategic Partners Recruited</p>
-                    </CardContent>
-                </Card>
-                <Card className="border-primary/20 bg-slate-900/50">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Ambassador Status</CardTitle>
-                        <ShieldCheck className="h-4 w-4 text-primary" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-xl font-bold text-primary uppercase tracking-tighter">Verified Marketer</div>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Account Secure</p>
-                    </CardContent>
-                </Card>
-            </div>
-
-            <Card className="border-primary bg-primary/5 p-8">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-                    <div className="space-y-4 text-center md:text-left">
-                        <h2 className="text-2xl font-bold font-headline flex items-center justify-center md:justify-start gap-2 text-white">
-                            <LinkIcon className="h-6 w-6 text-primary" />
-                            Universal Marketing Link
-                        </h2>
-                        <p className="text-slate-400 max-w-md">
-                            Direct recruits to the pricing page using this link. It automatically unlocks their **20% discount** and secures your **$5.00 bounty**.
-                        </p>
-                    </div>
-                    <div className="w-full md:w-auto space-y-4">
-                        <div className="p-4 rounded-lg bg-black/40 border border-primary/20 font-mono text-xs text-primary break-all">
-                            {referralLink}
-                        </div>
-                        <Button onClick={handleCopy} className="w-full h-12 btn-gold-glow bg-primary font-black uppercase">
-                            <Copy className="mr-2 h-4 w-4" /> Copy Link
+        <div className="min-h-screen flex flex-col">
+            {/* Dedicated Marketer Header */}
+            <header className="p-6 flex justify-between items-center border-b border-primary/10 bg-black/50 backdrop-blur-sm sticky top-0 z-20">
+                <Link href={`https://${rootDomain}`} className="flex items-center gap-2 group">
+                    <SomaLogo aria-hidden="true" className="h-6 w-6 text-primary transition-transform group-hover:scale-110" />
+                    <span className="font-headline font-bold text-xl text-primary tracking-tighter uppercase transition-opacity group-hover:opacity-80">SOMA</span>
+                </Link>
+                <div className="flex items-center gap-4">
+                    {user ? (
+                        <Button variant="ghost" asChild className="font-headline text-slate-400 hover:text-primary">
+                            <Link href="/dashboard">Executive Dashboard</Link>
                         </Button>
-                    </div>
+                    ) : (
+                        <Button variant="ghost" asChild className="font-headline text-primary hover:text-primary/80">
+                            <Link href="/login">Sign In</Link>
+                        </Button>
+                    )}
                 </div>
-            </Card>
+            </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <Card className="border-primary/10 bg-slate-900/20">
-                    <CardHeader>
-                        <CardTitle className="text-sm font-headline uppercase tracking-widest">Earnings Policy</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-xs text-slate-500 space-y-3 leading-relaxed">
-                        <p>1. Bounties are triggered once a recruit's first subscription payment is successfully processed.</p>
-                        <p>2. Funds become available for withdrawal after a 14-day maturity period to prevent fraud.</p>
-                        <p>3. Self-referrals are strictly prohibited and result in permanent ban and forfeiture.</p>
-                    </CardContent>
-                </Card>
-                <div className="flex flex-col gap-4">
-                    <Button asChild size="lg" className="h-16 text-lg font-bold">
-                        <Link href="/dashboard/wallet">
-                            Request Payout <DollarSign className="ml-2 h-5 w-5" />
-                        </Link>
-                    </Button>
-                    <Button variant="outline" size="lg" className="h-16 text-lg border-slate-800 text-slate-400">
-                        View Recruitment History
-                    </Button>
-                </div>
-            </div>
+            <main className="flex-1 max-w-6xl mx-auto w-full space-y-10 py-12 px-6">
+                {!user ? (
+                    /* Prospect Landing State */
+                    <div className="flex flex-col items-center justify-center py-20 text-center space-y-8">
+                        <div className="bg-primary/10 p-8 rounded-full border border-primary/20">
+                            <Award className="h-20 w-20 text-primary" />
+                        </div>
+                        <div className="space-y-4 max-w-2xl">
+                            <h1 className="text-5xl font-bold font-headline text-white tracking-tight leading-tight">The Marketer Role</h1>
+                            <p className="text-xl text-slate-400">Earn a flat <span className="text-primary font-bold">$5.00</span> bounty for every paid user you bring to the SOMA ecosystem. No inventory, no management—just results.</p>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <Button asChild size="lg" className="h-14 px-10 text-lg btn-gold-glow bg-primary font-black uppercase text-black">
+                                <Link href="/signup?planTier=AMBASSADOR&interval=free">Apply as Ambassador</Link>
+                            </Button>
+                            <Button asChild variant="outline" size="lg" className="h-14 px-10 text-lg border-primary/30 text-primary hover:bg-primary/5">
+                                <Link href="/login">Partner Sign In</Link>
+                            </Button>
+                        </div>
+                    </div>
+                ) : (
+                    /* Active Ambassador Dashboard */
+                    <>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h1 className="text-3xl font-bold font-headline text-white flex items-center gap-3">
+                                    <Award className="h-8 w-8 text-primary" />
+                                    Ambassador Command Center
+                                </h1>
+                                <p className="text-slate-500 mt-1 text-sm uppercase tracking-widest font-bold">Performance Tracking & Yield Control</p>
+                            </div>
+                            <div className="flex items-center gap-3 bg-primary/5 p-3 rounded-xl border border-primary/20 shadow-gold-glow">
+                                <div className="text-right">
+                                    <p className="text-[10px] font-black text-primary/60 uppercase tracking-widest">Bounty Level</p>
+                                    <p className="text-xl font-bold font-mono text-primary">$5.00 FLAT</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <Card className="border-primary/20 bg-slate-900/50 shadow-xl">
+                                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                    <CardTitle className="text-sm font-medium text-slate-400">Marketing Yield</CardTitle>
+                                    <DollarSign className="h-4 w-4 text-primary" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-3xl font-bold text-slate-200">
+                                        {formatCurrency(Math.round((userProfile?.totalReferralEarnings || 0) * 100))}
+                                    </div>
+                                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Lifetime Accrued Rewards</p>
+                                </CardContent>
+                            </Card>
+                            <Card className="border-primary/20 bg-slate-900/50 shadow-xl">
+                                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                    <CardTitle className="text-sm font-medium text-slate-400">Paid Conversions</CardTitle>
+                                    <Users className="h-4 w-4 text-primary" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-3xl font-bold text-slate-200">{userProfile?.activeReferralCount || 0}</div>
+                                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Strategic Partners Recruited</p>
+                                </CardContent>
+                            </Card>
+                            <Card className="border-primary/20 bg-slate-900/50 shadow-xl">
+                                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                    <CardTitle className="text-sm font-medium text-slate-400">Account Status</CardTitle>
+                                    <ShieldCheck className="h-4 w-4 text-primary" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-xl font-bold text-primary uppercase tracking-tighter">Verified Marketer</div>
+                                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">SOMA Affiliate Protocol Active</p>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        <Card className="border-primary bg-primary/5 p-8 relative overflow-hidden shadow-2xl">
+                            <div className="absolute top-0 right-0 p-4 opacity-5">
+                                <LinkIcon className="h-32 w-32" />
+                            </div>
+                            <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+                                <div className="space-y-4 text-center md:text-left">
+                                    <h2 className="text-2xl font-bold font-headline flex items-center justify-center md:justify-start gap-2 text-white">
+                                        <LinkIcon className="h-6 w-6 text-primary" />
+                                        Universal Marketing Link
+                                    </h2>
+                                    <p className="text-slate-400 max-w-md">
+                                        Direct recruits to the pricing page using this link. It automatically unlocks their **20% discount** and secures your **$5.00 bounty**.
+                                    </p>
+                                </div>
+                                <div className="w-full md:w-auto space-y-4">
+                                    <div className="p-4 rounded-lg bg-black/40 border border-primary/20 font-mono text-xs text-primary break-all">
+                                        {referralLink || 'Generating unique link...'}
+                                    </div>
+                                    <Button onClick={handleCopy} className="w-full h-12 btn-gold-glow bg-primary font-black uppercase text-black">
+                                        <Copy className="mr-2 h-4 w-4" /> Copy Link
+                                    </Button>
+                                </div>
+                            </div>
+                        </Card>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-20">
+                            <Card className="border-primary/10 bg-slate-900/20">
+                                <CardHeader>
+                                    <CardTitle className="text-sm font-headline uppercase tracking-widest text-slate-400">Program Guidelines</CardTitle>
+                                </CardHeader>
+                                <CardContent className="text-xs text-slate-500 space-y-3 leading-relaxed">
+                                    <p>1. Bounties are triggered once a recruit's first subscription payment is successfully processed.</p>
+                                    <p>2. Funds become available for withdrawal after a 14-day maturity period to prevent fraud.</p>
+                                    <p>3. Self-referrals are strictly prohibited and result in immediate status revocation and yield forfeiture.</p>
+                                </CardContent>
+                            </Card>
+                            <div className="flex flex-col gap-4">
+                                <Button asChild size="lg" className="h-16 text-lg font-bold btn-gold-glow bg-primary text-black">
+                                    <Link href="/dashboard/wallet">
+                                        Access SOMA Wallet <DollarSign className="ml-2 h-5 w-5" />
+                                    </Link>
+                                </Button>
+                                <Button variant="outline" size="lg" className="h-16 text-lg border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800/50">
+                                    Download Marketing Assets
+                                </Button>
+                            </div>
+                        </div>
+                    </>
+                )}
+            </main>
+            <footer className="p-12 border-t border-primary/10 bg-black/50 text-center">
+                <p className="text-[10px] uppercase tracking-[0.4em] text-slate-600 font-black">SOMA Strategic Assets Group</p>
+            </footer>
         </div>
     );
 }
@@ -249,8 +287,10 @@ export default function TenantBoutiquePage() {
                 <p className="text-muted-foreground text-center max-w-sm">
                     The boutique at "{identifier}" is not currently provisioned in our network.
                 </p>
-                <Button variant="outline" className="border-primary/50" onClick={() => window.location.href = `https://${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com'}`}>
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Platform Home
+                <Button variant="outline" className="border-primary/50" asChild>
+                    <Link href={`https://${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com'}`}>
+                        <ArrowLeft className="mr-2 h-4 w-4" /> Platform Home
+                    </Link>
                 </Button>
             </div>
         );
