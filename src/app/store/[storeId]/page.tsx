@@ -54,8 +54,8 @@ export async function generateMetadata(
 
   if (isDemoMode) {
     return {
-      title: 'SOMA Demo Store',
-      description: 'A preview of a live SOMA storefront experience.',
+      title: 'SOMA Demo Store | Luxury E-commerce Preview',
+      description: 'Experience the high-fidelity SOMA storefront. Dynamic product syncing, luxury themes, and integrated checkout.',
     }
   }
   
@@ -75,12 +75,27 @@ export async function generateMetadata(
       }
     }
 
+    const title = `${storeData.storeName} | SOMA Luxury Boutique`;
+    const description = storeData.heroSubtitle || `Experience curated luxury at ${storeData.storeName}. Discover our exclusive collection of timeless assets.`;
+
     return {
-      title: storeData.storeName || 'SOMA Store',
-      description: storeData.heroSubtitle || 'Discover curated collections of timeless luxury.',
+      title,
+      description,
       openGraph: {
+        title,
+        description,
+        type: 'website',
         images: [storeData.heroImageUrl || ''],
       },
+      twitter: {
+        card: 'summary_large_image',
+        title,
+        description,
+        images: [storeData.heroImageUrl || ''],
+      },
+      alternates: {
+        canonical: storeData.customDomain ? `https://${storeData.customDomain}` : undefined,
+      }
     }
   } catch (error) {
      return {
