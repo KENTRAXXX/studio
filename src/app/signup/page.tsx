@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense, useTransition, useEffect } from 'react';
@@ -149,7 +150,7 @@ function SignUpForm() {
                     type: 'signup',
                     planTier,
                     interval,
-                    discountApplied: !!data.referralCode // Apply discount if a code is present
+                    discountApplied: !!data.referralCode
                 },
                 metadata: {
                   userId: user.user.uid,
@@ -179,7 +180,6 @@ function SignUpForm() {
   };
 
   const isPending = isSigningUp || isInitializing;
-  const isFreePlan = (planTier === 'SELLER' && interval === 'free') || planTier === 'ADMIN';
   const buttonText = isFreePlan ? 'Establish Admin Identity' : 'Confirm & Proceed to Payment';
 
   return (
@@ -353,7 +353,7 @@ function SignUpForm() {
 
 export default function SignUpPage() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-black gold-mesh-gradient p-4 sm:p-6">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-black gold-mesh-gradient p-4 sm:p-6 text-foreground">
       <div className="text-center mb-10">
         <SomaLogo className="h-12 w-12 mx-auto" />
         <h1 className="text-4xl font-bold font-headline mt-4 text-white tracking-tight">Executive Provisioning</h1>

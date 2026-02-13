@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, Suspense } from "react";
@@ -71,7 +72,7 @@ function PlanSelectionContent() {
     };
 
     return (
-        <div className="flex flex-col items-center min-h-screen bg-background p-4 sm:p-6">
+        <div className="flex flex-col items-center min-h-screen bg-background p-4 sm:p-6 text-foreground">
             <div className="text-center mb-10">
                 <SomaLogo className="h-12 w-12 mx-auto"/>
                 <h1 className="text-4xl font-bold font-headline mt-4 text-primary">Choose Your Empire's Foundation</h1>
@@ -157,7 +158,7 @@ export default function PlanSelectionPage() {
     return (
         <Suspense fallback={
             <div className="flex h-screen w-full items-center justify-center bg-background">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <Loader2 className="h-12 w-12 animate-spin text-primary opacity-20" />
             </div>
         }>
             <PlanSelectionContent />
