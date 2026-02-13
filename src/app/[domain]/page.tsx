@@ -81,9 +81,14 @@ function AmbassadorPortal() {
                             <Link href="/dashboard">Executive Dashboard</Link>
                         </Button>
                     ) : (
-                        <Button variant="ghost" asChild className="font-headline text-primary hover:text-primary/80 transition-all">
-                            <Link href="/login">Partner Sign In</Link>
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            <Button variant="ghost" asChild className="font-headline text-slate-400 hover:text-primary transition-all">
+                                <Link href="/login">Partner Sign In</Link>
+                            </Button>
+                            <Button asChild className="font-headline bg-primary text-black font-bold hover:bg-primary/90">
+                                <Link href="/signup?planTier=AMBASSADOR&interval=free">Claim Access</Link>
+                            </Button>
+                        </div>
                     )}
                 </div>
             </header>
@@ -126,7 +131,7 @@ function AmbassadorPortal() {
                                 <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-4">
                                     <Button asChild size="lg" className="h-16 px-12 text-xl btn-gold-glow bg-primary font-black uppercase text-black group overflow-hidden relative">
                                         <Link href="/signup?planTier=AMBASSADOR&interval=free">
-                                            <span className="relative z-10">Apply as Ambassador</span>
+                                            <span className="relative z-10">Claim Access</span>
                                             <motion.div 
                                                 className="absolute inset-0 bg-white/20"
                                                 initial={{ x: '-100%' }}

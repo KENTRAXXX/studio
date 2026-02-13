@@ -24,11 +24,12 @@ import SomaLogo from '@/components/logo';
 import { useSignUp } from '@/hooks/use-signup';
 import { usePaystack } from '@/hooks/use-paystack';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Eye, EyeOff, Loader2, ShieldCheck, Lock, Globe, User, MessageSquare, Landmark, FileText, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ShieldCheck, Lock, Globe, User, MessageSquare, Landmark, FileText, CheckCircle2, UploadCloud } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
+import { ImageUploader } from '@/components/ui/image-uploader';
 
 const formSchema = z.object({
   fullName: z.string().min(2, 'Legal name is required.'),
@@ -115,6 +116,16 @@ function SignUpFormContent() {
   }, [refParam, form]);
 
   const onSubmit = (data: FormValues) => {
+    // KYC Check for Ambassadors
+    if (isAmbassador && !data.governmentId) {
+        toast({
+            variant: 'destructive',
+            title: 'KYC Document Required',
+            description: 'Please upload a verified government identity document to continue.',
+        });
+        return;
+    }
+
     if (planTier === 'ADMIN') {
         const systemSecret = process.env.NEXT_PUBLIC_ADMIN_GATE_CODE;
         if (!systemSecret || data.adminCode !== systemSecret) {
@@ -404,12 +415,26 @@ function SignUpFormContent() {
                                                 render={({ field }) => (
                                                 <FormItem>
                                                     <FormLabel className="flex items-center gap-2">
-                                                        <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-                                                        Government ID / NIN (Optional)
+                                                        <FileText className="h-3.5 w-3.5 text-primary" />
+                                                        Identity Verification (KYC)
                                                     </FormLabel>
                                                     <FormControl>
-                                                        <Input placeholder="ID Number for fraud prevention" {...field} className="bg-black/20 border-primary/20" />
+                                                        <div className="space-y-4">
+                                                            <ImageUploader 
+                                                                onSuccess={(url) => field.onChange(url)}
+                                                                label="Upload Government ID / Passport"
+                                                                aspectRatio="aspect-[16/9]"
+                                                            />
+                                                            {field.value && (
+                                                                <div className="flex items-center gap-2 text-green-500 text-[10px] font-black uppercase tracking-widest bg-green-500/10 p-2 rounded border border-green-500/20">
+                                                                    <CheckCircle2 className="h-3 w-3" />
+                                                                    KYC Asset Secured
+                                                                </div>
+                                                            )}
+                                                            <Input type="hidden" {...field} />
+                                                        </div>
                                                     </FormControl>
+                                                    <FormDescription>Official ID document required for payout validation.</FormDescription>
                                                     <FormMessage />
                                                 </FormItem>
                                                 )}

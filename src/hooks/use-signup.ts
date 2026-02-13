@@ -134,7 +134,7 @@ export function useSignUp() {
           newUserProfile.ambassadorData = {
               socialHandle: credentials.socialHandle || '',
               targetAudience: credentials.targetAudience || '',
-              governmentId: credentials.governmentId || '',
+              governmentIdUrl: credentials.governmentId || '', // Store as URL
               payoutDetails: {
                   bankName: credentials.bankName || '',
                   accountNumber: credentials.accountNumber || '',
