@@ -25,9 +25,11 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/firebase/user-profile-provider';
-import { collection, doc, setDoc, getDocs, query, where } from 'firebase/firestore';
+import { collection, doc, setDoc, query, where } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { cn } from '@/lib/utils';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 type Product = {
   id: string;
@@ -36,7 +38,7 @@ type Product = {
   retailPrice: number;
   stockLevel: number;
   imageId: string;
-  imageSrc?: string; // For demo data
+  imageSrc?: string; 
   productType: 'INTERNAL' | 'EXTERNAL';
   vendorId: string;
   isActive?: boolean;
@@ -66,8 +68,6 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
   const router = useRouter();
   const { userProfile, loading: profileLoading } = useUserProfile();
 
-  const [syncedProducts, setSyncedProducts] = useState<Set<string>>(new Set());
-  const [syncingProducts, setSyncingProducts] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -78,6 +78,7 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
     }
   }, [userProfile, profileLoading, router]);
 
+  // 1. Fetch Global Catalog
   const masterCatalogRef = useMemoFirebase(() => {
     if (!firestore || isDemo) return null;
     return query(
@@ -88,22 +89,20 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
   
   const { data: liveCatalog, loading: catalogLoading } = useCollection<Product>(masterCatalogRef);
   
-  const userProductsRef = useMemoFirebase(() => {
+  // 2. Fetch User's Provisioned Products (Reactive)
+  const userProductsQuery = useMemoFirebase(() => {
     if (!firestore || !user || isDemo) return null;
     return collection(firestore, 'stores', user.uid, 'products');
   }, [firestore, user, isDemo]);
 
-  const masterCatalog = isDemo ? [] : liveCatalog;
-  const isLoading = isDemo ? false : (catalogLoading || profileLoading);
+  const { data: userProducts, loading: userProductsLoading } = useCollection<any>(userProductsQuery);
 
-  useEffect(() => {
-    if (userProductsRef) {
-      getDocs(userProductsRef).then(snapshot => {
-        const productIds = new Set(snapshot.docs.map(d => d.id));
-        setSyncedProducts(productIds);
-      });
-    }
-  }, [userProductsRef]);
+  const syncedProducts = useMemo(() => {
+    if (!userProducts) return new Set<string>();
+    return new Set(userProducts.map(p => p.id));
+  }, [userProducts]);
+
+  const masterCatalog = isDemo ? [] : liveCatalog;
 
   const filteredCatalog = useMemo(() => {
     if (!masterCatalog) return [];
@@ -119,7 +118,7 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
     return filteredCatalog.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredCatalog, currentPage]);
 
-  const handleSync = async (product: Product) => {
+  const handleSync = (product: Product) => {
     if (isDemo) {
         toast({ title: 'Demo Action', description: 'This is a demo. Syncing is disabled.'});
         return;
@@ -135,46 +134,37 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
       return;
     }
 
-    setSyncingProducts(prev => new Set(prev).add(product.id));
+    const newProductRef = doc(firestore, 'stores', user.uid, 'products', product.id);
+    
+    const productDataToSync = {
+      name: product.name,
+      suggestedRetailPrice: product.retailPrice,
+      wholesalePrice: product.masterCost,
+      description: `A high-quality ${product.name.toLowerCase()} from our master collection.`,
+      imageUrl: product.imageId,
+      productType: product.productType,
+      vendorId: product.vendorId,
+      isManagedBySoma: true,
+      categories: product.categories || [],
+      tags: product.tags || []
+    };
 
-    try {
-      const newProductRef = doc(firestore, 'stores', user.uid, 'products', product.id);
-      
-      const productDataToSync = {
-        name: product.name,
-        suggestedRetailPrice: product.retailPrice,
-        wholesalePrice: product.masterCost,
-        description: `A high-quality ${product.name.toLowerCase()} from our master collection.`,
-        imageUrl: product.imageId,
-        productType: product.productType,
-        vendorId: product.vendorId,
-        isManagedBySoma: true,
-        categories: product.categories || [],
-        tags: product.tags || []
-      };
-
-      await setDoc(newProductRef, productDataToSync);
-
-      setSyncedProducts(prev => new Set(prev).add(product.id));
-      
-      toast({
-        title: 'Product Synced!',
-        description: `${product.name} has been added to your boutique.`,
-      });
-
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Sync Failed',
-        description: error.message || 'Could not add product to your store.',
-      });
-    } finally {
-        setSyncingProducts(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(product.id);
-            return newSet;
+    // Strategic Non-Blocking Write
+    setDoc(newProductRef, productDataToSync)
+      .then(() => {
+        toast({
+          title: 'Asset Synchronized',
+          description: `${product.name} has been added to your boutique.`,
         });
-    }
+      })
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: newProductRef.path,
+          operation: 'write',
+          requestResourceData: productDataToSync,
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
+      });
   };
 
   const checkIfNew = (approvedAt: any) => {
@@ -185,6 +175,7 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
     return diffInHours <= 48;
   };
 
+  const isLoading = isDemo ? false : (catalogLoading || profileLoading || userProductsLoading);
 
   return (
     <div className="space-y-8">
@@ -250,7 +241,6 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
                             <TableBody>
                             {paginatedCatalog.map((product) => {
                             const isSynced = syncedProducts.has(product.id);
-                            const isSyncing = syncingProducts.has(product.id);
                             const isNew = checkIfNew(product.approvedAt);
                             const wholesale = product.masterCost || 0;
                             const retail = product.retailPrice || 0;
@@ -324,10 +314,9 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
                                         variant="outline"
                                         size="sm"
                                         onClick={() => handleSync(product)}
-                                        disabled={isSyncing}
                                         className="border-primary/20 hover:border-primary/50"
                                     >
-                                        {isSyncing ? <Loader2 className="animate-spin" /> : 'Sync Item'}
+                                        Sync Item
                                     </Button>
                                 )}
                                 </TableCell>
