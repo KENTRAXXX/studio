@@ -80,7 +80,6 @@ function SignUpForm() {
     },
   });
 
-  // Handle URL-based Referral Attribution
   useEffect(() => {
     if (refParam) {
       form.setValue('referralCode', refParam.toUpperCase());
@@ -90,7 +89,6 @@ function SignUpForm() {
   const onSubmit = (data: FormValues) => {
     const isFreePlan = (planTier === 'SELLER' && interval === 'free') || planTier === 'ADMIN';
     
-    // GATELOCK: Executive Authorization Check
     if (planTier === 'ADMIN') {
         const systemSecret = process.env.NEXT_PUBLIC_ADMIN_GATE_CODE;
         if (!systemSecret || data.adminCode !== systemSecret) {
@@ -113,7 +111,6 @@ function SignUpForm() {
         }
 
         const onPaystackSuccess = async () => {
-          // Optimistic update to bridge the gap until the webhook hits
           if (firestore && user.user.uid) {
               try {
                   const userRef = doc(firestore, 'users', user.user.uid);
@@ -151,13 +148,15 @@ function SignUpForm() {
                 payment: {
                     type: 'signup',
                     planTier,
-                    interval
+                    interval,
+                    discountApplied: !!data.referralCode // Apply discount if a code is present
                 },
                 metadata: {
                   userId: user.user.uid,
                   plan: interval,
                   planTier: planTier,
                   template: 'gold-standard',
+                  referralCode: data.referralCode
                 },
               },
               onPaystackSuccess,

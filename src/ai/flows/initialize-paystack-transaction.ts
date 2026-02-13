@@ -2,7 +2,7 @@
 
 /**
  * @fileOverview Initializes a Paystack transaction.
- * Regular Server Action (Decoupled from Genkit to support Edge Runtime).
+ * Updated to support discounted plan codes for the Ambassador program.
  */
 
 import { convertToCents } from '@/lib/currency';
@@ -18,26 +18,25 @@ const basePrices: Record<string, number> = {
 
 /**
  * Resolves the plan code from environment variables.
- * Checks both PAYSTACK_ and NEXT_PUBLIC_ prefixes to ensure compatibility with Cloudflare secrets.
- * Aggressively cleans the input to handle hidden characters or copy-paste artifacts.
+ * Supports a 'DISCOUNTED' variant for Ambassador conversions.
  */
-function getPlanCode(tier: string, interval: string): string | undefined {
-    const suffix = `${tier}_${interval.toUpperCase()}_PLAN_CODE`;
+function getPlanCode(tier: string, interval: string, isDiscounted: boolean = false): string | undefined {
+    const baseSuffix = `${tier}_${interval.toUpperCase()}`;
+    const suffix = isDiscounted ? `${baseSuffix}_DISCOUNTED_PLAN_CODE` : `${baseSuffix}_PLAN_CODE`;
+    
     const envKey = `PAYSTACK_${suffix}`;
     const publicEnvKey = `NEXT_PUBLIC_${suffix}`;
     
     const rawValue = process.env[envKey] || process.env[publicEnvKey];
     
     if (!rawValue || typeof rawValue !== 'string') {
+        // Fallback to standard plan if discounted plan code isn't configured yet
+        if (isDiscounted) return getPlanCode(tier, interval, false);
         return undefined;
     }
 
-    // REMOVE ALL WHITESPACE (including spaces in the middle, tabs, and newlines)
-    // This handles cases where plan codes might have been copied with artifacts.
     const code = rawValue.replace(/\s+/g, '');
     
-    // Strictly validate: must start with PLN_ and have a reasonable length.
-    // Must not contain placeholder indicators like "..." or "YOUR_".
     if (
         code.startsWith('PLN_') && 
         code.length > 5 &&
@@ -54,6 +53,7 @@ const SignupPaymentSchema = z.object({
     type: z.literal('signup'),
     planTier: z.enum(['MERCHANT', 'SCALER', 'SELLER', 'ENTERPRISE', 'BRAND', 'ADMIN']),
     interval: z.enum(['monthly', 'yearly', 'free', 'lifetime']),
+    discountApplied: z.boolean().optional(),
 });
 
 const CartPaymentSchema = z.object({
@@ -75,15 +75,12 @@ export type InitializePaystackTransactionOutput = {
   reference: string;
 };
 
-/**
- * Decoupled from Genkit to avoid pulling gRPC/Telemetry into the Edge Runtime bundle.
- */
 export async function initializePaystackTransaction(
   input: InitializePaystackTransactionInput
 ): Promise<InitializePaystackTransactionOutput> {
     const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
     if (!paystackSecretKey) {
-      throw new Error('Paystack secret key is not configured in environment variables.');
+      throw new Error('Paystack secret key is not configured.');
     }
 
     const finalPayload: any = {
@@ -95,18 +92,21 @@ export async function initializePaystackTransaction(
     };
 
     if (input.payment.type === 'signup') {
-        const { planTier, interval } = input.payment;
+        const { planTier, interval, discountApplied } = input.payment;
         
         if ((planTier === 'SELLER' && interval === 'free') || planTier === 'ADMIN') {
             throw new Error("Free plans do not require payment initialization.");
         }
 
-        const planCode = getPlanCode(planTier, interval);
+        const planCode = getPlanCode(planTier, interval, !!discountApplied);
         
-        // Calculate the amount. 
-        // Note: Paystack requires the amount even if a plan is provided for some currency configurations.
+        // Calculate the amount (20% off for Ambassador referrals)
         const basePrice = basePrices[planTier] || 0;
-        const dollarAmount = interval === 'yearly' ? basePrice * 10 : basePrice;
+        let dollarAmount = interval === 'yearly' ? basePrice * 10 : basePrice;
+        
+        if (discountApplied) {
+            dollarAmount = dollarAmount * 0.8;
+        }
         
         if (dollarAmount <= 0) {
             throw new Error(`Plan ${planTier} has no price defined.`);
@@ -115,7 +115,6 @@ export async function initializePaystackTransaction(
         finalPayload.amount = convertToCents(dollarAmount);
         finalPayload.currency = 'USD';
 
-        // Only attach the plan if it was resolved and validated successfully
         if (planCode) {
             finalPayload.plan = planCode;
         }
@@ -136,19 +135,8 @@ export async function initializePaystackTransaction(
     const responseData = await response.json();
 
     if (!response.ok) {
-      console.error('Paystack API Error Response:', responseData);
-      let errorMsg = responseData.message || 'Unknown error';
-      
-      // Provide actionable feedback for the specific "Plan not found" issue
-      if (errorMsg.toLowerCase().includes('plan not found') && finalPayload.plan) {
-          errorMsg += ` (Plan ID: ${finalPayload.plan}). Check if this plan was created in Test or Live mode to match your Secret Key.`;
-      }
-      
-      throw new Error(`Paystack API Error: ${errorMsg}`);
-    }
-
-    if (!responseData.status || !responseData.data) {
-        throw new Error('Transaction initialization failed on Paystack.');
+      console.error('Paystack API Error:', responseData);
+      throw new Error(`Paystack API Error: ${responseData.message || 'Unknown error'}`);
     }
 
     return responseData.data;
