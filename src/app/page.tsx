@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -7,7 +8,7 @@ import { useEffect, useState, useRef } from 'react';
 import { AnimatePresence, motion, useInView } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Globe, DollarSign, Boxes, Check, Rocket, Gem, Users, ShieldCheck, Loader2 } from 'lucide-react';
+import { Globe, DollarSign, Boxes, Check, Rocket, Gem, Users, ShieldCheck, Loader2, Sparkles } from 'lucide-react';
 import AnimatedCounter from '@/components/ui/animated-counter';
 import Image from 'next/image';
 import { useToastWithRandomCity } from '@/hooks/use-toast-with-random-city';
@@ -16,7 +17,6 @@ import { useUser } from '@/firebase';
 
 /**
  * Constants for deterministic growth calculation.
- * Using a fixed launch date: July 1, 2024.
  */
 const LAUNCH_DATE = new Date('2024-07-01T00:00:00Z');
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
@@ -31,7 +31,7 @@ function LiveCounter() {
       const daysSinceLaunch = Math.max(0, (now.getTime() - LAUNCH_DATE.getTime()) / MS_PER_DAY);
       
       const initialStores = 184;
-      const growthPerDay = 12.4; // Stable average growth
+      const growthPerDay = 12.4; 
       
       return Math.floor(initialStores + (daysSinceLaunch * growthPerDay));
     };
@@ -40,7 +40,7 @@ function LiveCounter() {
 
     const updateCount = () => {
         setCount((prev) => (prev || 0) + 1);
-        const randomInterval = Math.random() * (600000 - 300000) + 300000; // 5 to 10 minutes
+        const randomInterval = Math.random() * (600000 - 300000) + 300000; 
         timerRef.current = setTimeout(updateCount, randomInterval);
     };
 
@@ -97,12 +97,10 @@ function PlatformPulse() {
             const now = new Date();
             const daysSinceLaunch = Math.max(0, (now.getTime() - LAUNCH_DATE.getTime()) / MS_PER_DAY);
 
-            // Baseline figures from July 1, 2024
             const initialSales = 4455321.98;
             const initialSellers = 127;
             const initialBrands = 89;
 
-            // Stable growth rates
             const salesGrowthPerDay = 32450.50;
             const sellersGrowthPerDay = 8.2;
             const brandsGrowthPerDay = 2.1;
@@ -127,13 +125,12 @@ function PlatformPulse() {
             const saleAmount = Math.random() * (185.00 - 14.50) + 14.50;
             setGlobalSalesSum(prev => (prev || 0) + saleAmount);
             
-            // Only show pop-up toasts for anonymous visitors to reduce annoyance for logged-in users
             if (!user) {
                 showRandomCityToast(saleAmount);
             }
 
             setIsGlowing(true);
-            setTimeout(() => setIsGlowing(false), 2000); // Glow duration
+            setTimeout(() => setIsGlowing(false), 2000); 
 
             const randomInterval = Math.random() * (15000 - 8000) + 8000;
             timerRef.current = setTimeout(updateSales, randomInterval);
@@ -329,15 +326,28 @@ function SneakPeek() {
                             </motion.li>
                         ))}
                     </motion.ul>
-                    <motion.div
-                         initial={{ opacity: 0, y: 20 }}
-                         animate={isInView ? { opacity: 1, y: 0 } : {}}
-                         transition={{ duration: 0.5, delay: 1.0 }}
-                    >
-                        <Button asChild size="lg" className="h-12 text-lg w-full sm:w-auto btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
-                            <Link href="/plan-selection">Claim Your Lifetime Access</Link>
-                        </Button>
-                    </motion.div>
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={isInView ? { opacity: 1, y: 0 } : {}}
+                            transition={{ duration: 0.5, delay: 1.0 }}
+                        >
+                            <Button asChild size="lg" className="h-12 text-lg w-full sm:w-auto btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+                                <Link href="/plan-selection">Claim Your Lifetime Access</Link>
+                            </Button>
+                        </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={isInView ? { opacity: 1, y: 0 } : {}}
+                            transition={{ duration: 0.5, delay: 1.1 }}
+                        >
+                            <Button asChild variant="outline" size="lg" className="h-12 text-lg w-full sm:w-auto border-primary/50 text-primary hover:bg-primary/10">
+                                <Link href="/ambassador" className="flex items-center gap-2">
+                                    <Sparkles className="h-4 w-4" /> Become an Ambassador
+                                </Link>
+                            </Button>
+                        </motion.div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -375,10 +385,7 @@ export default function Home() {
                 <Link href="/plan-selection">Get Started Now</Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="h-12 text-lg w-full sm:w-auto border-primary/50 text-primary hover:bg-primary/10 hover:text-primary">
-                <Link href="/store/demo">View Store Demo</Link>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="h-12 text-lg w-full sm:w-auto border-primary/50 text-primary hover:bg-primary/10 hover:text-primary">
-                <Link href="/dashboard/demo">View Dashboard Demo</Link>
+                <Link href="/ambassador">Become an Ambassador</Link>
             </Button>
             </div>
         </section>

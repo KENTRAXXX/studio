@@ -1,14 +1,15 @@
+
 /**
  * @fileOverview SOMA Strategic Tier Registry
  * Single Source of Truth for platform economics, feature entitlements, and routing.
  */
 
-export type PlanTier = 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND' | 'ADMIN';
+export type PlanTier = 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND' | 'ADMIN' | 'AMBASSADOR';
 
 export interface TierConfig {
     id: PlanTier;
     label: string;
-    portal: 'dashboard' | 'backstage' | 'admin';
+    portal: 'dashboard' | 'backstage' | 'admin' | 'ambassador';
     commissionRate: number; // The percentage SOMA takes (0.03 = 3%)
     entitlements: string[];
     features: {
@@ -18,6 +19,8 @@ export interface TierConfig {
         analytics: 'basic' | 'advanced' | 'executive';
         academyAccess: boolean;
     };
+    discountedMonthly?: number;
+    discountedYearly?: number;
 }
 
 export const TIER_REGISTRY: Record<PlanTier, TierConfig> = {
@@ -25,7 +28,7 @@ export const TIER_REGISTRY: Record<PlanTier, TierConfig> = {
         id: 'MERCHANT',
         label: 'Merchant',
         portal: 'dashboard',
-        commissionRate: 0, // Merchants pay SaaS fee, 0% platform commission on private stock
+        commissionRate: 0, 
         entitlements: ['private_inventory', 'domain_management', 'basic_analytics'],
         features: {
             dropshipping: false,
@@ -33,13 +36,15 @@ export const TIER_REGISTRY: Record<PlanTier, TierConfig> = {
             customDomains: true,
             analytics: 'basic',
             academyAccess: false
-        }
+        },
+        discountedMonthly: 15.00,
+        discountedYearly: 150.00
     },
     SCALER: {
         id: 'SCALER',
         label: 'Scaler',
         portal: 'dashboard',
-        commissionRate: 0.03, // SOMA takes 3% on dropship wholesale
+        commissionRate: 0.03, 
         entitlements: ['dropshipping', 'academy', 'advanced_analytics'],
         features: {
             dropshipping: true,
@@ -47,7 +52,9 @@ export const TIER_REGISTRY: Record<PlanTier, TierConfig> = {
             customDomains: true,
             analytics: 'advanced',
             academyAccess: true
-        }
+        },
+        discountedMonthly: 23.00,
+        discountedYearly: 230.00
     },
     ENTERPRISE: {
         id: 'ENTERPRISE',
@@ -61,13 +68,15 @@ export const TIER_REGISTRY: Record<PlanTier, TierConfig> = {
             customDomains: true,
             analytics: 'executive',
             academyAccess: true
-        }
+        },
+        discountedMonthly: 26.66,
+        discountedYearly: 266.00
     },
     SELLER: {
         id: 'SELLER',
         label: 'Seller',
         portal: 'backstage',
-        commissionRate: 0.09, // Free tier sellers pay 9% commission
+        commissionRate: 0.09, 
         entitlements: ['supplier_portal', 'inventory_sync'],
         features: {
             dropshipping: false,
@@ -81,12 +90,28 @@ export const TIER_REGISTRY: Record<PlanTier, TierConfig> = {
         id: 'BRAND',
         label: 'Brand',
         portal: 'backstage',
-        commissionRate: 0.03, // Paid brands pay reduced 3% commission
+        commissionRate: 0.03, 
         entitlements: ['supplier_portal', 'inventory_sync', 'marketing_portal', 'concierge'],
         features: {
             dropshipping: false,
             privateInventory: false,
-            customDomains: false, // BRAND tier is restricted to Master Catalog submission
+            customDomains: false,
+            analytics: 'advanced',
+            academyAccess: false
+        },
+        discountedMonthly: 16.80,
+        discountedYearly: 168.00
+    },
+    AMBASSADOR: {
+        id: 'AMBASSADOR',
+        label: 'Ambassador',
+        portal: 'ambassador',
+        commissionRate: 0,
+        entitlements: ['marketing_terminal', 'flat_commissions', 'referral_links'],
+        features: {
+            dropshipping: false,
+            privateInventory: false,
+            customDomains: false,
             analytics: 'advanced',
             academyAccess: false
         }

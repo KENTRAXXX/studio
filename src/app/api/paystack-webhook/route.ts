@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server';
 import { createClientStore } from '@/ai/flows/create-client-store';
 import { initializeApp, getApps } from 'firebase/app';
@@ -27,12 +28,6 @@ async function logWebhookEvent(eventType: string, payload: any, status: 'success
     } catch (e) {
         console.error("Critical: Failed to log webhook event to Firestore", e);
     }
-}
-
-function getReferralCommissionRate(activeCount: number): number {
-    if (activeCount >= 51) return 0.20;
-    if (activeCount >= 21) return 0.15;
-    return 0.10;
 }
 
 async function verifyPaystackSignature(payload: string, signature: string, secret: string): Promise<boolean> {
@@ -244,7 +239,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ status: 'success', message: 'Event acknowledged, no metadata.' });
     }
 
-    const { userId, plan, cart, storeId, planTier } = metadata;
+    const { userId, plan, cart, storeId, planTier, referralCode } = metadata;
 
     if (cart && storeId) {
         await executePaymentSplit(event.data);
@@ -260,50 +255,66 @@ export async function POST(req: Request) {
                 if (!userSnap.exists()) throw new Error("User document not found during activation.");
                 const userData = userSnap.data();
 
-                const referredBy = userData.referredBy;
-                if (referredBy) {
-                    const referrerRef = doc(firestore, "users", referredBy);
+                // 1. DUAL-CHANNEL ATTRIBUTION CHECK
+                // Check metadata (passed via checkout) or the user profile (passed via sign-up)
+                const refCode = referralCode || userData.referralCode;
+                let finalReferrerId = userData.referredBy;
+
+                // Resolve referring user if only code is provided
+                if (!finalReferrerId && refCode) {
+                    const referrerQuery = query(collection(firestore, 'users'), where('referralCode', '==', refCode.toUpperCase()));
+                    const referrerSnap = await getDocs(referrerQuery);
+                    if (!referrerSnap.empty) {
+                        finalReferrerId = referrerSnap.docs[0].id;
+                    }
+                }
+
+                if (finalReferrerId) {
+                    const referrerRef = doc(firestore, "users", finalReferrerId);
                     const referrerSnap = await transaction.get(referrerRef);
                     
                     if (referrerSnap.exists() && referrerSnap.data().hasAccess === true) {
                         const referrerData = referrerSnap.data();
-                        const currentActiveCount = referrerData.activeReferralCount || 0;
-                        const referralCommissionRate = getReferralCommissionRate(currentActiveCount);
                         
-                        const tierId = (userData.planTier || planTier) as PlanTier;
-                        const tier = getTier(tierId);
-                        
-                        // Reference prices for rewards
-                        const basePrices: Record<string, number> = { MERCHANT: 19.99, SCALER: 29.00, SELLER: 0, ENTERPRISE: 33.33, BRAND: 21.00 };
-                        const interval = userData.plan || plan;
-                        const basePrice = basePrices[tierId] || 0;
-                        const totalPlanCost = interval === 'yearly' ? basePrice * 10 : basePrice;
-                        
-                        const referralReward = totalPlanCost * referralCommissionRate;
+                        // 2. AMBASSADOR FLAT-BEE REWARD LOGIC ($5.00)
+                        const isAmbassador = referrerData.userRole === 'AMBASSADOR';
+                        let rewardAmount = 0;
 
-                        if (referralReward > 0) {
+                        if (isAmbassador) {
+                            rewardAmount = 5.00;
+                        } else {
+                            // Standard Mogul Reward logic (deprecated but maintained for legacy)
+                            const currentActiveCount = referrerData.activeReferralCount || 0;
+                            const rate = currentActiveCount >= 51 ? 0.20 : currentActiveCount >= 21 ? 0.15 : 0.10;
+                            const tierId = (userData.planTier || planTier) as PlanTier;
+                            const basePrices: Record<string, number> = { MERCHANT: 19.99, SCALER: 29.00, SELLER: 0, ENTERPRISE: 33.33, BRAND: 21.00 };
+                            const totalPlanCost = (userData.plan || plan) === 'yearly' ? (basePrices[tierId] || 0) * 10 : (basePrices[tierId] || 0);
+                            rewardAmount = totalPlanCost * rate;
+                        }
+
+                        if (rewardAmount > 0) {
                             const payoutRef = doc(collection(firestore, 'payouts_pending'));
                             transaction.set(payoutRef, {
-                                userId: referredBy,
-                                amount: referralReward,
+                                userId: finalReferrerId,
+                                amount: rewardAmount,
                                 currency: 'USD',
                                 status: 'pending_maturity',
                                 type: 'referral_reward',
                                 referredUserId: userId,
                                 createdAt: new Date().toISOString(),
-                                description: `${referralCommissionRate * 100}% Referral Reward for ${userData.email || 'New User'} activation.`
+                                description: isAmbassador ? `$5.00 Ambassador Bounty for ${userData.email} activation.` : `Referral Reward for ${userData.email} activation.`
                             });
 
                             transaction.update(referrerRef, {
                                 activeReferralCount: increment(1),
-                                totalReferralEarnings: increment(referralReward)
+                                totalReferralEarnings: increment(rewardAmount)
                             });
 
                             emailData = {
                                 to: referrerData.email,
                                 referrerName: referrerData.displayName || referrerData.email.split('@')[0],
                                 protegeName: userData.displayName || userData.email.split('@')[0],
-                                creditAmount: formatCurrency(Math.round(referralReward * 100))
+                                creditAmount: formatCurrency(Math.round(rewardAmount * 100))
                             };
                         }
                     }
@@ -312,6 +323,7 @@ export async function POST(req: Request) {
                 transaction.update(userRef, {
                     hasAccess: true,
                     paidAt: new Date().toISOString(),
+                    referredBy: finalReferrerId || null
                 });
 
                 const revenueRef = doc(collection(firestore, 'revenue_logs'));
@@ -326,12 +338,10 @@ export async function POST(req: Request) {
             });
 
             if (emailData) {
-                await sendReferralActivatedEmail(emailData).catch(err => {
-                    console.error("Failed to send referral activation email:", err);
-                });
+                await sendReferralActivatedEmail(emailData).catch(err => console.error("Referral email failed:", err));
             }
 
-            const isSupplierTier = planTier === 'SELLER' || planTier === 'BRAND';
+            const isSupplierTier = planTier === 'SELLER' || planTier === 'BRAND' || planTier === 'AMBASSADOR';
             if (!isSupplierTier) {
                 await createClientStore({
                     userId,
@@ -345,16 +355,9 @@ export async function POST(req: Request) {
         } catch (error: any) {
             console.error(`Failed to handle signup success for ${userId}:`, error);
             await logWebhookEvent(event.event, event.data, 'failed', error.message);
-            const alertsRef = collection(firestore, 'admin_alerts');
-            await addDoc(alertsRef, {
-                flowName: 'paystackWebhook_signupSuccess',
-                userId: userId,
-                error: error.message || 'An unknown error occurred',
-                timestamp: new Date().toISOString()
-            });
         }
     } else {
-        await logWebhookEvent(event.event, event.data, 'failed', 'Missing userId in metadata. Manual fix required.');
+        await logWebhookEvent(event.event, event.data, 'failed', 'Missing userId in metadata.');
     }
   } else {
       await logWebhookEvent(event.event, event.data, 'success');

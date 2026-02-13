@@ -203,7 +203,7 @@
                 "userRole": {
                     "type": "string",
                     "description": "The role of the user within the platform.",
-                    "enum": ["ADMIN", "MOGUL", "SELLER"]
+                    "enum": ["ADMIN", "MOGUL", "SELLER", "AMBASSADOR"]
                 },
                 "plan": {
                     "type": "string",
@@ -218,7 +218,7 @@
                 "planTier": {
                     "type": "string",
                     "description": "The specific plan tier for the user, determining access level.",
-                    "enum": ["MERCHANT", "SCALER", "SELLER", "ENTERPRISE", "BRAND"]
+                    "enum": ["MERCHANT", "SCALER", "SELLER", "ENTERPRISE", "BRAND", "AMBASSADOR"]
                 },
                 "isVerifiedSeller": {
                     "type": "boolean",

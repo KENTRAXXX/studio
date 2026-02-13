@@ -1,8 +1,9 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * @fileOverview SOMA Multi-Tenancy Resolver
- * Robust rewrite logic for Custom Domains and Subdomains.
+ * Robust rewrite logic for Custom Domains, Subdomains, and the Ambassador Portal.
  */
 export function middleware(request: NextRequest) {
   const url = request.nextUrl;
@@ -29,16 +30,20 @@ export function middleware(request: NextRequest) {
     path.startsWith('/legal') ||
     path.startsWith('/payout-confirmed') ||
     path.startsWith('/access-denied') ||
-    path.startsWith('/store')
+    path.startsWith('/store') ||
+    path.startsWith('/ambassador')
   ) {
     return NextResponse.next();
   }
 
-  // 3. Perform the Rewrite: If the hostname is NOT the root domain
+  // 3. Special Case: Ambassador Portal Subdomain
+  if (currentHost === `ambassador.${rootDomain}`) {
+      const rewriteUrl = new URL(`/ambassador${path}${url.search}`, request.url);
+      return NextResponse.rewrite(rewriteUrl);
+  }
+
+  // 4. Perform the Rewrite: If the hostname is NOT the root domain
   if (currentHost !== rootDomain && currentHost !== `www.${rootDomain}`) {
-    // 4. Add a Debug Log for Vercel diagnostic monitoring
-    console.log('Middleware Path:', currentHost, 'Rewriting to:', `/[domain]${path}`);
-    
     // Internal Rewrite maintains the branded URL in the browser
     const rewriteUrl = new URL(`/${currentHost}${path}${url.search}`, request.url);
     return NextResponse.rewrite(rewriteUrl);
