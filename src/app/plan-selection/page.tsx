@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, Star, Building, Gem, Rocket, ShoppingBag, ShieldCheck, Tag, Loader2 } from "lucide-react";
+import { Check, Building, Gem, Rocket, ShoppingBag, ShieldCheck, Tag, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SomaLogo from "@/components/logo";
 import { Badge } from "@/components/ui/badge";
@@ -121,7 +121,7 @@ function PlanSelectionContent() {
                     const isYearly = !plan.pricing.free && interval === 'yearly';
                     
                     const basePrice = priceInfo.price;
-                    const finalPrice = isDiscounted ? basePrice * 0.8 : basePrice;
+                    const finalPrice = isDiscounted && plan.id !== 'SELLER' ? basePrice * 0.8 : basePrice;
 
                     return (
                     <Card 
@@ -146,11 +146,11 @@ function PlanSelectionContent() {
                             <CardDescription>{plan.description}</CardDescription>
                              <div className="flex items-baseline gap-2">
                                <span className="text-4xl font-extrabold text-primary">
-                                   ${finalPrice.toLocaleString('en-US', { minimumFractionDigits: ['SCALER', 'MOGUL'].includes(plan.id) ? 0 : 2, maximumFractionDigits: 2})}
+                                   ${finalPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2})}
                                </span> 
                                <span className="text-muted-foreground">
                                     {plan.pricing.free ? '' : `/${interval === 'monthly' ? 'mo' : 'yr'}`}
-                               </span>
+                                </span>
                             </div>
                             {isDiscounted && plan.id !== 'SELLER' && (
                                 <p className="text-[10px] text-muted-foreground line-through font-mono">Was ${basePrice.toFixed(2)}</p>

@@ -40,7 +40,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 type PlanInterval = 'monthly' | 'yearly' | 'lifetime' | 'free';
-type PlanTier = 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND' | 'ADMIN';
+type PlanTier = 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND' | 'ADMIN' | 'AMBASSADOR';
 
 
 function SignUpForm() {
@@ -67,6 +67,7 @@ function SignUpForm() {
     ENTERPRISE: 'Enterprise',
     BRAND: 'Brand',
     ADMIN: 'Administrator',
+    AMBASSADOR: 'Ambassador',
   }[planTier] || 'Scaler';
   
   const form = useForm<FormValues>({
@@ -88,7 +89,7 @@ function SignUpForm() {
   }, [refParam, form]);
 
   const onSubmit = (data: FormValues) => {
-    const isFreePlan = (planTier === 'SELLER' && interval === 'free') || planTier === 'ADMIN';
+    const isFreePlan = (planTier === 'SELLER' && interval === 'free') || planTier === 'ADMIN' || planTier === 'AMBASSADOR';
     
     // GATELOCK: Executive Authorization Check
     if (planTier === 'ADMIN') {
@@ -180,8 +181,8 @@ function SignUpForm() {
   };
 
   const isPending = isSigningUp || isInitializing;
-  const isFreePlan = (planTier === 'SELLER' && interval === 'free') || planTier === 'ADMIN';
-  const buttonText = isFreePlan ? 'Establish Admin Identity' : 'Confirm & Proceed to Payment';
+  const isFreePlan = (planTier === 'SELLER' && interval === 'free') || planTier === 'ADMIN' || planTier === 'AMBASSADOR';
+  const buttonText = isFreePlan ? 'Establish Identity' : 'Confirm & Proceed to Payment';
 
   return (
       <div className="w-full max-w-lg">
@@ -339,8 +340,8 @@ function SignUpForm() {
                                 <Lock className="absolute inset-0 m-auto h-4 w-4 text-primary/60" />
                             </div>
                             <div>
-                                <p className="text-xl font-headline font-bold text-primary">Payment Handshake Initialized</p>
-                                <p className="text-muted-foreground text-sm mt-2">Securely processing your plan activation via Paystack...</p>
+                                <p className="text-xl font-headline font-bold text-primary">Identity Finalized</p>
+                                <p className="text-muted-foreground text-sm mt-2">Initializing your strategic hub...</p>
                             </div>
                         </CardContent>
                     </Card>

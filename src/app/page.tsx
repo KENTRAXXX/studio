@@ -335,12 +335,12 @@ function SneakPeek() {
                          transition={{ duration: 0.5, delay: 1.0 }}
                          className="flex flex-col sm:flex-row items-center gap-4"
                     >
-                        <Button asChild size="lg" className="h-12 text-lg w-full sm:w-auto btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+                        <Button asChild size="lg" className="h-12 text-lg w-full sm:w-auto btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
                             <Link href="/plan-selection">Claim Your Lifetime Access</Link>
                         </Button>
                         <Button asChild size="lg" variant="outline" className="h-12 text-lg w-full sm:w-auto border-primary/50 text-primary hover:bg-primary/10">
                             <Link href="https://ambassador.somatoday.com">
-                                <Award className="mr-2 h-5 w-5" /> Be an Ambassador
+                                <Award className="mr-2 h-5 w-5" /> Become an Ambassador
                             </Link>
                         </Button>
                     </motion.div>
@@ -352,6 +352,9 @@ function SneakPeek() {
 
 
 export default function Home() {
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
+  const ambassadorUrl = `https://ambassador.${rootDomain}`;
+
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen w-full bg-black gold-mesh-gradient overflow-x-hidden">
       <header className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center z-20">
@@ -359,9 +362,14 @@ export default function Home() {
           <SomaLogo aria-hidden="true" className="transition-transform group-hover:scale-110" />
           <span className="font-headline font-bold text-xl text-primary tracking-tighter uppercase transition-opacity group-hover:opacity-80">SomaDS</span>
         </Link>
-        <Button variant="ghost" asChild className="font-headline text-primary hover:text-primary/80 hover:bg-primary/5">
-          <Link href="/login">Sign In</Link>
-        </Button>
+        <div className="flex items-center gap-4">
+            <Button variant="ghost" asChild className="font-headline text-primary hover:text-primary/80 hover:bg-primary/5 hidden md:flex">
+                <Link href={ambassadorUrl}>Become an Ambassador</Link>
+            </Button>
+            <Button variant="ghost" asChild className="font-headline text-primary hover:text-primary/80 hover:bg-primary/5">
+                <Link href="/login">Sign In</Link>
+            </Button>
+        </div>
       </header>
 
       <main id="main-content" className="w-full">
@@ -377,14 +385,14 @@ export default function Home() {
             </p>
 
             <div className="mt-10 flex flex-col sm:flex-row items-center gap-4">
-            <Button asChild size="lg" className="h-12 text-lg w-full sm:w-auto btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Button asChild size="lg" className="h-12 text-lg w-full sm:w-auto btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
                 <Link href="/plan-selection">Get Started Now</Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="h-12 text-lg w-full sm:w-auto border-primary/50 text-primary hover:bg-primary/10 hover:text-primary">
                 <Link href="/store/demo">View Store Demo</Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="h-12 text-lg w-full sm:w-auto border-primary/50 text-primary hover:bg-primary/10 hover:text-primary">
-                <Link href="https://ambassador.somatoday.com">Become an Ambassador</Link>
+                <Link href={ambassadorUrl}>Become an Ambassador</Link>
             </Button>
             </div>
         </section>
