@@ -6,7 +6,7 @@ import { useUser, useFirestore, useCollection, useDoc, useUserProfile, useMemoFi
 import { collection, doc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Loader2, Store, DollarSign, Users, ArrowRight, Rocket, Sparkles } from "lucide-react";
+import { CheckCircle2, Loader2, Store, DollarSign, Users, ArrowRight, Rocket, Sparkles, ShieldCheck } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { CompletePaymentPrompt } from '@/components/complete-payment-prompt';
 import { ProvisioningLoader } from '@/components/store/provisioning-loader';
@@ -48,7 +48,6 @@ export default function DashboardOverviewPage() {
     }, [orders]);
 
     // 4. Branded URL Resolution
-    // Prioritizes Custom Domain -> Subdomain -> Fallback internal path
     const boutiqueUrl = useMemo(() => {
         if (!storeData) return '#';
         if (typeof window === 'undefined') return '#';
@@ -75,9 +74,37 @@ export default function DashboardOverviewPage() {
 
     if (!user) return null;
 
-    // 5. Payment Gatelock
+    // 5. ROADMAP GATE: Show roadmap and payment prompt if access not yet secured
     if (userProfile && !userProfile.hasAccess) {
-        return <CompletePaymentPrompt />;
+        return (
+            <div className="max-w-5xl mx-auto space-y-10 py-12 px-4">
+                <header className="text-center space-y-4">
+                    <div className="mx-auto bg-primary/10 rounded-full p-4 border border-primary/20 w-fit">
+                        <ShieldCheck className="h-12 w-12 text-primary animate-pulse" />
+                    </div>
+                    <h1 className="text-4xl font-bold font-headline text-white tracking-tight">Initialize Your Empire</h1>
+                    <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                        Your strategic identity has been provisioned. Complete the financial handshake to activate your boutique's blueprint.
+                    </p>
+                </header>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                    <OnboardingChecklist />
+                    <div className="space-y-6">
+                        <CompletePaymentPrompt />
+                        <Card className="bg-primary/5 border-primary/20">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-primary/60">Tier Entitlement</CardTitle>
+                            </CardHeader>
+                            <CardContent className="text-sm text-slate-400">
+                                You are activating the <span className="text-primary font-bold">{getTier(userProfile.planTier).label}</span> blueprint. 
+                                Full access to the Global Catalog and Multi-Tenancy Engine will be granted instantly upon verification.
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     // 6. Special View for Suppliers (Sellers/Brands)
@@ -85,7 +112,7 @@ export default function DashboardOverviewPage() {
         return <DashboardController planTier={userProfile.planTier} />;
     }
 
-    // 7. INITIALIZATION STATE: If paid but no store yet
+    // 7. PROVISIONING STATE: If paid but no store yet
     if (!storeData) {
         const justLaunched = typeof window !== 'undefined' && sessionStorage.getItem('soma_just_launched') === 'true';
         
@@ -99,9 +126,9 @@ export default function DashboardOverviewPage() {
                     <div className="mx-auto bg-primary/10 rounded-full p-4 border border-primary/20 w-fit">
                         <Sparkles className="h-12 w-12 text-primary animate-pulse" />
                     </div>
-                    <h1 className="text-4xl font-bold font-headline text-white tracking-tight">Your Empire Awaits</h1>
+                    <h1 className="text-4xl font-bold font-headline text-white tracking-tight">Roadmap to Deployment</h1>
                     <p className="text-muted-foreground text-lg max-xl mx-auto leading-relaxed">
-                        Your strategic credentials have been verified. Complete the launch sequence to initialize your luxury storefront.
+                        Access secured. Complete the launch wizard to initialize your luxury storefront and synchronize your collection.
                     </p>
                 </header>
 
@@ -110,14 +137,14 @@ export default function DashboardOverviewPage() {
                     
                     <Card className="border-primary bg-primary/5 flex flex-col items-center justify-center text-center p-8 shadow-gold-glow">
                         <Rocket className="h-16 w-16 text-primary mb-6" />
-                        <CardTitle className="font-headline text-2xl text-white">Initialize Storefront</CardTitle>
+                        <CardTitle className="font-headline text-2xl text-white">Activate Blueprint</CardTitle>
                         <CardContent className="p-0 mt-4 space-y-6">
                             <p className="text-slate-300 text-sm leading-relaxed">
                                 Deploy your high-fidelity theme and synchronize your initial product collection from the SOMA Global Registry.
                             </p>
                             <Button asChild size="lg" className="w-full h-14 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest">
                                 <Link href="/dashboard/my-store">
-                                    Start Launch Wizard <ArrowRight className="ml-2 h-5 w-5" />
+                                    Launch Wizard <ArrowRight className="ml-2 h-5 w-5" />
                                 </Link>
                             </Button>
                         </CardContent>

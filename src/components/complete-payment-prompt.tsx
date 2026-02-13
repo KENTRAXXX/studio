@@ -4,7 +4,7 @@ import { usePaystack } from '@/hooks/use-paystack';
 import { useUserProfile, useFirestore } from '@/firebase';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -41,7 +41,6 @@ export function CompletePaymentPrompt() {
 
     const handleRetryPayment = async () => {
         const onPaystackSuccess = async () => {
-            // Optimistic update to trigger Handshake observer
             if (firestore && userProfile.id) {
                 try {
                     const userRef = doc(firestore, 'users', userProfile.id);
@@ -87,19 +86,27 @@ export function CompletePaymentPrompt() {
     }
     
     return (
-        <Card className="border-destructive bg-destructive/10 text-destructive-foreground mt-8 max-w-2xl mx-auto">
+        <Card className="border-destructive bg-destructive/10 text-destructive-foreground h-full flex flex-col justify-center">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-destructive">
                     <AlertTriangle className="h-6 w-6" />
-                    Action Required: Complete Your Payment
+                    Strategic Access Required
                 </CardTitle>
-                <CardDescription className="text-destructive/80">
-                    Your account has been created, but your subscription is not active yet. Please complete the payment to launch your store.
+                <CardDescription className="text-destructive/80 text-base">
+                    Your {planName} identity is provisioned, but the blueprint remains locked until the entrance fee is processed.
                 </CardDescription>
             </CardHeader>
-            <CardContent>
-                <Button onClick={handleRetryPayment} disabled={isInitializing} className="w-full bg-destructive hover:bg-destructive/90 text-destructive-foreground">
-                    {isInitializing ? <Loader2 className="animate-spin" /> : `Complete Payment for ${planName} Plan`}
+            <CardContent className="space-y-6">
+                <p className="text-sm leading-relaxed opacity-80">
+                    SOMA acts as the central Merchant of Record. Completing this transaction authorizes your boutique instance and grants full sync permissions to the Master Catalog.
+                </p>
+                <Button onClick={handleRetryPayment} disabled={isInitializing} size="lg" className="w-full h-16 text-lg bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold shadow-2xl">
+                    {isInitializing ? <Loader2 className="animate-spin" /> : (
+                        <>
+                            <ShieldCheck className="mr-2 h-6 w-6" />
+                            Secure {planName} Handshake
+                        </>
+                    )}
                 </Button>
             </CardContent>
         </Card>

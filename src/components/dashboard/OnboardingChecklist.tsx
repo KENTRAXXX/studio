@@ -15,7 +15,8 @@ import {
     Instagram, 
     Check, 
     Sparkles, 
-    ExternalLink 
+    ExternalLink,
+    Lock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import confetti from 'canvas-confetti';
@@ -31,9 +32,9 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 
 /**
- * @fileOverview A high-end onboarding checklist for Moguls.
+ * @fileOverview A high-end onboarding roadmap for Moguls.
  * Tracks payment status, branding assets, inventory sync, and theme selection.
- * Triggers a graduation flow once 100% complete.
+ * Milestones are dynamically verified to ensure zero "mocked" steps.
  */
 
 export function OnboardingChecklist() {
@@ -45,7 +46,7 @@ export function OnboardingChecklist() {
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
     const [hasTriggeredConfetti, setHasTriggeredConfetti] = useState(false);
 
-    // Data fetching for checklist logic
+    // Data verification hooks
     const storeRef = useMemoFirebase(() => (user && firestore ? doc(firestore, 'stores', user.uid) : null), [user, firestore]);
     const { data: storeData, loading: storeLoading } = useDoc<any>(storeRef);
 
@@ -54,7 +55,7 @@ export function OnboardingChecklist() {
 
     const isLoading = profileLoading || storeLoading || productsLoading;
 
-    const checklist = useMemo(() => {
+    const roadmap = useMemo(() => {
         if (!userProfile) return { items: [], progress: 0, completedCount: 0 };
 
         const hasPaid = !!userProfile.hasAccess;
@@ -63,10 +64,30 @@ export function OnboardingChecklist() {
         const themeSelected = !!storeData?.themeConfig;
 
         const items = [
-            { label: 'Payment Verification', complete: hasPaid },
-            { label: 'Brand Logo Uploaded', complete: logoUploaded },
-            { label: 'Initial Products Synced', complete: productsSynced },
-            { label: 'Storefront Theme Selected', complete: themeSelected },
+            { 
+                id: 'pay',
+                label: 'Strategic Access Fee', 
+                description: 'Verifying financial handshake and plan activation.',
+                complete: hasPaid 
+            },
+            { 
+                id: 'logo',
+                label: 'Visual Identity Registry', 
+                description: 'Uploading premium brand assets and logo.',
+                complete: logoUploaded 
+            },
+            { 
+                id: 'sync',
+                label: 'Global Catalog Synchronization', 
+                description: 'Cloning signature items from the master registry.',
+                complete: productsSynced 
+            },
+            { 
+                id: 'theme',
+                label: 'Boutique Architecture', 
+                description: 'Selecting a high-fidelity luxury theme story.',
+                complete: themeSelected 
+            },
         ];
 
         const completedCount = items.filter(i => i.complete).length;
@@ -117,14 +138,14 @@ export function OnboardingChecklist() {
         }, 250);
     };
 
-    // Graduation Logic
+    // Graduation Flow
     useEffect(() => {
-        if (checklist.progress === 100 && !userProfile?.live && !hasTriggeredConfetti) {
+        if (roadmap.progress === 100 && !userProfile?.live && !hasTriggeredConfetti) {
             setHasTriggeredConfetti(true);
             triggerGoldConfetti();
             setIsSuccessModalOpen(true);
         }
-    }, [checklist.progress, userProfile?.live, hasTriggeredConfetti]);
+    }, [roadmap.progress, userProfile?.live, hasTriggeredConfetti]);
 
     const handleMarkAsLive = async () => {
         if (!user || !firestore) return;
@@ -134,7 +155,7 @@ export function OnboardingChecklist() {
             setIsSuccessModalOpen(false);
             toast({
                 title: 'Empire Activated',
-                description: 'Your store is now officially part of the SOMA network.',
+                description: 'Your store is now officially live on the SOMA network.',
             });
         } catch (e) {
             console.error("Failed to update live status", e);
@@ -210,50 +231,57 @@ export function OnboardingChecklist() {
                 </DialogContent>
             </Dialog>
 
-            <Card className="border-primary/50 bg-card/50 backdrop-blur-sm shadow-xl relative overflow-hidden">
+            <Card className="border-primary/50 bg-card/50 backdrop-blur-sm shadow-xl relative overflow-hidden h-full">
                 <div className="absolute top-0 right-0 p-4 opacity-10">
                     <Sparkles className="h-24 w-24 text-primary" />
                 </div>
                 
                 <CardHeader className="pb-6">
                     <div className="flex items-center justify-between mb-3">
-                        <CardTitle className="text-xl font-headline font-bold text-primary uppercase tracking-tight">Onboarding Pulse</CardTitle>
+                        <CardTitle className="text-xl font-headline font-bold text-primary uppercase tracking-tight">Deployment Pulse</CardTitle>
                         <span className="text-sm font-bold font-mono text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                            {checklist.progress}% COMPLETE
+                            {roadmap.progress}% COMPLETE
                         </span>
                     </div>
-                    <Progress value={checklist.progress} className="h-2 bg-muted border border-primary/20" />
+                    <Progress value={roadmap.progress} className="h-2 bg-muted border border-primary/20" />
                 </CardHeader>
                 <CardContent>
-                    <ul className="space-y-5 pt-2">
-                        {checklist.items.map((item, idx) => (
-                            <li key={idx} className="flex items-center gap-4 transition-all duration-300">
-                                <div className="shrink-0">
+                    <ul className="space-y-6 pt-2">
+                        {roadmap.items.map((item, idx) => (
+                            <li key={idx} className="flex items-start gap-4 transition-all duration-300">
+                                <div className="shrink-0 mt-1">
                                     {item.complete ? (
                                         <div className="bg-primary/20 rounded-full p-1 border border-primary/50">
                                             <CheckCircle2 className="h-5 w-5 text-primary" />
                                         </div>
                                     ) : (
                                         <div className="bg-muted rounded-full p-1 border border-border">
-                                            <Circle className="h-5 w-5 text-muted-foreground/30" />
+                                            <Lock className="h-5 w-5 text-muted-foreground/30" />
                                         </div>
                                     )}
                                 </div>
-                                <span className={cn(
-                                    "text-lg font-medium transition-all duration-500",
-                                    item.complete 
-                                        ? "text-muted-foreground line-through opacity-40 italic" 
-                                        : "text-foreground"
-                                )}>
-                                    {item.label}
-                                </span>
+                                <div className="space-y-1">
+                                    <p className={cn(
+                                        "text-base font-bold transition-all duration-500",
+                                        item.complete 
+                                            ? "text-muted-foreground line-through opacity-40 italic" 
+                                            : "text-foreground"
+                                    )}>
+                                        {item.label}
+                                    </p>
+                                    {!item.complete && (
+                                        <p className="text-xs text-muted-foreground leading-relaxed">
+                                            {item.description}
+                                        </p>
+                                    )}
+                                </div>
                             </li>
                         ))}
                     </ul>
                     
-                    {checklist.progress === 100 && (
+                    {roadmap.progress === 100 && (
                         <div className="mt-8 p-4 rounded-lg bg-green-500/10 border border-green-500/30 text-center animate-in zoom-in duration-500">
-                            <p className="text-sm font-bold text-green-400">EMPIRE READY FOR GLOBAL DEPLOYMENT</p>
+                            <p className="text-[10px] font-black uppercase text-green-400 tracking-widest">Global Handshake Successful • Verified</p>
                         </div>
                     )}
                 </CardContent>
