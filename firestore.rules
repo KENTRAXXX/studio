@@ -90,5 +90,10 @@ service cloud.firestore {
     match /withdrawal_requests/{reqId} {
       allow read, write: if isSignedIn();
     }
+    
+    match /platform_metadata/{metaId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
   }
 }

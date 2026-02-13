@@ -2,7 +2,9 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser } from '@/firebase/provider';
+import { useFirestore, useMemoFirebase } from '@/firebase/provider';
+import { useCollection } from '@/firebase/firestore/use-collection';
 import { collection, query, orderBy, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,13 +19,15 @@ import {
     CheckCircle2, 
     History,
     Search,
-    User
+    User,
+    ArrowLeft
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import SomaLogo from '@/components/logo';
 import { SupportTicket } from '@/lib/types';
+import Link from 'next/link';
 
 export function SupportPortalContent() {
     const { user } = useUser();
@@ -97,10 +101,17 @@ export function SupportPortalContent() {
 
     return (
         <div className="space-y-10 max-w-7xl mx-auto pb-12 px-4">
+            <div className="flex items-center justify-between">
+                <Link href="/backstage" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors">
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Dashboard
+                </Link>
+                <SomaLogo className="h-10 w-10 text-primary" />
+                <div className="w-20" /> {/* Spacer */}
+            </div>
+
             <div className="text-center">
-                <SomaLogo className="h-12 w-12 mx-auto text-primary" />
-                <h1 className="text-4xl font-bold font-headline mt-4 text-primary">Executive Support Portal</h1>
-                <p className="mt-2 text-lg text-muted-foreground">Manage client inquiries and strategic requests for your boutique.</p>
+                <h1 className="text-4xl font-bold font-headline text-primary">Boutique Support Terminal</h1>
+                <p className="mt-2 text-lg text-muted-foreground">Manage client inquiries and strategic requests for your brand.</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -109,12 +120,12 @@ export function SupportPortalContent() {
                         <CardHeader className="bg-muted/30 border-b border-primary/10 space-y-4">
                             <div className="flex items-center gap-2">
                                 <History className="h-4 w-4 text-primary" />
-                                <CardTitle className="text-sm font-headline uppercase tracking-widest text-slate-200">Boutique Inbox</CardTitle>
+                                <CardTitle className="text-sm font-headline uppercase tracking-widest text-slate-200">Inquiry Ledger</CardTitle>
                             </div>
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                                 <Input 
-                                    placeholder="Filter inquiries..." 
+                                    placeholder="Filter communications..." 
                                     className="h-9 text-xs pl-9 border-primary/10 bg-black/20"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -123,7 +134,7 @@ export function SupportPortalContent() {
                         </CardHeader>
                         <CardContent className="p-0 max-h-[600px] overflow-y-auto">
                             {filteredTickets.length === 0 ? (
-                                <div className="p-12 text-center text-muted-foreground italic text-sm">No strategic inquiries found.</div>
+                                <div className="p-12 text-center text-muted-foreground italic text-sm">No inquiries recorded.</div>
                             ) : (
                                 <div className="divide-y divide-primary/5">
                                     {filteredTickets.map((ticket) => (
@@ -173,7 +184,7 @@ export function SupportPortalContent() {
                                         )}>
                                             {selectedTicket.status}
                                         </Badge>
-                                        <span className="text-[10px] text-muted-foreground font-mono">ID: {selectedTicket.id.slice(0, 8)}</span>
+                                        <span className="text-[10px] text-muted-foreground font-mono">Ref ID: {selectedTicket.id.slice(0, 8).toUpperCase()}</span>
                                     </div>
                                 </div>
                                 <div className="flex gap-2">
@@ -184,7 +195,7 @@ export function SupportPortalContent() {
                                         onClick={handleResolve}
                                         disabled={selectedTicket.status === 'RESOLVED'}
                                     >
-                                        <CheckCircle2 className="h-3 w-3 mr-1" /> Mark Resolved
+                                        <CheckCircle2 className="h-3 w-3 mr-1" /> Close Inquiry
                                     </Button>
                                 </div>
                             </CardHeader>
@@ -194,7 +205,7 @@ export function SupportPortalContent() {
                                     <div className="space-y-6">
                                         <div className="bg-primary/5 border border-primary/10 p-6 rounded-2xl max-w-[85%]">
                                             <p className="text-[10px] font-black uppercase text-primary/60 mb-2 tracking-widest flex items-center gap-2">
-                                                <User className="h-3 w-3" /> Initial Client Inquiry
+                                                <User className="h-3 w-3" /> Initial Client Submission
                                             </p>
                                             <p className="text-slate-200 leading-relaxed whitespace-pre-wrap">{selectedTicket.message}</p>
                                         </div>
@@ -217,7 +228,7 @@ export function SupportPortalContent() {
                                                         <p className="text-sm leading-relaxed whitespace-pre-wrap">{displayMsg}</p>
                                                     </div>
                                                     <span className="text-[9px] text-slate-600 uppercase font-bold px-2 tracking-tighter">
-                                                        {isCurator ? 'Boutique Response' : 'Client Message'}
+                                                        {isCurator ? 'Boutique Authority' : 'Client Feedback'}
                                                     </span>
                                                 </div>
                                             );
@@ -250,8 +261,8 @@ export function SupportPortalContent() {
                             <div className="bg-primary/5 p-10 rounded-full mb-6">
                                 <MessageSquare className="h-20 w-20 text-primary/20" />
                             </div>
-                            <h3 className="text-2xl font-bold font-headline text-slate-400 uppercase tracking-tighter">Support Terminal</h3>
-                            <p className="text-slate-500 max-w-sm mt-2">Select an inquiry from the inbox to begin client orchestration.</p>
+                            <h3 className="text-2xl font-bold font-headline text-slate-400 uppercase tracking-tighter">Support Command</h3>
+                            <p className="text-slate-500 max-w-sm mt-2">Select an inquiry from the ledger to begin elite orchestration.</p>
                         </div>
                     )}
                 </div>

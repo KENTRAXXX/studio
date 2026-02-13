@@ -16,7 +16,7 @@ import {
     serverTimestamp,
     getDocs
 } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { useFirestore } from '@/firebase/provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -213,7 +213,7 @@ export function ContactFormContent() {
                                         Your request has been transmitted directly to the boutique ledger. 
                                         You will receive a confirmation email shortly.
                                     </p>
-                                    <Button asChild size="lg" className="mt-4 btn-gold-glow" onClick={() => router.push('/')}>
+                                    <Button asChild size="lg" className="mt-4 btn-gold-glow">
                                         <Link href="/">Return to Boutique</Link>
                                     </Button>
                                 </CardContent>
