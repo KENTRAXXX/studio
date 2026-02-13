@@ -29,12 +29,6 @@ async function logWebhookEvent(eventType: string, payload: any, status: 'success
     }
 }
 
-function getReferralCommissionRate(activeCount: number): number {
-    if (activeCount >= 51) return 0.20;
-    if (activeCount >= 21) return 0.15;
-    return 0.10;
-}
-
 async function verifyPaystackSignature(payload: string, signature: string, secret: string): Promise<boolean> {
     const encoder = new TextEncoder();
     const keyData = encoder.encode(secret);
@@ -267,19 +261,10 @@ export async function POST(req: Request) {
                     
                     if (referrerSnap.exists() && referrerSnap.data().hasAccess === true) {
                         const referrerData = referrerSnap.data();
-                        const currentActiveCount = referrerData.activeReferralCount || 0;
-                        const referralCommissionRate = getReferralCommissionRate(currentActiveCount);
                         
-                        const tierId = (userData.planTier || planTier) as PlanTier;
-                        const tier = getTier(tierId);
-                        
-                        // Reference prices for rewards
-                        const basePrices: Record<string, number> = { MERCHANT: 19.99, SCALER: 29.00, SELLER: 0, ENTERPRISE: 33.33, BRAND: 21.00 };
-                        const interval = userData.plan || plan;
-                        const basePrice = basePrices[tierId] || 0;
-                        const totalPlanCost = interval === 'yearly' ? basePrice * 10 : basePrice;
-                        
-                        const referralReward = totalPlanCost * referralCommissionRate;
+                        // SOMA Ambassador Program: Flat $5.00 reward
+                        const isAmbassador = referrerData.userRole === 'AMBASSADOR';
+                        const referralReward = isAmbassador ? 5 : 0; 
 
                         if (referralReward > 0) {
                             const payoutRef = doc(collection(firestore, 'payouts_pending'));
@@ -288,10 +273,10 @@ export async function POST(req: Request) {
                                 amount: referralReward,
                                 currency: 'USD',
                                 status: 'pending_maturity',
-                                type: 'referral_reward',
+                                type: 'ambassador_bounty',
                                 referredUserId: userId,
                                 createdAt: new Date().toISOString(),
-                                description: `${referralCommissionRate * 100}% Referral Reward for ${userData.email || 'New User'} activation.`
+                                description: `Flat $5.00 Ambassador Reward for recruiting ${userData.email || 'New User'}.`
                             });
 
                             transaction.update(referrerRef, {
@@ -331,7 +316,7 @@ export async function POST(req: Request) {
                 });
             }
 
-            const isSupplierTier = planTier === 'SELLER' || planTier === 'BRAND';
+            const isSupplierTier = planTier === 'SELLER' || planTier === 'BRAND' || planTier === 'AMBASSADOR';
             if (!isSupplierTier) {
                 await createClientStore({
                     userId,

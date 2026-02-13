@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useDoc, useFirestore, useCollection, useUser, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, where, limit, or } from 'firebase/firestore';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -17,46 +17,181 @@ import {
     Star,
     Truck,
     Activity,
-    Zap
+    Zap,
+    Award,
+    TrendingUp,
+    DollarSign,
+    Users,
+    Link as LinkIcon,
+    Copy,
+    Rocket
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ProductGrid } from '@/components/store/product-grid';
 import { StoreVisitorTracker } from '@/components/store/visitor-tracker';
-
-type StorefrontProduct = {
-    id: string;
-    name: string;
-    description: string;
-    suggestedRetailPrice: number;
-    wholesalePrice: number;
-    imageUrl: string;
-    productType: 'INTERNAL' | 'EXTERNAL';
-    vendorId: string;
-    isManagedBySoma: boolean;
-};
+import { useUserProfile } from '@/firebase/user-profile-provider';
+import Link from 'next/link';
+import { formatCurrency } from '@/utils/format';
 
 /**
- * @fileOverview Tenant Boutique Root
- * Handles high-fidelity rendering for hostnames passed via middleware rewrite.
+ * @fileOverview Ambassador Portal UI
+ * Rendered when domain is 'ambassador'
  */
+function AmbassadorPortal() {
+    const { user } = useUser();
+    const { userProfile, loading: profileLoading } = useUserProfile();
+    const { toast } = (require('@/hooks/use-toast')).useToast();
+    const router = useRouter();
+
+    const referralLink = userProfile?.referralCode 
+        ? `https://somatoday.com/plan-selection?ref=${userProfile.referralCode}`
+        : '';
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(referralLink);
+        toast({ title: 'Link Secured', description: 'Your personalized marketing link is ready.' });
+    };
+
+    if (profileLoading) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
+
+    if (!user) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen bg-black text-center p-6">
+                <Award className="h-16 w-16 text-primary mb-6" />
+                <h1 className="text-4xl font-bold font-headline text-white mb-4">The Marketer Role</h1>
+                <p className="text-slate-400 max-w-md mb-8">Earn a flat $5.00 for every paid Mogul you bring to the SOMA ecosystem. No inventory, pure performance.</p>
+                <div className="flex gap-4">
+                    <Button asChild size="lg" className="btn-gold-glow">
+                        <Link href="/signup?planTier=AMBASSADOR&interval=free">Join as Ambassador</Link>
+                    </Button>
+                    <Button asChild variant="outline" size="lg">
+                        <Link href="/login">Partner Sign In</Link>
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="max-w-6xl mx-auto space-y-10 py-12 px-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold font-headline text-primary flex items-center gap-3">
+                        <Award className="h-8 w-8" />
+                        Ambassador Command Center
+                    </h1>
+                    <p className="text-slate-500">Track your yield and scale your marketing reach.</p>
+                </div>
+                <div className="flex items-center gap-3 bg-primary/10 p-3 rounded-xl border border-primary/20">
+                    <div className="text-right">
+                        <p className="text-[10px] font-black text-primary/60 uppercase tracking-widest">Commission Tier</p>
+                        <p className="text-xl font-bold font-mono text-primary">$5.00 FLAT</p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="border-primary/20 bg-slate-900/50">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium">Marketing Yield</CardTitle>
+                        <DollarSign className="h-4 w-4 text-primary" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-bold text-slate-200">
+                            {formatCurrency(Math.round((userProfile?.totalReferralEarnings || 0) * 100))}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Lifetime Accrued Rewards</p>
+                    </CardContent>
+                </Card>
+                <Card className="border-primary/20 bg-slate-900/50">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium">Paid Conversions</CardTitle>
+                        <Users className="h-4 w-4 text-primary" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-bold text-slate-200">{userProfile?.activeReferralCount || 0}</div>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Strategic Partners Recruited</p>
+                    </CardContent>
+                </Card>
+                <Card className="border-primary/20 bg-slate-900/50">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium">Ambassador Status</CardTitle>
+                        <ShieldCheck className="h-4 w-4 text-primary" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-xl font-bold text-primary uppercase tracking-tighter">Verified Marketer</div>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Account Secure</p>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <Card className="border-primary bg-primary/5 p-8">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+                    <div className="space-y-4 text-center md:text-left">
+                        <h2 className="text-2xl font-bold font-headline flex items-center justify-center md:justify-start gap-2 text-white">
+                            <LinkIcon className="h-6 w-6 text-primary" />
+                            Universal Marketing Link
+                        </h2>
+                        <p className="text-slate-400 max-w-md">
+                            Direct recruits to the pricing page using this link. It automatically unlocks their **20% discount** and secures your **$5.00 bounty**.
+                        </p>
+                    </div>
+                    <div className="w-full md:w-auto space-y-4">
+                        <div className="p-4 rounded-lg bg-black/40 border border-primary/20 font-mono text-xs text-primary break-all">
+                            {referralLink}
+                        </div>
+                        <Button onClick={handleCopy} className="w-full h-12 btn-gold-glow bg-primary font-black uppercase">
+                            <Copy className="mr-2 h-4 w-4" /> Copy Link
+                        </Button>
+                    </div>
+                </div>
+            </Card>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <Card className="border-primary/10 bg-slate-900/20">
+                    <CardHeader>
+                        <CardTitle className="text-sm font-headline uppercase tracking-widest">Earnings Policy</CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-xs text-slate-500 space-y-3 leading-relaxed">
+                        <p>1. Bounties are triggered once a recruit's first subscription payment is successfully processed.</p>
+                        <p>2. Funds become available for withdrawal after a 14-day maturity period to prevent fraud.</p>
+                        <p>3. Self-referrals are strictly prohibited and result in permanent ban and forfeiture.</p>
+                    </CardContent>
+                </Card>
+                <div className="flex flex-col gap-4">
+                    <Button asChild size="lg" className="h-16 text-lg font-bold">
+                        <Link href="/dashboard/wallet">
+                            Request Payout <DollarSign className="ml-2 h-5 w-5" />
+                        </Link>
+                    </Button>
+                    <Button variant="outline" size="lg" className="h-16 text-lg border-slate-800 text-slate-400">
+                        View Recruitment History
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function TenantBoutiquePage() {
     const params = useParams();
-    const router = useRouter();
-    // In multi-tenancy mode, 'domain' is the incoming hostname
     const identifier = params.domain as string; 
+    const isAmbassadorPortal = identifier?.toLowerCase().startsWith('ambassador');
     
+    if (isAmbassadorPortal) {
+        return <AmbassadorPortal />;
+    }
+
+    const router = useRouter();
     const firestore = useFirestore();
 
-    // 1. Boutique Identity Resolution Logic
-    // Handles subdomains (deluxeinc.somatoday.com), custom domains (brand.com), and raw slugs
     const storeQuery = useMemoFirebase(() => {
         if (!firestore || !identifier) return null;
         
         const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
         const normalizedIdentifier = identifier.toLowerCase();
         
-        // Extract the slug if it's a platform subdomain
         let slug = normalizedIdentifier;
         if (normalizedIdentifier.endsWith(`.${rootDomain}`)) {
             slug = normalizedIdentifier.replace(`.${rootDomain}`, '');
@@ -68,9 +203,9 @@ export default function TenantBoutiquePage() {
         return query(
             collection(firestore, 'stores'),
             or(
-                where('userId', '==', slug), // Direct UID match
-                where('customDomain', '==', normalizedIdentifier), // Full custom domain match
-                where('slug', '==', slug) // Normalized slug match
+                where('userId', '==', slug), 
+                where('customDomain', '==', normalizedIdentifier), 
+                where('slug', '==', slug) 
             ),
             limit(1)
         );
@@ -92,25 +227,9 @@ export default function TenantBoutiquePage() {
         return query(collection(firestore, `stores/${storeId}/products`));
     }, [firestore, storeId]);
 
-    const { data: products, loading: productsLoading } = useCollection<StorefrontProduct>(productsQuery);
-
-    const healthMetrics = useMemo(() => {
-        if (!ownerProfile) return null;
-        const isVerified = ownerProfile.status === 'approved';
-        return {
-            authenticityScore: isVerified ? 100 : 85,
-            inventoryAccuracy: isVerified ? 99.4 : 92.0,
-            avgShippingTime: isVerified ? "1.4 Days" : "2.1 Days",
-            fulfillmentRating: isVerified ? 4.9 : 4.2
-        };
-    }, [ownerProfile]);
+    const { data: products, loading: productsLoading } = useCollection<any>(productsQuery);
 
     const isLoading = storeLoading || ownerLoading || productsLoading;
-
-    const handlePlatformHome = () => {
-        const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
-        window.location.href = `https://${rootDomain}`;
-    };
 
     if (isLoading) {
         return (
@@ -130,7 +249,7 @@ export default function TenantBoutiquePage() {
                 <p className="text-muted-foreground text-center max-w-sm">
                     The boutique at "{identifier}" is not currently provisioned in our network.
                 </p>
-                <Button variant="outline" className="border-primary/50" onClick={handlePlatformHome}>
+                <Button variant="outline" className="border-primary/50" onClick={() => window.location.href = `https://${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com'}`}>
                     <ArrowLeft className="mr-2 h-4 w-4" /> Platform Home
                 </Button>
             </div>
@@ -145,7 +264,6 @@ export default function TenantBoutiquePage() {
         <div className="min-h-screen bg-background text-foreground selection:bg-primary/30">
             <StoreVisitorTracker storeId={storeId} />
             
-            {/* Elite Brand Header */}
             <div className="relative h-[400px] w-full overflow-hidden">
                 <Image 
                     src={ownerProfile?.coverPhotoUrl || heroImageUrl || ""} 
@@ -188,57 +306,7 @@ export default function TenantBoutiquePage() {
                 </div>
             </div>
 
-            <main className="container py-16 px-4 sm:px-6 lg:px-8 mx-auto space-y-20">
-                {/* Brand Health Indicators */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <Card className="border-primary/20 bg-slate-900/30">
-                        <CardHeader className="pb-4">
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="text-[10px] font-headline uppercase tracking-[0.2em] text-primary/60">Registry Health</CardTitle>
-                                <Activity className="h-4 w-4 text-primary/40" />
-                            </div>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <div className="flex justify-between items-end">
-                                    <span className="text-xs font-bold text-slate-200 uppercase">Provenance Audit</span>
-                                    <span className="font-mono text-sm font-bold text-green-500">{healthMetrics?.authenticityScore}%</span>
-                                </div>
-                                <Progress value={healthMetrics?.authenticityScore} className="h-1 bg-slate-800" />
-                            </div>
-                            <div className="space-y-2">
-                                <div className="flex justify-between items-end">
-                                    <span className="text-xs font-bold text-slate-200 uppercase">Inventory Accuracy</span>
-                                    <span className="font-mono text-sm font-bold text-primary">{healthMetrics?.inventoryAccuracy}%</span>
-                                </div>
-                                <Progress value={healthMetrics?.inventoryAccuracy} className="h-1 bg-slate-800" />
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="p-6 rounded-xl bg-slate-900/30 border border-primary/10 flex flex-col items-center justify-center text-center">
-                            <Truck className="h-6 w-6 text-primary mb-2" />
-                            <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest">Avg. Shipping</p>
-                            <p className="text-lg font-bold text-slate-200">{healthMetrics?.avgShippingTime}</p>
-                        </div>
-                        <div className="p-6 rounded-xl bg-slate-900/30 border border-primary/10 flex flex-col items-center justify-center text-center">
-                            <Star className="h-6 w-6 text-primary mb-2 fill-primary" />
-                            <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest">Mogul Rating</p>
-                            <p className="text-lg font-bold text-slate-200">{healthMetrics?.fulfillmentRating}</p>
-                        </div>
-                    </div>
-
-                    <Card className="border-primary/20 bg-primary/5 flex items-center justify-center p-8 text-center">
-                        <div className="space-y-2">
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60">Collection Depth</p>
-                            <p className="text-4xl font-black font-headline text-primary">{products?.length || 0}</p>
-                            <p className="text-[9px] font-bold text-slate-500 uppercase">Masterwork Assets</p>
-                        </div>
-                    </Card>
-                </div>
-
-                {/* Product Collection */}
+            <main className="container py-16 px-4 sm:px-6 lg:px-8 mx-auto">
                 <section id="collection" className="space-y-12">
                     <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-primary/10 pb-8 gap-4">
                         <div>

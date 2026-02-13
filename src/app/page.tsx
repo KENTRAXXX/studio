@@ -7,7 +7,7 @@ import { useEffect, useState, useRef } from 'react';
 import { AnimatePresence, motion, useInView } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Globe, DollarSign, Boxes, Check, Rocket, Gem, Users, ShieldCheck, Loader2 } from 'lucide-react';
+import { Globe, DollarSign, Boxes, Check, Rocket, Gem, Users, ShieldCheck, Loader2, Award } from 'lucide-react';
 import AnimatedCounter from '@/components/ui/animated-counter';
 import Image from 'next/image';
 import { useToastWithRandomCity } from '@/hooks/use-toast-with-random-city';
@@ -333,9 +333,15 @@ function SneakPeek() {
                          initial={{ opacity: 0, y: 20 }}
                          animate={isInView ? { opacity: 1, y: 0 } : {}}
                          transition={{ duration: 0.5, delay: 1.0 }}
+                         className="flex flex-col sm:flex-row items-center gap-4"
                     >
                         <Button asChild size="lg" className="h-12 text-lg w-full sm:w-auto btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
                             <Link href="/plan-selection">Claim Your Lifetime Access</Link>
+                        </Button>
+                        <Button asChild size="lg" variant="outline" className="h-12 text-lg w-full sm:w-auto border-primary/50 text-primary hover:bg-primary/10">
+                            <Link href="https://ambassador.somatoday.com">
+                                <Award className="mr-2 h-5 w-5" /> Be an Ambassador
+                            </Link>
                         </Button>
                     </motion.div>
                 </div>
@@ -378,7 +384,7 @@ export default function Home() {
                 <Link href="/store/demo">View Store Demo</Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="h-12 text-lg w-full sm:w-auto border-primary/50 text-primary hover:bg-primary/10 hover:text-primary">
-                <Link href="/dashboard/demo">View Dashboard Demo</Link>
+                <Link href="https://ambassador.somatoday.com">Become an Ambassador</Link>
             </Button>
             </div>
         </section>
