@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -92,7 +93,7 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
   
   const { data: liveCatalog, loading: catalogLoading } = useCollection<Product>(masterCatalogRef);
   
-  // 2. Fetch User's Provisioned Products (Reactive)
+  // 2. Fetch User's Provisioned Products (Reactive Listener)
   const userProductsQuery = useMemoFirebase(() => {
     if (!firestore || !user || isDemo) return null;
     return collection(firestore, 'stores', user.uid, 'products');
@@ -140,7 +141,7 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
     setSyncingId(product.id);
     const newProductRef = doc(firestore, 'stores', user.uid, 'products', product.id);
     
-    // Creating a full document copy with specific metadata
+    // Creating a full document copy with mandatory Merchant metadata
     const productDataToSync = {
       name: product.name,
       suggestedRetailPrice: product.retailPrice,
@@ -154,13 +155,13 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
       isManagedBySoma: true,
       categories: product.categories || [],
       tags: product.tags || [],
-      // Strategic Metadata
+      // Strategic Traceability Metadata
       originalCatalogId: product.id,
       syncedAt: serverTimestamp(),
       ownerId: user.uid
     };
 
-    // Strategic Non-Blocking Write
+    // Atomic write ensures asset persistence in the Merchant's local registry
     setDoc(newProductRef, productDataToSync)
       .then(() => {
         toast({
@@ -171,6 +172,7 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
       })
       .catch(async (serverError) => {
         setSyncingId(null);
+        // Permission errors are emitted contextually for dev audit
         const permissionError = new FirestorePermissionError({
           path: newProductRef.path,
           operation: 'write',

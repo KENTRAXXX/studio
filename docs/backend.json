@@ -158,9 +158,22 @@
                 "isFeatured": {
                     "type": "boolean",
                     "description": "Indicates if the product is featured on the boutique homepage."
+                },
+                "originalCatalogId": {
+                    "type": "string",
+                    "description": "Reference to the original masterpiece in the Master Catalog."
+                },
+                "syncedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Timestamp when the product was cloned from the master registry."
+                },
+                "ownerId": {
+                    "type": "string",
+                    "description": "The UID of the Merchant who owns this local product instance."
                 }
             },
-            "required": ["name", "suggestedRetailPrice", "imageUrl", "productType", "vendorId"]
+            "required": ["name", "suggestedRetailPrice", "imageUrl", "productType", "vendorId", "ownerId"]
         },
         "trafficLog": {
             "title": "Traffic Log",

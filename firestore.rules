@@ -4,57 +4,77 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
     function isRole(role) {
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userRole == role;
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userRole == role;
+    }
+
+    function isTier(tier) {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.planTier == tier;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
     }
 
     match /users/{userId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth.uid == userId;
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId);
       // Allow authenticated owners to update their own profile fields safely
-      allow update: if request.auth.uid == userId || isRole('ADMIN');
+      allow update: if isOwner(userId) || isRole('ADMIN');
       allow delete: if isRole('ADMIN');
     }
 
     match /stores/{storeId} {
       allow read;
-      allow write: if request.auth.uid == storeId || isRole('ADMIN');
+      // Owners can manage their own store configuration
+      allow write: if isOwner(storeId) || isRole('ADMIN');
 
       match /products/{productId} {
         allow read;
-        allow write: if request.auth.uid == storeId || isRole('ADMIN');
+        // Owners (including SCALER and ENTERPRISE tiers) can manage their boutique inventory
+        // This authorizes the 'Deep Copy' synchronization from the Master Catalog
+        allow write: if isOwner(storeId) || isRole('ADMIN');
       }
       
       match /orders/{orderId} {
-        allow read: if request.auth.uid == storeId || isRole('ADMIN');
+        allow read: if isOwner(storeId) || isRole('ADMIN');
         allow create: if true; // Allow customers to create orders
+      }
+
+      match /traffic_logs/{logId} {
+        allow read: if isOwner(storeId) || isRole('ADMIN');
+        allow create: if true; 
       }
     }
     
     match /Pending_Master_Catalog/{productId} {
-        allow read: if isRole('ADMIN') || (request.auth != null && resource.data.vendorId == request.auth.uid);
-        allow create: if request.auth != null && (isRole('SELLER') || isRole('MOGUL'));
+        allow read: if isRole('ADMIN') || (isAuthenticated() && resource.data.vendorId == request.auth.uid);
+        allow create: if isAuthenticated() && (isRole('SELLER') || isRole('MOGUL'));
         allow update: if isRole('ADMIN');
     }
     
     match /Master_Catalog/{productId} {
-        allow read: if request.auth != null;
+        allow read: if isAuthenticated();
         allow write: if isRole('ADMIN');
     }
     
      match /Training_Modules/{moduleId} {
-        allow read: if request.auth != null;
+        allow read: if isAuthenticated();
         allow write: if isRole('ADMIN');
     }
 
     match /payouts_pending/{payoutId} {
-      allow read: if request.auth != null && (request.auth.uid == resource.data.userId || isRole('ADMIN'));
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isRole('ADMIN'));
       allow create: if false; 
       allow update: if isRole('ADMIN');
     }
     
      match /payouts_completed/{payoutId} {
-      allow read: if request.auth != null && (request.auth.uid == resource.data.userId || isRole('ADMIN'));
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isRole('ADMIN'));
       allow create: if false; 
     }
     
@@ -64,8 +84,8 @@ service cloud.firestore {
     }
     
     match /withdrawal_requests/{reqId} {
-        allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-        allow read: if request.auth != null && (request.auth.uid == resource.data.userId || isRole('ADMIN'));
+        allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+        allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isRole('ADMIN'));
         allow update: if isRole('ADMIN');
     }
     
@@ -76,12 +96,12 @@ service cloud.firestore {
 
     match /webhook_logs/{logId} {
         allow read: if isRole('ADMIN');
-        allow create: if true; // Webhook function hits this
+        allow create: if true; 
     }
 
     match /concierge_tickets/{ticketId} {
-        allow create: if request.auth != null && request.auth.uid == request.resource.data.brandId;
-        allow read: if request.auth != null && (request.auth.uid == resource.data.brandId || isRole('ADMIN'));
+        allow create: if isAuthenticated() && request.auth.uid == request.resource.data.brandId;
+        allow read: if isAuthenticated() && (request.auth.uid == resource.data.brandId || isRole('ADMIN'));
         allow update: if isRole('ADMIN');
     }
 
