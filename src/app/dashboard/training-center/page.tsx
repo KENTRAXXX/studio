@@ -1,11 +1,13 @@
+'use client';
 
 import dynamic from 'next/dynamic';
+import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 
 /**
  * @fileOverview Executive Training Center Gateway.
- * Refactored as a thin Server Component wrapper to resolve Next.js 15 build conflicts.
- * Uses dynamic client-side loading to isolate Firebase runtime from the build server.
+ * Applied "Nuclear" Isolation fix to break build-time circular dependencies.
+ * ssr: false ensures this component skips the server build process entirely.
  */
 
 const TrainingCenterContent = dynamic(
@@ -14,7 +16,7 @@ const TrainingCenterContent = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex h-screen items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <Loader2 className="h-12 w-12 animate-spin text-primary opacity-20" />
       </div>
     )
   }
@@ -23,5 +25,13 @@ const TrainingCenterContent = dynamic(
 export const dynamic = 'force-dynamic';
 
 export default function TrainingCenterPage() {
-    return <TrainingCenterContent />;
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary opacity-20" />
+      </div>
+    }>
+      <TrainingCenterContent />
+    </Suspense>
+  );
 }

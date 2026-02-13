@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { UserProfileProvider } from '@/firebase/user-profile-provider';
 import { SkipToContent } from '@/components/skip-to-content';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 export const metadata: Metadata = {
   title: 'SomaDS',
@@ -26,6 +27,7 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <SkipToContent />
         <FirebaseClientProvider>
+          <FirebaseErrorListener />
           <UserProfileProvider>
             {children}
           </UserProfileProvider>

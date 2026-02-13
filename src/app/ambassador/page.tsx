@@ -83,7 +83,7 @@ export default function AmbassadorLandingPage() {
                         <div className="mx-auto h-16 w-16 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mb-6">
                             <Zap className="h-8 w-8 text-primary" />
                         </div>
-                        <h3 className="text-2xl font-bold font-headline text-primary mb-2Exclusive Discount</h3>
+                        <h3 className="text-2xl font-bold font-headline text-primary mb-2">Exclusive Discount</h3>
                         <p className="text-muted-foreground text-sm">Your recruits unlock a 20% discount on all SOMA plans, making your conversion link highly valuable.</p>
                     </Card>
 
