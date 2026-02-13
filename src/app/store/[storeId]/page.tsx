@@ -4,14 +4,18 @@ import { notFound, useParams } from 'next/navigation';
 import { HeroSection } from '@/components/store/hero-section';
 import { ProductGrid } from '@/components/store/product-grid';
 import { StoreVisitorTracker } from '@/components/store/visitor-tracker';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, limit, or, orderBy } from 'firebase/firestore';
-import { Loader2, ArrowLeft, Box } from 'lucide-react';
+import { useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, where, limit, or, orderBy, doc } from 'firebase/firestore';
+import { Loader2, ArrowLeft, Box, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { demoProducts } from '@/lib/demo-data';
 
+/**
+ * @fileOverview Reactive Boutique Storefront.
+ * Uses real-time listeners to ensure the "Real-time Global Sync" promise is met.
+ */
 export default function StorefrontPage() {
   const params = useParams();
   const identifier = (params.storeId || params.domain || params.site) as string;
@@ -23,9 +27,11 @@ export default function StorefrontPage() {
 
   const isDemoMode = identifier === 'demo';
 
-  // 1. Resolve Store Identity
+  // 1. Resolve Store Identity (Real-time)
   const storeQuery = useMemoFirebase(() => {
     if (!firestore || isDemoMode) return null;
+    
+    // Support resolution via UID, Custom Domain, or Slug
     return query(
         collection(firestore, 'stores'),
         or(
@@ -41,7 +47,7 @@ export default function StorefrontPage() {
   const storeData = storeDocs?.[0];
   const storeId = storeData?.userId;
 
-  // 2. Fetch Provisioned Products
+  // 2. Fetch Provisioned Products (Real-time)
   const productsQuery = useMemoFirebase(() => {
     if (!firestore || !storeId || isDemoMode) return null;
     return query(
@@ -65,15 +71,15 @@ export default function StorefrontPage() {
   if (!storeData && !isDemoMode) {
     const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
     return (
-        <div className="flex flex-col items-center justify-center h-screen space-y-4 bg-background px-4">
-            <div className="bg-primary/10 p-6 rounded-full">
+        <div className="flex flex-col items-center justify-center h-screen space-y-4 bg-background px-4 text-center">
+            <div className="bg-primary/10 p-6 rounded-full border border-primary/20">
                 <Box className="h-16 w-16 text-primary opacity-20" />
             </div>
-            <h1 className="text-3xl font-bold font-headline text-primary uppercase tracking-widest text-center">Boutique Not Found</h1>
-            <p className="text-muted-foreground text-center max-w-sm">
-                The boutique at "{identifier}" is not currently provisioned in our network.
+            <h1 className="text-3xl font-bold font-headline text-primary uppercase tracking-widest">Boutique Not Found</h1>
+            <p className="text-muted-foreground max-w-sm leading-relaxed">
+                The boutique at "{identifier}" is not currently provisioned in the SOMA network.
             </p>
-            <Button variant="outline" className="border-primary/50" asChild>
+            <Button variant="outline" className="border-primary/50 text-primary mt-4" asChild>
                 <Link href={`https://${rootDomain}`}>
                     <ArrowLeft className="mr-2 h-4 w-4" /> Platform Home
                 </Link>
@@ -99,18 +105,31 @@ export default function StorefrontPage() {
   const heroImageUrl = finalStoreData?.heroImageUrl || PlaceHolderImages.find(img => img.id === 'storefront-hero')?.imageUrl;
   
   return (
-    <div>
+    <div className="min-h-screen bg-background">
       <StoreVisitorTracker storeId={storeId || identifier} />
+      
       <HeroSection
         imageUrl={heroImageUrl}
         title={heroTitle}
         subtitle={heroSubtitle}
       />
 
-      <section id="products" className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <h2 className="text-3xl font-bold text-center font-headline mb-10">Featured Products</h2>
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+            <div className="space-y-2">
+                <h2 className="text-4xl font-bold font-headline text-white tracking-tighter uppercase">Signature Collection</h2>
+                <p className="text-slate-500 italic">Curated assets from the {finalStoreData?.storeName || 'Boutique'} archives.</p>
+            </div>
+            {!isDemoMode && (
+                <div className="flex items-center gap-3 px-4 py-2 rounded-full border border-primary/20 bg-primary/5 shadow-gold-glow">
+                    <Zap className="h-4 w-4 text-primary fill-primary animate-pulse" />
+                    <span className="text-[10px] font-black text-primary uppercase tracking-widest">Real-time Global Sync Active</span>
+                </div>
+            )}
+        </div>
+
         <ProductGrid products={finalProducts || []} storeId={storeId || identifier} />
-      </section>
+      </main>
     </div>
   );
 }

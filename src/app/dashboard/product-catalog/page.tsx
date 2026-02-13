@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -13,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
-import { Gem, Loader2, Check, Warehouse, Sparkles, Search, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { Gem, Loader2, Check, Warehouse, Sparkles, Search, ChevronLeft, ChevronRight, Plus, ShoppingBag } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -93,7 +92,7 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
   
   const { data: liveCatalog, loading: catalogLoading } = useCollection<Product>(masterCatalogRef);
   
-  // 2. Fetch User's Provisioned Products (Reactive Listener)
+  // 2. Fetch User's Provisioned Products (Reactive Listener ensures Synced status is accurate)
   const userProductsQuery = useMemoFirebase(() => {
     if (!firestore || !user || isDemo) return null;
     return collection(firestore, 'stores', user.uid, 'products');
@@ -209,6 +208,11 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
             Global Product Catalog
           </h1>
         </div>
+        <Button asChild variant="outline" className="border-primary/20 text-primary">
+            <Link href="/dashboard">
+                <ShoppingBag className="mr-2 h-4 w-4" /> View My Inventory
+            </Link>
+        </Button>
       </div>
 
       <Card className="border-primary/50">
@@ -243,11 +247,11 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
                 </div>
             ) : (
                 <div className="space-y-4">
-                    <div className="rounded-md border">
+                    <div className="rounded-md border overflow-x-auto">
                         <Table>
                             <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[80px]">Image</TableHead>
+                                <TableHead className="w-[80px]">Asset</TableHead>
                                 <TableHead>Product Name</TableHead>
                                 <TableHead>Category</TableHead>
                                 <TableHead className="text-right">Wholesale Cost</TableHead>
@@ -326,9 +330,10 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
                                 </TableCell>
                                 <TableCell className="text-right">
                                 {isSynced ? (
-                                    <Button variant="ghost" size="sm" disabled className="text-green-500">
-                                        <Check className="mr-2 h-4 w-4" /> Synced
-                                    </Button>
+                                    <div className="flex items-center justify-end gap-2 text-green-500 px-3">
+                                        <Check className="h-4 w-4" /> 
+                                        <span className="text-xs font-bold uppercase tracking-widest">Synced</span>
+                                    </div>
                                 ) : (
                                     <Button
                                         variant="outline"
