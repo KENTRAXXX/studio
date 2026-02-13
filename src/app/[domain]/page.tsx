@@ -40,6 +40,7 @@ import Link from 'next/link';
 import { formatCurrency } from '@/utils/format';
 import SomaLogo from '@/components/logo';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * @fileOverview Ambassador Portal UI
@@ -49,7 +50,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 function AmbassadorPortal() {
     const { user } = useUser();
     const { userProfile, loading: profileLoading } = useUserProfile();
-    const { toast } = (require('@/hooks/use-toast')).useToast();
+    const { toast } = useToast();
     const router = useRouter();
 
     const referralLink = userProfile?.referralCode 
@@ -57,6 +58,7 @@ function AmbassadorPortal() {
         : '';
 
     const handleCopy = () => {
+        if (!referralLink) return;
         navigator.clipboard.writeText(referralLink);
         toast({ title: 'Link Secured', description: 'Your personalized marketing link is ready.' });
     };
@@ -388,6 +390,7 @@ export default function TenantBoutiquePage() {
     }
 
     if (!storeData) {
+        const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
         return (
             <div className="flex flex-col items-center justify-center h-screen space-y-4 bg-background px-4">
                 <div className="bg-primary/10 p-6 rounded-full">
@@ -398,7 +401,7 @@ export default function TenantBoutiquePage() {
                     The boutique at "{identifier}" is not currently provisioned in our network.
                 </p>
                 <Button variant="outline" className="border-primary/50" asChild>
-                    <Link href={`https://${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com'}`}>
+                    <Link href={`https://${rootDomain}`}>
                         <ArrowLeft className="mr-2 h-4 w-4" /> Platform Home
                     </Link>
                 </Button>

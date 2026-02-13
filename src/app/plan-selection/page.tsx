@@ -4,12 +4,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, Building, Gem, Rocket, ShoppingBag, ShieldCheck, Tag, Loader2, Sparkles } from "lucide-react";
+import { Check, Building, Gem, Rocket, ShoppingBag, ShieldCheck, Loader2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SomaLogo from "@/components/logo";
 import { Badge } from "@/components/ui/badge";
 import { useFirestore } from "@/firebase";
 import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
+import { motion } from "framer-motion";
 
 type Interval = 'monthly' | 'yearly';
 
@@ -78,27 +79,32 @@ const plans = [
 function PlanSelectionContent() {
     const [selectedPlan, setSelectedPlan] = useState('SCALER');
     const [interval, setInterval] = useState<Interval>('monthly');
+    const [isReferralValid, setIsReferralValid] = useState(false);
     const router = useRouter();
     const searchParams = useSearchParams();
     const firestore = useFirestore();
     
     const referralCode = searchParams.get('ref');
-    const isDiscounted = !!referralCode;
 
-    // Click Tracking Logic
+    // Click Tracking & Role Validation Logic
     useEffect(() => {
         if (referralCode && firestore) {
-            const trackClick = async () => {
-                const referralQuery = query(collection(firestore, 'users'), where('referralCode', '==', referralCode.toUpperCase()));
+            const verifyReferral = async () => {
+                const referralQuery = query(
+                    collection(firestore, 'users'), 
+                    where('referralCode', '==', referralCode.toUpperCase()),
+                    where('userRole', '==', 'AMBASSADOR') // Restrict discount to Marketer role
+                );
                 const querySnapshot = await getDocs(referralQuery);
                 if (!querySnapshot.empty) {
+                    setIsReferralValid(true);
                     const referrerRef = doc(firestore, 'users', querySnapshot.docs[0].id);
                     await updateDoc(referrerRef, {
                         "ambassadorData.referralClicks": increment(1)
                     }).catch(console.error);
                 }
             };
-            trackClick();
+            verifyReferral();
         }
     }, [referralCode, firestore]);
 
@@ -118,7 +124,7 @@ function PlanSelectionContent() {
                 <SomaLogo className="h-12 w-12 mx-auto"/>
                 <h1 className="text-4xl font-bold font-headline mt-4 text-primary">Choose Your Empire's Foundation</h1>
                 <p className="mt-2 text-lg text-muted-foreground">Select a plan that scales with your ambition.</p>
-                {isDiscounted && (
+                {isReferralValid && (
                     <motion.div 
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -145,7 +151,7 @@ function PlanSelectionContent() {
                     const isYearly = !plan.pricing.free && interval === 'yearly';
                     
                     const basePrice = priceInfo.price;
-                    const finalPrice = isDiscounted && plan.id !== 'SELLER' ? basePrice * 0.8 : basePrice;
+                    const finalPrice = isReferralValid && plan.id !== 'SELLER' ? basePrice * 0.8 : basePrice;
 
                     return (
                     <Card 
@@ -156,10 +162,10 @@ function PlanSelectionContent() {
                             selectedPlan === plan.id ? 'border-primary shadow-2xl shadow-primary/20' : 'border-border/20 hover:border-primary/40'
                         )}
                     >
-                         {isYearly && !isDiscounted && (
+                         {isYearly && !isReferralValid && (
                              <Badge className="absolute top-3 left-3 bg-green-500/20 text-green-400 border-green-500/50">Save 15%</Badge>
                         )}
-                        {isDiscounted && plan.id !== 'SELLER' && (
+                        {isReferralValid && plan.id !== 'SELLER' && (
                              <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground font-black">20% DISCOUNT APPLIED</Badge>
                         )}
                         <CardHeader className="text-center items-center">
@@ -176,7 +182,7 @@ function PlanSelectionContent() {
                                     {plan.pricing.free ? '' : `/${interval === 'monthly' ? 'mo' : 'yr'}`}
                                 </span>
                             </div>
-                            {isDiscounted && plan.id !== 'SELLER' && (
+                            {isReferralValid && plan.id !== 'SELLER' && (
                                 <p className="text-[10px] text-muted-foreground line-through font-mono">Was ${basePrice.toFixed(2)}</p>
                             )}
                         </CardHeader>

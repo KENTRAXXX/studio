@@ -25,7 +25,7 @@ import SomaLogo from '@/components/logo';
 import { useSignUp } from '@/hooks/use-signup';
 import { usePaystack } from '@/hooks/use-paystack';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Eye, EyeOff, Loader2, ShieldCheck, Lock, Globe, User, MessageSquare, Landmark } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ShieldCheck, Lock, Globe, User, MessageSquare, Landmark, FileText } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -35,9 +35,9 @@ const formSchema = z.object({
   fullName: z.string().min(2, 'Legal name is required.'),
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
-  phoneNumber: z.string().min(10, 'WhatsApp number is required for alerts.').optional(),
-  storeName: z.string().min(2, 'Store name is required.').optional(),
-  desiredSubdomain: z.string().min(2, 'Subdomain is required.').optional(),
+  phoneNumber: z.string().optional(),
+  storeName: z.string().optional(),
+  desiredSubdomain: z.string().optional(),
   niche: z.string().optional(),
   referralCode: z.string().optional(),
   adminCode: z.string().optional(),
@@ -48,6 +48,7 @@ const formSchema = z.object({
   bankName: z.string().optional(),
   accountNumber: z.string().optional(),
   accountHolderName: z.string().optional(),
+  governmentId: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -65,7 +66,6 @@ function SignUpForm() {
   const { initializePayment, isInitializing } = usePaystack();
   const [isSuccess, setIsSuccess] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [isPendingTransition, startTransition] = useTransition();
   const [showPassword, setShowPassword] = useState(false);
   const [showAdminCode, setShowAdminCode] = useState(false);
 
@@ -74,6 +74,7 @@ function SignUpForm() {
   const refParam = searchParams.get('ref');
   
   const isAmbassador = planTier === 'AMBASSADOR';
+  const isFreePlan = (planTier === 'SELLER' && interval === 'free') || planTier === 'ADMIN' || planTier === 'AMBASSADOR';
   
   const planName = {
     MERCHANT: 'Merchant',
@@ -104,10 +105,10 @@ function SignUpForm() {
       bankName: '',
       accountNumber: '',
       accountHolderName: '',
+      governmentId: '',
     },
   });
 
-  // Handle URL-based Referral Attribution
   useEffect(() => {
     if (refParam) {
       form.setValue('referralCode', refParam.toUpperCase());
@@ -115,8 +116,6 @@ function SignUpForm() {
   }, [refParam, form]);
 
   const onSubmit = (data: FormValues) => {
-    const isFreePlan = (planTier === 'SELLER' && interval === 'free') || planTier === 'ADMIN' || planTier === 'AMBASSADOR';
-    
     // GATELOCK: Executive Authorization Check
     if (planTier === 'ADMIN') {
         const systemSecret = process.env.NEXT_PUBLIC_ADMIN_GATE_CODE;
@@ -229,8 +228,15 @@ function SignUpForm() {
                 >
                     <Card className="border-primary/50 bg-card/50 backdrop-blur-md">
                         <CardHeader>
-                            <CardTitle className="text-2xl font-headline text-primary">Establish My Legacy: {planName}</CardTitle>
-                            <CardDescription>Enter your executive credentials to initialize your SOMA boutique.</CardDescription>
+                            <CardTitle className="text-2xl font-headline text-primary">
+                                {isAmbassador ? 'Strategic Partner Application' : `Establish My Legacy: ${planName}`}
+                            </CardTitle>
+                            <CardDescription>
+                                {isAmbassador 
+                                    ? 'Join the SOMA Ambassador force and scale your digital yields.' 
+                                    : 'Enter your executive credentials to initialize your SOMA boutique.'
+                                }
+                            </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <Form {...form}>
@@ -285,6 +291,35 @@ function SignUpForm() {
                                                 />
                                                 <FormField
                                                     control={form.control}
+                                                    name="desiredSubdomain"
+                                                    render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Desired Subdomain</FormLabel>
+                                                        <FormControl>
+                                                        <Input placeholder="emporium" {...field} className="bg-black/20 border-primary/20 font-mono" />
+                                                        </FormControl>
+                                                        <FormDescription>emporium.somatoday.com</FormDescription>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                    )}
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="niche"
+                                                    render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Business Niche</FormLabel>
+                                                        <FormControl>
+                                                        <Input placeholder="Luxury, Tech, Fashion..." {...field} className="bg-black/20 border-primary/20" />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={form.control}
                                                     name="phoneNumber"
                                                     render={({ field }) => (
                                                     <FormItem>
@@ -312,9 +347,9 @@ function SignUpForm() {
                                                     name="ambassadorCode"
                                                     render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel>Unique Handle</FormLabel>
+                                                        <FormLabel>Unique Ambassador Handle</FormLabel>
                                                         <FormControl>
-                                                        <Input placeholder="SOMA_KING" {...field} className="bg-black/20 border-primary/20 font-mono" />
+                                                        <Input placeholder="SOMA_HERO" {...field} className="bg-black/20 border-primary/20 font-mono" />
                                                         </FormControl>
                                                         <FormDescription>Your custom link suffix.</FormDescription>
                                                         <FormMessage />
@@ -326,7 +361,7 @@ function SignUpForm() {
                                                     name="socialHandle"
                                                     render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel>Social Portfolio</FormLabel>
+                                                        <FormLabel>Primary Social Platform</FormLabel>
                                                         <FormControl>
                                                         <Input placeholder="@handle (IG/X/TikTok)" {...field} className="bg-black/20 border-primary/20" />
                                                         </FormControl>
@@ -340,7 +375,7 @@ function SignUpForm() {
                                                 name="targetAudience"
                                                 render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Target Audience</FormLabel>
+                                                    <FormLabel>Target Audience Description</FormLabel>
                                                     <FormControl>
                                                     <Textarea placeholder="Who will you be marketing to?" {...field} className="bg-black/20 border-primary/20 h-20" />
                                                     </FormControl>
@@ -351,20 +386,37 @@ function SignUpForm() {
                                             
                                             <div className="space-y-4 pt-2">
                                                 <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-widest">
-                                                    <Landmark className="h-3.5 w-3.5" /> Payout Destination
+                                                    <Landmark className="h-3.5 w-3.5" /> Payout Credentials
                                                 </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                                     <FormField control={form.control} name="bankName" render={({ field }) => (
-                                                        <FormItem><FormControl><Input placeholder="Bank/Mobile Money" {...field} className="bg-black/20 border-primary/20 text-xs" /></FormControl></FormItem>
+                                                        <FormItem><FormControl><Input placeholder="Bank / Provider" {...field} className="bg-black/20 border-primary/20 text-xs" /></FormControl></FormItem>
                                                     )} />
                                                     <FormField control={form.control} name="accountNumber" render={({ field }) => (
-                                                        <FormItem><FormControl><Input placeholder="Acct Number" {...field} className="bg-black/20 border-primary/20 text-xs" /></FormControl></FormItem>
+                                                        <FormItem><FormControl><Input placeholder="Account/Mobile #" {...field} className="bg-black/20 border-primary/20 text-xs" /></FormControl></FormItem>
                                                     )} />
                                                     <FormField control={form.control} name="accountHolderName" render={({ field }) => (
                                                         <FormItem><FormControl><Input placeholder="Holder Name" {...field} className="bg-black/20 border-primary/20 text-xs" /></FormControl></FormItem>
                                                     )} />
                                                 </div>
                                             </div>
+
+                                            <FormField
+                                                control={form.control}
+                                                name="governmentId"
+                                                render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="flex items-center gap-2">
+                                                        <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                                                        Government ID / NIN (Optional)
+                                                    </FormLabel>
+                                                    <FormControl>
+                                                        <Input placeholder="ID Number for fraud prevention" {...field} className="bg-black/20 border-primary/20" />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                                )}
+                                            />
                                         </div>
                                     )}
 
@@ -455,11 +507,7 @@ function SignUpForm() {
                                         <Checkbox 
                                             id="terms" 
                                             checked={agreedToTerms}
-                                            onCheckedChange={(checked) => {
-                                                startTransition(() => {
-                                                    setAgreedToTerms(checked as boolean)
-                                                });
-                                            }}
+                                            onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
                                         />
                                         <label
                                             htmlFor="terms"
