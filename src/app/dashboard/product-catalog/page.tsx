@@ -25,7 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/firebase/user-profile-provider';
-import { collection, doc, setDoc, query, where } from 'firebase/firestore';
+import { collection, doc, setDoc, query, where, serverTimestamp } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { cn } from '@/lib/utils';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -34,11 +34,13 @@ import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/e
 type Product = {
   id: string;
   name: string;
+  description?: string;
   masterCost: number;
   retailPrice: number;
   stockLevel: number;
   imageId: string;
-  imageSrc?: string; 
+  imageGallery?: string[];
+  colorOptions?: any[];
   productType: 'INTERNAL' | 'EXTERNAL';
   vendorId: string;
   isActive?: boolean;
@@ -138,25 +140,32 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
     setSyncingId(product.id);
     const newProductRef = doc(firestore, 'stores', user.uid, 'products', product.id);
     
+    // Creating a full document copy with specific metadata
     const productDataToSync = {
       name: product.name,
       suggestedRetailPrice: product.retailPrice,
       wholesalePrice: product.masterCost,
-      description: `A high-quality ${product.name.toLowerCase()} from our master collection.`,
+      description: product.description || `A high-quality ${product.name.toLowerCase()} from our master collection.`,
       imageUrl: product.imageId,
+      imageGallery: product.imageGallery || [product.imageId],
+      colorOptions: product.colorOptions || [],
       productType: product.productType,
       vendorId: product.vendorId,
       isManagedBySoma: true,
       categories: product.categories || [],
-      tags: product.tags || []
+      tags: product.tags || [],
+      // Strategic Metadata
+      originalCatalogId: product.id,
+      syncedAt: serverTimestamp(),
+      ownerId: user.uid
     };
 
     // Strategic Non-Blocking Write
     setDoc(newProductRef, productDataToSync)
       .then(() => {
         toast({
-          title: 'Asset Synchronized',
-          description: `${product.name} has been added to your boutique.`,
+          title: 'Locked into Local Inventory',
+          description: `${product.name} has been successfully synchronized.`,
         });
         setSyncingId(null);
       })
