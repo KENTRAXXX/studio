@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,8 @@ import { Check, Rocket, ShoppingBag, Building, Tag, Loader2 } from "lucide-react
 import { cn } from "@/lib/utils";
 import SomaLogo from "@/components/logo";
 import { Badge } from "@/components/ui/badge";
+
+export const dynamic = 'force-dynamic';
 
 type Interval = 'monthly' | 'yearly';
 
@@ -60,6 +61,13 @@ function PlanSelectionContent() {
     
     const ambassadorCode = searchParams.get('ref');
     const isDiscounted = !!ambassadorCode;
+
+    // Persistent Referral Protocol
+    useEffect(() => {
+        if (ambassadorCode) {
+            document.cookie = `soma_referral_code=${ambassadorCode}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+        }
+    }, [ambassadorCode]);
 
     const handleConfirm = () => {
         const plan = plans.find(p => p.id === selectedPlan);

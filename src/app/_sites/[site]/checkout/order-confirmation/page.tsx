@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useSearchParams, notFound } from 'next/navigation';
@@ -8,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { CheckCircle2, Loader2 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { Suspense } from 'react';
+
+export const dynamic = 'force-dynamic';
 
 function OrderConfirmationContent() {
     const searchParams = useSearchParams();

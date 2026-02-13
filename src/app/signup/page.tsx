@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense, useTransition, useEffect } from 'react';
@@ -30,6 +29,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
+
+export const dynamic = 'force-dynamic';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -82,8 +83,16 @@ function SignUpForm() {
   });
 
   useEffect(() => {
+    // Priority 1: URL Parameter
     if (refParam) {
       form.setValue('referralCode', refParam.toUpperCase());
+    } 
+    // Priority 2: Persistent Cookie
+    else if (typeof document !== 'undefined') {
+        const match = document.cookie.match(new RegExp('(^| )soma_referral_code=([^;]+)'));
+        if (match) {
+            form.setValue('referralCode', match[2].toUpperCase());
+        }
     }
   }, [refParam, form]);
 
@@ -180,6 +189,7 @@ function SignUpForm() {
   };
 
   const isPending = isSigningUp || isInitializing;
+  const isFreePlan = (planTier === 'SELLER' && interval === 'free') || planTier === 'ADMIN';
   const buttonText = isFreePlan ? 'Establish Admin Identity' : 'Confirm & Proceed to Payment';
 
   return (
@@ -280,7 +290,7 @@ function SignUpForm() {
                                         render={({ field }) => (
                                         <FormItem>
                                             <FormLabel className="flex items-center gap-2">
-                                                Referral Attribution {refParam && <ShieldCheck className="h-3.5 w-3.5 text-primary" />}
+                                                Referral Attribution {(refParam || field.value) && <ShieldCheck className="h-3.5 w-3.5 text-primary" />}
                                             </FormLabel>
                                             <FormControl>
                                             <Input 
@@ -290,7 +300,7 @@ function SignUpForm() {
                                                 className={cn(!!refParam && "bg-muted/50 cursor-not-allowed border-primary/20 text-primary font-mono font-bold")}
                                             />
                                             </FormControl>
-                                            {refParam && <p className="text-[10px] text-primary/60 uppercase tracking-widest font-bold">Strategic credit applied via link</p>}
+                                            {(refParam || field.value) && <p className="text-[10px] text-primary/60 uppercase tracking-widest font-bold">Strategic credit applied</p>}
                                             <FormMessage />
                                         </FormItem>
                                         )}
