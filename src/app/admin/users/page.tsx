@@ -23,12 +23,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
-  Loader2,
   Users,
   Search,
   CheckCircle,
   XCircle,
   Eye,
+  Loader2
 } from 'lucide-react';
 import {
   Select,
@@ -133,11 +133,7 @@ export default function UserManagementPage() {
 
 
   if (profileLoading || usersLoading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
+    return null;
   }
 
   return (
@@ -207,7 +203,7 @@ export default function UserManagementPage() {
                         </Badge>
                     </TableCell>
                     <TableCell className="text-right space-x-2">
-                        {processingId === user.id ? <Loader2 className="animate-spin ml-auto" /> : (
+                        {processingId === user.id ? <Loader2 className="animate-spin ml-auto h-4 w-4" /> : (
                             <>
                                 <Button asChild variant="ghost" size="icon" title="View Storefront">
                                     <Link href={`/store/${user.id}`} target="_blank">

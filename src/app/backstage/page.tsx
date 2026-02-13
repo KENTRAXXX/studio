@@ -31,7 +31,7 @@ const SomaMap = dynamic(() => import('@/components/ui/soma-map'), {
   ssr: false,
   loading: () => (
     <div className="h-48 w-full rounded-xl bg-slate-900/50 border border-primary/10 flex items-center justify-center">
-      <Loader2 className="h-6 w-6 animate-spin text-primary opacity-20" />
+      <div className="h-6 w-6 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
     </div>
   )
 });
@@ -110,7 +110,6 @@ export default function BackstagePage() {
   useEffect(() => {
     const isLoading = profileLoading || userLoading;
     if (!isLoading && userProfile) {
-        // GATELOCK: Admins do not belong here
         if (userProfile.userRole === 'ADMIN') {
             router.push('/admin');
             return;
@@ -230,11 +229,7 @@ export default function BackstagePage() {
 
   const isLoading = profileLoading || userLoading;
   if (isLoading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
+    return null;
   }
 
   // Session guard for logout

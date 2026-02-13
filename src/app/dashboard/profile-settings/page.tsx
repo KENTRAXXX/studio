@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { User, Loader2, Save, CheckCircle2, BookOpen, ShieldCheck, Clock, ExternalLink, Share2, Instagram, Twitter } from 'lucide-react';
+import { User, Save, CheckCircle2, BookOpen, ShieldCheck, Clock, ExternalLink, Share2, Instagram, Twitter, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -154,11 +154,7 @@ export default function ProfileSettingsPage() {
     };
 
     if (profileLoading) {
-        return (
-            <div className="flex h-96 w-full items-center justify-center">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            </div>
-        );
+        return null;
     }
     
     return (
@@ -334,7 +330,7 @@ export default function ProfileSettingsPage() {
                                     )} />
                                 </div>
 
-                                <Separator className="bg-primary/10" />
+                                <div className="h-px w-full bg-primary/10" />
 
                                 <div className="space-y-6">
                                     <div className="flex items-center gap-2">
@@ -409,8 +405,4 @@ export default function ProfileSettingsPage() {
             </Form>
         </div>
     )
-}
-
-function Separator({ className }: { className?: string }) {
-    return <div className={cn("h-px w-full", className)} />;
 }

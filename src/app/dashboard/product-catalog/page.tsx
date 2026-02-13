@@ -177,6 +177,10 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
 
   const isLoading = isDemo ? false : (catalogLoading || profileLoading || userProductsLoading);
 
+  if (isLoading) {
+    return null;
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -212,11 +216,7 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
           </div>
         </CardHeader>
         <CardContent>
-            {isLoading ? (
-                 <div className="flex h-64 w-full items-center justify-center">
-                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                </div>
-            ) : !masterCatalog || masterCatalog.length === 0 ? (
+            {!masterCatalog || masterCatalog.length === 0 ? (
                 <div className="flex flex-col items-center justify-center text-center h-64 border-2 border-dashed border-primary/20 rounded-lg">
                     <Warehouse className="h-16 w-16 text-muted-foreground mb-4" />
                     <h3 className="text-xl font-bold font-headline text-primary">No Products Available</h3>

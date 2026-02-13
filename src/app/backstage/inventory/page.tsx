@@ -25,7 +25,6 @@ import {
   Check,
   Search,
   Warehouse,
-  ArrowUpDown,
   History
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -131,11 +130,7 @@ export default function SupplierInventoryPage() {
   };
 
   if (userLoading || profileLoading || dataLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
+    return null;
   }
 
   return (
@@ -251,7 +246,7 @@ export default function SupplierInventoryPage() {
                                         onClick={() => handleSaveStock(product.id)}
                                         disabled={isUpdating}
                                     >
-                                        {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                                        {isUpdating ? <Loader2 className="animate-spin h-4 w-4" /> : <Check className="h-4 w-4" />}
                                     </Button>
                                 </div>
                             ) : (

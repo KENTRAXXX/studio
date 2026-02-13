@@ -222,7 +222,7 @@ export default function AdminOverviewPage() {
 
             toast({ title: 'Product Synced', description: `${product.productName} is now in the Master Catalog.` });
         } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Error', description: error.message });
+            toast({ title: 'Error', description: error.message });
         } finally {
             setProcessingId(null);
         }
@@ -231,11 +231,7 @@ export default function AdminOverviewPage() {
     const isLoading = sellersLoading || ticketsLoading || rewardsLoading || ordersLoading || revenueLoading || payoutsLoading || activeUsersLoading || itemsLoading;
 
     if (isLoading) {
-        return (
-            <div className="flex h-96 w-full items-center justify-center">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            </div>
-        );
+        return null;
     }
 
     return (

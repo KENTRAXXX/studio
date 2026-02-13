@@ -87,11 +87,7 @@ export default function ApprovalQueuePage() {
   const isLoading = productsLoading || profileLoading;
 
   if (isLoading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
+    return null;
   }
 
   return (
@@ -106,15 +102,11 @@ export default function ApprovalQueuePage() {
             <CardHeader>
                 <CardTitle>Pending Submissions</CardTitle>
                 <CardDescription>
-                    {productsLoading ? 'Loading products...' : `There are ${pendingProducts?.length || 0} products awaiting your review.`}
+                    {productsLoading ? 'Syncing...' : `There are ${pendingProducts?.length || 0} products awaiting your review.`}
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                {productsLoading ? (
-                    <div className="flex h-64 w-full items-center justify-center">
-                        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                    </div>
-                ) : !pendingProducts || pendingProducts.length === 0 ? (
+                {!pendingProducts || pendingProducts.length === 0 ? (
                     <div className="h-64 flex items-center justify-center text-center">
                         <p className="text-muted-foreground">The approval queue is empty.</p>
                     </div>

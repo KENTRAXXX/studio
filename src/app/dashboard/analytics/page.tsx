@@ -1,13 +1,12 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, orderBy, limit, updateDoc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
     BarChart2, 
     DollarSign, 
-    Loader2, 
     TrendingUp, 
     Users, 
     Eye, 
@@ -22,21 +21,18 @@ import {
     ShieldCheck,
     Star,
     ArrowUp,
-    ChevronRight,
     Sparkles,
-    Gem
+    Gem,
+    Loader2
 } from 'lucide-react';
 import {
   ResponsiveContainer,
   LineChart,
   Line,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Cell
 } from 'recharts';
 import { 
   ComposableMap, 
@@ -330,11 +326,7 @@ export default function AnalyticsPage() {
   const isLoading = userLoading || ordersLoading || storeLoading || productsLoading;
 
   if (isLoading) {
-      return (
-        <div className="flex h-96 w-full items-center justify-center">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-      );
+      return null;
   }
 
   const visitors = storeData?.visitorCount || 0;
@@ -687,7 +679,7 @@ export default function AnalyticsPage() {
                                         disabled={processingId === product.id}
                                       >
                                           {processingId === product.id ? (
-                                              <Loader2 className="h-3 w-3 animate-spin" />
+                                              <Loader2 className="h-3 w-3 animate-spin h-4 w-4" />
                                           ) : product.isFeatured ? (
                                               <><Star className="h-3 w-3 mr-1 fill-current" /> Featured</>
                                           ) : (
