@@ -1,37 +1,36 @@
 'use client';
 
-import dynamic from 'next/dynamic';
-import { Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 
 /**
  * @fileOverview Executive Training Center Gateway.
- * Applied "Nuclear" Isolation fix to break build-time circular dependencies.
- * ssr: false ensures this component skips the server build process entirely.
+ * Applied "Hard-Kill" Isolation to break build-time circular dependencies.
  */
-
-const TrainingCenterContent = dynamic(
-  () => import('@/components/dashboard/TrainingCenterContent').then(mod => mod.TrainingCenterContent),
-  { 
-    ssr: false,
-    loading: () => (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary opacity-20" />
-      </div>
-    )
-  }
-);
 
 export const dynamic = 'force-dynamic';
 
 export default function TrainingCenterPage() {
-  return (
-    <Suspense fallback={
+  const [Component, setComponent] = useState<any>(null);
+
+  useEffect(() => {
+    // Only import the component once we are safely in the browser
+    import('@/components/dashboard/TrainingCenterContent').then((mod) => {
+      setComponent(() => mod.TrainingCenterContent);
+    });
+  }, []);
+
+  if (!Component) {
+    return (
       <div className="flex h-screen items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary opacity-20" />
       </div>
-    }>
-      <TrainingCenterContent />
+    );
+  }
+
+  return (
+    <Suspense fallback={null}>
+      <Component />
     </Suspense>
   );
 }

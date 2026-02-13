@@ -1,35 +1,36 @@
-
 'use client';
 
-import dynamic from 'next/dynamic';
-import { Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 
 /**
- * @fileOverview Global Support Oversight.
- * Dynamic client-side wrapper to prevent build-time Firebase initialization conflicts.
+ * @fileOverview Global Support Oversight Terminal.
+ * Applied "Hard-Kill" Isolation to break build-time circular dependencies.
  */
 
-const SupportOversightTerminal = dynamic(
-  () => import('@/components/admin/SupportOversightTerminal').then(mod => mod.SupportOversightTerminal), 
-  { 
-    ssr: false,
-    loading: () => (
-      <div className="flex h-[60vh] items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary opacity-20" />
-      </div>
-    )
-  }
-);
+export const dynamic = 'force-dynamic';
 
 export default function AdminSupportPage() {
-  return (
-    <Suspense fallback={
+  const [Component, setComponent] = useState<any>(null);
+
+  useEffect(() => {
+    // Only import the component once we are safely in the browser
+    import('@/components/admin/SupportOversightTerminal').then((mod) => {
+      setComponent(() => mod.SupportOversightTerminal);
+    });
+  }, []);
+
+  if (!Component) {
+    return (
       <div className="flex h-[60vh] items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary opacity-20" />
       </div>
-    }>
-      <SupportOversightTerminal />
+    );
+  }
+
+  return (
+    <Suspense fallback={null}>
+      <Component />
     </Suspense>
   );
 }
