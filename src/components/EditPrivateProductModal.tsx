@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useUser, useFirestore, useUserProfile } from '@/firebase';
-import { doc, updateDoc, increment } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { analyzeProductImage } from '@/ai/flows/analyze-product-image';
 
 import {
@@ -100,7 +100,7 @@ export function EditPrivateProductModal({ isOpen, onOpenChange, product }: EditP
         form.setValue('description', result.description, { shouldValidate: true });
         toast({ title: 'AI REFRESH COMPLETE', description: 'AI has updated the product identity based on the current asset.' });
     } catch (e: any) {
-        if (error.message.includes('exhausted')) {
+        if (e.message.includes('exhausted') || e.message.includes('INSUFFICIENT_CREDITS')) {
             setShowCreditModal(true);
         } else {
             toast({ variant: 'destructive', title: 'Refresh Failed', description: e.message });
@@ -179,7 +179,7 @@ export function EditPrivateProductModal({ isOpen, onOpenChange, product }: EditP
             <DialogTitle className="flex items-center gap-2 text-primary font-headline">
                 <PackagePlus className="h-6 w-6" />
                 Edit Private Product
-            </DialogTitle(
+            </DialogTitle>
             <DialogDescription>
                 Synchronize changes to your local inventory.
             </DialogDescription>

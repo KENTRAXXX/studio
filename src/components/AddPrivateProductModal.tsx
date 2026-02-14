@@ -87,7 +87,7 @@ export function AddPrivateProductModal({ isOpen, onOpenChange }: AddPrivateProdu
         form.setValue('description', result.description, { shouldValidate: true });
         toast({ title: 'AI ENRICHMENT COMPLETE', description: 'Product metadata enriched from visual analysis.' });
     } catch (e: any) {
-        if (error.message.includes('exhausted')) {
+        if (e.message.includes('exhausted') || e.message.includes('INSUFFICIENT_CREDITS')) {
             setShowCreditModal(true);
         } else {
             toast({ variant: 'destructive', title: 'AI Error', description: e.message });
