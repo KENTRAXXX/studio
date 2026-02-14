@@ -97,7 +97,7 @@ const AnalyzeProductImageOutputSchema = z.object({
     marketKeywords: z.array(z.string()).describe('High-volume keywords used by competitors.'),
   }).optional(),
   suggestedName: z.string().describe('A sophisticated name for the product based on visual and market data.'),
-  description: z.string().describe('An evocative, luxury-standard product description. Incorporate market research to fill in material gaps (e.g., "Likely Egyptian Cotton"). NO mention of branding until the final sentence.'),
+  description: z.string().describe('An evocative, luxury-standard product description. Incorporate market research to fill in material gaps (e.g., "Likely 100% Egyptian Cotton"). NO mention of branding until the final sentence.'),
   suggestedCategories: z.array(z.string()).describe('The most relevant categories.'),
   suggestedTags: z.array(z.string()).describe('A list of SEO tags.'),
 });
@@ -134,6 +134,9 @@ export async function analyzeProductImage(input: AnalyzeProductImageInput): Prom
             output: { schema: AnalyzeProductImageOutputSchema },
             prompt: [
                 { text: `You are an elite luxury commerce curator. 
+
+NEGATIVE CONSTRAINT: 
+NEVER assume the product is a SOMA brand item during the analysis phase. Treat every image as a unique, unbranded mystery item that requires a 100% objective technical breakdown.
 
 INSTRUCTION SET:
 1. PERFORM A VISUAL-FIRST ANALYSIS: Analyze the provided image with absolute precision. Describe materials, textures, and technical specs based ONLY on the photo.
