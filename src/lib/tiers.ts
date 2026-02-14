@@ -58,7 +58,7 @@ export const TIER_REGISTRY: Record<PlanTier, TierConfig> = {
         portal: 'dashboard',
         commissionRate: 0.03,
         entitlements: ['dropshipping', 'private_inventory', 'academy', 'executive_analytics'],
-        aiCreditsMonthly: 100,
+        aiCreditsMonthly: 30,
         features: {
             dropshipping: true,
             privateInventory: true,
