@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -78,19 +77,21 @@ export function AddPrivateProductModal({ isOpen, onOpenChange }: AddPrivateProdu
     if (!user || !firestore) return;
 
     const currentCredits = userProfile?.aiCredits ?? 0;
-    if (currentCredits <= 0 && userProfile?.userRole !== 'ADMIN' && userProfile?.planTier !== 'ENTERPRISE') {
+    const isAdmin = userProfile?.userRole === 'ADMIN';
+
+    if (!isAdmin && currentCredits <= 0) {
         setShowCreditModal(true);
         return;
     }
 
     setIsAnalyzing(true);
     try {
-        const userRef = doc(firestore, 'users', user.uid);
-        if (userProfile?.userRole !== 'ADMIN' && userProfile?.planTier !== 'ENTERPRISE') {
+        if (!isAdmin) {
+            const userRef = doc(firestore, 'users', user.uid);
             updateDoc(userRef, { aiCredits: increment(-1) }).catch(console.error);
         }
 
-        const result = await analyzeProductImage({ imageUrl });
+        const result = await analyzeProductImage({ imageUrl, tier: userProfile?.planTier });
         form.setValue('name', result.suggestedName, { shouldValidate: true });
         form.setValue('description', result.description, { shouldValidate: true });
         toast({ title: 'AI ENRICHMENT COMPLETE', description: 'Product metadata enriched from visual analysis.' });
@@ -152,7 +153,7 @@ export function AddPrivateProductModal({ isOpen, onOpenChange }: AddPrivateProdu
                 Credit Limit Reached
             </DialogTitle>
             <DialogDescription className="text-center pt-2">
-                Your strategic AI allocation has been exhausted. Upgrade to Enterprise for unlimited analysis or purchase additional high-fidelity credits.
+                Your strategic AI allocation has been exhausted. Upgrade your plan or purchase an additional credit block in Store Settings.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-6 flex flex-col sm:flex-row gap-3">
@@ -161,7 +162,7 @@ export function AddPrivateProductModal({ isOpen, onOpenChange }: AddPrivateProdu
             </Button>
             <Button asChild className="w-full sm:w-auto btn-gold-glow bg-primary font-bold">
               <Link href="/plan-selection">
-                <CreditCard className="mr-2 h-4 w-4" /> Upgrade to Enterprise
+                <CreditCard className="mr-2 h-4 w-4" /> Upgrade Plan
               </Link>
             </Button>
           </DialogFooter>
@@ -193,7 +194,7 @@ export function AddPrivateProductModal({ isOpen, onOpenChange }: AddPrivateProdu
                 AI ENRICHMENT
             </Button>
             <p className="text-[9px] font-mono text-muted-foreground uppercase">
-                Credits: {userProfile?.planTier === 'ENTERPRISE' || userProfile?.userRole === 'ADMIN' ? 'Unlimited' : userProfile?.aiCredits ?? 0}
+                Credits: {userProfile?.userRole === 'ADMIN' ? '∞' : userProfile?.aiCredits ?? 0}
             </p>
           </div>
         </DialogHeader>

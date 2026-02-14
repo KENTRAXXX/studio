@@ -11,6 +11,7 @@ export interface TierConfig {
     portal: 'dashboard' | 'backstage' | 'admin' | 'ambassador';
     commissionRate: number; // The percentage SOMA takes (0.03 = 3%)
     entitlements: string[];
+    aiCreditsMonthly: number;
     features: {
         dropshipping: boolean;
         privateInventory: boolean;
@@ -27,6 +28,7 @@ export const TIER_REGISTRY: Record<PlanTier, TierConfig> = {
         portal: 'dashboard',
         commissionRate: 0, 
         entitlements: ['private_inventory', 'domain_management', 'basic_analytics'],
+        aiCreditsMonthly: 5,
         features: {
             dropshipping: false,
             privateInventory: true,
@@ -41,6 +43,7 @@ export const TIER_REGISTRY: Record<PlanTier, TierConfig> = {
         portal: 'dashboard',
         commissionRate: 0.03,
         entitlements: ['dropshipping', 'academy', 'advanced_analytics'],
+        aiCreditsMonthly: 20,
         features: {
             dropshipping: true,
             privateInventory: false,
@@ -55,6 +58,7 @@ export const TIER_REGISTRY: Record<PlanTier, TierConfig> = {
         portal: 'dashboard',
         commissionRate: 0.03,
         entitlements: ['dropshipping', 'private_inventory', 'academy', 'executive_analytics'],
+        aiCreditsMonthly: 100,
         features: {
             dropshipping: true,
             privateInventory: true,
@@ -69,6 +73,7 @@ export const TIER_REGISTRY: Record<PlanTier, TierConfig> = {
         portal: 'backstage',
         commissionRate: 0.09,
         entitlements: ['supplier_portal', 'inventory_sync'],
+        aiCreditsMonthly: 0,
         features: {
             dropshipping: false,
             privateInventory: false,
@@ -83,6 +88,7 @@ export const TIER_REGISTRY: Record<PlanTier, TierConfig> = {
         portal: 'backstage',
         commissionRate: 0.03,
         entitlements: ['supplier_portal', 'inventory_sync', 'marketing_portal', 'concierge'],
+        aiCreditsMonthly: 50,
         features: {
             dropshipping: false,
             privateInventory: false,
@@ -97,6 +103,7 @@ export const TIER_REGISTRY: Record<PlanTier, TierConfig> = {
         portal: 'admin',
         commissionRate: 0,
         entitlements: ['all_access'],
+        aiCreditsMonthly: 999999, // Effectively unlimited
         features: {
             dropshipping: true,
             privateInventory: true,
@@ -111,6 +118,7 @@ export const TIER_REGISTRY: Record<PlanTier, TierConfig> = {
         portal: 'ambassador',
         commissionRate: 0,
         entitlements: ['marketing_kit', 'flat_rewards', 'referral_dashboard'],
+        aiCreditsMonthly: 0,
         features: {
             dropshipping: false,
             privateInventory: false,

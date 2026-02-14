@@ -82,6 +82,7 @@ const getMarketInsights = ai.defineTool(
 
 const AnalyzeProductImageInputSchema = z.object({
   imageUrl: z.string().url().describe("The public URL of the product image to analyze."),
+  tier: z.string().optional().describe("The user's plan tier, unlocking enhanced 'Market Scheming' if Enterprise."),
 });
 export type AnalyzeProductImageInput = z.infer<typeof AnalyzeProductImageInputSchema>;
 
@@ -101,6 +102,7 @@ const AnalyzeProductImageOutputSchema = z.object({
   description: z.string().describe('An evocative, luxury-standard product description. Incorporate market research to fill in material gaps (e.g., "Likely 100% Egyptian Cotton"). NO mention of branding until the final sentence.'),
   suggestedCategories: z.array(z.string()).describe('The most relevant categories.'),
   suggestedTags: z.array(z.string()).describe('A list of SEO tags.'),
+  enterpriseDeepSchemes: z.string().optional().describe('Strategic market positioning advice only for Enterprise users.'),
 });
 export type AnalyzeProductImageOutput = z.infer<typeof AnalyzeProductImageOutputSchema>;
 
@@ -129,6 +131,8 @@ export async function analyzeProductImage(input: AnalyzeProductImageInput): Prom
             return generateFallbackMetadata();
         }
 
+        const isEnterprise = input.tier === 'ENTERPRISE';
+
         const { output } = await ai.generate({
             model: 'googleai/gemini-1.5-flash',
             tools: [getMarketInsights],
@@ -145,6 +149,8 @@ INSTRUCTION SET:
 3. ENRICHMENT: Use the research data to fill in gaps that the photo cannot show (e.g., "Likely 100% Egyptian Cotton based on market listings").
 4. RESTRICT BRANDING: Do NOT mention 'SOMA' or any platform branding in the 'suggestedName' or the body of the 'description'. 
 5. FINAL MARKETING COPY: Compose the 'description' based strictly on the 'observedFeatures' and market data. Mention the 'SOMA standard of excellence' ONLY in the final concluding sentence of the 'description'.
+
+${isEnterprise ? '6. DEEP MARKET SCHEMING (ENTERPRISE UNLOCKED): Provide a strategic analysis of how to position this item against the identified competitors to maximize luxury perception and margin.' : ''}
 
 Available categories for selection: ${AVAILABLE_CATEGORIES.join(', ')}` },
                 { media: { url: input.imageUrl } }

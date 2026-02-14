@@ -1,9 +1,9 @@
-
 'use client';
 import { useState } from 'react';
 import { createUserWithEmailAndPassword, UserCredential } from 'firebase/auth';
 import { doc, setDoc, query, collection, where, getDocs, increment, updateDoc } from 'firebase/firestore';
 import { useAuth, useFirestore } from '@/firebase';
+import { getTier } from '@/lib/tiers';
 
 type SignUpCredentials = {
   fullName: string;
@@ -111,6 +111,8 @@ export function useSignUp() {
           AMBASSADOR: 'pending_review'
       };
 
+      const tierConfig = getTier(credentials.planTier);
+
       const newUserProfile: any = {
         fullName: credentials.fullName,
         email: user.email,
@@ -119,7 +121,7 @@ export function useSignUp() {
         userRole: userRole,
         planTier: credentials.planTier,
         plan: credentials.plan,
-        aiCredits: 5, // Initial AI allotment for strategic analysis
+        aiCredits: tierConfig.aiCreditsMonthly, // Tier-based allocation
         referralCode: credentials.ambassadorCode?.toUpperCase() || generateReferralCode(6),
         status: statusMap[credentials.planTier as keyof typeof statusMap] || 'approved',
         createdAt: new Date().toISOString(),
