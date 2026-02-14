@@ -921,59 +921,46 @@ export const seedPart2: any[] = [
     "description": "Ultra-slim portable charger with 15W wireless output and digital percentage display.",
     "masterCost": 42.7,
     "retailPrice": 94.49,
-    "inventory": 29,
-    "category": "Tech & Accessories",
+    "stockLevel": 29,
+    "categories": ["Tech & Accessories"],
     "imageId": "demo-tech-&-accessories-6",
-    "tags": [
-      "Tech & Accessories",
-      "Best Seller",
-      "In Stock"
-    ],
+    "tags": ["Tech & Accessories", "Best Seller", "In Stock"],
     "vendorId": "admin",
-    "type": "INTERNAL",
+    "productType": "INTERNAL",
     "status": "active",
     "isActive": true,
     "submittedAt": "2026-02-14T14:07:52.179404"
   },
   {
-    "uniqueId": "seed-0029",
+    "id": "seed-0164",
     "name": "Automatic Field Watch",
-    "narrative": "24-jewel movement with sapphire crystal and 100m water resistance. Finished with a heavy-duty nylon NATO strap.",
+    "description": "24-jewel movement with sapphire crystal and 100m water resistance. Finished with a heavy-duty nylon NATO strap.",
     "masterCost": 133.59,
     "retailPrice": 307.61,
-    "inventory": 99,
-    "category": "Watches & Apparel",
+    "stockLevel": 99,
+    "categories": ["Watches & Apparel"],
     "imageId": "demo-watches-&-apparel-10",
-    "tags": [
-      "Watches & Apparel",
-      "Best Seller",
-      "In Stock"
-    ],
+    "tags": ["Watches & Apparel", "Best Seller", "In Stock"],
     "vendorId": "admin",
-    "type": "INTERNAL",
+    "productType": "INTERNAL",
     "status": "active",
     "isActive": true,
     "submittedAt": "2026-02-14T14:07:52.179418"
   },
   {
-    "uniqueId": "seed-0030",
+    "id": "seed-0165",
     "name": "Artisan Cold Brew System",
-    "narrative": "1L borosilicate glass carafe with a fine-mesh stainless steel filter for low-acid, smooth coffee concentrate.",
+    "description": "1L borosilicate glass carafe with a fine-mesh stainless steel filter for low-acid, smooth coffee concentrate.",
     "masterCost": 16.88,
     "retailPrice": 37.82,
-    "inventory": 73,
-    "category": "Home & Kitchen",
+    "stockLevel": 73,
+    "categories": ["Home & Kitchen"],
     "imageId": "demo-home-&-kitchen-10",
-    "tags": [
-      "Home & Kitchen",
-      "Best Seller",
-      "In Stock"
-    ],
+    "tags": ["Home & Kitchen", "Best Seller", "In Stock"],
     "vendorId": "admin",
-    "type": "INTERNAL",
+    "productType": "INTERNAL",
     "status": "active",
     "isActive": true,
     "submittedAt": "2026-02-14T14:07:52.179429"
   }
-]
-Take this as seed 136-165. Add to part 2
+];
