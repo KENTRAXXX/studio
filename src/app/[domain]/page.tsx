@@ -37,7 +37,8 @@ import {
     Check,
     Download,
     Share2,
-    Wallet
+    Wallet,
+    Image as ImageIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -482,7 +483,7 @@ function AmbassadorPortal() {
                                     <Card className="border-primary/50 bg-primary/5 p-10 flex flex-col md:flex-row items-center justify-between gap-8">
                                         <div className="space-y-4 flex-1">
                                             <h3 className="text-2xl font-bold font-headline text-white">Need Custom Creatives?</h3>
-                                            <p className="text-slate-400 text-sm max-w-md">Our executive design team can provide tailored banners or video ads for high-performing ambassadors.</p>
+                                            <p className="text-slate-400 text-sm max-md mx-auto">Our executive design team can provide tailored banners or video ads for high-performing ambassadors.</p>
                                         </div>
                                         <Button asChild className="h-14 px-8 btn-gold-glow bg-primary text-black font-black uppercase">
                                             <Link href="/backstage/concierge">Contact Creative HQ</Link>
