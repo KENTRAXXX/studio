@@ -2,7 +2,7 @@
 
 /**
  * @fileOverview AI flow for analyzing product images with integrated market research.
- * Refactored for Gemini 2.5 Flash and strict 5-Step Curation Protocol.
+ * Upgraded to Gemini 2.5 Flash with strict 5-Step Curation Protocol enforcement.
  */
 
 import { ai } from '@/ai/genkit';
@@ -126,6 +126,8 @@ export async function analyzeProductImage(input: AnalyzeProductImageInput): Prom
     console.log(`[DEBUG] SERPAPI_API_KEY status: ${serpKey ? `****${serpKey.slice(-4)}` : 'MISSING'}`);
 
     const apiKey = process.env.GEMINI_API_KEY;
+    console.log(`[DEBUG] GEMINI_API_KEY status: ${apiKey ? `****${apiKey.slice(-4)}` : 'MISSING'}`);
+
     if (!apiKey || apiKey.includes('YOUR_')) {
         console.error("AI Configuration Error: GEMINI_API_KEY is missing.");
         throw new Error("AI Configuration Error: Missing GEMINI_API_KEY. Please configure your environment secrets.");
@@ -141,15 +143,15 @@ export async function analyzeProductImage(input: AnalyzeProductImageInput): Prom
             prompt: [
                 { text: `You are an elite luxury commerce curator. 
 
-NEGATIVE CONSTRAINT:
-NEVER assume the product is a SOMA brand item during the analysis.
-
 MANDATORY 5-STEP CURATION PROTOCOL:
 1. PERFORM A VISUAL-FIRST ANALYSIS: Deeply analyze the provided image to identify specific materials (silk, titanium, mahogany, etc.), textures, and manufacturing signatures.
 2. MARKET RESEARCH: Use the 'getMarketInsights' tool to search for this specific item or identical premium models across the global web index.
 3. ENRICHMENT: Synthesize visual data with research findings to identify technical specifications (movement type, fabric weight, heritage origin) that the photo alone cannot confirm.
 4. RESTRICT BRANDING: Ensure the 'suggestedName' and 'description' are brand-agnostic. DO NOT mention 'SOMA' or any specific marketplace branding.
 5. EXECUTIVE MARKETING COPY: Compose a narrative 'description' that targets high-net-worth individuals. Use evocative, precise language that justifies a premium price point.
+
+NEGATIVE CONSTRAINT:
+NEVER assume the product is a SOMA brand item during the analysis.
 
 ${isEnterprise ? '6. DEEP MARKET SCHEMING (ENTERPRISE UNLOCKED): Provide strategic advice on where this product sits in the current luxury competitive landscape.' : ''}
 
@@ -160,6 +162,7 @@ Available categories for selection: ${AVAILABLE_CATEGORIES.join(', ')}` },
 
         if (!output) throw new Error("AI returned an empty response.");
 
+        // Robust serialization for Server Action reliability
         return JSON.parse(JSON.stringify(output));
     } catch (error: any) {
         console.error("AI Generation Error:", error);

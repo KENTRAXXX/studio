@@ -2,7 +2,7 @@
 
 /**
  * @fileOverview Provides accessibility suggestions for UI components.
- * Upgraded to Gemini 2.5 Flash.
+ * Upgraded to Gemini 2.5 Flash for elite diagnostic fidelity.
  */
 
 import { ai } from '@/ai/genkit';
@@ -26,6 +26,7 @@ export async function getAccessibilitySuggestions(input: AccessibilitySuggestion
     try {
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey || apiKey.includes('YOUR_')) {
+            console.warn("AI A11y Key Missing: Providing curated fallbacks.");
             return generateFallbackSuggestions();
         }
 
@@ -39,9 +40,7 @@ export async function getAccessibilitySuggestions(input: AccessibilitySuggestion
             return generateFallbackSuggestions();
         }
 
-        return {
-            suggestions: output.suggestions
-        };
+        return JSON.parse(JSON.stringify(output));
     } catch (error) {
         console.error("AI A11y Error (Handled):", error);
         return generateFallbackSuggestions();
