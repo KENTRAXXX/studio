@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
-import { Gem, Loader2, Check, Warehouse, Sparkles, Search, ChevronLeft, ChevronRight, Plus, ShoppingBag } from 'lucide-react';
+import { Gem, Loader2, Check, Warehouse, Sparkles, Search, ChevronLeft, ChevronRight, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -25,11 +25,12 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/firebase/user-profile-provider';
-import { collection, doc, setDoc, query, where, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, setDoc, query, where, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { cn } from '@/lib/utils';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
+import Link from 'next/link';
 
 type Product = {
   id: string;
@@ -92,7 +93,7 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
   
   const { data: liveCatalog, loading: catalogLoading } = useCollection<Product>(masterCatalogRef);
   
-  // 2. Fetch User's Provisioned Products (Reactive Listener ensures Synced status is accurate)
+  // 2. Fetch User's Provisioned Products
   const userProductsQuery = useMemoFirebase(() => {
     if (!firestore || !user || isDemo) return null;
     return collection(firestore, 'stores', user.uid, 'products');
@@ -132,15 +133,9 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
       return;
     }
 
-    if (syncedProducts.has(product.id)) {
-      toast({ title: 'Already Synced', description: `${product.name} is already in your boutique.`});
-      return;
-    }
-
     setSyncingId(product.id);
     const newProductRef = doc(firestore, 'stores', user.uid, 'products', product.id);
     
-    // Creating a full document copy with mandatory Merchant metadata
     const productDataToSync = {
       name: product.name,
       suggestedRetailPrice: product.retailPrice,
@@ -154,13 +149,11 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
       isManagedBySoma: true,
       categories: product.categories || [],
       tags: product.tags || [],
-      // Strategic Traceability Metadata
       originalCatalogId: product.id,
       syncedAt: serverTimestamp(),
       ownerId: user.uid
     };
 
-    // Atomic write ensures asset persistence in the Merchant's local registry
     setDoc(newProductRef, productDataToSync)
       .then(() => {
         toast({
@@ -171,13 +164,36 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
       })
       .catch(async (serverError) => {
         setSyncingId(null);
-        // Permission errors are emitted contextually for dev audit
         const permissionError = new FirestorePermissionError({
           path: newProductRef.path,
           operation: 'write',
           requestResourceData: productDataToSync,
         } satisfies SecurityRuleContext);
         errorEmitter.emit('permission-error', permissionError);
+      });
+  };
+
+  const handleUnsync = (product: Product) => {
+    if (!firestore || !user) return;
+    
+    setSyncingId(product.id);
+    const productRef = doc(firestore, 'stores', user.uid, 'products', product.id);
+    
+    deleteDoc(productRef)
+      .then(() => {
+        toast({
+          title: 'Asset Removed',
+          description: `${product.name} has been removed from your boutique.`,
+        });
+        setSyncingId(null);
+      })
+      .catch((error: any) => {
+        setSyncingId(null);
+        toast({
+          variant: 'destructive',
+          title: 'Operation Failed',
+          description: error.message || 'Could not remove product.',
+        });
       });
   };
 
@@ -330,10 +346,16 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
                                 </TableCell>
                                 <TableCell className="text-right">
                                 {isSynced ? (
-                                    <div className="flex items-center justify-end gap-2 text-green-500 px-3">
-                                        <Check className="h-4 w-4" /> 
-                                        <span className="text-xs font-bold uppercase tracking-widest">Synced</span>
-                                    </div>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleUnsync(product)}
+                                        disabled={isSyncing || userProductsLoading}
+                                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                    >
+                                        {isSyncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4 mr-1" />}
+                                        Unsync
+                                    </Button>
                                 ) : (
                                     <Button
                                         variant="outline"
@@ -388,4 +410,3 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
     </div>
   );
 }
-import Link from 'next/link';
