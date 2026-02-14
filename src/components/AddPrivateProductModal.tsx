@@ -74,29 +74,24 @@ export function AddPrivateProductModal({ isOpen, onOpenChange }: AddPrivateProdu
         return;
     }
 
-    if (!user || !firestore) return;
-
-    const currentCredits = userProfile?.aiCredits ?? 0;
-    const isAdmin = userProfile?.userRole === 'ADMIN';
-
-    if (!isAdmin && currentCredits <= 0) {
-        setShowCreditModal(true);
-        return;
-    }
+    if (!user) return;
 
     setIsAnalyzing(true);
     try {
-        if (!isAdmin) {
-            const userRef = doc(firestore, 'users', user.uid);
-            updateDoc(userRef, { aiCredits: increment(-1) }).catch(console.error);
-        }
-
-        const result = await analyzeProductImage({ imageUrl, tier: userProfile?.planTier });
+        const result = await analyzeProductImage({ 
+            imageUrl, 
+            userId: user.uid,
+            tier: userProfile?.planTier 
+        });
         form.setValue('name', result.suggestedName, { shouldValidate: true });
         form.setValue('description', result.description, { shouldValidate: true });
         toast({ title: 'AI ENRICHMENT COMPLETE', description: 'Product metadata enriched from visual analysis.' });
     } catch (e: any) {
-        toast({ variant: 'destructive', title: 'AI Error', description: e.message });
+        if (error.message.includes('exhausted')) {
+            setShowCreditModal(true);
+        } else {
+            toast({ variant: 'destructive', title: 'AI Error', description: e.message });
+        }
     } finally {
         setIsAnalyzing(false);
     }
@@ -161,8 +156,8 @@ export function AddPrivateProductModal({ isOpen, onOpenChange }: AddPrivateProdu
               Dismiss
             </Button>
             <Button asChild className="w-full sm:w-auto btn-gold-glow bg-primary font-bold">
-              <Link href="/plan-selection">
-                <CreditCard className="mr-2 h-4 w-4" /> Upgrade Plan
+              <Link href="/dashboard/settings">
+                <CreditCard className="mr-2 h-4 w-4" /> Purchase Credits
               </Link>
             </Button>
           </DialogFooter>

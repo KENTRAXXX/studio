@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClientStore } from '@/ai/flows/create-client-store';
 import { initializeApp, getApps } from 'firebase/app';
-import { getFirestore, doc, getDoc, collection, addDoc, runTransaction, query, where, increment } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, collection, addDoc, runTransaction, query, where, increment, updateDoc } from 'firebase/firestore';
 import { firebaseConfig } from '@/firebase/config';
 import { sendOrderEmail } from '@/ai/flows/send-order-email';
 import { sendReferralActivatedEmail } from '@/ai/flows/send-referral-activated-email';
@@ -30,7 +30,7 @@ async function logWebhookEvent(eventType: string, payload: any, status: 'success
 }
 
 async function verifyPaystackSignature(payload: string, signature: string, secret: string): Promise<boolean> {
-    const encoder = new TextEncoder();
+    const encoder = new NextEncoder();
     const keyData = encoder.encode(secret);
     const bodyData = encoder.encode(payload);
 
@@ -238,12 +238,30 @@ export async function POST(req: Request) {
         return NextResponse.json({ status: 'success', message: 'Event acknowledged, no metadata.' });
     }
 
-    const { userId, plan, cart, storeId, planTier } = metadata;
+    const { userId, plan, cart, storeId, planTier, purchaseType, credits } = metadata;
+    const firestore = getDb();
 
+    // 1. Handle AI Credit Purchases
+    if (purchaseType === 'ai_credits' && userId && credits) {
+        try {
+            const userRef = doc(firestore, "users", userId);
+            await updateDoc(userRef, {
+                aiCredits: increment(credits)
+            });
+            await logWebhookEvent(event.event, event.data, 'success');
+            return NextResponse.json({ status: 'success' });
+        } catch (err: any) {
+            await logWebhookEvent(event.event, event.data, 'failed', `Credit provision failed: ${err.message}`);
+            return NextResponse.json({ status: 'error' }, { status: 500 });
+        }
+    }
+
+    // 2. Handle Product Sales
     if (cart && storeId) {
         await executePaymentSplit(event.data);
-    } else if (userId) {
-        const firestore = getDb();
+    } 
+    // 3. Handle Subscription Signups
+    else if (userId) {
         try {
             let emailData: { to: string, referrerName: string, protegeName: string, creditAmount: string } | null = null;
 
@@ -350,4 +368,10 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json({ status: 'success' });
+}
+
+class NextEncoder {
+    encode(str: string) {
+        return new TextEncoder().encode(str);
+    }
 }

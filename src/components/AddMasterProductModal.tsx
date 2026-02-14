@@ -154,22 +154,15 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
         return;
     }
 
-    if (!user || !firestore) return;
-
-    const currentCredits = userProfile?.aiCredits ?? 0;
-    if (currentCredits <= 0 && userProfile?.userRole !== 'ADMIN') {
-        setShowCreditModal(true);
-        return;
-    }
+    if (!user) return;
 
     setIsAnalyzing(true);
     try {
-        const userRef = doc(firestore, 'users', user.uid);
-        if (userProfile?.userRole !== 'ADMIN') {
-            updateDoc(userRef, { aiCredits: increment(-1) }).catch(console.error);
-        }
-
-        const result = await analyzeProductImage({ imageUrl: imageGallery[0] });
+        const result = await analyzeProductImage({ 
+            imageUrl: imageGallery[0],
+            userId: user.uid,
+            tier: userProfile?.planTier
+        });
         
         form.setValue('name', result.suggestedName, { shouldValidate: true });
         form.setValue('description', result.description, { shouldValidate: true });
@@ -182,7 +175,11 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
             action: <Sparkles className="h-4 w-4 text-primary" />
         });
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Magic Failed', description: error.message });
+        if (error.message.includes('exhausted')) {
+            setShowCreditModal(true);
+        } else {
+            toast({ variant: 'destructive', title: 'Magic Failed', description: error.message });
+        }
     } finally {
         setIsAnalyzing(false);
     }
@@ -332,7 +329,7 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
                 Credit Limit Reached
             </DialogTitle>
             <DialogDescription className="text-center pt-2">
-                Your strategic AI allocation has been exhausted. Upgrade to Enterprise for a larger monthly block or purchase additional high-fidelity credits.
+                Your strategic AI allocation has been exhausted. Upgrade to Enterprise for a larger monthly block or purchase additional high-fidelity credits in Store Settings.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-6 flex flex-col sm:flex-row gap-3">
@@ -340,8 +337,8 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
               Dismiss
             </Button>
             <Button asChild className="w-full sm:w-auto btn-gold-glow bg-primary font-bold">
-              <Link href="/plan-selection">
-                <CreditCard className="mr-2 h-4 w-4" /> Upgrade to Enterprise
+              <Link href="/dashboard/settings">
+                <CreditCard className="mr-2 h-4 w-4" /> Purchase Credits
               </Link>
             </Button>
           </DialogFooter>

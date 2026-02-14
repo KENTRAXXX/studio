@@ -87,27 +87,24 @@ export function EditPrivateProductModal({ isOpen, onOpenChange, product }: EditP
         return;
     }
 
-    if (!user || !firestore) return;
-
-    const currentCredits = userProfile?.aiCredits ?? 0;
-    if (currentCredits <= 0 && userProfile?.userRole !== 'ADMIN') {
-        setShowCreditModal(true);
-        return;
-    }
+    if (!user) return;
 
     setIsAnalyzing(true);
     try {
-        const userRef = doc(firestore, 'users', user.uid);
-        if (userProfile?.userRole !== 'ADMIN') {
-            updateDoc(userRef, { aiCredits: increment(-1) }).catch(console.error);
-        }
-
-        const result = await analyzeProductImage({ imageUrl });
+        const result = await analyzeProductImage({ 
+            imageUrl, 
+            userId: user.uid,
+            tier: userProfile?.planTier 
+        });
         form.setValue('name', result.suggestedName, { shouldValidate: true });
         form.setValue('description', result.description, { shouldValidate: true });
         toast({ title: 'AI REFRESH COMPLETE', description: 'AI has updated the product identity based on the current asset.' });
     } catch (e: any) {
-        toast({ variant: 'destructive', title: 'Refresh Failed', description: e.message });
+        if (error.message.includes('exhausted')) {
+            setShowCreditModal(true);
+        } else {
+            toast({ variant: 'destructive', title: 'Refresh Failed', description: e.message });
+        }
     } finally {
         setIsAnalyzing(false);
     }
@@ -159,7 +156,7 @@ export function EditPrivateProductModal({ isOpen, onOpenChange, product }: EditP
                 Credit Limit Reached
             </DialogTitle>
             <DialogDescription className="text-center pt-2">
-                Your strategic AI allocation has been exhausted. Upgrade to Enterprise for a larger monthly block or purchase additional high-fidelity credits.
+                Your strategic AI allocation has been exhausted. Upgrade to Enterprise for a larger monthly block or purchase additional high-fidelity credits in Store Settings.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-6 flex flex-col sm:flex-row gap-3">
@@ -167,8 +164,8 @@ export function EditPrivateProductModal({ isOpen, onOpenChange, product }: EditP
               Dismiss
             </Button>
             <Button asChild className="w-full sm:w-auto btn-gold-glow bg-primary font-bold">
-              <Link href="/plan-selection">
-                <CreditCard className="mr-2 h-4 w-4" /> Upgrade to Enterprise
+              <Link href="/dashboard/settings">
+                <CreditCard className="mr-2 h-4 w-4" /> Purchase Credits
               </Link>
             </Button>
           </DialogFooter>
@@ -182,7 +179,7 @@ export function EditPrivateProductModal({ isOpen, onOpenChange, product }: EditP
             <DialogTitle className="flex items-center gap-2 text-primary font-headline">
                 <PackagePlus className="h-6 w-6" />
                 Edit Private Product
-            </DialogTitle>
+            </DialogTitle(
             <DialogDescription>
                 Synchronize changes to your local inventory.
             </DialogDescription>

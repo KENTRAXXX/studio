@@ -3,11 +3,20 @@
 /**
  * @fileOverview AI flow for analyzing product images with integrated market research.
  * Implements a visual-first reasoning chain enriched by real-time competitor data.
- * Enforces strict unbranded analysis and objective feature extraction.
+ * Features a server-side Firestore Transaction for atomic credit governance.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { initializeApp, getApps } from 'firebase/app';
+import { getFirestore, doc, runTransaction, increment } from 'firebase/firestore';
+import { firebaseConfig } from '@/firebase/config';
+
+const getDb = () => {
+    const apps = getApps();
+    const app = apps.length > 0 ? apps[0] : initializeApp(firebaseConfig);
+    return getFirestore(app);
+};
 
 const AVAILABLE_CATEGORIES = [
     "Watches", "Leather Goods", "Jewelry", "Fragrance", "Apparel", 
@@ -82,6 +91,7 @@ const getMarketInsights = ai.defineTool(
 
 const AnalyzeProductImageInputSchema = z.object({
   imageUrl: z.string().url().describe("The public URL of the product image to analyze."),
+  userId: z.string().describe("The UID of the user requesting the analysis for credit verification."),
   tier: z.string().optional().describe("The user's plan tier, unlocking enhanced 'Market Scheming' if Enterprise."),
 });
 export type AnalyzeProductImageInput = z.infer<typeof AnalyzeProductImageInputSchema>;
@@ -122,8 +132,38 @@ const generateFallbackMetadata = (): AnalyzeProductImageOutput => ({
 /**
  * Analyzes a product image to generate luxury metadata enriched by market research.
  * Implements a unified script for both new product enrichment and metadata refresh.
+ * Performs a Firestore Transaction to atomically deduct credits before the AI call.
  */
 export async function analyzeProductImage(input: AnalyzeProductImageInput): Promise<AnalyzeProductImageOutput> {
+    const firestore = getDb();
+    const userRef = doc(firestore, 'users', input.userId);
+
+    // 1. ATOMIC CREDIT GOVERNANCE
+    // We deduct the credit BEFORE the expensive AI call to prevent race conditions.
+    try {
+        await runTransaction(firestore, async (transaction) => {
+            const userSnap = await transaction.get(userRef);
+            if (!userSnap.exists()) throw new Error("User identity not found in registry.");
+            
+            const userData = userSnap.data();
+            // Administrators enjoy an executive bypass for platform-wide curation
+            if (userData.userRole === 'ADMIN') return;
+
+            const currentCredits = userData.aiCredits ?? 0;
+            if (currentCredits < 1) {
+                throw new Error("INSUFFICIENT_CREDITS");
+            }
+
+            transaction.update(userRef, { aiCredits: increment(-1) });
+        });
+    } catch (error: any) {
+        if (error.message === 'INSUFFICIENT_CREDITS') {
+            throw new Error("Your strategic AI allocation has been exhausted. Please top up your credits in Store Settings.");
+        }
+        throw error;
+    }
+
+    // 2. AI INTELLIGENCE PHASE
     try {
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey || apiKey.includes('YOUR_')) {

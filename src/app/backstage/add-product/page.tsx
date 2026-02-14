@@ -175,24 +175,15 @@ export default function AddProductPage() {
         return;
     }
 
-    if (!user || !firestore) return;
-
-    // Credit-gating check
-    const currentCredits = userProfile?.aiCredits ?? 0;
-    if (currentCredits <= 0 && userProfile?.userRole !== 'ADMIN') {
-        setShowCreditModal(true);
-        return;
-    }
+    if (!user) return;
 
     setIsAnalyzing(true);
     try {
-        // Atomic credit deduction
-        const userRef = doc(firestore, 'users', user.uid);
-        if (userProfile?.userRole !== 'ADMIN') {
-            updateDoc(userRef, { aiCredits: increment(-1) }).catch(console.error);
-        }
-
-        const result = await analyzeProductImage({ imageUrl: imageUrls[0] });
+        const result = await analyzeProductImage({ 
+            imageUrl: imageUrls[0],
+            userId: user.uid,
+            tier: userProfile?.planTier
+        });
         
         setProductName(result.suggestedName);
         setDescription(result.description);
@@ -205,11 +196,15 @@ export default function AddProductPage() {
             action: <Sparkles className="h-4 w-4 text-primary" />
         });
     } catch (error: any) {
-        toast({
-            variant: 'destructive',
-            title: 'AI Analysis Failed',
-            description: error.message || 'The curation team is currently offline.'
-        });
+        if (error.message.includes('exhausted')) {
+            setShowCreditModal(true);
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'AI Analysis Failed',
+                description: error.message || 'The curation team is currently offline.'
+            });
+        }
     } finally {
         setIsAnalyzing(false);
     }
@@ -344,7 +339,7 @@ export default function AddProductPage() {
                 Credit Limit Reached
             </DialogTitle>
             <DialogDescription className="text-center pt-2">
-                Your strategic AI allocation has been exhausted. Upgrade to Enterprise for a larger monthly block or purchase additional high-fidelity credits.
+                Your strategic AI allocation has been exhausted. Upgrade to Enterprise for a larger monthly block or purchase additional high-fidelity credits in Store Settings.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-6 flex flex-col sm:flex-row gap-3">
@@ -352,8 +347,8 @@ export default function AddProductPage() {
               Dismiss
             </Button>
             <Button asChild className="w-full sm:w-auto btn-gold-glow bg-primary font-bold">
-              <Link href="/plan-selection">
-                <CreditCard className="mr-2 h-4 w-4" /> Upgrade to Enterprise
+              <Link href="/dashboard/settings">
+                <CreditCard className="mr-2 h-4 w-4" /> Purchase Credits
               </Link>
             </Button>
           </DialogFooter>
