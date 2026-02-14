@@ -2,7 +2,7 @@
 
 /**
  * @fileOverview Provides accessibility suggestions for UI components.
- * Refactored for Cloudflare resilience using stable models and serializable fallbacks.
+ * Upgraded to Gemini 2.5 Flash.
  */
 
 import { ai } from '@/ai/genkit';
@@ -30,9 +30,9 @@ export async function getAccessibilitySuggestions(input: AccessibilitySuggestion
         }
 
         const { output } = await ai.generate({
-            model: 'googleai/gemini-1.5-flash',
+            model: 'googleai/gemini-2.5-flash',
             output: { schema: AccessibilitySuggestionsOutputSchema },
-            prompt: `Review the following UI code for accessibility improvements and provide a concise list of suggestions to meet SOMA luxury standards:\n\n${input.componentCode}`,
+            prompt: `Review the following UI code for accessibility improvements and provide a concise list of suggestions to meet SOMA luxury standards. Focus on semantic HTML, ARIA attributes, and keyboard navigation integrity:\n\n${input.componentCode}`,
         });
 
         if (!output) {

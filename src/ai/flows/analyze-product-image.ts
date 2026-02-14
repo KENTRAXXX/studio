@@ -2,7 +2,7 @@
 
 /**
  * @fileOverview AI flow for analyzing product images with integrated market research.
- * Refactored for high stability in serverless environments.
+ * Refactored for Gemini 2.5 Flash and strict 5-Step Curation Protocol.
  */
 
 import { ai } from '@/ai/genkit';
@@ -122,11 +122,9 @@ const generateFallbackMetadata = (): AnalyzeProductImageOutput => ({
  * Analyzes a product image to generate luxury metadata.
  */
 export async function analyzeProductImage(input: AnalyzeProductImageInput): Promise<AnalyzeProductImageOutput> {
-    // Debug: Log masked SERPAPI_API_KEY status
     const serpKey = process.env.SERPAPI_API_KEY;
     console.log(`[DEBUG] SERPAPI_API_KEY status: ${serpKey ? `****${serpKey.slice(-4)}` : 'MISSING'}`);
 
-    // Validate Gemini API Key
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey || apiKey.includes('YOUR_')) {
         console.error("AI Configuration Error: GEMINI_API_KEY is missing.");
@@ -137,7 +135,7 @@ export async function analyzeProductImage(input: AnalyzeProductImageInput): Prom
         const isEnterprise = input.tier === 'ENTERPRISE';
 
         const { output } = await ai.generate({
-            model: 'googleai/gemini-1.5-flash',
+            model: 'googleai/gemini-2.5-flash',
             tools: [getMarketInsights],
             output: { schema: AnalyzeProductImageOutputSchema },
             prompt: [
@@ -146,14 +144,14 @@ export async function analyzeProductImage(input: AnalyzeProductImageInput): Prom
 NEGATIVE CONSTRAINT:
 NEVER assume the product is a SOMA brand item during the analysis.
 
-INSTRUCTION SET:
-1. PERFORM A VISUAL-FIRST ANALYSIS: Analyze the provided image and extract technical data.
-2. MARKET RESEARCH: Use the 'getMarketInsights' tool to find the specific item or similar models on the web.
-3. ENRICHMENT: Use the research data to fill in gaps that the photo alone cannot provide (e.g. MSRP, known variants).
-4. RESTRICT BRANDING: Do NOT mention 'SOMA' or any platform branding. This metadata must be brand-agnostic.
-5. FINAL MARKETING COPY: Compose the 'description' based strictly on the visual and research evidence. Use evocative, luxury-standard language.
+MANDATORY 5-STEP CURATION PROTOCOL:
+1. PERFORM A VISUAL-FIRST ANALYSIS: Deeply analyze the provided image to identify specific materials (silk, titanium, mahogany, etc.), textures, and manufacturing signatures.
+2. MARKET RESEARCH: Use the 'getMarketInsights' tool to search for this specific item or identical premium models across the global web index.
+3. ENRICHMENT: Synthesize visual data with research findings to identify technical specifications (movement type, fabric weight, heritage origin) that the photo alone cannot confirm.
+4. RESTRICT BRANDING: Ensure the 'suggestedName' and 'description' are brand-agnostic. DO NOT mention 'SOMA' or any specific marketplace branding.
+5. EXECUTIVE MARKETING COPY: Compose a narrative 'description' that targets high-net-worth individuals. Use evocative, precise language that justifies a premium price point.
 
-${isEnterprise ? '6. DEEP MARKET SCHEMING (ENTERPRISE UNLOCKED): Provide strategic positioning advice.' : ''}
+${isEnterprise ? '6. DEEP MARKET SCHEMING (ENTERPRISE UNLOCKED): Provide strategic advice on where this product sits in the current luxury competitive landscape.' : ''}
 
 Available categories for selection: ${AVAILABLE_CATEGORIES.join(', ')}` },
                 { media: { url: input.imageUrl } }
@@ -162,7 +160,6 @@ Available categories for selection: ${AVAILABLE_CATEGORIES.join(', ')}` },
 
         if (!output) throw new Error("AI returned an empty response.");
 
-        // Serialization: Ensure data is a plain serializable object for the client
         return JSON.parse(JSON.stringify(output));
     } catch (error: any) {
         console.error("AI Generation Error:", error);
