@@ -46,7 +46,7 @@ import { collection, query, writeBatch, doc, serverTimestamp, getDocs } from 'fi
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { AddMasterProductModal } from '@/components/AddMasterProductModal';
 import { EditMasterProductModal } from '@/components/EditMasterProductModal';
-import { masterSeedRegistry } from '@/lib/seed-registry';
+import { generateCatalog } from '@/lib/seed-generator';
 import { useToast } from '@/hooks/use-toast';
 
 type MasterProduct = {
@@ -137,7 +137,6 @@ export default function AdminCatalogPage() {
             batch.delete(docSnap.ref);
             count++;
             
-            // Commit in chunks of 450 to stay under the 500 operation limit
             if (count % 450 === 0) {
                 await batch.commit();
                 batch = writeBatch(firestore);
@@ -163,34 +162,23 @@ export default function AdminCatalogPage() {
   const handleSeedCatalog = async () => {
     if (!firestore) return;
     
-    if (masterSeedRegistry.length === 0) {
-        toast({
-            variant: 'destructive',
-            title: 'Registry Empty',
-            description: 'The modular seed registry has not been populated yet.'
-        });
-        return;
-    }
-
     setIsSeeding(true);
     
     try {
+        // Generate the 1,000 items on the fly using the Python-translated logic
+        const curatedRegistry = generateCatalog(1000);
+        
         let batch = writeBatch(firestore);
         const catalogRef = collection(firestore, 'Master_Catalog');
 
-        for (let i = 0; i < masterSeedRegistry.length; i++) {
-            const item = masterSeedRegistry[i];
-            const id = item.id || `seed-${String(i + 1).padStart(4, '0')}`;
+        for (let i = 0; i < curatedRegistry.length; i++) {
+            const item = curatedRegistry[i];
+            const id = item.id;
             
             const newDocRef = doc(catalogRef, id);
             batch.set(newDocRef, {
                 ...item,
-                id,
-                status: 'active',
-                vendorId: item.vendorId || 'admin',
-                productType: item.productType || 'INTERNAL',
                 submittedAt: serverTimestamp(),
-                isActive: true
             });
 
             if ((i + 1) % 450 === 0) {
@@ -202,12 +190,12 @@ export default function AdminCatalogPage() {
         await batch.commit();
         toast({
             title: 'Global Catalog Synchronized',
-            description: `${masterSeedRegistry.length} curated assets have been deployed to the Master Catalog.`,
+            description: `1,000 curated assets have been programmatically deployed.`,
         });
     } catch (error: any) {
         toast({
             variant: 'destructive',
-            title: 'Seeding Failed',
+            title: 'Automated Seeding Failed',
             description: error.message
         });
     } finally {
@@ -279,7 +267,7 @@ export default function AdminCatalogPage() {
                 className="border-primary/30 text-primary hover:bg-primary/5"
             >
                 {isSeeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                Ingest Curated Registry ({masterSeedRegistry.length})
+                Automated Engine Ingest (1,000 Items)
             </Button>
             
             <Button onClick={() => setIsAddModalOpen(true)} className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
@@ -319,10 +307,10 @@ export default function AdminCatalogPage() {
                 <div className="flex flex-col items-center justify-center text-center h-64 border-2 border-dashed border-primary/20 rounded-lg">
                     <Warehouse className="h-16 w-16 text-muted-foreground mb-4" />
                     <h3 className="text-xl font-bold font-headline text-primary">The Master Catalog is Empty</h3>
-                    <p className="text-muted-foreground mt-2 mb-6">Deploy your curated registry to initialize the platform.</p>
+                    <p className="text-muted-foreground mt-2 mb-6">Trigger the automated engine to initialize the platform with 1,000 items.</p>
                     <Button onClick={handleSeedCatalog} disabled={isSeeding} variant="outline" className="border-primary text-primary font-bold h-12 px-8">
                         {isSeeding ? <Loader2 className="animate-spin mr-2" /> : <Sparkles className="mr-2" />}
-                        Deploy Registry ({masterSeedRegistry.length} items)
+                        Run Automated Engine
                     </Button>
                 </div>
                ) : (
