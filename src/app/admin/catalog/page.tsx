@@ -6,7 +6,18 @@ import Image from 'next/image';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Gem, PlusCircle, Loader2, Warehouse, Sparkles, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { 
+    Gem, 
+    PlusCircle, 
+    Loader2, 
+    Warehouse, 
+    Sparkles, 
+    Search, 
+    ChevronLeft, 
+    ChevronRight,
+    Trash2,
+    AlertTriangle
+} from "lucide-react";
 import {
   Table,
   TableBody,
@@ -17,10 +28,21 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 import { useUserProfile } from '@/firebase/user-profile-provider';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, writeBatch, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, writeBatch, doc, serverTimestamp, getDocs } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { AddMasterProductModal } from '@/components/AddMasterProductModal';
 import { EditMasterProductModal } from '@/components/EditMasterProductModal';
@@ -52,6 +74,7 @@ export default function AdminCatalogPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<MasterProduct | null>(null);
   const [isSeeding, setIsSeeding] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -94,6 +117,49 @@ export default function AdminCatalogPage() {
     return PlaceHolderImages.find(img => img.id === id)?.imageUrl || 'https://picsum.photos/seed/placeholder/100/100';
   }
 
+  const handleClearCatalog = async () => {
+    if (!firestore) return;
+    setIsClearing(true);
+    
+    try {
+        const catalogRef = collection(firestore, 'Master_Catalog');
+        const snap = await getDocs(catalogRef);
+        
+        if (snap.empty) {
+            toast({ title: 'Registry Empty', description: 'There are no assets to liquidate.' });
+            return;
+        }
+
+        let batch = writeBatch(firestore);
+        let count = 0;
+
+        for (const docSnap of snap.docs) {
+            batch.delete(docSnap.ref);
+            count++;
+            
+            // Commit in chunks of 450 to stay under the 500 operation limit
+            if (count % 450 === 0) {
+                await batch.commit();
+                batch = writeBatch(firestore);
+            }
+        }
+
+        await batch.commit();
+        toast({
+            title: 'Registry Liquidated',
+            description: `${count} legacy assets have been purged from the system.`,
+        });
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Liquidation Failed',
+            description: error.message
+        });
+    } finally {
+        setIsClearing(false);
+    }
+  };
+
   const handleSeedCatalog = async () => {
     if (!firestore) return;
     
@@ -112,10 +178,9 @@ export default function AdminCatalogPage() {
         let batch = writeBatch(firestore);
         const catalogRef = collection(firestore, 'Master_Catalog');
 
-        // Iterate through the curated registry
         for (let i = 0; i < masterSeedRegistry.length; i++) {
             const item = masterSeedRegistry[i];
-            const id = item.id || `seed-${i + 1}`;
+            const id = item.id || `seed-${String(i + 1).padStart(4, '0')}`;
             
             const newDocRef = doc(catalogRef, id);
             batch.set(newDocRef, {
@@ -128,7 +193,6 @@ export default function AdminCatalogPage() {
                 isActive: true
             });
 
-            // Commit in chunks of 450 to avoid the 500 write limit
             if ((i + 1) % 450 === 0) {
                 await batch.commit();
                 batch = writeBatch(firestore);
@@ -178,6 +242,36 @@ export default function AdminCatalogPage() {
             <h1 className="text-3xl font-bold font-headline">Master Catalog Editor</h1>
         </div>
         <div className="flex gap-3">
+            <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button 
+                        variant="outline" 
+                        disabled={isClearing || masterCatalog?.length === 0}
+                        className="border-destructive/30 text-destructive hover:bg-destructive/10"
+                    >
+                        {isClearing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                        Liquidate Registry
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="bg-card border-destructive">
+                    <AlertDialogHeader>
+                        <div className="mx-auto bg-destructive/10 rounded-full p-4 w-fit mb-4">
+                            <AlertTriangle className="h-8 w-8 text-destructive" />
+                        </div>
+                        <AlertDialogTitle className="text-destructive font-headline text-center">Execute Global Liquidation?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-center pt-2">
+                            This action will permanently delete ALL documents from the Master Catalog. Boutique owners will lose synchronization access to these assets instantly.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="sm:justify-center gap-3">
+                        <AlertDialogCancel className="border-slate-700">Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleClearCatalog} className="bg-destructive hover:bg-destructive/90 text-white font-bold">
+                            Liquidate Registry
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
             <Button 
                 variant="outline" 
                 onClick={handleSeedCatalog} 
@@ -185,8 +279,9 @@ export default function AdminCatalogPage() {
                 className="border-primary/30 text-primary hover:bg-primary/5"
             >
                 {isSeeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                Ingest Curated Registry ({masterSeedRegistry.length} items)
+                Ingest Curated Registry ({masterSeedRegistry.length})
             </Button>
+            
             <Button onClick={() => setIsAddModalOpen(true)} className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
                 <PlusCircle className="mr-2 h-5 w-5"/>
                 Add New Product
