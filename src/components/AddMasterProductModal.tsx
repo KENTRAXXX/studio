@@ -154,7 +154,23 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
         return;
     }
 
-    if (!user) return;
+    if (!user || !firestore) return;
+
+    // Credit Governance (Client Side)
+    if (userProfile?.userRole !== 'ADMIN') {
+        const currentCredits = userProfile?.aiCredits ?? 0;
+        if (currentCredits < 1) {
+            setShowCreditModal(true);
+            return;
+        }
+        try {
+            const userRef = doc(firestore, 'users', user.uid);
+            await updateDoc(userRef, { aiCredits: increment(-1) });
+        } catch (e) {
+            toast({ variant: 'destructive', title: 'Verification Failed', description: 'Could not verify AI allocation.' });
+            return;
+        }
+    }
 
     setIsAnalyzing(true);
     try {
@@ -175,11 +191,7 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
             action: <Sparkles className="h-4 w-4 text-primary" />
         });
     } catch (error: any) {
-        if (error.message.includes('exhausted')) {
-            setShowCreditModal(true);
-        } else {
-            toast({ variant: 'destructive', title: 'Magic Failed', description: error.message });
-        }
+        toast({ variant: 'destructive', title: 'Magic Failed', description: error.message });
     } finally {
         setIsAnalyzing(false);
     }

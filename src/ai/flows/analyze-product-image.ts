@@ -2,29 +2,11 @@
 
 /**
  * @fileOverview AI flow for analyzing product images with integrated market research.
- * Refactored for high stability in serverless environments by using memory-only cache.
- * Restored original executive prompt instructions and negative constraints.
+ * Refactored for high stability in serverless environments.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { initializeApp, getApps } from 'firebase/app';
-import { getFirestore, doc, getDoc, updateDoc, increment, initializeFirestore, memoryLocalCache } from 'firebase/firestore';
-import { firebaseConfig } from '@/firebase/config';
-
-/**
- * Optimized Firestore initialization for Server Actions.
- * Uses memoryLocalCache to prevent persistence-related 500 errors in serverless runtimes.
- */
-const getDb = () => {
-    const apps = getApps();
-    const app = apps.length > 0 ? apps[0] : initializeApp(firebaseConfig);
-    try {
-        return getFirestore(app);
-    } catch (e) {
-        return initializeFirestore(app, { localCache: memoryLocalCache() });
-    }
-};
 
 const AVAILABLE_CATEGORIES = [
     "Watches", "Leather Goods", "Jewelry", "Fragrance", "Apparel", 
@@ -98,7 +80,7 @@ const getMarketInsights = ai.defineTool(
 
 const AnalyzeProductImageInputSchema = z.object({
   imageUrl: z.string().url().describe("The public URL of the product image to analyze."),
-  userId: z.string().describe("The UID of the user requesting the analysis for credit verification."),
+  userId: z.string().describe("The UID of the user requesting the analysis."),
   tier: z.string().optional().describe("The user's plan tier."),
 });
 export type AnalyzeProductImageInput = z.infer<typeof AnalyzeProductImageInputSchema>;
@@ -138,49 +120,20 @@ const generateFallbackMetadata = (): AnalyzeProductImageOutput => ({
 
 /**
  * Analyzes a product image to generate luxury metadata.
- * Restored original instructions and negative constraints.
  */
 export async function analyzeProductImage(input: AnalyzeProductImageInput): Promise<AnalyzeProductImageOutput> {
     // Debug: Log masked SERPAPI_API_KEY status
     const serpKey = process.env.SERPAPI_API_KEY;
     console.log(`[DEBUG] SERPAPI_API_KEY status: ${serpKey ? `****${serpKey.slice(-4)}` : 'MISSING'}`);
 
-    const firestore = getDb();
-    const userRef = doc(firestore, 'users', input.userId);
-
-    // 1. CREDIT GOVERNANCE
-    try {
-        const userSnap = await getDoc(userRef);
-        if (!userSnap.exists()) throw new Error("User identity not found.");
-        
-        const userData = userSnap.data();
-        
-        // Admins bypass credits
-        if (userData.userRole !== 'ADMIN') {
-            const currentCredits = userData.aiCredits ?? 0;
-            if (currentCredits < 1) {
-                throw new Error("INSUFFICIENT_CREDITS");
-            }
-            // Atomic decrement
-            await updateDoc(userRef, { aiCredits: increment(-1) });
-        }
-    } catch (error: any) {
-        if (error.message === 'INSUFFICIENT_CREDITS') {
-            throw new Error("Your strategic AI allocation has been exhausted.");
-        }
-        console.error("Credit check failure details:", error);
-        throw new Error("Identity verification failed. AI engine offline.");
+    // Validate Gemini API Key
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey || apiKey.includes('YOUR_')) {
+        console.error("AI Configuration Error: GEMINI_API_KEY is missing.");
+        throw new Error("AI Configuration Error: Missing GEMINI_API_KEY. Please configure your environment secrets.");
     }
 
-    // 2. AI INTELLIGENCE PHASE
     try {
-        const apiKey = process.env.GEMINI_API_KEY;
-        // Validation: descriptive error if missing
-        if (!apiKey || apiKey.includes('YOUR_')) {
-            console.error("AI Configuration Error: GEMINI_API_KEY is missing.");
-            throw new Error("AI Configuration Error: Missing GEMINI_API_KEY. Please configure your environment secrets.");
-        }
-
         const isEnterprise = input.tier === 'ENTERPRISE';
 
         const { output } = await ai.generate({
@@ -214,7 +167,6 @@ Available categories for selection: ${AVAILABLE_CATEGORIES.join(', ')}` },
     } catch (error: any) {
         console.error("AI Generation Error:", error);
         
-        // Re-throw if it's the specific missing key error to provide descriptive feedback
         if (error.message.includes("Missing GEMINI_API_KEY")) {
             throw error;
         }

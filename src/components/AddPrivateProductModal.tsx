@@ -74,7 +74,23 @@ export function AddPrivateProductModal({ isOpen, onOpenChange }: AddPrivateProdu
         return;
     }
 
-    if (!user) return;
+    if (!user || !firestore) return;
+
+    // Credit Governance (Client Side)
+    if (userProfile?.userRole !== 'ADMIN') {
+        const currentCredits = userProfile?.aiCredits ?? 0;
+        if (currentCredits < 1) {
+            setShowCreditModal(true);
+            return;
+        }
+        try {
+            const userRef = doc(firestore, 'users', user.uid);
+            await updateDoc(userRef, { aiCredits: increment(-1) });
+        } catch (e) {
+            toast({ variant: 'destructive', title: 'Verification Failed', description: 'Could not verify AI allocation.' });
+            return;
+        }
+    }
 
     setIsAnalyzing(true);
     try {
@@ -87,11 +103,7 @@ export function AddPrivateProductModal({ isOpen, onOpenChange }: AddPrivateProdu
         form.setValue('description', result.description, { shouldValidate: true });
         toast({ title: 'AI ENRICHMENT COMPLETE', description: 'Product metadata enriched from visual analysis.' });
     } catch (e: any) {
-        if (e.message.includes('exhausted') || e.message.includes('INSUFFICIENT_CREDITS')) {
-            setShowCreditModal(true);
-        } else {
-            toast({ variant: 'destructive', title: 'AI Error', description: e.message });
-        }
+        toast({ variant: 'destructive', title: 'AI Error', description: e.message });
     } finally {
         setIsAnalyzing(false);
     }

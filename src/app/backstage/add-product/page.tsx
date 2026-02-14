@@ -104,7 +104,6 @@ export default function AddProductPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showCreditModal, setShowCreditModal] = useState(false);
 
-  // Pre-generate an ID
   const [tempId, setTempId] = useState(() => crypto.randomUUID());
 
   const numericWholesale = parseFloat(wholesalePrice) || 0;
@@ -165,7 +164,6 @@ export default function AddProductPage() {
   const removeImage = (indexToRemove: number) => {
       const removedUrl = imageUrls[indexToRemove];
       setImageUrls(prev => prev.filter((_, i) => i !== indexToRemove));
-      // Also cleanup color options mapping to this image
       setColorOptions(prev => prev.filter(opt => opt.imageUrl !== removedUrl));
   };
 
@@ -175,7 +173,23 @@ export default function AddProductPage() {
         return;
     }
 
-    if (!user) return;
+    if (!user || !firestore) return;
+
+    // 1. Client-Side Credit Governance
+    if (userProfile?.userRole !== 'ADMIN') {
+        const currentCredits = userProfile?.aiCredits ?? 0;
+        if (currentCredits < 1) {
+            setShowCreditModal(true);
+            return;
+        }
+        try {
+            const userRef = doc(firestore, 'users', user.uid);
+            await updateDoc(userRef, { aiCredits: increment(-1) });
+        } catch (e) {
+            toast({ variant: 'destructive', title: 'Verification Failed', description: 'Could not verify AI allocation.' });
+            return;
+        }
+    }
 
     setIsAnalyzing(true);
     try {
@@ -196,15 +210,11 @@ export default function AddProductPage() {
             action: <Sparkles className="h-4 w-4 text-primary" />
         });
     } catch (error: any) {
-        if (error.message.includes('exhausted')) {
-            setShowCreditModal(true);
-        } else {
-            toast({
-                variant: 'destructive',
-                title: 'AI Analysis Failed',
-                description: error.message || 'The curation team is currently offline.'
-            });
-        }
+        toast({
+            variant: 'destructive',
+            title: 'AI Analysis Failed',
+            description: error.message || 'The curation team is currently offline.'
+        });
     } finally {
         setIsAnalyzing(false);
     }

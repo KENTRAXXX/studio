@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useUser, useFirestore, useUserProfile } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, increment } from 'firebase/firestore';
 import { analyzeProductImage } from '@/ai/flows/analyze-product-image';
 
 import {
@@ -87,7 +87,23 @@ export function EditPrivateProductModal({ isOpen, onOpenChange, product }: EditP
         return;
     }
 
-    if (!user) return;
+    if (!user || !firestore) return;
+
+    // Credit Governance (Client Side)
+    if (userProfile?.userRole !== 'ADMIN') {
+        const currentCredits = userProfile?.aiCredits ?? 0;
+        if (currentCredits < 1) {
+            setShowCreditModal(true);
+            return;
+        }
+        try {
+            const userRef = doc(firestore, 'users', user.uid);
+            await updateDoc(userRef, { aiCredits: increment(-1) });
+        } catch (e) {
+            toast({ variant: 'destructive', title: 'Verification Failed', description: 'Could not verify AI allocation.' });
+            return;
+        }
+    }
 
     setIsAnalyzing(true);
     try {
@@ -100,11 +116,7 @@ export function EditPrivateProductModal({ isOpen, onOpenChange, product }: EditP
         form.setValue('description', result.description, { shouldValidate: true });
         toast({ title: 'AI REFRESH COMPLETE', description: 'AI has updated the product identity based on the current asset.' });
     } catch (e: any) {
-        if (e.message.includes('exhausted') || e.message.includes('INSUFFICIENT_CREDITS')) {
-            setShowCreditModal(true);
-        } else {
-            toast({ variant: 'destructive', title: 'Refresh Failed', description: e.message });
-        }
+        toast({ variant: 'destructive', title: 'Refresh Failed', description: e.message });
     } finally {
         setIsAnalyzing(false);
     }
