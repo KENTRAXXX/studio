@@ -24,7 +24,7 @@ import { collection, query, writeBatch, doc, serverTimestamp } from 'firebase/fi
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { AddMasterProductModal } from '@/components/AddMasterProductModal';
 import { EditMasterProductModal } from '@/components/EditMasterProductModal';
-import { masterCatalog as mockData } from '@/lib/data';
+import { masterSeedRegistry } from '@/lib/seed-registry';
 import { useToast } from '@/hooks/use-toast';
 
 type MasterProduct = {
@@ -96,83 +96,40 @@ export default function AdminCatalogPage() {
 
   const handleSeedCatalog = async () => {
     if (!firestore) return;
+    
+    if (masterSeedRegistry.length === 0) {
+        toast({
+            variant: 'destructive',
+            title: 'Registry Empty',
+            description: 'The modular seed registry has not been populated yet.'
+        });
+        return;
+    }
+
     setIsSeeding(true);
     
     try {
         let batch = writeBatch(firestore);
         const catalogRef = collection(firestore, 'Master_Catalog');
 
-        const categories = [
-            "Watches", "Leather Goods", "Jewelry", "Fragrance", "Apparel", 
-            "Accessories", "Home Decor", "Electronics", "Fine Art", 
-            "Spirits & Wine", "Travel Gear", "Beauty & Skincare", 
-            "Wellness", "Collectibles", "Automotive", "Gourmet Food", 
-            "Furniture", "Digital Assets"
-        ];
-
-        const categoryImageMap: Record<string, string[]> = {
-            "Watches": ["product-1", "demo-jewelry-3"],
-            "Leather Goods": ["product-2", "product-7", "demo-fashion-1"],
-            "Jewelry": ["product-5", "demo-jewelry-1", "demo-jewelry-2", "demo-jewelry-3"],
-            "Fragrance": ["product-4"],
-            "Apparel": ["product-3", "product-6", "demo-fashion-2", "demo-fashion-3"],
-            "Accessories": ["product-7", "product-8"],
-            "Home Decor": ["storefront-product-2", "product-4"],
-            "Electronics": ["demo-gadget-1", "demo-gadget-2", "demo-gadget-3"],
-            "Furniture": ["storefront-product-1"],
-            "Travel Gear": ["demo-fashion-1"],
-        };
-        
-        const adjectives = ["Elite", "Royal", "Obsidian", "Imperial", "Grand", "Midnight", "Aether", "Luxe", "Velvet", "Golden", "Celestial", "Timeless", "Apex", "Noble", "Ethereal", "Sovereign"];
-        const nouns = ["Chronograph", "Vessel", "Heritage", "Essence", "Vault", "Legacy", "Prism", "Aura", "Zenith", "Archive", "Manifesto", "Oracle", "Covenant", "Horizon", "Ascent", "Sanctum"];
-
-        // 1. Curated Hand-crafted Mock Data first
-        mockData.forEach((item) => {
-            const newDocRef = doc(catalogRef, item.id);
-            batch.set(newDocRef, {
-                ...item,
-                status: 'active',
-                vendorId: 'admin',
-                productType: 'INTERNAL',
-                submittedAt: serverTimestamp(),
-                isActive: true
-            });
-        });
-
-        // 2. Programmatic Expansion to 1,000 items
-        for (let i = 0; i < 980; i++) {
-            const category = categories[i % categories.length];
-            const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
-            const noun = nouns[Math.floor(Math.random() * nouns.length)];
-            const name = `${adj} ${noun} ${i + 21}`;
-            const id = `seed-${i + 21}`;
-            
-            const cost = Math.floor(Math.random() * (1500 - 40) + 40);
-            const retail = Math.floor(cost * (1.8 + Math.random()));
-
-            const possibleImages = categoryImageMap[category] || ["product-1", "product-2", "product-3", "product-4"];
-            const imageId = possibleImages[i % possibleImages.length];
+        // Iterate through the curated registry
+        for (let i = 0; i < masterSeedRegistry.length; i++) {
+            const item = masterSeedRegistry[i];
+            const id = item.id || `seed-${i + 1}`;
             
             const newDocRef = doc(catalogRef, id);
             batch.set(newDocRef, {
+                ...item,
                 id,
-                name,
-                description: `An exquisite expression of ${adj.toLowerCase()} luxury. This ${noun.toLowerCase()} from our ${category} department is designed for the discerning individual who appreciates ${adj.toLowerCase()} craftsmanship. Guaranteed authenticity from the SOMA Strategic Assets Group.`,
-                masterCost: cost,
-                retailPrice: retail,
-                stockLevel: Math.floor(Math.random() * 250) + 10,
-                imageId: imageId, 
-                categories: [category],
-                tags: [adj, noun, category, "Investment Grade"],
                 status: 'active',
-                vendorId: 'admin',
-                productType: 'INTERNAL',
+                vendorId: item.vendorId || 'admin',
+                productType: item.productType || 'INTERNAL',
                 submittedAt: serverTimestamp(),
                 isActive: true
             });
 
             // Commit in chunks of 450 to avoid the 500 write limit
-            if ((i + mockData.length + 1) % 450 === 0) {
+            if ((i + 1) % 450 === 0) {
                 await batch.commit();
                 batch = writeBatch(firestore);
             }
@@ -180,8 +137,8 @@ export default function AdminCatalogPage() {
 
         await batch.commit();
         toast({
-            title: 'Global Catalog Seeded!',
-            description: '1,000 luxury assets have been synchronized with the Master Catalog.',
+            title: 'Global Catalog Synchronized',
+            description: `${masterSeedRegistry.length} curated assets have been deployed to the Master Catalog.`,
         });
     } catch (error: any) {
         toast({
@@ -228,7 +185,7 @@ export default function AdminCatalogPage() {
                 className="border-primary/30 text-primary hover:bg-primary/5"
             >
                 {isSeeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                Seed 1,000 Products
+                Ingest Curated Registry ({masterSeedRegistry.length} items)
             </Button>
             <Button onClick={() => setIsAddModalOpen(true)} className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
                 <PlusCircle className="mr-2 h-5 w-5"/>
@@ -267,10 +224,10 @@ export default function AdminCatalogPage() {
                 <div className="flex flex-col items-center justify-center text-center h-64 border-2 border-dashed border-primary/20 rounded-lg">
                     <Warehouse className="h-16 w-16 text-muted-foreground mb-4" />
                     <h3 className="text-xl font-bold font-headline text-primary">The Master Catalog is Empty</h3>
-                    <p className="text-muted-foreground mt-2 mb-6">Initialize the platform by seeding mock data or adding manual entries.</p>
+                    <p className="text-muted-foreground mt-2 mb-6">Deploy your curated registry to initialize the platform.</p>
                     <Button onClick={handleSeedCatalog} disabled={isSeeding} variant="outline" className="border-primary text-primary font-bold h-12 px-8">
                         {isSeeding ? <Loader2 className="animate-spin mr-2" /> : <Sparkles className="mr-2" />}
-                        Populate Global Registry (1,000 Items)
+                        Deploy Registry ({masterSeedRegistry.length} items)
                     </Button>
                 </div>
                ) : (
