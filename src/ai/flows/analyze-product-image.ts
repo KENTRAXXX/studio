@@ -2,14 +2,14 @@
 
 /**
  * @fileOverview AI flow for analyzing product images with integrated market research.
- * Implements a visual-first reasoning chain enriched by real-time competitor data.
- * Features a server-side Firestore Transaction for atomic credit governance.
+ * Refactored for high stability in serverless environments by removing transactions.
+ * Features atomic credit governance using Firestore field increments.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { initializeApp, getApps } from 'firebase/app';
-import { getFirestore, doc, runTransaction, increment } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import { firebaseConfig } from '@/firebase/config';
 
 const getDb = () => {
@@ -58,7 +58,6 @@ const getMarketInsights = ai.defineTool(
     }
 
     try {
-        // Use Google Lens search via SerpApi to find visual matches
         const searchUrl = `https://serpapi.com/search.json?engine=google_lens&url=${encodeURIComponent(input.imageUrl)}&api_key=${apiKey}`;
         const response = await fetch(searchUrl);
         const data = await response.json();
@@ -75,7 +74,7 @@ const getMarketInsights = ai.defineTool(
             foundSimilarItems: competitorData.length > 0,
             competitorData,
             marketSummary: competitorData.length > 0 
-                ? `Found similar items across ${competitorData.length} platforms. Typical price point around ${competitorData[0].price}. Listings mention premium materials.`
+                ? `Found similar items across ${competitorData.length} platforms. Typical price point around ${competitorData[0].price}.`
                 : "No exact visual matches found in high-fidelity indices.",
         };
     } catch (error) {
@@ -92,27 +91,27 @@ const getMarketInsights = ai.defineTool(
 const AnalyzeProductImageInputSchema = z.object({
   imageUrl: z.string().url().describe("The public URL of the product image to analyze."),
   userId: z.string().describe("The UID of the user requesting the analysis for credit verification."),
-  tier: z.string().optional().describe("The user's plan tier, unlocking enhanced 'Market Scheming' if Enterprise."),
+  tier: z.string().optional().describe("The user's plan tier."),
 });
 export type AnalyzeProductImageInput = z.infer<typeof AnalyzeProductImageInputSchema>;
 
 const AnalyzeProductImageOutputSchema = z.object({
   observedFeatures: z.object({
-    materials: z.array(z.string()).describe('Specific materials identified (e.g., "brushed titanium", "full-grain leather").'),
-    textures: z.array(z.string()).describe('Observable textures (e.g., "matte", "pebbled").'),
-    colors: z.array(z.string()).describe('Dominant and accent colors identified directly from pixels.'),
-    technicalSpecs: z.array(z.string()).describe('Technical details visible (e.g., "GMT complication").'),
-  }).describe('Raw visual data extracted directly from the image before generating copy.'),
+    materials: z.array(z.string()).describe('Specific materials identified.'),
+    textures: z.array(z.string()).describe('Observable textures.'),
+    colors: z.array(z.string()).describe('Dominant and accent colors.'),
+    technicalSpecs: z.array(z.string()).describe('Technical details visible.'),
+  }),
   marketResearch: z.object({
-    averagePriceRange: z.string().describe('The identified price range for similar items on the market.'),
-    competitorMaterials: z.array(z.string()).describe('Materials listed for similar items on competitor sites (Amazon/Alibaba).'),
-    marketKeywords: z.array(z.string()).describe('High-volume keywords used by competitors.'),
+    averagePriceRange: z.string().describe('The identified price range.'),
+    competitorMaterials: z.array(z.string()).describe('Materials listed for similar items.'),
+    marketKeywords: z.array(z.string()).describe('High-volume keywords.'),
   }).optional(),
-  suggestedName: z.string().describe('A sophisticated name for the product based on visual and market data.'),
-  description: z.string().describe('An evocative, luxury-standard product description. Incorporate market research to fill in material gaps (e.g., "Likely 100% Egyptian Cotton"). NO mention of branding until the final sentence.'),
+  suggestedName: z.string().describe('A sophisticated name for the product.'),
+  description: z.string().describe('An evocative, luxury-standard product description.'),
   suggestedCategories: z.array(z.string()).describe('The most relevant categories.'),
   suggestedTags: z.array(z.string()).describe('A list of SEO tags.'),
-  enterpriseDeepSchemes: z.string().optional().describe('Strategic market positioning advice only for Enterprise users.'),
+  enterpriseDeepSchemes: z.string().optional().describe('Strategic market positioning advice.'),
 });
 export type AnalyzeProductImageOutput = z.infer<typeof AnalyzeProductImageOutputSchema>;
 
@@ -126,48 +125,45 @@ const generateFallbackMetadata = (): AnalyzeProductImageOutput => ({
     suggestedName: "New Luxury Discovery",
     description: "An exquisite addition to your collection, defined by its timeless silhouette and premium craftsmanship. This piece embodies the SOMA standard of excellence and heritage design.",
     suggestedCategories: ["Accessories"],
-    suggestedTags: ["Luxury", "Curated", "New Arrival", "Exclusive", "Timeless"],
+    suggestedTags: ["Luxury", "Curated", "New Arrival"],
 });
 
 /**
- * Analyzes a product image to generate luxury metadata enriched by market research.
- * Implements a unified script for both new product enrichment and metadata refresh.
- * Performs a Firestore Transaction to atomically deduct credits before the AI call.
+ * Analyzes a product image to generate luxury metadata.
+ * Uses getDoc + updateDoc instead of runTransaction for high-stability server action execution.
  */
 export async function analyzeProductImage(input: AnalyzeProductImageInput): Promise<AnalyzeProductImageOutput> {
     const firestore = getDb();
     const userRef = doc(firestore, 'users', input.userId);
 
-    // 1. ATOMIC CREDIT GOVERNANCE
-    // We deduct the credit BEFORE the expensive AI call to prevent race conditions.
+    // 1. CREDIT GOVERNANCE (Stability Refactor)
     try {
-        await runTransaction(firestore, async (transaction) => {
-            const userSnap = await transaction.get(userRef);
-            if (!userSnap.exists()) throw new Error("User identity not found in registry.");
-            
-            const userData = userSnap.data();
-            // Administrators enjoy an executive bypass for platform-wide curation
-            if (userData.userRole === 'ADMIN') return;
-
+        const userSnap = await getDoc(userRef);
+        if (!userSnap.exists()) throw new Error("User identity not found.");
+        
+        const userData = userSnap.data();
+        
+        // Admins bypass credits
+        if (userData.userRole !== 'ADMIN') {
             const currentCredits = userData.aiCredits ?? 0;
             if (currentCredits < 1) {
                 throw new Error("INSUFFICIENT_CREDITS");
             }
-
-            transaction.update(userRef, { aiCredits: increment(-1) });
-        });
+            // Atomic decrement
+            await updateDoc(userRef, { aiCredits: increment(-1) });
+        }
     } catch (error: any) {
         if (error.message === 'INSUFFICIENT_CREDITS') {
-            throw new Error("Your strategic AI allocation has been exhausted. Please top up your credits in Store Settings.");
+            throw new Error("Your strategic AI allocation has been exhausted.");
         }
-        throw error;
+        console.error("Credit check failure:", error);
+        throw new Error("Identity verification failed. AI engine offline.");
     }
 
     // 2. AI INTELLIGENCE PHASE
     try {
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey || apiKey.includes('YOUR_')) {
-            console.warn("Gemini API key missing. Returning graceful fallback.");
             return generateFallbackMetadata();
         }
 
@@ -180,30 +176,24 @@ export async function analyzeProductImage(input: AnalyzeProductImageInput): Prom
             prompt: [
                 { text: `You are an elite luxury commerce curator. 
 
-NEGATIVE CONSTRAINT: 
-NEVER assume the product is a SOMA brand item during the analysis phase. Treat every image as a unique, unbranded mystery item that requires a 100% objective technical breakdown.
-
 INSTRUCTION SET:
-1. PERFORM A VISUAL-FIRST ANALYSIS: Analyze the provided image with absolute precision. Describe the materials, textures, colors, and technical specs based ONLY on the photo. Populate the 'observedFeatures' output field first.
-2. MARKET RESEARCH: Use the 'getMarketInsights' tool to find this specific item on the web. Look for the average price, specific material compositions listed on competitor sites (Alibaba/Amazon), and high-performing keywords.
-3. ENRICHMENT: Use the research data to fill in gaps that the photo cannot show (e.g., "Likely 100% Egyptian Cotton based on market listings").
-4. RESTRICT BRANDING: Do NOT mention 'SOMA' or any platform branding in the 'suggestedName' or the body of the 'description'. 
-5. FINAL MARKETING COPY: Compose the 'description' based strictly on the 'observedFeatures' and market data. Mention the 'SOMA standard of excellence' ONLY in the final concluding sentence of the 'description'.
+1. PERFORM A VISUAL-FIRST ANALYSIS: Describe materials, textures, colors, and technical specs based ONLY on the photo.
+2. MARKET RESEARCH: Use 'getMarketInsights' to find this specific item on the web.
+3. ENRICHMENT: Use research data to fill in gaps.
+4. BRANDING: Mention 'SOMA standard of excellence' ONLY in the final concluding sentence.
 
-${isEnterprise ? '6. DEEP MARKET SCHEMING (ENTERPRISE UNLOCKED): Provide a strategic analysis of how to position this item against the identified competitors to maximize luxury perception and margin.' : ''}
+${isEnterprise ? '6. DEEP MARKET SCHEMING (ENTERPRISE UNLOCKED): Provide strategic positioning advice.' : ''}
 
-Available categories for selection: ${AVAILABLE_CATEGORIES.join(', ')}` },
+Available categories: ${AVAILABLE_CATEGORIES.join(', ')}` },
                 { media: { url: input.imageUrl } }
             ]
         });
 
-        if (!output) {
-            return generateFallbackMetadata();
-        }
+        if (!output) throw new Error("AI returned an empty response.");
 
         return output;
     } catch (error) {
-        console.error("AI Analysis Error (Handled):", error);
+        console.error("AI Generation Error:", error);
         return generateFallbackMetadata();
     }
 }
