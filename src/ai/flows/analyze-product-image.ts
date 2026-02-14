@@ -2,20 +2,28 @@
 
 /**
  * @fileOverview AI flow for analyzing product images with integrated market research.
- * Refactored for high stability in serverless environments by removing transactions.
- * Features atomic credit governance using Firestore field increments.
+ * Refactored for high stability in serverless environments by using memory-only cache.
+ * Restored original executive prompt instructions and negative constraints.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { initializeApp, getApps } from 'firebase/app';
-import { getFirestore, doc, getDoc, updateDoc, increment } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, updateDoc, increment, initializeFirestore, memoryLocalCache } from 'firebase/firestore';
 import { firebaseConfig } from '@/firebase/config';
 
+/**
+ * Optimized Firestore initialization for Server Actions.
+ * Uses memoryLocalCache to prevent persistence-related 500 errors in serverless runtimes.
+ */
 const getDb = () => {
     const apps = getApps();
     const app = apps.length > 0 ? apps[0] : initializeApp(firebaseConfig);
-    return getFirestore(app);
+    try {
+        return getFirestore(app);
+    } catch (e) {
+        return initializeFirestore(app, { localCache: memoryLocalCache() });
+    }
 };
 
 const AVAILABLE_CATEGORIES = [
@@ -130,13 +138,13 @@ const generateFallbackMetadata = (): AnalyzeProductImageOutput => ({
 
 /**
  * Analyzes a product image to generate luxury metadata.
- * Uses getDoc + updateDoc instead of runTransaction for high-stability server action execution.
+ * Restored original instructions and negative constraints.
  */
 export async function analyzeProductImage(input: AnalyzeProductImageInput): Promise<AnalyzeProductImageOutput> {
     const firestore = getDb();
     const userRef = doc(firestore, 'users', input.userId);
 
-    // 1. CREDIT GOVERNANCE (Stability Refactor)
+    // 1. CREDIT GOVERNANCE
     try {
         const userSnap = await getDoc(userRef);
         if (!userSnap.exists()) throw new Error("User identity not found.");
@@ -156,7 +164,7 @@ export async function analyzeProductImage(input: AnalyzeProductImageInput): Prom
         if (error.message === 'INSUFFICIENT_CREDITS') {
             throw new Error("Your strategic AI allocation has been exhausted.");
         }
-        console.error("Credit check failure:", error);
+        console.error("Credit check failure details:", error);
         throw new Error("Identity verification failed. AI engine offline.");
     }
 
@@ -176,15 +184,19 @@ export async function analyzeProductImage(input: AnalyzeProductImageInput): Prom
             prompt: [
                 { text: `You are an elite luxury commerce curator. 
 
+NEGATIVE CONSTRAINT:
+NEVER assume the product is a SOMA brand item during the analysis.
+
 INSTRUCTION SET:
-1. PERFORM A VISUAL-FIRST ANALYSIS: Describe materials, textures, colors, and technical specs based ONLY on the photo.
-2. MARKET RESEARCH: Use 'getMarketInsights' to find this specific item on the web.
-3. ENRICHMENT: Use research data to fill in gaps.
-4. BRANDING: Mention 'SOMA standard of excellence' ONLY in the final concluding sentence.
+1. PERFORM A VISUAL-FIRST ANALYSIS: Analyze the provided image and extract technical data.
+2. MARKET RESEARCH: Use the 'getMarketInsights' tool to find the specific item or similar models on the web.
+3. ENRICHMENT: Use the research data to fill in gaps that the photo alone cannot provide (e.g. MSRP, known variants).
+4. RESTRICT BRANDING: Do NOT mention 'SOMA' or any platform branding. This metadata must be brand-agnostic.
+5. FINAL MARKETING COPY: Compose the 'description' based strictly on the visual and research evidence. Use evocative, luxury-standard language.
 
 ${isEnterprise ? '6. DEEP MARKET SCHEMING (ENTERPRISE UNLOCKED): Provide strategic positioning advice.' : ''}
 
-Available categories: ${AVAILABLE_CATEGORIES.join(', ')}` },
+Available categories for selection: ${AVAILABLE_CATEGORIES.join(', ')}` },
                 { media: { url: input.imageUrl } }
             ]
         });
