@@ -3,186 +3,134 @@
     {
       "id": "store-logo",
       "description": "Placeholder for store logo",
-      "imageUrl": "https://images.unsplash.com/photo-1610340804490-e9d7b22aee1d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxtaW5pbWFsaXN0JTIwbG9nb3xlbnwwfHx8fDE3Njc0MDI1OTd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1610340804490-e9d7b22aee1d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
       "imageHint": "minimalist logo"
     },
     {
-      "id": "store-favicon",
-      "description": "Placeholder for store favicon",
-      "imageUrl": "https://images.unsplash.com/photo-1754663186520-1e9d5bf4637e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxhYnN0cmFjdCUyMGljb258ZW58MHx8fHwxNzY3NDcwODM1fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "abstract icon"
-    },
-    {
-      "id": "product-1",
-      "description": "Luxury watch on a dark background",
-      "imageUrl": "https://images.unsplash.com/photo-1600003014755-ba31aa59c4b6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxsdXh1cnklMjB3YXRjaHxlbnwwfHx8fDE3NjczNzI3NTl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "id": "cat-watches",
+      "description": "Luxury timepiece close-up",
+      "imageUrl": "https://images.unsplash.com/photo-1523170335236-db0742fd209a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
       "imageHint": "luxury watch"
     },
     {
-      "id": "product-2",
-      "description": "Designer leather handbag",
-      "imageUrl": "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxsZWF0aGVyJTIwaGFuZGJhZ3xlbnwwfHx8fDE3Njc0MjAyODh8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "leather handbag"
+      "id": "cat-leather-goods",
+      "description": "Premium leather accessories",
+      "imageUrl": "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageHint": "leather goods"
     },
     {
-      "id": "product-3",
-      "description": "High-end sneakers",
-      "imageUrl": "https://images.unsplash.com/photo-1625622176712-7b8be24e2aee?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8ZGVzaWduZXIlMjBzbmVha2Vyc3xlbnwwfHx8fDE3Njc0NzA4MzV8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "designer sneakers"
+      "id": "cat-jewelry",
+      "description": "Exquisite diamond jewelry",
+      "imageUrl": "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageHint": "diamond jewelry"
     },
     {
-      "id": "product-4",
-      "description": "A bottle of premium perfume",
-      "imageUrl": "https://images.unsplash.com/photo-1541643600914-78b084683601?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxwZXJmdW1lJTIwYm90dGxlfGVufDB8fHx8MTc2NzQ1MTMyNHww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "perfume bottle"
+      "id": "cat-home-decor",
+      "description": "High-end interior decor",
+      "imageUrl": "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageHint": "luxury decor"
     },
     {
-      "id": "product-5",
-      "description": "Diamond necklace",
-      "imageUrl": "https://images.unsplash.com/photo-1628261674351-a7eb2cd1379f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxkaWFtb25kJTIwbmVja2xhY2V8ZW58MHx8fHwxNzY3NDcwODM1fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "diamond necklace"
+      "id": "cat-wellness",
+      "description": "Premium wellness and spa products",
+      "imageUrl": "https://images.unsplash.com/photo-1540555700478-4be289fbece8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageHint": "wellness spa"
     },
     {
-      "id": "product-6",
-      "description": "Silk scarf with intricate patterns",
-      "imageUrl": "https://images.unsplash.com/photo-1566534335938-05f1f2949435?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxzaWxrJTIwc2NhcmZ8ZW58MHx8fHwxNzY3NDMxNDM3fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "silk scarf"
+      "id": "cat-apparel",
+      "description": "Luxury fashion and textiles",
+      "imageUrl": "https://images.unsplash.com/photo-1445205170230-053b83016050?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageHint": "luxury apparel"
     },
     {
-      "id": "product-7",
-      "description": "Leather wallet",
-      "imageUrl": "https://images.unsplash.com/photo-1628483211662-9bcc692c46dc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxsZWF0aGVyJTIwd2FsbGV0fGVufDB8fHx8MTc2NzM4MzY3MHww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "leather wallet"
+      "id": "cat-electronics",
+      "description": "Premium high-tech gadgets",
+      "imageUrl": "https://images.unsplash.com/photo-1550009158-9ebf69173e03?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageHint": "tech gadgets"
     },
     {
-      "id": "product-8",
-      "description": "Gold fountain pen",
-      "imageUrl": "https://images.unsplash.com/photo-1518674660708-0e2c0473e68e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxmb3VudGFpbiUyMHBlbnxlbnwwfHx8fDE3NjczNTE1MzZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "fountain pen"
+      "id": "cat-fine-art",
+      "description": "Gallery standard fine art work",
+      "imageUrl": "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageHint": "fine art"
     },
     {
-      "id": "demo-gadget-1",
-      "description": "Smart audio glasses",
-      "imageUrl": "https://images.unsplash.com/photo-1639722462825-17799e46a360?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxzbWFydCUyMGdsYXNzZXN8ZW58MHx8fHwxNzg4NTQ1MTM0fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "smart glasses"
+      "id": "cat-travel-gear",
+      "description": "Elite travel accessories",
+      "imageUrl": "https://images.unsplash.com/photo-1584917865442-de89df76afd3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageHint": "travel gear"
     },
     {
-      "id": "demo-gadget-2",
-      "description": "Portable holographic projector",
-      "imageUrl": "https://images.unsplash.com/photo-1707016194721-50e5b5655e3a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxwb3J0YWJsZSUyMHByb2plY3RvcnxlbnwwfHx8fDE3ODg1NDUxMzR8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "portable projector"
+      "id": "cat-collectibles",
+      "description": "High-value blue-chip collectibles",
+      "imageUrl": "https://images.unsplash.com/photo-1518674660708-0e2c0473e68e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageHint": "luxury collectibles"
     },
     {
-      "id": "demo-gadget-3",
-      "description": "Minimalist smart mug",
-      "imageUrl": "https://images.unsplash.com/photo-1563830722213-7a292d3a3e64?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxzbWFydCUyMG11Z3xlbnwwfHx8fDE3ODg1NDUxMzR8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "smart mug"
+      "id": "cat-spirits-wine",
+      "description": "Aged single malt whiskey and fine wine",
+      "imageUrl": "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageHint": "fine spirits"
     },
     {
-      "id": "demo-fashion-1",
-      "description": "Leather weekender bag",
-      "imageUrl": "https://images.unsplash.com/photo-1584917865442-de89df76afd3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxsZWF0aGVyJTIwd2Vla2VuZGVyJTIwYmFnfGVufDB8fHx8MTc4ODU0NTEzNHww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "leather weekender"
+      "id": "cat-automotive",
+      "description": "Luxury performance automotive details",
+      "imageUrl": "https://images.unsplash.com/photo-1503376780353-7e6692767b70?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageHint": "luxury car"
     },
     {
-      "id": "demo-fashion-2",
-      "description": "Soft cashmere scarf",
-      "imageUrl": "https://images.unsplash.com/photo-1533658232478-f8d9551a3516?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxjYXNobWVyZSUyMHNjYXJmfGVufDB8fHx8MTc4ODU0NTEzNHww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "cashmere scarf"
+      "id": "cat-beauty-skincare",
+      "description": "Professional cosmetic and skincare products",
+      "imageUrl": "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageHint": "luxury beauty"
     },
     {
-      "id": "demo-fashion-3",
-      "description": "Modern tech jacket",
-      "imageUrl": "https://images.unsplash.com/photo-1592878912957-606275d59158?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHx0ZWNoJTIwamFja2V0fGVufDB8fHx8MTc4ODU0NTEzNHww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "tech jacket"
+      "id": "cat-fragrance",
+      "description": "Premium artisanal perfumes",
+      "imageUrl": "https://images.unsplash.com/photo-1541643600914-78b084683601?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageHint": "luxury fragrance"
     },
     {
-      "id": "demo-jewelry-1",
-      "description": "Braided steel bracelet",
-      "imageUrl": "https://images.unsplash.com/photo-1619543789536-15b22572a2b9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxicmFpZGVkJTIwc3RlZWwlMjBicmFjZWxldHxlbnwwfHx8fDE3ODg1NDUxMzR8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "steel bracelet"
+      "id": "cat-digital-assets",
+      "description": "Abstract digital wealth concept",
+      "imageUrl": "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageHint": "digital asset"
     },
     {
-      "id": "demo-jewelry-2",
-      "description": "Gold vermeil rings",
-      "imageUrl": "https://images.unsplash.com/photo-1601121141499-17ae80afc03a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxnb2xkJTIwdmVybWVpbCUyMHJpbmdzfGVufDB8fHx8MTc4ODU0NTEzNHww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "gold rings"
+      "id": "cat-gourmet-food",
+      "description": "Artisanal and high-end culinary items",
+      "imageUrl": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageHint": "gourmet food"
     },
     {
-      "id": "demo-jewelry-3",
-      "description": "Skeleton automatic watch",
-      "imageUrl": "https://images.unsplash.com/photo-1614798679339-de256d116934?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBza2VsZXRvbiUyMHdhdGNofGVufDB8fHx8MTc4ODU0NTEzNHww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "skeleton watch"
+      "id": "cat-furniture",
+      "description": "Modern luxury furniture pieces",
+      "imageUrl": "https://images.unsplash.com/photo-1524758631624-e2822e304c36?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageHint": "luxury furniture"
+    },
+    {
+      "id": "cat-accessories",
+      "description": "High-end fashion accessories",
+      "imageUrl": "https://images.unsplash.com/photo-1628483211662-9bcc692c46dc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageHint": "luxury accessories"
+    },
+    {
+      "id": "cat-fitness",
+      "description": "Premium performance athletic gear",
+      "imageUrl": "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageHint": "luxury fitness"
+    },
+    {
+      "id": "cat-hobbies",
+      "description": "High-end leisure and hobby items",
+      "imageUrl": "https://images.unsplash.com/photo-1511379938547-c1f69419868d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageHint": "luxury hobbies"
     },
     {
       "id": "storefront-hero",
       "description": "Abstract luxury background with golden geometric shapes",
-      "imageUrl": "https://images.unsplash.com/photo-1764263996484-73fed2cf6b98?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxsdXh1cnklMjBhYnN0cmFjdHxlbnwwfHx8fDE3Njc0NzA4MzV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1764263996484-73fed2cf6b98?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxsdXh1cnklMjBhYnN0cmFjdHxlbnwwfHx8fDE3Njc0MzA4MzV8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "luxury abstract"
-    },
-    {
-      "id": "storefront-product-1",
-      "description": "A stylish modern chair",
-      "imageUrl": "https://images.unsplash.com/photo-1759803557159-f48be1dcb43d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxtb2Rlcm4lMjBjaGFpcnxlbnwwfHx8fDE3Njc0MjA4OTd8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "modern chair"
-    },
-    {
-      "id": "storefront-product-2",
-      "description": "A set of ceramic vases",
-      "imageUrl": "https://images.unsplash.com/photo-1723779233741-8ead9562bfa5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxjZXJhbWljJTIwdmFzZXN8ZW58MHx8fHwxNzY3NDcwODM1fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "ceramic vases"
-    },
-    {
-      "id": "storefront-product-3",
-      "description": "A minimalist wrist watch",
-      "imageUrl": "https://images.unsplash.com/photo-1599865241129-95624934b7e2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxtaW5pbWFsaXN0JTIwd2F0Y2h8ZW58MHx8fHwxNzY3NDUzOTQ5fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "minimalist watch"
-    },
-    {
-      "id": "storefront-product-4",
-      "description": "A luxury leather bound notebook",
-      "imageUrl": "https://images.unsplash.com/photo-1701792606084-10fbd4a9eed1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bGVhdGhlciUyMG5vdGVib29rfGVufDB8fHx8MTc2NzQ3MDgzNXww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "leather notebook"
-    },
-    {
-      "id": "training-thumb-1",
-      "imageUrl": "https://images.unsplash.com/photo-1633533446213-a438ff5f0629?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8YnJhbmQlMjBpZGVudGl0eXxlbnwwfHx8fDE3Njc0Njg5NDR8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "brand identity"
-    },
-    {
-      "id": "training-thumb-2",
-      "imageUrl": "https://images.unsplash.com/photo-1647210768891-e0a5f51f9ea9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHx3aXphcmQlMjBpbnRlcmZhY2V8ZW58MHx8fHwxNzY3NDgxNzMwfDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "wizard interface"
-    },
-    {
-      "id": "training-thumb-3",
-      "imageUrl": "https://images.unsplash.com/photo-1687524690542-2659f268cde8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkb21haW4lMjBzZXR0aW5nc3xlbnwwfHx8fDE3Njc0ODE3MzF8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "domain settings"
-    },
-    {
-      "id": "training-thumb-4",
-      "imageUrl": "https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8c29jaWFsJTIwbWVkaWF8ZW58MHx8fHwxNzY3NDY5NjcyfDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "social media"
-    },
-    {
-      "id": "training-thumb-5",
-      "imageUrl": "https://images.unsplash.com/photo-1748439281934-2803c6a3ee36?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhbmFseXRpY3MlMjBjaGFydHxlbnwwfHx8fDE3Njc0NjUwNzl8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "analytics chart"
-    },
-    {
-      "id": "training-thumb-6",
-      "imageUrl": "https://images.unsplash.com/photo-1759661966728-4a02e3c6ed91?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxkYXRhJTIwZ3JhcGh8ZW58MHx8fHwxNzY3Mzk1OTA5fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "data graph"
-    },
-    {
-      "id": "training-thumb-7",
-      "imageUrl": "https://images.unsplash.com/photo-1691096675047-817e7a758f6f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxlY29tbWVyY2UlMjBwcm9kdWN0fGVufDB8fHx8MTc2NzQxNzYyOHww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "ecommerce product"
-    },
-    {
-      "id": "training-thumb-8",
-      "imageUrl": "https://images.unsplash.com/photo-1500669950830-1a4f3a4b0879?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxwcmljZSUyMHRhZ3N8ZW58MHx8fHwxNzY3NDgxNzMwfDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "price tags"
     }
   ]
 }

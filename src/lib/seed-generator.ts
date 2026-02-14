@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview SOMA Automated Seed Engine.
  * Translates Python generation logic into a high-performance TypeScript utility.
@@ -247,6 +248,30 @@ const VAULT: Record<string, [string, [number, number], string][]> = {
     ]
 };
 
+// Strategic Image Mapping: Category to High-Fidelity Placeholder ID
+const CATEGORY_IMAGE_MAP: Record<string, string> = {
+    "Watches": "cat-watches",
+    "Leather Goods": "cat-leather-goods",
+    "Jewelry": "cat-jewelry",
+    "Home Decor": "cat-home-decor",
+    "Wellness": "cat-wellness",
+    "Apparel": "cat-apparel",
+    "Electronics": "cat-electronics",
+    "Fine Art": "cat-fine-art",
+    "Travel Gear": "cat-travel-gear",
+    "Collectibles": "cat-collectibles",
+    "Spirits & Wine": "cat-spirits-wine",
+    "Automotive": "cat-automotive",
+    "Beauty & Skincare": "cat-beauty-skincare",
+    "Fragrance": "cat-fragrance",
+    "Digital Assets": "cat-digital-assets",
+    "Gourmet Food": "cat-gourmet-food",
+    "Furniture": "cat-furniture",
+    "Accessories": "cat-accessories",
+    "Fitness": "cat-fitness",
+    "Hobbies": "cat-hobbies"
+};
+
 export function generateCatalog(numItems: number = 1000) {
     const items = [];
     const categories = Object.keys(VAULT);
@@ -269,7 +294,7 @@ export function generateCatalog(numItems: number = 1000) {
             retailPrice: retail,
             stockLevel: Math.floor(Math.random() * (250 - 10 + 1) + 10),
             categories: [cat],
-            imageId: `demo-${cat.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-')}-${Math.floor(Math.random() * 10) + 1}`,
+            imageId: CATEGORY_IMAGE_MAP[cat] || "cat-accessories",
             tags: [cat, "Market Leading", "Verified", "Investment Grade"],
             vendorId: "admin",
             productType: "INTERNAL",
