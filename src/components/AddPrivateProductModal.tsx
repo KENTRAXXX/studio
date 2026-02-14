@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useUser, useFirestore } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
+import { analyzeProductImage } from '@/ai/flows/analyze-product-image';
 
 import {
   Dialog,
@@ -27,7 +28,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus } from 'lucide-react';
+import { Loader2, PackagePlus, Sparkles } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(3, { message: 'Product name must be at least 3 characters.' }),
@@ -49,6 +50,7 @@ export function AddPrivateProductModal({ isOpen, onOpenChange }: AddPrivateProdu
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -61,6 +63,26 @@ export function AddPrivateProductModal({ isOpen, onOpenChange }: AddPrivateProdu
       imageUrl: '',
     },
   });
+
+  const handleEnrichment = async () => {
+    const imageUrl = form.getValues('imageUrl');
+    if (!imageUrl || !imageUrl.startsWith('http')) {
+        toast({ variant: 'destructive', title: 'Asset Missing', description: 'Enter a valid image URL first to use AI enrichment.' });
+        return;
+    }
+
+    setIsAnalyzing(true);
+    try {
+        const result = await analyzeProductImage({ imageUrl });
+        form.setValue('name', result.suggestedName, { shouldValidate: true });
+        form.setValue('description', result.description, { shouldValidate: true });
+        toast({ title: 'Intelligence Applied', description: 'Product metadata enriched from visual analysis.' });
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: 'AI Error', description: e.message });
+    } finally {
+        setIsAnalyzing(false);
+    }
+  };
 
   const handleSubmit = async (data: FormValues) => {
     if (!user || !firestore) {
@@ -78,7 +100,7 @@ export function AddPrivateProductModal({ isOpen, onOpenChange }: AddPrivateProdu
         stock: data.stock,
         imageUrl: data.imageUrl,
         isManagedBySoma: false,
-        wholesalePrice: 0, // Merchant owns the stock
+        wholesalePrice: 0, 
         vendorId: user.uid,
         productType: 'INTERNAL',
       });
@@ -104,17 +126,33 @@ export function AddPrivateProductModal({ isOpen, onOpenChange }: AddPrivateProdu
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="bg-card border-primary">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-primary font-headline">
-            <PackagePlus className="h-6 w-6" />
-            Add Private Product
-          </DialogTitle>
-          <DialogDescription>
-            Enter the details for a product you manage and fulfill yourself.
-          </DialogDescription>
+        <DialogHeader className="flex flex-row items-center justify-between gap-4">
+          <div>
+            <DialogTitle className="flex items-center gap-2 text-primary font-headline">
+                <PackagePlus className="h-6 w-6" />
+                Add Private Product
+            </DialogTitle>
+            <DialogDescription>
+                Enter details for your private luxury stock.
+            </DialogDescription>
+          </div>
+          <Button 
+            type="button" 
+            size="sm" 
+            variant="outline" 
+            className="border-primary/30 text-primary h-10"
+            onClick={handleEnrichment}
+            disabled={isAnalyzing}
+          >
+            {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+            AI Enrichment
+          </Button>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <FormField control={form.control} name="imageUrl" render={({ field }) => (
+                <FormItem><FormLabel>Primary Image URL</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>
+            )} />
             <FormField control={form.control} name="name" render={({ field }) => (
                 <FormItem><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g., 'The Olympian Chronograph'" {...field} /></FormControl><FormMessage /></FormItem>
             )} />
@@ -129,13 +167,10 @@ export function AddPrivateProductModal({ isOpen, onOpenChange }: AddPrivateProdu
                     <FormItem><FormLabel>Stock Quantity</FormLabel><FormControl><Input type="number" placeholder="100" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
              </div>
-             <FormField control={form.control} name="imageUrl" render={({ field }) => (
-                <FormItem><FormLabel>Image URL</FormLabel><FormControl><Input placeholder="https://your-cdn.com/image.jpg" {...field} /></FormControl><FormMessage /></FormItem>
-            )} />
             
             <DialogFooter className="pt-4">
-              <Button type="submit" disabled={isSubmitting} className="w-full btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
-                {isSubmitting ? <Loader2 className="animate-spin" /> : 'Add Product to My Warehouse'}
+              <Button type="submit" disabled={isSubmitting} className="w-full btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
+                {isSubmitting ? <Loader2 className="animate-spin" /> : 'Deploy to Warehouse'}
               </Button>
             </DialogFooter>
           </form>

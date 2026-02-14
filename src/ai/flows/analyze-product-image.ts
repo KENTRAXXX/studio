@@ -3,6 +3,7 @@
 /**
  * @fileOverview AI flow for analyzing product images with integrated market research.
  * Implements a visual-first reasoning chain enriched by real-time competitor data.
+ * Enforces strict unbranded analysis and objective feature extraction.
  */
 
 import { ai } from '@/ai/genkit';
@@ -88,7 +89,7 @@ const AnalyzeProductImageOutputSchema = z.object({
   observedFeatures: z.object({
     materials: z.array(z.string()).describe('Specific materials identified (e.g., "brushed titanium", "full-grain leather").'),
     textures: z.array(z.string()).describe('Observable textures (e.g., "matte", "pebbled").'),
-    colors: z.array(z.string()).describe('Dominant and accent colors.'),
+    colors: z.array(z.string()).describe('Dominant and accent colors identified directly from pixels.'),
     technicalSpecs: z.array(z.string()).describe('Technical details visible (e.g., "GMT complication").'),
   }).describe('Raw visual data extracted directly from the image before generating copy.'),
   marketResearch: z.object({
@@ -118,7 +119,7 @@ const generateFallbackMetadata = (): AnalyzeProductImageOutput => ({
 
 /**
  * Analyzes a product image to generate luxury metadata enriched by market research.
- * Implements a 4-step reasoning chain: Analysis -> Research -> Enrichment -> Branding Restriction.
+ * Implements a unified script for both new product enrichment and metadata refresh.
  */
 export async function analyzeProductImage(input: AnalyzeProductImageInput): Promise<AnalyzeProductImageOutput> {
     try {
@@ -139,11 +140,11 @@ NEGATIVE CONSTRAINT:
 NEVER assume the product is a SOMA brand item during the analysis phase. Treat every image as a unique, unbranded mystery item that requires a 100% objective technical breakdown.
 
 INSTRUCTION SET:
-1. PERFORM A VISUAL-FIRST ANALYSIS: Analyze the provided image with absolute precision. Describe materials, textures, and technical specs based ONLY on the photo.
+1. PERFORM A VISUAL-FIRST ANALYSIS: Analyze the provided image with absolute precision. Describe the materials, textures, colors, and technical specs based ONLY on the photo. Populate the 'observedFeatures' output field first.
 2. MARKET RESEARCH: Use the 'getMarketInsights' tool to find this specific item on the web. Look for the average price, specific material compositions listed on competitor sites (Alibaba/Amazon), and high-performing keywords.
 3. ENRICHMENT: Use the research data to fill in gaps that the photo cannot show (e.g., "Likely 100% Egyptian Cotton based on market listings").
 4. RESTRICT BRANDING: Do NOT mention 'SOMA' or any platform branding in the 'suggestedName' or the body of the 'description'. 
-5. FINAL MARKETING COPY: Mention the 'SOMA standard of excellence' ONLY in the final concluding sentence of the 'description'.
+5. FINAL MARKETING COPY: Compose the 'description' based strictly on the 'observedFeatures' and market data. Mention the 'SOMA standard of excellence' ONLY in the final concluding sentence of the 'description'.
 
 Available categories for selection: ${AVAILABLE_CATEGORIES.join(', ')}` },
                 { media: { url: input.imageUrl } }
@@ -156,7 +157,7 @@ Available categories for selection: ${AVAILABLE_CATEGORIES.join(', ')}` },
 
         return output;
     } catch (error) {
-        console.error("AI Enrichment Error (Handled):", error);
+        console.error("AI Analysis Error (Handled):", error);
         return generateFallbackMetadata();
     }
 }

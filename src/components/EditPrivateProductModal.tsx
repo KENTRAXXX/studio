@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useUser, useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
+import { analyzeProductImage } from '@/ai/flows/analyze-product-image';
 
 import {
   Dialog,
@@ -27,7 +28,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus } from 'lucide-react';
+import { Loader2, PackagePlus, Sparkles } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(3, { message: 'Product name must be at least 3 characters.' }),
@@ -57,6 +58,7 @@ export function EditPrivateProductModal({ isOpen, onOpenChange, product }: EditP
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -74,6 +76,26 @@ export function EditPrivateProductModal({ isOpen, onOpenChange, product }: EditP
       });
     }
   }, [product, form]);
+
+  const handleRefresh = async () => {
+    const imageUrl = form.getValues('imageUrl');
+    if (!imageUrl || !imageUrl.startsWith('http')) {
+        toast({ variant: 'destructive', title: 'Asset Missing', description: 'A valid image URL is required for AI refresh.' });
+        return;
+    }
+
+    setIsAnalyzing(true);
+    try {
+        const result = await analyzeProductImage({ imageUrl });
+        form.setValue('name', result.suggestedName, { shouldValidate: true });
+        form.setValue('description', result.description, { shouldValidate: true });
+        toast({ title: 'Metadata Refreshed', description: 'AI has updated the product identity based on the current asset.' });
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: 'Refresh Failed', description: e.message });
+    } finally {
+        setIsAnalyzing(false);
+    }
+  };
 
   const handleSubmit = async (data: FormValues) => {
     if (!user || !firestore) {
@@ -112,22 +134,38 @@ export function EditPrivateProductModal({ isOpen, onOpenChange, product }: EditP
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="bg-card border-primary">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-primary font-headline">
-            <PackagePlus className="h-6 w-6" />
-            Edit Product
-          </DialogTitle>
-          <DialogDescription>
-            Update the details for your private product.
-          </DialogDescription>
+        <DialogHeader className="flex flex-row items-center justify-between gap-4">
+          <div>
+            <DialogTitle className="flex items-center gap-2 text-primary font-headline">
+                <PackagePlus className="h-6 w-6" />
+                Edit Private Product
+            </DialogTitle>
+            <DialogDescription>
+                Synchronize changes to your local inventory.
+            </DialogDescription>
+          </div>
+          <Button 
+            type="button" 
+            size="sm" 
+            variant="outline" 
+            className="border-primary/30 text-primary h-10"
+            onClick={handleRefresh}
+            disabled={isAnalyzing}
+          >
+            {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+            AI Refresh
+          </Button>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <FormField control={form.control} name="imageUrl" render={({ field }) => (
+                <FormItem><FormLabel>Asset URL</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+            )} />
             <FormField control={form.control} name="name" render={({ field }) => (
                 <FormItem><FormLabel>Product Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
             )} />
             <FormField control={form.control} name="description" render={({ field }) => (
-                <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea className="min-h-[100px]" {...field} /></FormControl><FormMessage /></FormItem>
             )} />
              <div className="grid grid-cols-2 gap-4">
                  <FormField control={form.control} name="price" render={({ field }) => (
@@ -137,13 +175,10 @@ export function EditPrivateProductModal({ isOpen, onOpenChange, product }: EditP
                     <FormItem><FormLabel>Stock Quantity</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
              </div>
-             <FormField control={form.control} name="imageUrl" render={({ field }) => (
-                <FormItem><FormLabel>Image URL</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-            )} />
             
             <DialogFooter className="pt-4">
-              <Button type="submit" disabled={isSubmitting} className="w-full btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
-                {isSubmitting ? <Loader2 className="animate-spin" /> : 'Save Changes'}
+              <Button type="submit" disabled={isSubmitting} className="w-full btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
+                {isSubmitting ? <Loader2 className="animate-spin" /> : 'Synchronize Changes'}
               </Button>
             </DialogFooter>
           </form>

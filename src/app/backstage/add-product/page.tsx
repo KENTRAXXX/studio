@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -169,7 +168,7 @@ export default function AddProductPage() {
 
   const handleAIMagic = async () => {
     if (imageUrls.length === 0) {
-        toast({ variant: 'destructive', title: 'Image Required', description: 'Upload a primary image first to use AI curation.' });
+        toast({ variant: 'destructive', title: 'Image Required', description: 'Upload a primary image first to use AI enrichment.' });
         return;
     }
 
@@ -183,8 +182,8 @@ export default function AddProductPage() {
         setTagsInput(result.suggestedTags.join(', '));
 
         toast({
-            title: 'Curation Intelligence Applied',
-            description: 'Luxury metadata has been auto-generated.',
+            title: 'AI Enrichment Applied',
+            description: 'Luxury metadata and market research synchronized.',
             action: <Sparkles className="h-4 w-4 text-primary" />
         });
     } catch (error: any) {
@@ -340,7 +339,7 @@ export default function AddProductPage() {
                 className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-black hidden md:flex h-12"
             >
                 {isAnalyzing ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                AI CURATION MAGIC
+                AI ENRICHMENT
             </Button>
         </CardHeader>
         <CardContent>
@@ -582,7 +581,7 @@ export default function AddProductPage() {
                             className="md:hidden h-14 border-primary text-primary font-black"
                         >
                             {isAnalyzing ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                            AI MAGIC CURATION
+                            AI ENRICHMENT
                         </Button>
 
                         <Button 
