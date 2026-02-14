@@ -4,30 +4,45 @@
  */
 
 const VAULT: Record<string, [string, [number, number], string][]> = {
-    "Home & Kitchen": [
-        ["Self-Heating Electric Lunchbox", [35, 75], "Portable 1.5L capacity with 304 stainless steel tray. Includes 110V/24V dual power for home and car use."],
-        ["Precision Electric Gooseneck Kettle", [65, 140], "1200W rapid boil with ±1°F temperature control and built-in brew stopwatch for pour-over coffee."],
-        ["Dual-Basket Air Fryer", [120, 220], "8-quart capacity with independent cooking zones and 6-in-1 functionality including dehydrate and roast."]
-    ],
-    "Tech & Accessories": [
-        ["Mechanical Keyboard (Hot-Swappable)", [85, 180], "75% layout with gasket mount design and pre-lubed linear switches. RGB backlit with aluminum frame."],
-        ["4K Ultra-Wide External Webcam", [50, 130], "90-degree field of view with dual noise-reducing microphones and privacy shutter. Optimized for Zoom and Teams."],
-        ["Carbon Fiber Laptop Stand", [25, 60], "Ultra-lightweight foldable design with 6 adjustable height levels for improved ergonomic posture."]
-    ],
-    "Wellness & Care": [
-        ["Smart Body Composition Scale", [30, 85], "Syncs with health apps to track 13 essential metrics including BMI, Body Fat, and Muscle Mass via Bio-impedance."],
-        ["Red Light Therapy Wand", [70, 160], "Combines therapeutic warmth, facial massage, and red light to improve skin elasticity and reduce fine lines."],
-        ["Deep-Tissue Percussion Massager", [110, 290], "Professional-grade motor with 5 speeds and 14mm amplitude for intense muscle recovery."]
-    ],
-    "Watches & Apparel": [
+    "Watches": [
         ["Sapphire Crystal Automatic Watch", [180, 550], "Japanese automatic movement with 40-hour power reserve and genuine leather deployment strap."],
-        ["Anti-Theft Commuter Backpack", [60, 150], "Water-resistant recycled polyester with hidden zippers, RFID-blocking pockets, and integrated USB charging port."],
+        ["Titanium Precision Chronograph", [350, 950], "Lightweight aerospace-grade titanium with a ceramic bezel and sapphire crystal."]
+    ],
+    "Leather Goods": [
+        ["Italian Grain Leather Briefcase", [250, 600], "Hand-stitched full-grain leather with a dedicated 16-inch laptop compartment and silk lining."],
         ["Minimalist Bifold Card Holder", [20, 55], "Top-grain Italian leather with a slim 0.4-inch profile and quick-access thumb slot."]
     ],
-    "Outdoor & Leisure": [
-        ["Insulated 40oz Adventure Tumbler", [25, 55], "Double-wall vacuum insulation keeps drinks cold for 48 hours. Fits standard car cup holders."],
-        ["Ultra-Bright 2000LM Headlamp", [30, 75], "Rechargeable LED with motion sensor activation and 5 light modes. IPX6 waterproof for hiking."],
-        ["Portable Power Station 240Wh", [180, 350], "Compact lithium battery backup with AC outlet, USB-C PD, and solar charging compatibility."]
+    "Jewelry": [
+        ["1.0ct Diamond Stud Earrings", [1500, 4500], "Certified brilliant-cut diamonds set in 18k white gold. SOMA authenticity guaranteed."],
+        ["Solid Gold Curb Chain", [600, 1800], "Hand-finished 14k yellow gold links with a high-polish shine and heavy-duty lobster clasp."]
+    ],
+    "Home Decor": [
+        ["Hand-Carved Carrara Marble Bowl", [120, 350], "Unique organic edges carved from a single slab of Italian marble. A definitive centerpiece."],
+        ["Artisan Crystal Decanter Set", [180, 450], "Mouth-blown crystal decanter with four matching tumblers, designed for optimal aeration."]
+    ],
+    "Wellness": [
+        ["Professional Deep-Tissue Massager", [110, 290], "High-torque brushless motor with 6 interchangeable heads for targeted muscle recovery."],
+        ["Smart Health & Metrics Scale", [30, 85], "Bio-impedance analysis tracking 13 essential metrics with cloud-synced app support."]
+    ],
+    "Apparel": [
+        ["Mongolian Cashmere Throw", [150, 400], "100% sustainable cashmere woven for unparalleled softness and warmth in a neutral palette."],
+        ["Hand-Printed Silk Scarf", [80, 220], "Mulberry silk featuring a bespoke geometric pattern with hand-rolled edges."]
+    ],
+    "Electronics": [
+        ["Gasket-Mount Mechanical Keyboard", [85, 180], "Hot-swappable linear switches with a precision-milled aluminum frame and RGB backlighting."],
+        ["Reference-Grade ANC Headphones", [250, 550], "Advanced active noise cancellation with 40mm high-fidelity drivers and 40-hour battery life."]
+    ],
+    "Fine Art": [
+        ["Limited Edition Signed Lithograph", [300, 1200], "Contemporary abstract composition numbered and signed by the artist. Includes COA."],
+        ["Modernist Bronze Desk Sculpture", [400, 1500], "Hand-cast bronze figure with a natural volcanic rock base. Part of a limited signature series."]
+    ],
+    "Travel Gear": [
+        ["Executive Anti-Theft Backpack", [60, 150], "Water-resistant tech fabric with hidden zippers, RFID shielding, and integrated USB-C charging."],
+        ["Japanese Hard-Shell Carry-On", [200, 450], "Aerospace polycarbonate shell with silent-spin dual wheels and integrated TSA-approved locks."]
+    ],
+    "Collectibles": [
+        ["Graded Vintage Comic Book", [500, 2500], "Pristine CGC-certified golden age issue. A blue-chip collectible for the serious curator."],
+        ["Investment-Grade Gold Coin", [800, 2200], "Historically significant currency asset in near-mint condition. Authenticity verified by SOMA."]
     ]
 };
 
