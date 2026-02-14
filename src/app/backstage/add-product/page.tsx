@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useUserProfile } from '@/firebase';
-import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, setDoc, updateDoc, serverTimestamp, increment } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,7 +25,8 @@ import {
     Package,
     Sparkles,
     Palette,
-    Plus
+    Plus,
+    CreditCard
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import SomaLogo from '@/components/logo';
@@ -48,6 +50,7 @@ import {
 } from "@/components/ui/select";
 import { uploadToCloudinary } from '@/lib/utils/upload-image';
 import { analyzeProductImage } from '@/ai/flows/analyze-product-image';
+import Link from 'next/link';
 
 const AVAILABLE_CATEGORIES = [
     "Watches", 
@@ -100,6 +103,7 @@ export default function AddProductPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showCreditModal, setShowCreditModal] = useState(false);
 
   // Pre-generate an ID
   const [tempId, setTempId] = useState(() => crypto.randomUUID());
@@ -176,8 +180,23 @@ export default function AddProductPage() {
         return;
     }
 
+    if (!user || !firestore) return;
+
+    // Credit-gating check
+    const currentCredits = userProfile?.aiCredits ?? 0;
+    if (currentCredits <= 0 && userProfile?.planTier !== 'ENTERPRISE' && userProfile?.userRole !== 'ADMIN') {
+        setShowCreditModal(true);
+        return;
+    }
+
     setIsAnalyzing(true);
     try {
+        // Atomic credit deduction
+        const userRef = doc(firestore, 'users', user.uid);
+        if (userProfile?.userRole !== 'ADMIN' && userProfile?.planTier !== 'ENTERPRISE') {
+            updateDoc(userRef, { aiCredits: increment(-1) }).catch(console.error);
+        }
+
         const result = await analyzeProductImage({ imageUrl: imageUrls[0] });
         
         setProductName(result.suggestedName);
@@ -320,6 +339,32 @@ export default function AddProductPage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={showCreditModal} onOpenChange={setShowCreditModal}>
+        <DialogContent className="bg-card border-destructive">
+          <DialogHeader>
+            <div className="mx-auto bg-destructive/10 rounded-full p-4 w-fit mb-4">
+                <AlertCircle className="h-8 w-8 text-destructive" />
+            </div>
+            <DialogTitle className="text-2xl font-bold font-headline text-destructive text-center">
+                Credit Limit Reached
+            </DialogTitle>
+            <DialogDescription className="text-center pt-2">
+                Your strategic AI allocation has been exhausted. Upgrade to Enterprise for unlimited analysis or purchase additional high-fidelity credits.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-6 flex flex-col sm:flex-row gap-3">
+            <Button variant="outline" onClick={() => setShowCreditModal(false)} className="w-full sm:w-auto border-white/10">
+              Dismiss
+            </Button>
+            <Button asChild className="w-full sm:w-auto btn-gold-glow bg-primary font-bold">
+              <Link href="/plan-selection">
+                <CreditCard className="mr-2 h-4 w-4" /> Upgrade to Enterprise
+              </Link>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="text-center mb-10">
         <SomaLogo className="h-12 w-12 mx-auto" />
         <h1 className="text-4xl font-bold font-headline mt-4 text-primary">Supplier Submission</h1>
@@ -337,14 +382,21 @@ export default function AddProductPage() {
                     Configure variants and metadata for the global collection.
                 </CardDescription>
             </div>
-            <Button 
-                onClick={handleAIMagic} 
-                disabled={imageUrls.length === 0 || isAnalyzing}
-                className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-black hidden md:flex h-12"
-            >
-                {isAnalyzing ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                AI ENRICHMENT
-            </Button>
+            <div className="flex flex-col items-end gap-2">
+                <Button 
+                    onClick={handleAIMagic} 
+                    disabled={imageUrls.length === 0 || isAnalyzing}
+                    className="btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-black hidden md:flex h-12"
+                >
+                    {isAnalyzing ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                    AI ENRICHMENT
+                </Button>
+                <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mr-2">
+                    {userProfile?.planTier === 'ENTERPRISE' || userProfile?.userRole === 'ADMIN' 
+                        ? 'Credits: Unlimited (Executive)' 
+                        : `Credits Remaining: ${userProfile?.aiCredits ?? 0}`}
+                </p>
+            </div>
         </CardHeader>
         <CardContent>
             <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-12">

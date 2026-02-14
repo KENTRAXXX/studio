@@ -233,6 +233,10 @@
                     "description": "The specific plan tier for the user, determining access level.",
                     "enum": ["MERCHANT", "SCALER", "SELLER", "ENTERPRISE", "BRAND"]
                 },
+                "aiCredits": {
+                    "type": "number",
+                    "description": "Remaining credits for AI product analysis."
+                },
                 "isVerifiedSeller": {
                     "type": "boolean",
                     "description": "Indicates if a user with the SELLER role has completed verification."

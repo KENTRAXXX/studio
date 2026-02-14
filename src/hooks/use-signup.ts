@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import { createUserWithEmailAndPassword, UserCredential } from 'firebase/auth';
@@ -118,6 +119,7 @@ export function useSignUp() {
         userRole: userRole,
         planTier: credentials.planTier,
         plan: credentials.plan,
+        aiCredits: 5, // Initial AI allotment for strategic analysis
         referralCode: credentials.ambassadorCode?.toUpperCase() || generateReferralCode(6),
         status: statusMap[credentials.planTier as keyof typeof statusMap] || 'approved',
         createdAt: new Date().toISOString(),

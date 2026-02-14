@@ -1,11 +1,12 @@
+
 'use client';
 
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore } from '@/firebase';
-import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { useFirestore, useUser, useUserProfile } from '@/firebase';
+import { doc, updateDoc, deleteDoc, increment } from 'firebase/firestore';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import {
@@ -58,10 +59,13 @@ import {
     X,
     Plus,
     ImageIcon,
-    Palette
+    Palette,
+    AlertCircle,
+    CreditCard
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { analyzeProductImage } from '@/ai/flows/analyze-product-image';
+import Link from 'next/link';
 
 const AVAILABLE_CATEGORIES = [
     "Watches", 
@@ -130,6 +134,8 @@ interface EditMasterProductModalProps {
 }
 
 export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMasterProductModalProps) {
+  const { user } = useUser();
+  const { userProfile } = useUserProfile();
   const firestore = useFirestore();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -137,6 +143,7 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showCreditModal, setShowCreditModal] = useState(false);
   const [uploads, setUploads] = useState<Record<string, UploadState>>({});
   const [imageGallery, setImageGallery] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -193,8 +200,21 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
         return;
     }
 
+    if (!user || !firestore) return;
+
+    const currentCredits = userProfile?.aiCredits ?? 0;
+    if (currentCredits <= 0 && userProfile?.userRole !== 'ADMIN' && userProfile?.planTier !== 'ENTERPRISE') {
+        setShowCreditModal(true);
+        return;
+    }
+
     setIsAnalyzing(true);
     try {
+        const userRef = doc(firestore, 'users', user.uid);
+        if (userProfile?.userRole !== 'ADMIN' && userProfile?.planTier !== 'ENTERPRISE') {
+            updateDoc(userRef, { aiCredits: increment(-1) }).catch(console.error);
+        }
+
         const result = await analyzeProductImage({ imageUrl: primaryImage });
         
         form.setValue('name', result.suggestedName, { shouldValidate: true });
@@ -354,6 +374,33 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
   }
 
   return (
+    <>
+    <Dialog open={showCreditModal} onOpenChange={setShowCreditModal}>
+        <DialogContent className="bg-card border-destructive z-[60]">
+          <DialogHeader>
+            <div className="mx-auto bg-destructive/10 rounded-full p-4 w-fit mb-4">
+                <AlertCircle className="h-8 w-8 text-destructive" />
+            </div>
+            <DialogTitle className="text-2xl font-bold font-headline text-destructive text-center">
+                Credit Limit Reached
+            </DialogTitle>
+            <DialogDescription className="text-center pt-2">
+                Your strategic AI allocation has been exhausted. Upgrade to Enterprise for unlimited analysis or purchase additional high-fidelity credits.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-6 flex flex-col sm:flex-row gap-3">
+            <Button variant="outline" onClick={() => setShowCreditModal(false)} className="w-full sm:w-auto border-white/10">
+              Dismiss
+            </Button>
+            <Button asChild className="w-full sm:w-auto btn-gold-glow bg-primary font-bold">
+              <Link href="/plan-selection">
+                <CreditCard className="mr-2 h-4 w-4" /> Upgrade to Enterprise
+              </Link>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+    </Dialog>
+
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="bg-card border-primary sm:max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="flex flex-col sm:flex-row items-center justify-between gap-4 pr-8">
@@ -366,14 +413,19 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
                 Synchronize strategic metadata for this luxury asset.
             </DialogDescription>
           </div>
-          <Button 
-            onClick={handleAIMagic} 
-            disabled={isAnalyzing}
-            className="w-full sm:w-auto btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-black h-12"
-          >
-            {isAnalyzing ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
-            AI REFRESH
-          </Button>
+          <div className="flex flex-col items-end gap-2">
+            <Button 
+                onClick={handleAIMagic} 
+                disabled={isAnalyzing}
+                className="w-full sm:w-auto btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-black h-12"
+            >
+                {isAnalyzing ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                AI REFRESH
+            </Button>
+            <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mr-2">
+                Credits: {userProfile?.planTier === 'ENTERPRISE' || userProfile?.userRole === 'ADMIN' ? 'Unlimited' : userProfile?.aiCredits ?? 0}
+            </p>
+          </div>
         </DialogHeader>
 
         <Form {...form}>
@@ -407,7 +459,7 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
 
                     <div className="space-y-3">
                         <Label className="flex items-center gap-2 text-[10px] font-black uppercase text-muted-foreground tracking-widest">
-                            <Layers className="h-3 w-3" /> Categorization
+                            <Layers className="h-3" /> Categorization
                         </Label>
                         <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-primary/10 bg-muted/10">
                             {AVAILABLE_CATEGORIES.map(cat => (
@@ -533,7 +585,7 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
 
                     <div className="space-y-4">
                         <Label className="flex items-center gap-2 text-primary/80 uppercase tracking-widest text-[10px] font-black">
-                            <ImageIcon className="h-4 w-4" />
+                            <ImageIcon className="h-4" />
                             Asset Gallery (Max {MAX_IMAGES})
                         </Label>
                         
@@ -627,5 +679,6 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
         </Form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

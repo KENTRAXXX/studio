@@ -1,11 +1,12 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useUser, useFirestore } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { useUser, useFirestore, useUserProfile } from '@/firebase';
+import { doc, updateDoc, increment } from 'firebase/firestore';
 import { analyzeProductImage } from '@/ai/flows/analyze-product-image';
 
 import {
@@ -28,7 +29,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, Sparkles } from 'lucide-react';
+import { Loader2, PackagePlus, Sparkles, AlertCircle, CreditCard } from 'lucide-react';
+import Link from 'next/link';
 
 const formSchema = z.object({
   name: z.string().min(3, { message: 'Product name must be at least 3 characters.' }),
@@ -55,10 +57,12 @@ interface EditPrivateProductModalProps {
 
 export function EditPrivateProductModal({ isOpen, onOpenChange, product }: EditPrivateProductModalProps) {
   const { user } = useUser();
+  const { userProfile } = useUserProfile();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showCreditModal, setShowCreditModal] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -84,8 +88,21 @@ export function EditPrivateProductModal({ isOpen, onOpenChange, product }: EditP
         return;
     }
 
+    if (!user || !firestore) return;
+
+    const currentCredits = userProfile?.aiCredits ?? 0;
+    if (currentCredits <= 0 && userProfile?.userRole !== 'ADMIN' && userProfile?.planTier !== 'ENTERPRISE') {
+        setShowCreditModal(true);
+        return;
+    }
+
     setIsAnalyzing(true);
     try {
+        const userRef = doc(firestore, 'users', user.uid);
+        if (userProfile?.userRole !== 'ADMIN' && userProfile?.planTier !== 'ENTERPRISE') {
+            updateDoc(userRef, { aiCredits: increment(-1) }).catch(console.error);
+        }
+
         const result = await analyzeProductImage({ imageUrl });
         form.setValue('name', result.suggestedName, { shouldValidate: true });
         form.setValue('description', result.description, { shouldValidate: true });
@@ -132,6 +149,33 @@ export function EditPrivateProductModal({ isOpen, onOpenChange, product }: EditP
   };
 
   return (
+    <>
+    <Dialog open={showCreditModal} onOpenChange={setShowCreditModal}>
+        <DialogContent className="bg-card border-destructive z-[60]">
+          <DialogHeader>
+            <div className="mx-auto bg-destructive/10 rounded-full p-4 w-fit mb-4">
+                <AlertCircle className="h-8 w-8 text-destructive" />
+            </div>
+            <DialogTitle className="text-2xl font-bold font-headline text-destructive text-center">
+                Credit Limit Reached
+            </DialogTitle>
+            <DialogDescription className="text-center pt-2">
+                Your strategic AI allocation has been exhausted. Upgrade to Enterprise for unlimited analysis or purchase additional high-fidelity credits.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-6 flex flex-col sm:flex-row gap-3">
+            <Button variant="outline" onClick={() => setShowCreditModal(false)} className="w-full sm:w-auto border-white/10">
+              Dismiss
+            </Button>
+            <Button asChild className="w-full sm:w-auto btn-gold-glow bg-primary font-bold">
+              <Link href="/plan-selection">
+                <CreditCard className="mr-2 h-4 w-4" /> Upgrade to Enterprise
+              </Link>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+    </Dialog>
+
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="bg-card border-primary">
         <DialogHeader className="flex flex-row items-center justify-between gap-4">
@@ -144,17 +188,22 @@ export function EditPrivateProductModal({ isOpen, onOpenChange, product }: EditP
                 Synchronize changes to your local inventory.
             </DialogDescription>
           </div>
-          <Button 
-            type="button" 
-            size="sm" 
-            variant="outline" 
-            className="border-primary/30 text-primary h-10"
-            onClick={handleRefresh}
-            disabled={isAnalyzing}
-          >
-            {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-            AI REFRESH
-          </Button>
+          <div className="flex flex-col items-end gap-2">
+            <Button 
+                type="button" 
+                size="sm" 
+                variant="outline" 
+                className="border-primary/30 text-primary h-10"
+                onClick={handleRefresh}
+                disabled={isAnalyzing}
+            >
+                {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                AI REFRESH
+            </Button>
+            <p className="text-[9px] font-mono text-muted-foreground uppercase">
+                Credits: {userProfile?.planTier === 'ENTERPRISE' || userProfile?.userRole === 'ADMIN' ? 'Unlimited' : userProfile?.aiCredits ?? 0}
+            </p>
+          </div>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
@@ -185,5 +234,6 @@ export function EditPrivateProductModal({ isOpen, onOpenChange, product }: EditP
         </Form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
