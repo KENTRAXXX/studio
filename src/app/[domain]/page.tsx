@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useDoc, useFirestore, useCollection, useUser, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, where, limit, or } from 'firebase/firestore';
+import { doc, collection, query, where, limit, or, orderBy } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -29,7 +29,15 @@ import {
     ChevronRight,
     Trophy,
     Target,
-    BarChart3
+    BarChart3,
+    Clock,
+    LayoutDashboard,
+    MessageSquare,
+    ChevronLeft,
+    Check,
+    Download,
+    Share2,
+    Wallet
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -41,6 +49,7 @@ import { formatCurrency } from '@/utils/format';
 import SomaLogo from '@/components/logo';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
+import { WithdrawalModal } from '@/components/WithdrawalModal';
 
 /**
  * @fileOverview Ambassador Portal UI
@@ -50,8 +59,44 @@ import { useToast } from '@/hooks/use-toast';
 function AmbassadorPortal() {
     const { user } = useUser();
     const { userProfile, loading: profileLoading } = useUserProfile();
+    const firestore = useFirestore();
     const { toast } = useToast();
     const router = useRouter();
+
+    const [activeView, setActiveView] = useState<'dashboard' | 'wallet' | 'marketing'>('dashboard');
+    const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+
+    // 1. Financial Telemetry
+    const payoutsQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return query(
+            collection(firestore, 'payouts_pending'), 
+            where('userId', '==', user.uid),
+            where('status', '==', 'pending')
+        );
+    }, [firestore, user]);
+
+    const maturityQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return query(
+            collection(firestore, 'payouts_pending'), 
+            where('userId', '==', user.uid),
+            where('status', '==', 'pending_maturity')
+        );
+    }, [firestore, user]);
+
+    const { data: payoutDocs, loading: payoutsLoading } = useCollection(payoutsQuery);
+    const { data: maturityDocs, loading: maturityLoading } = useCollection(maturityQuery);
+
+    const availableBalance = useMemo(() => {
+        if (!payoutDocs) return 0;
+        return payoutDocs.reduce((acc, doc: any) => acc + (doc.amount || 0), 0);
+    }, [payoutDocs]);
+
+    const pendingMaturityBalance = useMemo(() => {
+        if (!maturityDocs) return 0;
+        return maturityDocs.reduce((acc, doc: any) => acc + (doc.amount || 0), 0);
+    }, [maturityDocs]);
 
     const referralLink = userProfile?.referralCode 
         ? `https://somatoday.com/plan-selection?ref=${userProfile.referralCode}`
@@ -69,6 +114,13 @@ function AmbassadorPortal() {
 
     return (
         <div className="min-h-screen flex flex-col selection:bg-primary/30">
+            <WithdrawalModal 
+                isOpen={isWithdrawModalOpen}
+                onOpenChange={setIsWithdrawModalOpen}
+                availableBalance={availableBalance}
+                userProfile={userProfile}
+            />
+
             {/* Dedicated Marketer Header */}
             <header className="p-6 flex justify-between items-center bg-black/40 backdrop-blur-xl border-b border-primary/10 sticky top-0 z-50">
                 <Link href={`https://${rootDomain}`} className="flex items-center gap-2 group">
@@ -77,9 +129,21 @@ function AmbassadorPortal() {
                 </Link>
                 <div className="flex items-center gap-4">
                     {user ? (
-                        <Button variant="ghost" asChild className="font-headline text-slate-400 hover:text-primary transition-colors">
-                            <Link href="/dashboard">Executive Dashboard</Link>
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            {activeView !== 'dashboard' && (
+                                <Button 
+                                    variant="ghost" 
+                                    onClick={() => setActiveView('dashboard')}
+                                    className="font-headline text-slate-400 hover:text-primary transition-colors"
+                                >
+                                    <ChevronLeft className="mr-1 h-4 w-4" /> Back
+                                </Button>
+                            )}
+                            <div className="px-4 py-1 rounded-full bg-primary/10 border border-primary/20 flex items-center gap-2">
+                                <Wallet className="h-3 w-3 text-primary" />
+                                <span className="text-xs font-mono font-bold text-primary">{formatCurrency(Math.round(availableBalance * 100))}</span>
+                            </div>
+                        </div>
                     ) : (
                         <div className="flex items-center gap-2">
                             <Button variant="ghost" asChild className="font-headline text-slate-400 hover:text-primary transition-all">
@@ -97,11 +161,9 @@ function AmbassadorPortal() {
                 {!user ? (
                     /* High-Fidelity Prospect Landing State */
                     <div className="relative">
-                        {/* Background Accents */}
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[500px] bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
                         
                         <section className="container max-w-6xl mx-auto px-6 py-24 md:py-32 relative z-10 text-center space-y-16">
-                            {/* Floating Hero Visual */}
                             <motion.div 
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -146,7 +208,6 @@ function AmbassadorPortal() {
                                 </div>
                             </motion.div>
 
-                            {/* Program Advantage Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-12">
                                 {[
                                     { icon: DollarSign, title: "Pure Yield", desc: "Flat $5.00 cash bounty for every Mogul activation. Scale without limits." },
@@ -168,156 +229,268 @@ function AmbassadorPortal() {
                                     </motion.div>
                                 ))}
                             </div>
-
-                            {/* How it Works Section */}
-                            <div className="space-y-12 py-20 border-t border-primary/5">
-                                <h2 className="text-3xl font-bold font-headline text-primary uppercase tracking-[0.3em]">The Workflow</h2>
-                                <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-0">
-                                    {[
-                                        { step: "01", title: "Join", desc: "Secure your ambassador credentials." },
-                                        { step: "02", title: "Share", desc: "Distribute your universal link." },
-                                        { step: "03", title: "Scale", desc: "Collect $5.00 per activation." }
-                                    ].map((step, i) => (
-                                        <div key={i} className="flex items-center flex-1 w-full max-w-xs group">
-                                            <div className="p-6 rounded-2xl bg-black/40 border border-white/5 flex-1 text-center space-y-2 group-hover:border-primary/20 transition-all">
-                                                <span className="text-[10px] font-black text-primary/40 uppercase tracking-[0.4em]">{step.step}</span>
-                                                <h4 className="text-lg font-bold text-slate-200">{step.title}</h4>
-                                                <p className="text-xs text-slate-500">{step.desc}</p>
-                                            </div>
-                                            {i < 2 && <ChevronRight className="hidden md:block mx-4 text-primary/20" />}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
                         </section>
                     </div>
                 ) : (
-                    /* High-Fidelity Active Ambassador Dashboard */
+                    /* Active Ambassador Command Suite */
                     <div className="container max-w-6xl mx-auto py-12 px-6 space-y-10">
-                        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                            <div>
-                                <motion.h1 
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    className="text-4xl font-bold font-headline text-white flex items-center gap-3"
+                        <AnimatePresence mode="wait">
+                            {activeView === 'dashboard' && (
+                                <motion.div 
+                                    key="dashboard"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    className="space-y-10"
                                 >
-                                    <Target className="h-10 w-10 text-primary" />
-                                    Command Center
-                                </motion.h1>
-                                <p className="text-slate-500 mt-2 text-sm uppercase tracking-[0.4em] font-black">Performance Telemetry</p>
-                            </div>
-                            <div className="bg-primary/5 p-4 rounded-2xl border border-primary/20 shadow-gold-glow flex items-center gap-4 min-w-[200px]">
-                                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                                    <BarChart3 className="h-5 w-5" />
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-black text-primary/60 uppercase tracking-widest leading-none mb-1">Yield Level</p>
-                                    <p className="text-xl font-bold font-mono text-primary leading-none">$5.00 FLAT</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <Card className="border-primary/10 bg-slate-900/40 backdrop-blur-sm group hover:border-primary/30 transition-all">
-                                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                    <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Marketing Yield</CardTitle>
-                                    <DollarSign className="h-4 w-4 text-primary" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-4xl font-bold text-slate-100 font-mono tracking-tighter">
-                                        {formatCurrency(Math.round((userProfile?.totalReferralEarnings || 0) * 100))}
-                                    </div>
-                                    <p className="text-[10px] text-primary font-bold uppercase tracking-tighter mt-2 flex items-center gap-1">
-                                        <TrendingUp className="h-3 w-3" /> Accrued Rewards
-                                    </p>
-                                </CardContent>
-                            </Card>
-                            <Card className="border-primary/10 bg-slate-900/40 backdrop-blur-sm group hover:border-primary/30 transition-all">
-                                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                    <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Recruit Activity</CardTitle>
-                                    <Users className="h-4 w-4 text-primary" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="flex justify-between items-end">
+                                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                                         <div>
-                                            <div className="text-4xl font-bold text-slate-100 font-mono tracking-tighter">{userProfile?.ambassadorData?.referralSignups || 0}</div>
-                                            <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-2 font-bold">Paid Conversions</p>
+                                            <h1 className="text-4xl font-bold font-headline text-white flex items-center gap-3">
+                                                <Target className="h-10 w-10 text-primary" />
+                                                Command Center
+                                            </h1>
+                                            <p className="text-slate-500 mt-2 text-sm uppercase tracking-[0.4em] font-black">Performance Telemetry</p>
                                         </div>
-                                        <div className="text-right">
-                                            <div className="text-xl font-bold text-slate-400 font-mono tracking-tighter">{userProfile?.ambassadorData?.referralClicks || 0}</div>
-                                            <p className="text-[10px] text-slate-600 uppercase tracking-widest mt-1 font-bold">Link Clicks</p>
+                                        <div className="bg-primary/5 p-4 rounded-2xl border border-primary/20 shadow-gold-glow flex items-center gap-4 min-w-[200px]">
+                                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                                                <BarChart3 className="h-5 w-5" />
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-black text-primary/60 uppercase tracking-widest leading-none mb-1">Yield Level</p>
+                                                <p className="text-xl font-bold font-mono text-primary leading-none">$5.00 FLAT</p>
+                                            </div>
                                         </div>
                                     </div>
-                                </CardContent>
-                            </Card>
-                            <Card className="border-primary/10 bg-slate-900/40 backdrop-blur-sm group hover:border-primary/30 transition-all">
-                                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                    <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Partner Status</CardTitle>
-                                    <ShieldCheck className="h-4 w-4 text-primary" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-xl font-bold text-primary uppercase tracking-widest">VERIFIED</div>
-                                    <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-2 font-bold">SOMA Affiliate Protocol Active</p>
-                                </CardContent>
-                            </Card>
-                        </div>
 
-                        <Card className="border-primary bg-primary/5 p-10 relative overflow-hidden shadow-2xl group">
-                            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                                <LinkIcon className="h-48 w-48" />
-                            </div>
-                            <div className="flex flex-col lg:flex-row items-center justify-between gap-12 relative z-10">
-                                <div className="space-y-6 text-center lg:text-left flex-1">
-                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary text-black text-[10px] font-black uppercase tracking-[0.2em]">
-                                        <Zap className="h-3 w-3 fill-current" /> Auto-Attribution Active
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <Card className="border-primary/10 bg-slate-900/40 backdrop-blur-sm group hover:border-primary/30 transition-all">
+                                            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                                <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Marketing Yield</CardTitle>
+                                                <DollarSign className="h-4 w-4 text-primary" />
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="text-4xl font-bold text-slate-100 font-mono tracking-tighter">
+                                                    {formatCurrency(Math.round((userProfile?.totalReferralEarnings || 0) * 100))}
+                                                </div>
+                                                <p className="text-[10px] text-primary font-bold uppercase tracking-tighter mt-2 flex items-center gap-1">
+                                                    <TrendingUp className="h-3 w-3" /> Accrued Rewards
+                                                </p>
+                                            </CardContent>
+                                        </Card>
+                                        <Card className="border-primary/10 bg-slate-900/40 backdrop-blur-sm group hover:border-primary/30 transition-all">
+                                            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                                <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Recruit Activity</CardTitle>
+                                                <Users className="h-4 w-4 text-primary" />
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="flex justify-between items-end">
+                                                    <div>
+                                                        <div className="text-4xl font-bold text-slate-100 font-mono tracking-tighter">{userProfile?.ambassadorData?.referralSignups || 0}</div>
+                                                        <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-2 font-bold">Paid Conversions</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="text-xl font-bold text-slate-400 font-mono tracking-tighter">{userProfile?.ambassadorData?.referralClicks || 0}</div>
+                                                        <p className="text-[10px] text-slate-600 uppercase tracking-widest mt-1 font-bold">Link Clicks</p>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                        <Card className="border-primary/10 bg-slate-900/40 backdrop-blur-sm group hover:border-primary/30 transition-all">
+                                            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                                <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Partner Status</CardTitle>
+                                                <ShieldCheck className="h-4 w-4 text-primary" />
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="text-xl font-bold text-primary uppercase tracking-widest">VERIFIED</div>
+                                                <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-2 font-bold">SOMA Affiliate Protocol Active</p>
+                                            </CardContent>
+                                        </Card>
                                     </div>
-                                    <h2 className="text-3xl font-bold font-headline text-white leading-tight">
-                                        Universal Marketing Link
-                                    </h2>
-                                    <p className="text-slate-400 max-w-lg text-lg leading-relaxed">
-                                        Recruits arriving via this link automatically unlock their **20% discount** and secure your **$5.00 bounty**.
-                                    </p>
-                                </div>
-                                <div className="w-full lg:w-auto space-y-4">
-                                    <div className="p-5 rounded-xl bg-black/60 border border-primary/20 font-mono text-sm text-primary break-all shadow-inner">
-                                        {referralLink || 'Establishing secure link...'}
-                                    </div>
-                                    <Button onClick={handleCopy} size="lg" className="w-full h-14 btn-gold-glow bg-primary font-black uppercase text-black text-lg">
-                                        <Copy className="mr-3 h-5 w-5" /> Copy Link
-                                    </Button>
-                                </div>
-                            </div>
-                        </Card>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-20">
-                            <div className="space-y-6">
-                                <h3 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500 flex items-center gap-2">
-                                    <ShieldCheck className="h-4 w-4" /> Protocol Compliance
-                                </h3>
-                                <div className="space-y-4">
-                                    {[
-                                        "Bounties trigger upon successful first subscription processing.",
-                                        "14-day hold period applies to prevent fraud and reversals.",
-                                        "Self-referrals trigger immediate status revocation."
-                                    ].map((rule, i) => (
-                                        <div key={i} className="flex items-start gap-4 p-4 rounded-xl border border-white/5 bg-slate-900/20 text-xs text-slate-400">
-                                            <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">{i+1}</div>
-                                            <p className="leading-relaxed">{rule}</p>
+                                    <Card className="border-primary bg-primary/5 p-10 relative overflow-hidden shadow-2xl group">
+                                        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                                            <LinkIcon className="h-48 w-48" />
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="flex flex-col gap-4 justify-end">
-                                <Button asChild size="lg" className="h-16 text-lg font-black btn-gold-glow bg-primary text-black uppercase tracking-widest">
-                                    <Link href="/dashboard/wallet">
-                                        Access SOMA Wallet <DollarSign className="ml-2 h-6 w-6" />
-                                    </Link>
-                                </Button>
-                                <Button variant="outline" size="lg" className="h-16 text-lg border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800/50 uppercase tracking-widest font-bold">
-                                    Marketing Toolkit
-                                </Button>
-                            </div>
-                        </div>
+                                        <div className="flex flex-col lg:flex-row items-center justify-between gap-12 relative z-10">
+                                            <div className="space-y-6 text-center lg:text-left flex-1">
+                                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary text-black text-[10px] font-black uppercase tracking-[0.2em]">
+                                                    <Zap className="h-3 w-3 fill-current" /> Auto-Attribution Active
+                                                </div>
+                                                <h2 className="text-3xl font-bold font-headline text-white leading-tight">
+                                                    Universal Marketing Link
+                                                </h2>
+                                                <p className="text-slate-400 max-w-lg text-lg leading-relaxed">
+                                                    Recruits arriving via this link automatically unlock their **20% discount** and secure your **$5.00 bounty**.
+                                                </p>
+                                            </div>
+                                            <div className="w-full lg:w-auto space-y-4">
+                                                <div className="p-5 rounded-xl bg-black/60 border border-primary/20 font-mono text-sm text-primary break-all shadow-inner">
+                                                    {referralLink || 'Establishing secure link...'}
+                                                </div>
+                                                <Button onClick={handleCopy} size="lg" className="w-full h-14 btn-gold-glow bg-primary font-black uppercase text-black text-lg">
+                                                    <Copy className="mr-3 h-5 w-5" /> Copy Link
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </Card>
+
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-20">
+                                        <div className="space-y-6">
+                                            <h3 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500 flex items-center gap-2">
+                                                <ShieldCheck className="h-4 w-4" /> Protocol Compliance
+                                            </h3>
+                                            <div className="space-y-4">
+                                                {[
+                                                    "Bounties trigger upon successful first subscription processing.",
+                                                    "14-day hold period applies to prevent fraud and reversals.",
+                                                    "Self-referrals trigger immediate status revocation."
+                                                ].map((rule, i) => (
+                                                    <div key={i} className="flex items-start gap-4 p-4 rounded-xl border border-white/5 bg-slate-900/20 text-xs text-slate-400">
+                                                        <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">{i+1}</div>
+                                                        <p className="leading-relaxed">{rule}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col gap-4 justify-end">
+                                            <Button 
+                                                onClick={() => setActiveView('wallet')}
+                                                size="lg" 
+                                                className="h-16 text-lg font-black btn-gold-glow bg-primary text-black uppercase tracking-widest"
+                                            >
+                                                Access SOMA Wallet <DollarSign className="ml-2 h-6 w-6" />
+                                            </Button>
+                                            <Button 
+                                                onClick={() => setActiveView('marketing')}
+                                                variant="outline" 
+                                                size="lg" 
+                                                className="h-16 text-lg border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800/50 uppercase tracking-widest font-bold"
+                                            >
+                                                Marketing Toolkit
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {activeView === 'wallet' && (
+                                <motion.div 
+                                    key="wallet"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    className="max-w-xl mx-auto space-y-8 pb-20"
+                                >
+                                    <div className="text-center space-y-2">
+                                        <h2 className="text-3xl font-bold font-headline text-primary">SOMA Wallet</h2>
+                                        <p className="text-slate-500 uppercase text-[10px] font-black tracking-[0.3em]">Treasury & Payouts</p>
+                                    </div>
+
+                                    <Card className="border-primary bg-primary/5 text-center p-10 relative overflow-hidden shadow-gold-glow">
+                                        <div className="absolute top-0 right-0 p-4 opacity-5">
+                                            <Wallet className="h-32 w-32" />
+                                        </div>
+                                        <CardHeader className="p-0">
+                                            <p className="text-[10px] font-black text-primary/60 uppercase tracking-widest mb-2">Available for Withdrawal</p>
+                                            <CardTitle className="text-6xl font-bold text-white font-mono tracking-tighter">
+                                                {payoutsLoading ? <Loader2 className="animate-spin mx-auto h-10 w-10" /> : formatCurrency(Math.round(availableBalance * 100))}
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="p-0 mt-8 space-y-6">
+                                            <Button 
+                                                size="lg" 
+                                                disabled={availableBalance < 10}
+                                                onClick={() => setIsWithdrawModalOpen(true)}
+                                                className="w-full h-16 text-lg btn-gold-glow bg-primary text-black font-black uppercase tracking-widest"
+                                            >
+                                                {availableBalance < 10 ? `Min. ${formatCurrency(1000)} Required` : 'Initiate Payout'}
+                                            </Button>
+                                            <p className="text-[10px] text-slate-500 italic">Withdrawals are processed via verified bank transfer within 48 business hours.</p>
+                                        </CardContent>
+                                    </Card>
+
+                                    {pendingMaturityBalance > 0 && (
+                                        <div className="p-6 rounded-2xl border border-yellow-500/20 bg-yellow-500/5 flex items-center justify-between">
+                                            <div className="flex items-center gap-4">
+                                                <div className="h-10 w-10 rounded-full bg-yellow-500/10 flex items-center justify-center text-yellow-500/60">
+                                                    <Clock className="h-5 w-5" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-black uppercase text-yellow-500/60 tracking-widest">Pending Maturity</p>
+                                                    <p className="text-xl font-bold font-mono text-white">{formatCurrency(Math.round(pendingMaturityBalance * 100))}</p>
+                                                </div>
+                                            </div>
+                                            <Badge variant="outline" className="border-yellow-500/20 text-yellow-500/60 font-black text-[9px] uppercase">14 Day Hold</Badge>
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-4">
+                                        <h3 className="text-xs font-black uppercase text-slate-500 tracking-widest">Platform Integrity Protocol</h3>
+                                        <div className="p-4 rounded-xl border border-white/5 bg-slate-900/40 text-xs text-slate-400 leading-relaxed">
+                                            All rewards are subject to a 14-day maturity window. This period allows the platform to verify the authenticity of the recruitment and prevent attribution fraud.
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {activeView === 'marketing' && (
+                                <motion.div 
+                                    key="marketing"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    className="space-y-10 pb-20"
+                                >
+                                    <div className="text-center space-y-2">
+                                        <h2 className="text-3xl font-bold font-headline text-primary">Marketing Toolkit</h2>
+                                        <p className="text-slate-500 uppercase text-[10px] font-black tracking-[0.3em]">Conversion Accelerators</p>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <Card className="border-primary/20 bg-slate-900/40 p-8 space-y-6">
+                                            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                                <MessageSquare className="h-6 w-6" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <h3 className="text-xl font-bold text-white font-headline">Proven Swipe Copy</h3>
+                                                <p className="text-sm text-slate-500 leading-relaxed">Copy and paste these conversion-optimized scripts for your social campaigns.</p>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div className="p-4 rounded-xl bg-black/40 border border-white/5 space-y-3">
+                                                    <p className="text-xs text-slate-300 italic">"Launch your luxury empire in 5 minutes with @SomaExecutive. Get 20% off all setup tiers using my link..."</p>
+                                                    <Button variant="ghost" size="sm" className="h-7 text-[9px] uppercase font-black text-primary hover:bg-primary/5">
+                                                        Copy Script
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </Card>
+
+                                        <Card className="border-primary/20 bg-slate-900/40 p-8 space-y-6">
+                                            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                                <ImageIcon className="h-6 w-6" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <h3 className="text-xl font-bold text-white font-headline">Brand Asset Pack</h3>
+                                                <p className="text-sm text-slate-500 leading-relaxed">High-resolution lifestyle visuals and logo variations for high-end promotion.</p>
+                                            </div>
+                                            <Button variant="outline" className="w-full border-primary/20 text-primary hover:bg-primary/5 h-12 font-bold uppercase tracking-widest">
+                                                <Download className="mr-2 h-4 w-4" /> Download .ZIP (42MB)
+                                            </Button>
+                                        </Card>
+                                    </div>
+
+                                    <Card className="border-primary/50 bg-primary/5 p-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                                        <div className="space-y-4 flex-1">
+                                            <h3 className="text-2xl font-bold font-headline text-white">Need Custom Creatives?</h3>
+                                            <p className="text-slate-400 text-sm max-w-md">Our executive design team can provide tailored banners or video ads for high-performing ambassadors.</p>
+                                        </div>
+                                        <Button asChild className="h-14 px-8 btn-gold-glow bg-primary text-black font-black uppercase">
+                                            <Link href="/backstage/concierge">Contact Creative HQ</Link>
+                                        </Button>
+                                    </Card>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 )}
             </main>
