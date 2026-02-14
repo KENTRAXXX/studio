@@ -89,7 +89,7 @@ export function EditPrivateProductModal({ isOpen, onOpenChange, product }: EditP
         const result = await analyzeProductImage({ imageUrl });
         form.setValue('name', result.suggestedName, { shouldValidate: true });
         form.setValue('description', result.description, { shouldValidate: true });
-        toast({ title: 'Metadata Refreshed', description: 'AI has updated the product identity based on the current asset.' });
+        toast({ title: 'AI REFRESH COMPLETE', description: 'AI has updated the product identity based on the current asset.' });
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Refresh Failed', description: e.message });
     } finally {
@@ -153,7 +153,7 @@ export function EditPrivateProductModal({ isOpen, onOpenChange, product }: EditP
             disabled={isAnalyzing}
           >
             {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-            AI Refresh
+            AI REFRESH
           </Button>
         </DialogHeader>
         <Form {...form}>
@@ -178,7 +178,7 @@ export function EditPrivateProductModal({ isOpen, onOpenChange, product }: EditP
             
             <DialogFooter className="pt-4">
               <Button type="submit" disabled={isSubmitting} className="w-full btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
-                {isSubmitting ? <Loader2 className="animate-spin" /> : 'Synchronize Changes'}
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : 'Synchronize Changes'}
               </Button>
             </DialogFooter>
           </form>

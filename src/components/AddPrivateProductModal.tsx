@@ -76,7 +76,7 @@ export function AddPrivateProductModal({ isOpen, onOpenChange }: AddPrivateProdu
         const result = await analyzeProductImage({ imageUrl });
         form.setValue('name', result.suggestedName, { shouldValidate: true });
         form.setValue('description', result.description, { shouldValidate: true });
-        toast({ title: 'Intelligence Applied', description: 'Product metadata enriched from visual analysis.' });
+        toast({ title: 'AI ENRICHMENT COMPLETE', description: 'Product metadata enriched from visual analysis.' });
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'AI Error', description: e.message });
     } finally {
@@ -145,7 +145,7 @@ export function AddPrivateProductModal({ isOpen, onOpenChange }: AddPrivateProdu
             disabled={isAnalyzing}
           >
             {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-            AI Enrichment
+            AI ENRICHMENT
           </Button>
         </DialogHeader>
         <Form {...form}>
@@ -170,7 +170,7 @@ export function AddPrivateProductModal({ isOpen, onOpenChange }: AddPrivateProdu
             
             <DialogFooter className="pt-4">
               <Button type="submit" disabled={isSubmitting} className="w-full btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
-                {isSubmitting ? <Loader2 className="animate-spin" /> : 'Deploy to Warehouse'}
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : 'Deploy to Warehouse'}
               </Button>
             </DialogFooter>
           </form>

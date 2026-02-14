@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo, useRef } from 'react';
@@ -204,8 +203,8 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
         setTagsInput(result.suggestedTags.join(', '));
 
         toast({
-            title: 'Registry Synchronized',
-            description: 'Luxury metadata has been auto-generated.',
+            title: 'AI REFRESH COMPLETE',
+            description: 'Registry enriched with updated metadata.',
             action: <Sparkles className="h-4 w-4 text-primary" />
         });
     } catch (error: any) {
@@ -429,7 +428,6 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
                         </div>
                     </div>
 
-                    {/* Color Mapping */}
                     <div className="space-y-4 pt-4 border-t border-white/5">
                         <div className="flex items-center justify-between">
                             <Label className="flex items-center gap-2 text-primary font-bold">
@@ -622,7 +620,7 @@ export function EditMasterProductModal({ isOpen, onOpenChange, product }: EditMa
                 </AlertDialog>
 
                 <Button type="submit" disabled={isSubmitting || isUploading} className="w-full sm:w-auto btn-gold-glow bg-primary h-12 font-bold px-8">
-                    {isSubmitting ? <Loader2 className="animate-spin" /> : 'Synchronize Global Catalog'}
+                    {isSubmitting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : 'Synchronize Global Catalog'}
                 </Button>
             </DialogFooter>
           </form>

@@ -149,7 +149,7 @@ export default function AddProductPage() {
         });
 
         const urls = await Promise.all(uploadPromises);
-        setImageUrls(prev => [...prev, ...urls]);
+        imageUrlsSet(prev => [...prev, ...urls]);
         toast({ title: 'Assets Secured', description: `${urls.length} image(s) processed.` });
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Upload Failed', description: error.message || 'Could not upload images.' });
@@ -157,6 +157,10 @@ export default function AddProductPage() {
         setIsUploading(false);
         if (fileInputRef.current) fileInputRef.current.value = '';
     }
+  };
+
+  const imageUrlsSet = (fn: (prev: string[]) => string[]) => {
+      setImageUrls(fn);
   };
 
   const removeImage = (indexToRemove: number) => {
@@ -182,7 +186,7 @@ export default function AddProductPage() {
         setTagsInput(result.suggestedTags.join(', '));
 
         toast({
-            title: 'AI Enrichment Applied',
+            title: 'AI ENRICHMENT COMPLETE',
             description: 'Luxury metadata and market research synchronized.',
             action: <Sparkles className="h-4 w-4 text-primary" />
         });
@@ -345,7 +349,6 @@ export default function AddProductPage() {
         <CardContent>
             <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                 <div className="space-y-8">
-                    {/* Basic Info */}
                     <div className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="product-name">Product Name</Label>
@@ -396,7 +399,6 @@ export default function AddProductPage() {
                         </div>
                     </div>
 
-                    {/* Pricing & Stock */}
                     <div className="grid grid-cols-3 gap-6">
                         <div className="space-y-2">
                             <Label htmlFor="wholesale-price">Wholesale ($)</Label>
@@ -419,7 +421,6 @@ export default function AddProductPage() {
                         </div>
                     )}
 
-                    {/* Color Variants */}
                     <div className="space-y-4 pt-4 border-t border-white/5">
                         <div className="flex items-center justify-between">
                             <Label className="flex items-center gap-2 text-primary">
@@ -494,7 +495,6 @@ export default function AddProductPage() {
                 </div>
 
                 <div className="space-y-8">
-                    {/* Visual Asset Management */}
                     <div className="space-y-4">
                         <Label className="flex items-center gap-2 text-primary/80 uppercase tracking-widest text-[10px] font-black">
                             <ImageIcon className="h-4 w-4" />
@@ -592,7 +592,7 @@ export default function AddProductPage() {
                         >
                             {isSubmitting ? (
                                 <>
-                                    <Loader2 className="animate-spin mr-3" />
+                                    <Loader2 className="animate-spin mr-3 h-6 w-6" />
                                     TRANSMITTING...
                                 </>
                             ) : 'Submit for Curation'}

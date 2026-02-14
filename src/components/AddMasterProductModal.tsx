@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useMemo } from 'react';
@@ -159,7 +158,7 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
         setTagsInput(result.suggestedTags.join(', '));
 
         toast({
-            title: 'AI Insights Applied',
+            title: 'AI ENRICHMENT COMPLETE',
             description: 'Registry enriched with executive metadata.',
             action: <Sparkles className="h-4 w-4 text-primary" />
         });
@@ -328,7 +327,6 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-10">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                {/* Left Column: Intelligence */}
                 <div className="space-y-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField control={form.control} name="name" render={({ field }) => (
@@ -378,7 +376,6 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
                         </div>
                     </div>
 
-                    {/* Color Mapping */}
                     <div className="space-y-4 pt-4 border-t border-white/5">
                         <div className="flex items-center justify-between">
                             <Label className="flex items-center gap-2 text-primary font-bold">
@@ -442,7 +439,6 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
                     </div>
                 </div>
 
-                {/* Right Column: Assets & Margin */}
                 <div className="space-y-8">
                     <div className="grid grid-cols-3 gap-4">
                         <FormField control={form.control} name="masterCost" render={({ field }) => (
