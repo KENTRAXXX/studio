@@ -27,6 +27,7 @@ Ensure these are added in **Settings > Environment Variables**.
 - `GEMINI_API_KEY`=your_gemini_key
 - `PAYSTACK_SECRET_KEY`=sk_test_...
 - `RESEND_API_KEY`=re_...
+- `SERPAPI_API_KEY`=your_serpapi_key
 
 ### 3. Compatibility Flags
 In **Settings > Functions > Compatibility flags**, ensure:
