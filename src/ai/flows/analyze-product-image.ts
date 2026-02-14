@@ -141,6 +141,10 @@ const generateFallbackMetadata = (): AnalyzeProductImageOutput => ({
  * Restored original instructions and negative constraints.
  */
 export async function analyzeProductImage(input: AnalyzeProductImageInput): Promise<AnalyzeProductImageOutput> {
+    // Debug: Log masked SERPAPI_API_KEY status
+    const serpKey = process.env.SERPAPI_API_KEY;
+    console.log(`[DEBUG] SERPAPI_API_KEY status: ${serpKey ? `****${serpKey.slice(-4)}` : 'MISSING'}`);
+
     const firestore = getDb();
     const userRef = doc(firestore, 'users', input.userId);
 
@@ -171,8 +175,10 @@ export async function analyzeProductImage(input: AnalyzeProductImageInput): Prom
     // 2. AI INTELLIGENCE PHASE
     try {
         const apiKey = process.env.GEMINI_API_KEY;
+        // Validation: descriptive error if missing
         if (!apiKey || apiKey.includes('YOUR_')) {
-            return generateFallbackMetadata();
+            console.error("AI Configuration Error: GEMINI_API_KEY is missing.");
+            throw new Error("AI Configuration Error: Missing GEMINI_API_KEY. Please configure your environment secrets.");
         }
 
         const isEnterprise = input.tier === 'ENTERPRISE';
@@ -203,9 +209,16 @@ Available categories for selection: ${AVAILABLE_CATEGORIES.join(', ')}` },
 
         if (!output) throw new Error("AI returned an empty response.");
 
-        return output;
-    } catch (error) {
+        // Serialization: Ensure data is a plain serializable object for the client
+        return JSON.parse(JSON.stringify(output));
+    } catch (error: any) {
         console.error("AI Generation Error:", error);
+        
+        // Re-throw if it's the specific missing key error to provide descriptive feedback
+        if (error.message.includes("Missing GEMINI_API_KEY")) {
+            throw error;
+        }
+        
         return generateFallbackMetadata();
     }
 }
