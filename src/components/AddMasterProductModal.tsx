@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useMemo } from 'react';
@@ -158,7 +157,7 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
     if (!user || !firestore) return;
 
     const currentCredits = userProfile?.aiCredits ?? 0;
-    if (currentCredits <= 0 && userProfile?.userRole !== 'ADMIN' && userProfile?.planTier !== 'ENTERPRISE') {
+    if (currentCredits <= 0 && userProfile?.userRole !== 'ADMIN') {
         setShowCreditModal(true);
         return;
     }
@@ -166,7 +165,7 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
     setIsAnalyzing(true);
     try {
         const userRef = doc(firestore, 'users', user.uid);
-        if (userProfile?.userRole !== 'ADMIN' && userProfile?.planTier !== 'ENTERPRISE') {
+        if (userProfile?.userRole !== 'ADMIN') {
             updateDoc(userRef, { aiCredits: increment(-1) }).catch(console.error);
         }
 
@@ -333,7 +332,7 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
                 Credit Limit Reached
             </DialogTitle>
             <DialogDescription className="text-center pt-2">
-                Your strategic AI allocation has been exhausted. Upgrade to Enterprise for unlimited analysis or purchase additional high-fidelity credits.
+                Your strategic AI allocation has been exhausted. Upgrade to Enterprise for a larger monthly block or purchase additional high-fidelity credits.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-6 flex flex-col sm:flex-row gap-3">
@@ -371,7 +370,7 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
                 AI ENRICHMENT
             </Button>
             <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mr-2">
-                Credits: {userProfile?.planTier === 'ENTERPRISE' || userProfile?.userRole === 'ADMIN' ? 'Unlimited' : userProfile?.aiCredits ?? 0}
+                Credits: {userProfile?.userRole === 'ADMIN' ? 'Unlimited' : userProfile?.aiCredits ?? 0}
             </p>
           </div>
         </DialogHeader>

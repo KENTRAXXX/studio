@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -153,7 +152,7 @@ export default function AddProductPage() {
         });
 
         const urls = await Promise.all(uploadPromises);
-        imageUrlsSet(prev => [...prev, ...urls]);
+        setImageUrls(prev => [...prev, ...urls]);
         toast({ title: 'Assets Secured', description: `${urls.length} image(s) processed.` });
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Upload Failed', description: error.message || 'Could not upload images.' });
@@ -161,10 +160,6 @@ export default function AddProductPage() {
         setIsUploading(false);
         if (fileInputRef.current) fileInputRef.current.value = '';
     }
-  };
-
-  const imageUrlsSet = (fn: (prev: string[]) => string[]) => {
-      setImageUrls(fn);
   };
 
   const removeImage = (indexToRemove: number) => {
@@ -184,7 +179,7 @@ export default function AddProductPage() {
 
     // Credit-gating check
     const currentCredits = userProfile?.aiCredits ?? 0;
-    if (currentCredits <= 0 && userProfile?.planTier !== 'ENTERPRISE' && userProfile?.userRole !== 'ADMIN') {
+    if (currentCredits <= 0 && userProfile?.userRole !== 'ADMIN') {
         setShowCreditModal(true);
         return;
     }
@@ -193,7 +188,7 @@ export default function AddProductPage() {
     try {
         // Atomic credit deduction
         const userRef = doc(firestore, 'users', user.uid);
-        if (userProfile?.userRole !== 'ADMIN' && userProfile?.planTier !== 'ENTERPRISE') {
+        if (userProfile?.userRole !== 'ADMIN') {
             updateDoc(userRef, { aiCredits: increment(-1) }).catch(console.error);
         }
 
@@ -349,7 +344,7 @@ export default function AddProductPage() {
                 Credit Limit Reached
             </DialogTitle>
             <DialogDescription className="text-center pt-2">
-                Your strategic AI allocation has been exhausted. Upgrade to Enterprise for unlimited analysis or purchase additional high-fidelity credits.
+                Your strategic AI allocation has been exhausted. Upgrade to Enterprise for a larger monthly block or purchase additional high-fidelity credits.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-6 flex flex-col sm:flex-row gap-3">
@@ -392,7 +387,7 @@ export default function AddProductPage() {
                     AI ENRICHMENT
                 </Button>
                 <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mr-2">
-                    {userProfile?.planTier === 'ENTERPRISE' || userProfile?.userRole === 'ADMIN' 
+                    {userProfile?.userRole === 'ADMIN' 
                         ? 'Credits: Unlimited (Executive)' 
                         : `Credits Remaining: ${userProfile?.aiCredits ?? 0}`}
                 </p>
