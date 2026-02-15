@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, createContext, useContext, useEffect, useMemo } from 'react';
+import { useState, createContext, useContext, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -68,10 +68,6 @@ export function CartProvider({ children }: { children: React.PropsWithChildren<{
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
 
-const getPlaceholderImage = (id: string): ImagePlaceholder | undefined => {
-    return PlaceHolderImages.find(img => img.id === id);
-}
-
 function CartSheet({ storeId }: { storeId?: string }) {
     const { cart, removeFromCart, getCartTotal } = useCart();
     const params = useParams();
@@ -102,7 +98,7 @@ function CartSheet({ storeId }: { storeId?: string }) {
                                         return (
                                             <li key={item.product.id} className="flex items-center gap-4">
                                                 <div className="relative h-16 w-16 rounded-md overflow-hidden border border-primary/20">
-                                                    <Image src={getPlaceholderImage(item.product.imageId)?.imageUrl || item.product.imageUrl || ''} alt={item.product.name} fill className="object-cover" />
+                                                    <Image src={PlaceHolderImages.find(img => img.id === item.product.imageId)?.imageUrl || item.product.imageUrl || ''} alt={item.product.name} fill className="object-cover" />
                                                 </div>
                                                 <div className="flex-1">
                                                     <h3 className="font-semibold">{item.product.name}</h3>
@@ -190,7 +186,6 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
   const identifier = (params.storeId || params.domain || params.site) as string;
   const firestore = useFirestore();
 
-  // Unified Identity Resolution Logic
   const storeQuery = useMemoFirebase(() => {
     if (!firestore || !identifier) return null;
 

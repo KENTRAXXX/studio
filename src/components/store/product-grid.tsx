@@ -43,10 +43,11 @@ export function ProductGrid({ products, storeId }: ProductGridProps) {
   const { addToCart } = useCart();
   const params = useParams();
 
-  // Multi-tenancy aware path generation: Pluralized /products/ for Next.js 15 standards
+  // Multi-tenancy aware path generation
+  // Standardized to /product/ to match the file structure and manual testing URLs
   const getProductPath = (productId: string) => {
       const isSubdomain = !!params.domain || !!params.site;
-      return isSubdomain ? `/products/${productId}` : `/store/${storeId}/products/${productId}`;
+      return isSubdomain ? `/product/${productId}` : `/store/${storeId}/product/${productId}`;
   };
 
   const handleAddToCart = (product: StorefrontProduct) => {
