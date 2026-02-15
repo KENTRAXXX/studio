@@ -43,7 +43,8 @@ import {
   Palette,
   Landmark,
   Warehouse,
-  FolderOpen
+  FolderOpen,
+  Headset
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
@@ -97,6 +98,7 @@ export default function DashboardLayout({
         { href: '/dashboard/wallet', icon: Wallet, label: 'SOMA Wallet' },
         { href: '/dashboard/referrals', icon: Globe, label: 'Referrals' },
         { href: '/dashboard/accessibility-checker', icon: Accessibility, label: 'A11y Checker' },
+        { href: '/backstage/concierge', icon: Headset, label: 'Help & Support' }, // Universal support access
     ];
 
     // Entitlement-based injection

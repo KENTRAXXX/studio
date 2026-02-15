@@ -164,7 +164,10 @@ function ContactSheet({ ownerEmail, trigger }: { ownerEmail?: string, trigger?: 
                                     {ownerEmail}
                                 </a>
                             ) : (
-                                <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                                <div className="space-y-2 flex flex-col items-center">
+                                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                                    <p className="text-[10px] text-muted-foreground">Resolving owner credentials...</p>
+                                </div>
                             )}
                         </div>
                      </div>
@@ -198,7 +201,6 @@ export default function StoreLayout({
     const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
     const normalizedIdentifier = identifier.toLowerCase();
     
-    // Identity Normalization for subdomains and custom domains
     let slug = normalizedIdentifier;
     if (normalizedIdentifier.endsWith(`.${rootDomain}`)) {
         slug = normalizedIdentifier.replace(`.${rootDomain}`, '');
@@ -234,15 +236,22 @@ export default function StoreLayout({
 
   const customStyles = useMemo(() => {
     if (!themeColors) return {};
+    
+    // Readability Engine: Determine foreground contrast based on background/primary
+    const themeId = storeData?.themeConfig?.id || 'onyx';
+    const isLightBackground = themeId === 'ivory';
+    
     return {
         '--primary': themeColors.primary,
+        '--primary-foreground': isLightBackground ? '0 0% 100%' : '0 0% 5%', // White text on black button (ivory theme), Black text on gold button (onyx)
         '--background': themeColors.background,
+        '--foreground': isLightBackground ? '0 0% 5%' : '0 0% 90%',
         '--card': themeColors.background,
         '--accent': themeColors.accent,
         '--ring': themeColors.primary,
         '--border': `hsl(${themeColors.primary} / 0.2)`,
     } as React.CSSProperties;
-  }, [themeColors]);
+  }, [themeColors, storeData?.themeConfig?.id]);
 
   const socials = ownerData?.socials;
 
