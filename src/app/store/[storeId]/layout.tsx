@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, createContext, useContext, useEffect } from 'react';
+import { useState, createContext, useContext, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -194,12 +194,25 @@ export default function StoreLayout({
   // Robust Boutique Resolution: Supports UID, Custom Domain, or Slug
   const storeQuery = useMemoFirebase(() => {
     if (!firestore || !identifier) return null;
+
+    const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
+    const normalizedIdentifier = identifier.toLowerCase();
+    
+    // Identity Normalization for subdomains and custom domains
+    let slug = normalizedIdentifier;
+    if (normalizedIdentifier.endsWith(`.${rootDomain}`)) {
+        slug = normalizedIdentifier.replace(`.${rootDomain}`, '');
+    }
+    if (slug.startsWith('www.')) {
+        slug = slug.replace('www.', '');
+    }
+
     return query(
         collection(firestore, 'stores'),
         or(
-            where('userId', '==', identifier),
-            where('customDomain', '==', identifier),
-            where('slug', '==', identifier)
+            where('userId', '==', slug),
+            where('customDomain', '==', normalizedIdentifier),
+            where('slug', '==', slug)
         ),
         limit(1)
     );
@@ -219,14 +232,17 @@ export default function StoreLayout({
   const logoUrl = storeData?.logoUrl;
   const themeColors = storeData?.themeConfig?.colors;
 
-  const customStyles = themeColors ? {
-    '--primary': themeColors.primary,
-    '--background': themeColors.background,
-    '--card': themeColors.background,
-    '--accent': themeColors.accent,
-    '--ring': themeColors.primary,
-    '--border': `hsl(${themeColors.primary} / 0.2)`,
-  } as React.CSSProperties : {};
+  const customStyles = useMemo(() => {
+    if (!themeColors) return {};
+    return {
+        '--primary': themeColors.primary,
+        '--background': themeColors.background,
+        '--card': themeColors.background,
+        '--accent': themeColors.accent,
+        '--ring': themeColors.primary,
+        '--border': `hsl(${themeColors.primary} / 0.2)`,
+    } as React.CSSProperties;
+  }, [themeColors]);
 
   const socials = ownerData?.socials;
 

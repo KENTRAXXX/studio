@@ -40,32 +40,46 @@ export default function ProductDetailPage() {
   const firestore = useFirestore();
   const { userProfile, loading: profileLoading } = useUserProfile();
 
-  const productRef = useMemoFirebase(() => {
-    return firestore ? doc(firestore, `stores/${rawStoreId}/products/${productId}`) : null;
-  }, [firestore, rawStoreId, productId]);
-  const { data: product, loading: productLoading } = useDoc<any>(productRef);
-
-  // Resolve Store Owner Data for contact
+  // Robust Boutique Resolution for Product Data
   const storeQuery = useMemoFirebase(() => {
     if (!firestore || !rawStoreId) return null;
+    
+    const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
+    const normalizedIdentifier = rawStoreId.toLowerCase();
+    
+    let slug = normalizedIdentifier;
+    if (normalizedIdentifier.endsWith(`.${rootDomain}`)) {
+        slug = normalizedIdentifier.replace(`.${rootDomain}`, '');
+    }
+    if (slug.startsWith('www.')) {
+        slug = slug.replace('www.', '');
+    }
+
     return query(
         collection(firestore, 'stores'),
         or(
-            where('userId', '==', rawStoreId),
-            where('customDomain', '==', rawStoreId),
-            where('slug', '==', rawStoreId)
+            where('userId', '==', slug),
+            where('customDomain', '==', normalizedIdentifier),
+            where('slug', '==', slug)
         ),
         limit(1)
     );
   }, [firestore, rawStoreId]);
 
-  const { data: storeDocs } = useCollection<any>(storeQuery);
-  const ownerId = storeDocs?.[0]?.userId;
+  const { data: storeDocs, loading: storeLoading } = useCollection<any>(storeQuery);
+  const storeData = storeDocs?.[0];
+  const storeId = storeData?.userId;
 
+  const productRef = useMemoFirebase(() => {
+    return firestore && storeId ? doc(firestore, `stores/${storeId}/products/${productId}`) : null;
+  }, [firestore, storeId, productId]);
+  const { data: product, loading: productLoading } = useDoc<any>(productRef);
+
+  // Resolve Store Owner Data for contact
   const ownerRef = useMemoFirebase(() => {
-    if (!firestore || !ownerId) return null;
-    return doc(firestore, 'users', ownerId);
-  }, [firestore, ownerId]);
+    if (!firestore || !storeId) return null;
+    return doc(firestore, 'users', storeId);
+  }, [firestore, storeId]);
   const { data: ownerData } = useDoc<any>(ownerRef);
   
   const [currentPrice, setCurrentPrice] = useState(0);
@@ -86,7 +100,7 @@ export default function ProductDetailPage() {
     }
   }, [product]);
 
-  const isLoading = productLoading || profileLoading;
+  const isLoading = productLoading || profileLoading || storeLoading;
 
   const wholesalePrice = product?.wholesalePrice || 0;
   
@@ -174,7 +188,7 @@ export default function ProductDetailPage() {
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16">
-      <ProductViewTracker storeId={rawStoreId} productId={productId} />
+      <ProductViewTracker storeId={storeId || rawStoreId} productId={productId} />
       <Link href={rawStoreId ? (params.domain ? '/' : `/store/${rawStoreId}`) : '/'} className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-8 transition-colors">
         <ArrowLeft className="mr-2 h-4 w-4" /> Back to Collection
       </Link>

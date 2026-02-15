@@ -31,13 +31,24 @@ export default function StorefrontPage() {
   const storeQuery = useMemoFirebase(() => {
     if (!firestore || isDemoMode) return null;
     
-    // Support resolution via UID, Custom Domain, or Slug
+    const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
+    const normalizedIdentifier = identifier.toLowerCase();
+    
+    // Identity Normalization for subdomains and custom domains
+    let slug = normalizedIdentifier;
+    if (normalizedIdentifier.endsWith(`.${rootDomain}`)) {
+        slug = normalizedIdentifier.replace(`.${rootDomain}`, '');
+    }
+    if (slug.startsWith('www.')) {
+        slug = slug.replace('www.', '');
+    }
+
     return query(
         collection(firestore, 'stores'),
         or(
-            where('userId', '==', identifier),
-            where('customDomain', '==', identifier),
-            where('slug', '==', identifier)
+            where('userId', '==', slug),
+            where('customDomain', '==', normalizedIdentifier),
+            where('slug', '==', slug)
         ),
         limit(1)
     );
