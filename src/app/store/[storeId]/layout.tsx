@@ -156,16 +156,17 @@ function ContactSheet({ ownerEmail, trigger }: { ownerEmail?: string, trigger?: 
                         <h3 className="font-bold text-lg text-slate-200 uppercase tracking-widest">Strategic Inquiry</h3>
                         <p className="text-sm text-muted-foreground">Direct access to the curator of this boutique.</p>
                         <div className="pt-4">
-                            {ownerEmail ? (
-                                <a 
-                                    href={`mailto:${ownerEmail}`} 
-                                    className="inline-flex items-center gap-2 font-bold text-primary text-lg hover:underline decoration-primary/30"
-                                >
-                                    {ownerEmail}
-                                </a>
-                            ) : (
-                                <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                            )}
+                            <a 
+                                href={ownerEmail ? `mailto:${ownerEmail}` : '#'} 
+                                className="inline-flex items-center gap-2 font-bold text-primary text-lg hover:underline decoration-primary/30"
+                            >
+                                {ownerEmail || (
+                                    <div className="flex items-center gap-2">
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        <span>Resolving Curator...</span>
+                                    </div>
+                                )}
+                            </a>
                         </div>
                      </div>
                      <Separator className="my-4 bg-primary/10"/>
