@@ -81,7 +81,11 @@ export default function ConciergePage() {
     if (!user || !firestore || !userProfile) return;
 
     try {
-      const brandName = userProfile.verificationData?.legalBusinessName || 'New Partner';
+      // Role-agnostic branding fallback
+      const brandName = userProfile.verificationData?.legalBusinessName || 
+                        userProfile.displayName || 
+                        user.email?.split('@')[0] || 
+                        'New Partner';
 
       // 1. Log to Firestore
       const docRef = await addDoc(collection(firestore, 'concierge_tickets'), {
