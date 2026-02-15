@@ -43,12 +43,10 @@ export function ProductGrid({ products, storeId }: ProductGridProps) {
   const { addToCart } = useCart();
   const params = useParams();
 
-  // Multi-tenancy aware path generation
+  // Multi-tenancy aware path generation: Pluralized /products/ for Next.js 15 standards
   const getProductPath = (productId: string) => {
-      // If we are on a custom domain or a subdomain (resolved via middleware/[domain]), the URL should be relative.
-      // If we are on the root domain browsing via /store/[storeId], maintain the full path.
       const isSubdomain = !!params.domain || !!params.site;
-      return isSubdomain ? `/product/${productId}` : `/store/${storeId}/product/${productId}`;
+      return isSubdomain ? `/products/${productId}` : `/store/${storeId}/products/${productId}`;
   };
 
   const handleAddToCart = (product: StorefrontProduct) => {

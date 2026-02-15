@@ -13,7 +13,7 @@ const getDb = () => {
 /**
  * @fileOverview Tenant Domain Layout Resolver (Server-Side for SEO)
  * Dynamically generates metadata for custom domains and specialized portals.
- * Uses robust identity resolution matching subdomains, slugs, and case-sensitive UIDs.
+ * Correctly awaits params for Next.js 15 compatibility.
  */
 
 export async function generateMetadata({ params }: { params: Promise<{ domain: string }> }): Promise<Metadata> {
@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: { params: Promise<{ domain: s
         const q = query(
             storesRef, 
             or(
-                where('userId', '==', domain), // Preserves casing for UID match
+                where('userId', '==', domain), // Case-sensitive UID match
                 where('customDomain', '==', normalizedIdentifier),
                 where('slug', '==', slug)
             ),
