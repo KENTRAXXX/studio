@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, createContext, useContext, useEffect } from 'react';
+import { useState, createContext, useContext, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -191,15 +191,19 @@ export default function StoreLayout({
   const identifier = (params.storeId || params.domain || params.site) as string;
   const firestore = useFirestore();
 
-  // Robust Boutique Resolution: Supports UID, Custom Domain, or Slug
+  // Robust Boutique Resolution: Normalizes hostnames and UIDs for theme and owner context
   const storeQuery = useMemoFirebase(() => {
     if (!firestore || !identifier) return null;
+    const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
+    const normalized = identifier.toLowerCase().replace(`.${rootDomain}`, '').replace('www.', '');
+
     return query(
         collection(firestore, 'stores'),
         or(
-            where('userId', '==', identifier),
-            where('customDomain', '==', identifier),
-            where('slug', '==', identifier)
+            where('userId', '==', identifier), // Case-sensitive UID check
+            where('userId', '==', normalized),
+            where('customDomain', '==', identifier.toLowerCase()),
+            where('slug', '==', normalized)
         ),
         limit(1)
     );
@@ -219,14 +223,25 @@ export default function StoreLayout({
   const logoUrl = storeData?.logoUrl;
   const themeColors = storeData?.themeConfig?.colors;
 
-  const customStyles = themeColors ? {
-    '--primary': themeColors.primary,
-    '--background': themeColors.background,
-    '--card': themeColors.background,
-    '--accent': themeColors.accent,
-    '--ring': themeColors.primary,
-    '--border': `hsl(${themeColors.primary} / 0.2)`,
-  } as React.CSSProperties : {};
+  // Luxury Contrast Protocol: Ensures high readability across all themes
+  const customStyles = useMemo(() => {
+    if (!themeColors) return {};
+    
+    // Determine if the background is "Light" or "Dark" based on standard theme IDs
+    const isLightBackground = storeData?.themeConfig?.id === 'ivory';
+    
+    return {
+        '--primary': themeColors.primary,
+        '--background': themeColors.background,
+        '--card': themeColors.background,
+        '--accent': themeColors.accent,
+        '--ring': themeColors.primary,
+        '--border': `hsl(${themeColors.primary} / 0.2)`,
+        // Contrast Logic
+        '--foreground': isLightBackground ? '0 0% 10%' : '0 0% 90%',
+        '--primary-foreground': isLightBackground ? '0 0% 100%' : '0 0% 5%',
+    } as React.CSSProperties;
+  }, [themeColors, storeData?.themeConfig?.id]);
 
   const socials = ownerData?.socials;
 

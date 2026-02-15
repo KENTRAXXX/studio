@@ -14,7 +14,7 @@ import { demoProducts } from '@/lib/demo-data';
 
 /**
  * @fileOverview Reactive Boutique Storefront.
- * Uses real-time listeners to ensure the "Real-time Global Sync" promise is met.
+ * Uses robust identity normalization to ensure correct branding and theme resolution.
  */
 export default function StorefrontPage() {
   const params = useParams();
@@ -27,17 +27,20 @@ export default function StorefrontPage() {
 
   const isDemoMode = identifier === 'demo';
 
-  // 1. Resolve Store Identity (Real-time)
+  // 1. Resolve Store Identity (Real-time with Normalization)
   const storeQuery = useMemoFirebase(() => {
     if (!firestore || isDemoMode) return null;
+    const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
+    const normalized = identifier.toLowerCase().replace(`.${rootDomain}`, '').replace('www.', '');
     
-    // Support resolution via UID, Custom Domain, or Slug
+    // Support resolution via case-sensitive UID, Custom Domain, or Slug
     return query(
         collection(firestore, 'stores'),
         or(
             where('userId', '==', identifier),
-            where('customDomain', '==', identifier),
-            where('slug', '==', identifier)
+            where('userId', '==', normalized),
+            where('customDomain', '==', identifier.toLowerCase()),
+            where('slug', '==', normalized)
         ),
         limit(1)
     );
