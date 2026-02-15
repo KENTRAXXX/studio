@@ -39,6 +39,14 @@ export default function ProductDetailPage() {
   const { addToCart } = useCart();
   const firestore = useFirestore();
   const { userProfile, loading: profileLoading } = useUserProfile();
+  const [forceLoadingDone, setForceLoadingDone] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setForceLoadingDone(true);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const productRef = useMemoFirebase(() => {
     return firestore ? doc(firestore, `stores/${rawStoreId}/products/${productId}`) : null;
@@ -48,12 +56,15 @@ export default function ProductDetailPage() {
   // Resolve Store Owner Data for contact
   const storeQuery = useMemoFirebase(() => {
     if (!firestore || !rawStoreId) return null;
+    const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
+    const normalizedSlug = rawStoreId.toLowerCase().replace(`.${rootDomain}`, '').replace('www.', '');
+
     return query(
         collection(firestore, 'stores'),
         or(
-            where('userId', '==', rawStoreId),
-            where('customDomain', '==', rawStoreId),
-            where('slug', '==', rawStoreId)
+            where('userId', '==', rawStoreId), // Case-sensitive UID check
+            where('customDomain', '==', rawStoreId.toLowerCase()),
+            where('slug', '==', normalizedSlug)
         ),
         limit(1)
     );
@@ -86,7 +97,7 @@ export default function ProductDetailPage() {
     }
   }, [product]);
 
-  const isLoading = productLoading || profileLoading;
+  const isLoading = (productLoading || profileLoading) && !forceLoadingDone;
 
   const wholesalePrice = product?.wholesalePrice || 0;
   
@@ -360,7 +371,10 @@ export default function ProductDetailPage() {
                                         {ownerData.email}
                                     </a>
                                 ) : (
-                                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                                    <div className="flex items-center justify-center gap-2">
+                                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                        <span className="text-sm text-muted-foreground">Resolving Curator...</span>
+                                    </div>
                                 )}
                             </div>
                         </div>

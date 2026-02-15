@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { notFound, useParams } from 'next/navigation';
 import { HeroSection } from '@/components/store/hero-section';
 import { ProductGrid } from '@/components/store/product-grid';
@@ -20,6 +21,14 @@ export default function StorefrontPage() {
   const params = useParams();
   const identifier = (params.storeId || params.domain || params.site) as string;
   const firestore = useFirestore();
+  const [forceLoadingDone, setForceLoadingDone] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setForceLoadingDone(true);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, []);
 
   if (!identifier) {
     notFound();
@@ -31,16 +40,16 @@ export default function StorefrontPage() {
   const storeQuery = useMemoFirebase(() => {
     if (!firestore || isDemoMode) return null;
     const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
-    const normalized = identifier.toLowerCase().replace(`.${rootDomain}`, '').replace('www.', '');
     
-    // Support resolution via case-sensitive UID, Custom Domain, or Slug
+    // STRICT FIX: Preserve casing for the raw identifier when matching UIDs
+    const normalizedSlug = identifier.toLowerCase().replace(`.${rootDomain}`, '').replace('www.', '');
+    
     return query(
         collection(firestore, 'stores'),
         or(
-            where('userId', '==', identifier),
-            where('userId', '==', normalized),
+            where('userId', '==', identifier), // Case-sensitive UID check
             where('customDomain', '==', identifier.toLowerCase()),
-            where('slug', '==', normalized)
+            where('slug', '==', normalizedSlug)
         ),
         limit(1)
     );
@@ -61,7 +70,7 @@ export default function StorefrontPage() {
 
   const { data: products, loading: productsLoading } = useCollection<any>(productsQuery);
 
-  const isLoading = (storeLoading || productsLoading) && !isDemoMode;
+  const isLoading = (storeLoading || productsLoading) && !isDemoMode && !forceLoadingDone;
 
   if (isLoading) {
     return (

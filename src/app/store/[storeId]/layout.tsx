@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, createContext, useContext, useMemo } from 'react';
+import { useState, createContext, useContext, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -141,6 +141,22 @@ function CartSheet({storeId}: {storeId: string}) {
 }
 
 function ContactSheet({ ownerEmail, trigger }: { ownerEmail?: string, trigger?: React.ReactNode }) {
+    const [isTimedOut, setIsTimedOut] = useState(false);
+
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (!ownerEmail) {
+            timer = setTimeout(() => {
+                setIsTimedOut(true);
+            }, 5000);
+        } else {
+            setIsTimedOut(false);
+        }
+        return () => {
+            if (timer) clearTimeout(timer);
+        };
+    }, [ownerEmail]);
+
     return (
         <Sheet>
             <SheetTrigger asChild>
@@ -156,17 +172,21 @@ function ContactSheet({ ownerEmail, trigger }: { ownerEmail?: string, trigger?: 
                         <h3 className="font-bold text-lg text-slate-200 uppercase tracking-widest">Strategic Inquiry</h3>
                         <p className="text-sm text-muted-foreground">Direct access to the curator of this boutique.</p>
                         <div className="pt-4">
-                            <a 
-                                href={ownerEmail ? `mailto:${ownerEmail}` : '#'} 
-                                className="inline-flex items-center gap-2 font-bold text-primary text-lg hover:underline decoration-primary/30"
-                            >
-                                {ownerEmail || (
-                                    <div className="flex items-center gap-2">
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                        <span>Resolving Curator...</span>
-                                    </div>
-                                )}
-                            </a>
+                            {ownerEmail ? (
+                                <a 
+                                    href={`mailto:${ownerEmail}`} 
+                                    className="inline-flex items-center gap-2 font-bold text-primary text-lg hover:underline decoration-primary/30"
+                                >
+                                    {ownerEmail}
+                                </a>
+                            ) : isTimedOut ? (
+                                <p className="text-destructive font-bold text-sm">Contact Credentials Unavailable</p>
+                            ) : (
+                                <div className="flex items-center justify-center gap-2">
+                                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                                    <span className="text-sm text-muted-foreground">Resolving Curator...</span>
+                                </div>
+                            )}
                         </div>
                      </div>
                      <Separator className="my-4 bg-primary/10"/>
@@ -196,15 +216,16 @@ export default function StoreLayout({
   const storeQuery = useMemoFirebase(() => {
     if (!firestore || !identifier) return null;
     const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
-    const normalized = identifier.toLowerCase().replace(`.${rootDomain}`, '').replace('www.', '');
+    
+    // STRICT FIX: Preserve casing for potential UID resolution
+    const normalizedSlug = identifier.toLowerCase().replace(`.${rootDomain}`, '').replace('www.', '');
 
     return query(
         collection(firestore, 'stores'),
         or(
             where('userId', '==', identifier), // Case-sensitive UID check
-            where('userId', '==', normalized),
             where('customDomain', '==', identifier.toLowerCase()),
-            where('slug', '==', normalized)
+            where('slug', '==', normalizedSlug)
         ),
         limit(1)
     );
@@ -224,11 +245,9 @@ export default function StoreLayout({
   const logoUrl = storeData?.logoUrl;
   const themeColors = storeData?.themeConfig?.colors;
 
-  // Luxury Contrast Protocol: Ensures high readability across all themes
   const customStyles = useMemo(() => {
     if (!themeColors) return {};
     
-    // Determine if the background is "Light" or "Dark" based on standard theme IDs
     const isLightBackground = storeData?.themeConfig?.id === 'ivory';
     
     return {
@@ -238,7 +257,6 @@ export default function StoreLayout({
         '--accent': themeColors.accent,
         '--ring': themeColors.primary,
         '--border': `hsl(${themeColors.primary} / 0.2)`,
-        // Contrast Logic
         '--foreground': isLightBackground ? '0 0% 10%' : '0 0% 90%',
         '--primary-foreground': isLightBackground ? '0 0% 100%' : '0 0% 5%',
     } as React.CSSProperties;
