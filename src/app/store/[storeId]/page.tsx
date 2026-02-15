@@ -27,7 +27,7 @@ export default function StorefrontPage() {
 
   const isDemoMode = identifier === 'demo';
 
-  // 1. Resolve Store Identity (Robust Case-Sensitive UID Handling)
+  // Robust Identity Resolution: Standardized across all storefront entries
   const storeQuery = useMemoFirebase(() => {
     if (!firestore || isDemoMode) return null;
     

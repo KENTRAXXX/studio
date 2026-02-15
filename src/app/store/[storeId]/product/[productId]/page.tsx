@@ -77,6 +77,7 @@ export default function ProductDetailPage() {
   const productRef = useMemoFirebase(() => {
     return firestore && storeId ? doc(firestore, `stores/${storeId}/products/${productId}`) : null;
   }, [firestore, storeId, productId]);
+  
   const { data: product, loading: productLoading } = useDoc<any>(productRef);
 
   // Strategic Curator Credentials
@@ -92,7 +93,6 @@ export default function ProductDetailPage() {
   const [isBuyingNow, setIsBuyingNow] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
-
 
   useEffect(() => {
     if (product) {
@@ -163,7 +163,8 @@ export default function ProductDetailPage() {
     setIsBuyingNow(true);
     const productWithCurrentPrice = { ...product, suggestedRetailPrice: currentPrice, selectedColor };
     addToCart(productWithCurrentPrice);
-    router.push(params.domain ? '/checkout' : `/store/${rawStoreId}/checkout`);
+    const checkoutPath = params.domain ? '/checkout' : `/store/${rawStoreId}/checkout`;
+    router.push(checkoutPath);
   };
   
   const handlePriceSave = async () => {
@@ -188,7 +189,6 @@ export default function ProductDetailPage() {
           setIsSaving(false);
       }
   }
-
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16">

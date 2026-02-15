@@ -68,12 +68,11 @@ export function CartProvider({ children }: { children: React.PropsWithChildren<{
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
 
-
 const getPlaceholderImage = (id: string): ImagePlaceholder | undefined => {
     return PlaceHolderImages.find(img => img.id === id);
 }
 
-function CartSheet({storeId}: {storeId: string}) {
+function CartSheet({ storeId }: { storeId?: string }) {
     const { cart, removeFromCart, getCartTotal } = useCart();
     const params = useParams();
     
@@ -101,20 +100,21 @@ function CartSheet({storeId}: {storeId: string}) {
                                     {cart.map(item => {
                                         const price = item.product.suggestedRetailPrice || item.product.price;
                                         return (
-                                        <li key={item.product.id} className="flex items-center gap-4">
-                                            <div className="relative h-16 w-16 rounded-md overflow-hidden border border-primary/20">
-                                                <Image src={getPlaceholderImage(item.product.imageId)?.imageUrl || item.product.imageUrl || ''} alt={item.product.name} fill className="object-cover" />
-                                            </div>
-                                            <div className="flex-1">
-                                                <h3 className="font-semibold">{item.product.name}</h3>
-                                                <p className="text-sm text-muted-foreground">{formatCurrency(Math.round(price * 100))} x {item.quantity}</p>
-                                            </div>
-                                            <p className="font-semibold">{formatCurrency(Math.round(price * item.quantity * 100))}</p>
-                                            <Button variant="ghost" size="icon" onClick={() => removeFromCart(item.product.id)} aria-label={`Remove ${item.product.name} from cart`}>
-                                                <X className="h-4 w-4" />
-                                            </Button>
-                                        </li>
-                                    )})}
+                                            <li key={item.product.id} className="flex items-center gap-4">
+                                                <div className="relative h-16 w-16 rounded-md overflow-hidden border border-primary/20">
+                                                    <Image src={getPlaceholderImage(item.product.imageId)?.imageUrl || item.product.imageUrl || ''} alt={item.product.name} fill className="object-cover" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h3 className="font-semibold">{item.product.name}</h3>
+                                                    <p className="text-sm text-muted-foreground">{formatCurrency(Math.round(price * 100))} x {item.quantity}</p>
+                                                </div>
+                                                <p className="font-semibold">{formatCurrency(Math.round(price * item.quantity * 100))}</p>
+                                                <Button variant="ghost" size="icon" onClick={() => removeFromCart(item.product.id)} aria-label={`Remove ${item.product.name} from cart`}>
+                                                    <X className="h-4 w-4" />
+                                                </Button>
+                                            </li>
+                                        )
+                                    })}
                                 </ul>
                             </div>
                             <Separator className="my-4 bg-primary/20" />
@@ -123,7 +123,7 @@ function CartSheet({storeId}: {storeId: string}) {
                                     <span>Subtotal</span>
                                     <span>{formatCurrency(Math.round(getCartTotal() * 100))}</span>
                                 </div>
-                                <Button asChild className="w-full h-12 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+                                <Button asChild className="w-full h-12 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
                                     <Link href={params.domain ? '/checkout' : `/store/${storeId}/checkout`}>Checkout</Link>
                                 </Button>
                             </div>
@@ -174,7 +174,7 @@ function ContactSheet({ ownerEmail, trigger }: { ownerEmail?: string, trigger?: 
                      </div>
                      <Separator className="my-4 bg-primary/10"/>
                      <div className="p-4 rounded-lg bg-primary/5 border border-primary/10 italic text-[10px] text-slate-500 leading-relaxed">
-                        <p>Our curation team typically responds to premium inquiries within 24 business hours.</p>
+                        <p>Our team typically responds to strategic inquiries within 24 business hours.</p>
                      </div>
                      <div className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] pt-8">
                         <p>Powered by <span className="font-black text-primary">SOMA Executive</span></p>
@@ -185,17 +185,12 @@ function ContactSheet({ ownerEmail, trigger }: { ownerEmail?: string, trigger?: 
     )
 }
 
-
-export default function StoreLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function StoreLayout({ children }: { children: React.ReactNode }) {
   const params = useParams();
   const identifier = (params.storeId || params.domain || params.site) as string;
   const firestore = useFirestore();
 
-  // Robust Case-Sensitive Identity Resolution
+  // Unified Identity Resolution Logic
   const storeQuery = useMemoFirebase(() => {
     if (!firestore || !identifier) return null;
 
@@ -214,7 +209,7 @@ export default function StoreLayout({
     return query(
         collection(firestore, 'stores'),
         or(
-            where('userId', '==', originalIdentifier), // Preserve original casing for UID
+            where('userId', '==', originalIdentifier),
             where('customDomain', '==', normalizedIdentifier),
             where('slug', '==', slug)
         ),
