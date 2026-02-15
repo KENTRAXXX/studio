@@ -194,11 +194,12 @@ export default function StoreLayout({
   const identifier = (params.storeId || params.domain || params.site) as string;
   const firestore = useFirestore();
 
-  // Robust Boutique Resolution: Supports UID, Custom Domain, or Slug
+  // Case-Sensitive resolution: UIDs are case-sensitive, slugs/domains are lowercased.
   const storeQuery = useMemoFirebase(() => {
     if (!firestore || !identifier) return null;
 
     const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
+    const originalIdentifier = identifier;
     const normalizedIdentifier = identifier.toLowerCase();
     
     let slug = normalizedIdentifier;
@@ -212,7 +213,7 @@ export default function StoreLayout({
     return query(
         collection(firestore, 'stores'),
         or(
-            where('userId', '==', slug),
+            where('userId', '==', originalIdentifier), // Case-sensitive UID match
             where('customDomain', '==', normalizedIdentifier),
             where('slug', '==', slug)
         ),
@@ -237,13 +238,13 @@ export default function StoreLayout({
   const customStyles = useMemo(() => {
     if (!themeColors) return {};
     
-    // Readability Engine: Determine foreground contrast based on background/primary
+    // Contrast Engine: Flip text colors based on background intensity
     const themeId = storeData?.themeConfig?.id || 'onyx';
     const isLightBackground = themeId === 'ivory';
     
     return {
         '--primary': themeColors.primary,
-        '--primary-foreground': isLightBackground ? '0 0% 100%' : '0 0% 5%', // White text on black button (ivory theme), Black text on gold button (onyx)
+        '--primary-foreground': isLightBackground ? '0 0% 100%' : '0 0% 5%', // White text on black button (ivory), Black text on gold button (onyx)
         '--background': themeColors.background,
         '--foreground': isLightBackground ? '0 0% 5%' : '0 0% 90%',
         '--card': themeColors.background,

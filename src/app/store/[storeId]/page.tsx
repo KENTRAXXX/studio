@@ -27,14 +27,14 @@ export default function StorefrontPage() {
 
   const isDemoMode = identifier === 'demo';
 
-  // 1. Resolve Store Identity (Real-time)
+  // 1. Resolve Store Identity (Case-Sensitive for UID, normalized for domains)
   const storeQuery = useMemoFirebase(() => {
     if (!firestore || isDemoMode) return null;
     
     const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
+    const originalIdentifier = identifier;
     const normalizedIdentifier = identifier.toLowerCase();
     
-    // Identity Normalization for subdomains and custom domains
     let slug = normalizedIdentifier;
     if (normalizedIdentifier.endsWith(`.${rootDomain}`)) {
         slug = normalizedIdentifier.replace(`.${rootDomain}`, '');
@@ -46,7 +46,7 @@ export default function StorefrontPage() {
     return query(
         collection(firestore, 'stores'),
         or(
-            where('userId', '==', slug),
+            where('userId', '==', originalIdentifier),
             where('customDomain', '==', normalizedIdentifier),
             where('slug', '==', slug)
         ),
@@ -87,7 +87,7 @@ export default function StorefrontPage() {
                 <Box className="h-16 w-16 text-primary opacity-20" />
             </div>
             <h1 className="text-3xl font-bold font-headline text-primary uppercase tracking-widest">Boutique Not Found</h1>
-            <p className="text-muted-foreground max-w-sm leading-relaxed">
+            <p className="text-muted-foreground max-sm leading-relaxed">
                 The boutique at "{identifier}" is not currently provisioned in the SOMA network.
             </p>
             <Button variant="outline" className="border-primary/50 text-primary mt-4" asChild>

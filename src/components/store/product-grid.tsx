@@ -2,12 +2,13 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useCart } from '@/app/store/[storeId]/layout';
-import { Loader2, Warehouse } from 'lucide-react';
+import { Warehouse } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/utils/format';
 
@@ -40,6 +41,15 @@ const ProductSkeletonCard = () => (
 export function ProductGrid({ products, storeId }: ProductGridProps) {
   const { toast } = useToast();
   const { addToCart } = useCart();
+  const params = useParams();
+
+  // Multi-tenancy aware path generation
+  const getProductPath = (productId: string) => {
+      // If we are on a custom domain or a subdomain (resolved via middleware/[domain]), the URL should be relative.
+      // If we are on the root domain browsing via /store/[storeId], maintain the full path.
+      const isSubdomain = !!params.domain || !!params.site;
+      return isSubdomain ? `/product/${productId}` : `/store/${storeId}/product/${productId}`;
+  };
 
   const handleAddToCart = (product: StorefrontProduct) => {
     addToCart(product);
@@ -79,7 +89,7 @@ export function ProductGrid({ products, storeId }: ProductGridProps) {
       {products.map((product) => (
         <li key={product.id}>
             <Card className="group overflow-hidden rounded-lg border-primary/20 bg-card hover:border-primary/50 transition-all duration-300 transform hover:-translate-y-2">
-            <Link href={`/store/${storeId}/product/${product.id}`} className="block">
+            <Link href={getProductPath(product.id)} className="block">
                 <div className="relative w-full aspect-square">
                 <Image
                     src={getPlaceholderImage(product.imageUrl)}
@@ -91,7 +101,7 @@ export function ProductGrid({ products, storeId }: ProductGridProps) {
                 </div>
             </Link>
             <CardContent className="p-4 text-center">
-                <Link href={`/store/${storeId}/product/${product.id}`} className="block">
+                <Link href={getProductPath(product.id)} className="block">
                 <h3 className="text-lg font-semibold truncate group-hover:text-primary">{product.name}</h3>
                 </Link>
                 <div className="flex justify-center items-baseline gap-2 mt-1">

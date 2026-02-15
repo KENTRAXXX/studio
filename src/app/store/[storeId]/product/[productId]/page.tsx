@@ -40,11 +40,12 @@ export default function ProductDetailPage() {
   const firestore = useFirestore();
   const { userProfile, loading: profileLoading } = useUserProfile();
 
-  // Robust Boutique Resolution for Product Data
+  // Case-Sensitive resolution: UIDs are case-sensitive, slugs/domains are lowercased.
   const storeQuery = useMemoFirebase(() => {
     if (!firestore || !rawStoreId) return null;
     
     const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
+    const originalIdentifier = rawStoreId;
     const normalizedIdentifier = rawStoreId.toLowerCase();
     
     let slug = normalizedIdentifier;
@@ -58,7 +59,7 @@ export default function ProductDetailPage() {
     return query(
         collection(firestore, 'stores'),
         or(
-            where('userId', '==', slug),
+            where('userId', '==', originalIdentifier),
             where('customDomain', '==', normalizedIdentifier),
             where('slug', '==', slug)
         ),
