@@ -13,6 +13,7 @@ const getDb = () => {
 /**
  * @fileOverview Tenant Domain Layout Resolver (Server-Side for SEO)
  * Dynamically generates metadata for custom domains and specialized portals.
+ * Uses robust identity resolution matching subdomains, slugs, and case-sensitive UIDs.
  */
 
 export async function generateMetadata({ params }: { params: Promise<{ domain: string }> }): Promise<Metadata> {
@@ -32,14 +33,25 @@ export async function generateMetadata({ params }: { params: Promise<{ domain: s
     }
 
     try {
-        const db = getDb();
-        const storesRef = collection(db, 'stores');
+        const firestore = getDb();
+        const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
+        const normalizedIdentifier = domain.toLowerCase();
+        
+        let slug = normalizedIdentifier;
+        if (normalizedIdentifier.endsWith(`.${rootDomain}`)) {
+            slug = normalizedIdentifier.replace(`.${rootDomain}`, '');
+        }
+        if (slug.startsWith('www.')) {
+            slug = slug.replace('www.', '');
+        }
+
+        const storesRef = collection(firestore, 'stores');
         const q = query(
             storesRef, 
             or(
-                where('customDomain', '==', domain.toLowerCase()),
-                where('slug', '==', domain.toLowerCase()),
-                where('userId', '==', domain.toLowerCase())
+                where('userId', '==', domain), // Preserves casing for UID match
+                where('customDomain', '==', normalizedIdentifier),
+                where('slug', '==', slug)
             ),
             limit(1)
         );

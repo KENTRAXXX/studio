@@ -75,6 +75,7 @@ const getPlaceholderImage = (id: string): ImagePlaceholder | undefined => {
 
 function CartSheet({storeId}: {storeId: string}) {
     const { cart, removeFromCart, getCartTotal } = useCart();
+    const params = useParams();
     
     return (
         <Sheet>
@@ -123,7 +124,7 @@ function CartSheet({storeId}: {storeId: string}) {
                                     <span>{formatCurrency(Math.round(getCartTotal() * 100))}</span>
                                 </div>
                                 <Button asChild className="w-full h-12 btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground">
-                                    <Link href={storeId ? `/store/${storeId}/checkout` : '/checkout'}>Checkout</Link>
+                                    <Link href={params.domain ? '/checkout' : `/store/${storeId}/checkout`}>Checkout</Link>
                                 </Button>
                             </div>
                         </>
@@ -194,7 +195,7 @@ export default function StoreLayout({
   const identifier = (params.storeId || params.domain || params.site) as string;
   const firestore = useFirestore();
 
-  // Case-Sensitive resolution: UIDs are case-sensitive, slugs/domains are lowercased.
+  // Robust Case-Sensitive Identity Resolution
   const storeQuery = useMemoFirebase(() => {
     if (!firestore || !identifier) return null;
 
@@ -213,7 +214,7 @@ export default function StoreLayout({
     return query(
         collection(firestore, 'stores'),
         or(
-            where('userId', '==', originalIdentifier), // Case-sensitive UID match
+            where('userId', '==', originalIdentifier), // Preserve original casing for UID
             where('customDomain', '==', normalizedIdentifier),
             where('slug', '==', slug)
         ),
@@ -238,13 +239,12 @@ export default function StoreLayout({
   const customStyles = useMemo(() => {
     if (!themeColors) return {};
     
-    // Contrast Engine: Flip text colors based on background intensity
     const themeId = storeData?.themeConfig?.id || 'onyx';
     const isLightBackground = themeId === 'ivory';
     
     return {
         '--primary': themeColors.primary,
-        '--primary-foreground': isLightBackground ? '0 0% 100%' : '0 0% 5%', // White text on black button (ivory), Black text on gold button (onyx)
+        '--primary-foreground': isLightBackground ? '0 0% 100%' : '0 0% 5%',
         '--background': themeColors.background,
         '--foreground': isLightBackground ? '0 0% 5%' : '0 0% 90%',
         '--card': themeColors.background,
@@ -264,7 +264,7 @@ export default function StoreLayout({
         >
           <header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-sm border-b border-primary/20">
             <div className="container mx-auto flex h-20 items-center justify-between px-4 sm:px-6 lg:px-8">
-              <Link href={identifier ? (params.domain ? '/' : `/store/${identifier}`) : '/'} className="flex items-center gap-2 group">
+              <Link href={params.domain ? '/' : `/store/${identifier}`} className="flex items-center gap-2 group">
                 {storeLoading ? (
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 ) : logoUrl ? (

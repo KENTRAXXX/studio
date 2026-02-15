@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { notFound, useParams, useRouter } from 'next/navigation';
-import { ShoppingBag, Check, Loader2, DollarSign, TrendingUp, ArrowLeft, Palette, MessageSquare } from 'lucide-react';
+import { ShoppingBag, Check, Loader2, DollarSign, TrendingUp, ArrowLeft, Palette, MessageSquare, Mail } from 'lucide-react';
 import { useCart } from '../../layout';
 import { useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, updateDoc, collection, query, where, limit, or } from 'firebase/firestore';
@@ -27,9 +27,12 @@ import {
   type CarouselApi
 } from "@/components/ui/carousel";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Mail } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
+/**
+ * @fileOverview High-Fidelity Product Detail View.
+ * Dynamically resolves store context and owner credentials for strategic inquiries.
+ */
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -40,7 +43,7 @@ export default function ProductDetailPage() {
   const firestore = useFirestore();
   const { userProfile, loading: profileLoading } = useUserProfile();
 
-  // Case-Sensitive resolution: UIDs are case-sensitive, slugs/domains are lowercased.
+  // Robust Identity Resolution: Preserve UID casing while normalizing subdomains
   const storeQuery = useMemoFirebase(() => {
     if (!firestore || !rawStoreId) return null;
     
@@ -59,7 +62,7 @@ export default function ProductDetailPage() {
     return query(
         collection(firestore, 'stores'),
         or(
-            where('userId', '==', originalIdentifier),
+            where('userId', '==', originalIdentifier), // Case-sensitive UID match
             where('customDomain', '==', normalizedIdentifier),
             where('slug', '==', slug)
         ),
@@ -76,7 +79,7 @@ export default function ProductDetailPage() {
   }, [firestore, storeId, productId]);
   const { data: product, loading: productLoading } = useDoc<any>(productRef);
 
-  // Resolve Store Owner Data for contact
+  // Strategic Curator Credentials
   const ownerRef = useMemoFirebase(() => {
     if (!firestore || !storeId) return null;
     return doc(firestore, 'users', storeId);
@@ -160,7 +163,7 @@ export default function ProductDetailPage() {
     setIsBuyingNow(true);
     const productWithCurrentPrice = { ...product, suggestedRetailPrice: currentPrice, selectedColor };
     addToCart(productWithCurrentPrice);
-    router.push(rawStoreId ? `/store/${rawStoreId}/checkout` : '/checkout');
+    router.push(params.domain ? '/checkout' : `/store/${rawStoreId}/checkout`);
   };
   
   const handlePriceSave = async () => {
@@ -172,8 +175,8 @@ export default function ProductDetailPage() {
               compareAtPrice: compareAtPrice
           });
           toast({
-              title: 'Price Updated',
-              description: `Strategy synchronized successfully.`,
+              title: 'Strategy Updated',
+              description: `New pricing synchronized successfully.`,
           });
       } catch (error: any) {
           toast({
@@ -190,7 +193,7 @@ export default function ProductDetailPage() {
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16">
       <ProductViewTracker storeId={storeId || rawStoreId} productId={productId} />
-      <Link href={rawStoreId ? (params.domain ? '/' : `/store/${rawStoreId}`) : '/'} className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-8 transition-colors">
+      <Link href={params.domain ? '/' : `/store/${rawStoreId}`} className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-8 transition-colors">
         <ArrowLeft className="mr-2 h-4 w-4" /> Back to Collection
       </Link>
 
@@ -228,7 +231,7 @@ export default function ProductDetailPage() {
                 )}
             </div>
             
-            {(userProfile?.planTier === 'MERCHANT' || userProfile?.planTier === 'SCALER' || userProfile?.planTier === 'ENTERPRISE' || userProfile?.userRole === 'ADMIN') && (
+            {(userProfile?.id === storeId || userProfile?.userRole === 'ADMIN') && (
               <Card className="border-primary/50 bg-card shadow-lg">
                   <CardHeader>
                       <CardTitle className="font-headline text-primary flex items-center gap-2">

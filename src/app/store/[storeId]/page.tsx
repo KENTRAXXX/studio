@@ -4,7 +4,7 @@ import { notFound, useParams } from 'next/navigation';
 import { HeroSection } from '@/components/store/hero-section';
 import { ProductGrid } from '@/components/store/product-grid';
 import { StoreVisitorTracker } from '@/components/store/visitor-tracker';
-import { useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, limit, or, orderBy, doc } from 'firebase/firestore';
 import { Loader2, ArrowLeft, Box, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import { demoProducts } from '@/lib/demo-data';
 
 /**
  * @fileOverview Reactive Boutique Storefront.
- * Uses real-time listeners to ensure the "Real-time Global Sync" promise is met.
+ * Orchestrates store resolution and product display using robust multi-tenancy logic.
  */
 export default function StorefrontPage() {
   const params = useParams();
@@ -27,7 +27,7 @@ export default function StorefrontPage() {
 
   const isDemoMode = identifier === 'demo';
 
-  // 1. Resolve Store Identity (Case-Sensitive for UID, normalized for domains)
+  // 1. Resolve Store Identity (Robust Case-Sensitive UID Handling)
   const storeQuery = useMemoFirebase(() => {
     if (!firestore || isDemoMode) return null;
     
@@ -46,7 +46,7 @@ export default function StorefrontPage() {
     return query(
         collection(firestore, 'stores'),
         or(
-            where('userId', '==', originalIdentifier),
+            where('userId', '==', originalIdentifier), // Case-sensitive UID match
             where('customDomain', '==', normalizedIdentifier),
             where('slug', '==', slug)
         ),
@@ -58,7 +58,7 @@ export default function StorefrontPage() {
   const storeData = storeDocs?.[0];
   const storeId = storeData?.userId;
 
-  // 2. Fetch Provisioned Products (Real-time)
+  // 2. Fetch Provisioned Products
   const productsQuery = useMemoFirebase(() => {
     if (!firestore || !storeId || isDemoMode) return null;
     return query(
