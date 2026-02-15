@@ -36,19 +36,26 @@ export function middleware(request: NextRequest) {
 
   // 3. Perform the Rewrite: If the hostname is NOT the root domain
   if (currentHost !== rootDomain && currentHost !== `www.${rootDomain}`) {
-    console.log('Middleware Path:', currentHost, 'Rewriting to:', `/[domain]${path}`);
-    
     let targetPath = path;
     
+    // Extract the slug (subdomain prefix)
+    let slug = currentHost;
+    if (currentHost.endsWith(`.${rootDomain}`)) {
+        slug = currentHost.replace(`.${rootDomain}`, '');
+    }
+    if (slug.startsWith('www.')) {
+        slug = slug.replace('www.', '');
+    }
+
     // Fix for ambassador.somatoday.com/ambassador 404
-    // We strip the redundant /ambassador path for ambassador subdomains to resolve the portal correctly.
-    if (currentHost.startsWith('ambassador') && path === '/ambassador') {
+    if (slug.startsWith('ambassador') && path === '/ambassador') {
       targetPath = '/';
     }
 
     // Internal Rewrite maintains the branded URL in the browser
-    // This handles both boutique subdomains and specialized portals like ambassador.
-    const rewriteUrl = new URL(`/${currentHost}${targetPath}${url.search}`, request.url);
+    // This targets the src/app/[domain] directory.
+    const rewriteUrl = new URL(`/${slug}${targetPath}${url.search}`, request.url);
+    console.log(`[SOMA Middleware] Host: ${currentHost} -> Internal: /${slug}${targetPath}`);
     return NextResponse.rewrite(rewriteUrl);
   }
   

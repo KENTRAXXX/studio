@@ -113,7 +113,7 @@ function CartSheet({ storeId }: { storeId?: string }) {
                                                     <X className="h-4 w-4" />
                                                 </Button>
                                             </li>
-                                        )
+                                        );
                                     })}
                                 </ul>
                             </div>
