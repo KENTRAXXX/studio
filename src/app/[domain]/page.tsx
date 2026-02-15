@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useDoc, useFirestore, useCollection, useUser, useMemoFirebase } from '@/firebase';
@@ -38,7 +38,9 @@ import {
     Download,
     Share2,
     Wallet,
-    Image as ImageIcon
+    Image as ImageIcon,
+    Sparkles,
+    Monitor
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -51,6 +53,7 @@ import SomaLogo from '@/components/logo';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { WithdrawalModal } from '@/components/WithdrawalModal';
+import { toJpeg } from 'html-to-image';
 
 /**
  * @fileOverview Ambassador Portal UI
@@ -66,6 +69,8 @@ function AmbassadorPortal() {
 
     const [activeView, setActiveView] = useState<'dashboard' | 'wallet' | 'marketing'>('dashboard');
     const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
+    const posterRef = useRef<HTMLDivElement>(null);
 
     // 1. Financial Telemetry
     const payoutsQuery = useMemoFirebase(() => {
@@ -107,6 +112,34 @@ function AmbassadorPortal() {
         if (!referralLink) return;
         navigator.clipboard.writeText(referralLink);
         toast({ title: 'Link Secured', description: 'Your personalized marketing link is ready.' });
+    };
+
+    const handleCopyScript = (text: string) => {
+        navigator.clipboard.writeText(text);
+        toast({ title: 'Script Copied', description: 'Optimized copy ready for use.' });
+    };
+
+    const handleDownloadPoster = async () => {
+        if (!posterRef.current) return;
+        setIsExporting(true);
+        try {
+            const dataUrl = await toJpeg(posterRef.current, {
+                quality: 0.95,
+                width: 1080,
+                height: 1920,
+                cacheBust: true,
+                skipFonts: true,
+            });
+            const link = document.createElement('a');
+            link.download = `SOMA-Ambassador-${userProfile?.referralCode || 'Partner'}.jpg`;
+            link.href = dataUrl;
+            link.click();
+            toast({ title: 'Asset Generated', description: 'High-res marketing card ready for social sharing.' });
+        } catch (err) {
+            toast({ variant: 'destructive', title: 'Generation Failed', description: 'Visual render encountered a logic error.' });
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     if (profileLoading) return <div className="h-screen flex items-center justify-center bg-black"><Loader2 className="animate-spin text-primary" /></div>;
@@ -328,7 +361,7 @@ function AmbassadorPortal() {
                                                 <div className="p-5 rounded-xl bg-black/60 border border-primary/20 font-mono text-sm text-primary break-all shadow-inner">
                                                     {referralLink || 'Establishing secure link...'}
                                                 </div>
-                                                <Button onClick={handleCopy} size="lg" className="w-full h-14 btn-gold-glow bg-primary font-black uppercase text-black text-lg">
+                                                <Button onClick={handleCopy} size="lg" className="w-full lg:w-auto h-14 btn-gold-glow bg-primary font-black uppercase text-black text-lg">
                                                     <Copy className="mr-3 h-5 w-5" /> Copy Link
                                                 </Button>
                                             </div>
@@ -447,48 +480,126 @@ function AmbassadorPortal() {
                                         <p className="text-slate-500 uppercase text-[10px] font-black tracking-[0.3em]">Conversion Accelerators</p>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <Card className="border-primary/20 bg-slate-900/40 p-8 space-y-6">
-                                            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                                                <MessageSquare className="h-6 w-6" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <h3 className="text-xl font-bold text-white font-headline">Proven Swipe Copy</h3>
-                                                <p className="text-sm text-slate-500 leading-relaxed">Copy and paste these conversion-optimized scripts for your social campaigns.</p>
-                                            </div>
-                                            <div className="space-y-4">
-                                                <div className="p-4 rounded-xl bg-black/40 border border-white/5 space-y-3">
-                                                    <p className="text-xs text-slate-300 italic">"Launch your luxury empire in 5 minutes with @SomaExecutive. Get 20% off all setup tiers using my link..."</p>
-                                                    <Button variant="ghost" size="sm" className="h-7 text-[9px] uppercase font-black text-primary hover:bg-primary/5">
-                                                        Copy Script
-                                                    </Button>
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                                        {/* Swipe Copy Tools */}
+                                        <div className="space-y-6">
+                                            <Card className="border-primary/20 bg-slate-900/40 p-8 space-y-6">
+                                                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                                    <MessageSquare className="h-6 w-6" />
                                                 </div>
-                                            </div>
-                                        </Card>
+                                                <div className="space-y-2">
+                                                    <h3 className="text-xl font-bold text-white font-headline">Proven Swipe Copy</h3>
+                                                    <p className="text-sm text-slate-500 leading-relaxed">High-performance scripts optimized for rapid conversions.</p>
+                                                </div>
+                                                <div className="space-y-4">
+                                                    {[
+                                                        "Launch your luxury empire in 5 minutes with @SomaExecutive. Get 20% off all setup tiers using my link...",
+                                                        "Stop building on rented land. Own your customer data and luxury branding with SOMA. Access my partner discount here...",
+                                                        "From concept to storefront in 300 seconds. No inventory, no code, no limits. Join the elite network today..."
+                                                    ].map((script, i) => (
+                                                        <div key={i} className="p-4 rounded-xl bg-black/40 border border-white/5 space-y-3">
+                                                            <p className="text-xs text-slate-300 italic leading-relaxed">"{script}"</p>
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                size="sm" 
+                                                                onClick={() => handleCopyScript(script)}
+                                                                className="h-7 text-[9px] uppercase font-black text-primary hover:bg-primary/5 p-0"
+                                                            >
+                                                                Copy Script
+                                                            </Button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </Card>
 
-                                        <Card className="border-primary/20 bg-slate-900/40 p-8 space-y-6">
-                                            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                                                <ImageIcon className="h-6 w-6" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <h3 className="text-xl font-bold text-white font-headline">Brand Asset Pack</h3>
-                                                <p className="text-sm text-slate-500 leading-relaxed">High-resolution lifestyle visuals and logo variations for high-end promotion.</p>
-                                            </div>
-                                            <Button variant="outline" className="w-full border-primary/20 text-primary hover:bg-primary/5 h-12 font-bold uppercase tracking-widest">
-                                                <Download className="mr-2 h-4 w-4" /> Download .ZIP (42MB)
-                                            </Button>
-                                        </Card>
-                                    </div>
-
-                                    <Card className="border-primary/50 bg-primary/5 p-10 flex flex-col md:flex-row items-center justify-between gap-8">
-                                        <div className="space-y-4 flex-1">
-                                            <h3 className="text-2xl font-bold font-headline text-white">Need Custom Creatives?</h3>
-                                            <p className="text-slate-400 text-sm max-md mx-auto">Our executive design team can provide tailored banners or video ads for high-performing ambassadors.</p>
+                                            <Card className="border-primary/20 bg-slate-900/40 p-8 space-y-6">
+                                                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                                    <ImageIcon className="h-6 w-6" />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <h3 className="text-xl font-bold text-white font-headline">Brand Asset Pack</h3>
+                                                    <p className="text-sm text-slate-500 leading-relaxed">Official SOMA visuals for professional promotion.</p>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    {[1, 2, 3, 4].map(i => (
+                                                        <div key={i} className="aspect-video relative rounded-lg overflow-hidden border border-white/5 group">
+                                                            <img src={`https://picsum.photos/seed/soma-asset-${i}/400/225`} className="object-cover opacity-60 group-hover:opacity-100 transition-opacity" alt="Platform Visual" />
+                                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-white"><Download className="h-4 w-4"/></Button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <Button variant="outline" className="w-full border-primary/20 text-primary hover:bg-primary/5 h-12 font-bold uppercase tracking-widest">
+                                                    <Download className="mr-2 h-4 w-4" /> All Assets (.ZIP)
+                                                </Button>
+                                            </Card>
                                         </div>
-                                        <Button asChild className="h-14 px-8 btn-gold-glow bg-primary text-black font-black uppercase">
-                                            <Link href="/backstage/concierge">Contact Creative HQ</Link>
-                                        </Button>
-                                    </Card>
+
+                                        {/* Live Asset Generator */}
+                                        <div className="space-y-6 lg:sticky lg:top-24">
+                                            <Card className="border-primary/50 bg-primary/5 p-8 space-y-6 shadow-gold-glow">
+                                                <div className="flex items-center justify-between">
+                                                    <h3 className="text-xl font-bold text-white font-headline flex items-center gap-2">
+                                                        <Sparkles className="h-5 w-5 text-primary" />
+                                                        Asset Generator
+                                                    </h3>
+                                                    <div className="flex items-center gap-2 px-2 py-1 rounded-full bg-green-500/10 border border-green-500/20">
+                                                        <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                                                        <span className="text-[8px] font-black text-green-500 uppercase tracking-widest">Live Engine</span>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="relative aspect-[9/16] w-full max-w-[300px] mx-auto rounded-xl border-4 border-black/40 shadow-2xl overflow-hidden bg-slate-900">
+                                                    {/* The Canvas (Hidden scaled representation) */}
+                                                    <div 
+                                                        ref={posterRef}
+                                                        className="absolute inset-0 bg-black flex flex-col items-center justify-between py-20 px-10 text-center"
+                                                        style={{ width: '1080px', height: '1920px', transform: 'scale(0.2777)', transformOrigin: 'top left' }}
+                                                    >
+                                                        <div className="absolute inset-8 border-[6px] border-primary/40 pointer-events-none" />
+                                                        <div className="space-y-10 z-10 pt-10">
+                                                            <SomaLogo className="h-24 w-24 text-primary mx-auto" />
+                                                            <h2 className="text-7xl font-headline font-black text-primary uppercase tracking-[0.2em]">SOMA EXECUTIVE</h2>
+                                                        </div>
+                                                        <div className="space-y-12 z-10 w-full px-10">
+                                                            <div className="space-y-4">
+                                                                <p className="text-3xl font-headline uppercase tracking-[0.4em] text-slate-400">Exclusive Partner Invitation</p>
+                                                                <h3 className="text-8xl font-headline font-black text-white leading-tight">UNLOCK THE ECOSYSTEM</h3>
+                                                            </div>
+                                                            <div className="p-10 rounded-2xl bg-primary/10 border-2 border-primary/30 space-y-4">
+                                                                <p className="text-2xl font-bold text-primary uppercase tracking-widest">Partner Privilege Code</p>
+                                                                <p className="text-9xl font-mono font-black text-white tracking-widest">{userProfile?.referralCode || 'ELITE'}</p>
+                                                            </div>
+                                                            <p className="text-2xl text-slate-500 uppercase tracking-[0.5em] font-medium pt-10">Verification required at somatoday.com</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <Button 
+                                                    onClick={handleDownloadPoster}
+                                                    disabled={isExporting}
+                                                    className="w-full h-14 text-lg btn-gold-glow bg-primary text-black font-black uppercase tracking-widest"
+                                                >
+                                                    {isExporting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Rendering...</> : <><Download className="mr-2 h-5 w-5" /> Download Story Asset</>}
+                                                </Button>
+                                                
+                                                <p className="text-[10px] text-muted-foreground text-center italic">
+                                                    Generates a branded 1080x1920 Story asset with your unique partner code embedded.
+                                                </p>
+                                            </Card>
+
+                                            <Card className="border-primary/20 bg-slate-900/40 p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                                                <div className="space-y-2 flex-1 text-center md:text-left">
+                                                    <h3 className="text-lg font-bold text-white font-headline">Custom Creative HQ</h3>
+                                                    <p className="text-xs text-slate-500">Need specific banners for your campaign? Reach out to our design team.</p>
+                                                </div>
+                                                <Button asChild variant="outline" className="h-12 px-6 border-primary/30 text-primary hover:bg-primary/5 font-bold uppercase tracking-widest">
+                                                    <Link href="/backstage/concierge">Contact Creative</Link>
+                                                </Button>
+                                            </Card>
+                                        </div>
+                                    </div>
                                 </motion.div>
                             )}
                         </AnimatePresence>
