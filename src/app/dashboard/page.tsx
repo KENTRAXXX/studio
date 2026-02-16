@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useCollection, useDoc, useUserProfile, useMemoFirebase } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
@@ -55,17 +55,31 @@ interface DashboardOverviewProps {
 /**
  * @fileOverview The Executive Command Center.
  * Orchestrates boutique management and platform navigation.
+ * Upgraded with Next.js 15 Hydration Safeguards.
  */
-export default function DashboardOverviewPage({ isDemo, demoData, tierOverride }: DashboardOverviewProps) {
+export default function DashboardOverviewPage(props: any) {
+    // Determine if we are being called as a Page (Next.js) or a Component (Demo)
+    const isDemo = props.isDemo === true;
+    const demoData = props.demoData;
+    const tierOverride = props.tierOverride;
+
     const { user, loading: userLoading } = useUser();
     const { userProfile, loading: profileLoading } = useUserProfile();
     const firestore = useFirestore();
     const router = useRouter();
 
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
     // 1. Session Protection (Bypass for Demo)
-    if (!isDemo && !userLoading && !user) {
-        return null;
-    }
+    useEffect(() => {
+        if (!isDemo && !userLoading && !user) {
+            router.replace('/login');
+        }
+    }, [user, userLoading, isDemo, router]);
 
     // 2. Data Synchronization (Real-time Listeners)
     const storeRef = useMemoFirebase(() => !isDemo && user && firestore ? doc(firestore, 'stores', user.uid) : null, [user, firestore, isDemo]);
@@ -87,18 +101,17 @@ export default function DashboardOverviewPage({ isDemo, demoData, tierOverride }
 
     const netProfit = useMemo(() => {
         if (isDemo && demoData) return demoData.netProfit;
-        // Basic calculation for real data: total - (total * 0.7 cost) - (total * 0.03 fee)
         return totalSales * 0.27;
     }, [totalSales, isDemo, demoData]);
 
-    // 4. Branded URL Resolution
+    // 4. Branded URL Resolution (Hydration Safe)
     const boutiqueUrl = useMemo(() => {
+        if (!isMounted) return '#';
         if (isDemo) return '#';
         if (!storeData) return '#';
-        if (typeof window === 'undefined') return '#';
 
         const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
-        const protocol = window.location.protocol;
+        const protocol = typeof window !== 'undefined' ? window.location.protocol : 'https:';
         
         if (storeData.customDomain && storeData.domainStatus === 'connected') {
             return `${protocol}//${storeData.customDomain}`;
@@ -107,9 +120,9 @@ export default function DashboardOverviewPage({ isDemo, demoData, tierOverride }
             return `${protocol}//${storeData.slug}.${rootDomain}`;
         }
         return `/store/${user?.uid}`;
-    }, [storeData, user?.uid, isDemo]);
+    }, [storeData, user?.uid, isDemo, isMounted]);
 
-    if (isLoading) {
+    if (isLoading || !isMounted) {
         return (
             <div className="flex h-96 w-full items-center justify-center">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />

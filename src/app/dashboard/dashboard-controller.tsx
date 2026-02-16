@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, limit } from 'firebase/firestore';
@@ -44,21 +45,28 @@ const sparklineData = [
     { value: 600 }, { value: 550 }, { value: 700 }, { value: 800 }
 ];
 
-const MiniSparkline = ({ color = "hsl(var(--primary))" }: { color?: string }) => (
-    <div className="h-8 w-24 opacity-50">
-        <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={sparklineData}>
-                <Line 
-                    type="monotone" 
-                    dataKey="value" 
-                    stroke={color} 
-                    strokeWidth={2} 
-                    dot={false} 
-                />
-            </LineChart>
-        </ResponsiveContainer>
-    </div>
-);
+const MiniSparkline = ({ color = "hsl(var(--primary))" }: { color?: string }) => {
+    const [isMounted, setIsMounted] = useState(false);
+    useEffect(() => setIsMounted(true), []);
+
+    if (!isMounted) return <div className="h-8 w-24 bg-muted/20 animate-pulse rounded" />;
+
+    return (
+        <div className="h-8 w-24 opacity-50">
+            <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={sparklineData}>
+                    <Line 
+                        type="monotone" 
+                        dataKey="value" 
+                        stroke={color} 
+                        strokeWidth={2} 
+                        dot={false} 
+                    />
+                </LineChart>
+            </ResponsiveContainer>
+        </div>
+    );
+};
 
 const PrivateInventoryCard = () => {
     const { user } = useUser();
@@ -121,6 +129,9 @@ const DropshipCatalogCard = () => {
 };
 
 const EarningsOverview = ({ pendingDocs, completedDocs }: { pendingDocs: any[], completedDocs: any[] }) => {
+    const [isMounted, setIsMounted] = useState(false);
+    useEffect(() => setIsMounted(true), []);
+
     const chartData = useMemo(() => {
         const last7Days = Array.from({ length: 7 }, (_, i) => {
             const date = subDays(new Date(), 6 - i);
@@ -165,6 +176,8 @@ const EarningsOverview = ({ pendingDocs, completedDocs }: { pendingDocs: any[], 
             </Card>
         );
     }
+
+    if (!isMounted) return <Card className="h-96 border-primary/20 bg-card animate-pulse" />;
 
     return (
         <Card className="border-primary/20 bg-card overflow-hidden">
