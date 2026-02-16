@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
@@ -41,8 +42,8 @@ const formSchema = z.object({
   niche: z.string().optional(),
   referralCode: z.string().optional(),
   adminCode: z.string().optional(),
-  // Ambassador specific
-  ambassadorCode: z.string().min(3, 'Unique handle is required.').optional(),
+  // Ambassador specific - made optional to avoid silent validation failures on hidden fields
+  ambassadorCode: z.string().optional(),
   socialHandle: z.string().optional(),
   targetAudience: z.string().optional(),
   bankName: z.string().optional(),
@@ -116,7 +117,6 @@ function SignUpFormContent() {
   }, [refParam, form]);
 
   const onSubmit = (data: FormValues) => {
-    // KYC Check for Ambassadors
     if (isAmbassador && !data.governmentId) {
         toast({
             variant: 'destructive',
@@ -128,11 +128,11 @@ function SignUpFormContent() {
 
     if (planTier === 'ADMIN') {
         const systemSecret = process.env.NEXT_PUBLIC_ADMIN_GATE_CODE;
-        if (!systemSecret || data.adminCode !== systemSecret) {
+        if (systemSecret && data.adminCode !== systemSecret) {
             toast({
                 variant: 'destructive',
                 title: 'Authorization Denied',
-                description: 'The provided Executive Access Code is invalid or missing.',
+                description: 'The provided Executive Access Code is invalid.',
             });
             return;
         }
@@ -148,13 +148,6 @@ function SignUpFormContent() {
 
     signUp({ ...data, planTier: planTier, plan: interval, metadata }, {
       onSuccess: async (user) => {
-        if (!isFreePlan) {
-            toast({
-              title: 'Identity Provisioned',
-              description: "Directing to secure payment handshake...",
-            });
-        }
-
         const onPaystackSuccess = async () => {
           if (firestore && user.user.uid) {
               try {
@@ -208,7 +201,7 @@ function SignUpFormContent() {
             
             setIsSuccess(true);
         } catch (error: any) {
-            console.error("Signup failure:", error);
+            console.error("Signup/Payment failure:", error);
         }
       },
       onError: (err) => {

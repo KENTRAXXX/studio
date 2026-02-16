@@ -54,8 +54,6 @@ interface DashboardOverviewProps {
 
 /**
  * @fileOverview The Executive Command Center.
- * Orchestrates boutique management and platform navigation.
- * Upgraded with Next.js 15 Hydration Safeguards.
  */
 export default function DashboardOverviewPage(props: any) {
     // Determine if we are being called as a Page (Next.js) or a Component (Demo)
@@ -76,10 +74,10 @@ export default function DashboardOverviewPage(props: any) {
 
     // 1. Session Protection (Bypass for Demo)
     useEffect(() => {
-        if (!isDemo && !userLoading && !user) {
+        if (!isDemo && !userLoading && !user && isMounted) {
             router.replace('/login');
         }
-    }, [user, userLoading, isDemo, router]);
+    }, [user, userLoading, isDemo, router, isMounted]);
 
     // 2. Data Synchronization (Real-time Listeners)
     const storeRef = useMemoFirebase(() => !isDemo && user && firestore ? doc(firestore, 'stores', user.uid) : null, [user, firestore, isDemo]);
@@ -122,7 +120,8 @@ export default function DashboardOverviewPage(props: any) {
         return `/store/${user?.uid}`;
     }, [storeData, user?.uid, isDemo, isMounted]);
 
-    if (isLoading || !isMounted) {
+    // PRE-HYDRATION RENDER: Avoid client-side exceptions during SSR
+    if (!isMounted || (isLoading && !isDemo)) {
         return (
             <div className="flex h-96 w-full items-center justify-center">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -132,7 +131,7 @@ export default function DashboardOverviewPage(props: any) {
 
     if (!isDemo && !user) return null;
 
-    // 5. ROADMAP GATE: Show roadmap and payment prompt if access not yet secured
+    // 5. ROADMAP GATE
     if (!isDemo && userProfile && !userProfile.hasAccess) {
         return (
             <div className="max-w-5xl mx-auto space-y-10 py-12 px-4">
@@ -167,12 +166,12 @@ export default function DashboardOverviewPage(props: any) {
 
     const currentPlanTier = isDemo ? (tierOverride || demoData?.planTier || 'SCALER') : userProfile?.planTier;
 
-    // 6. Special View for Suppliers (Sellers/Brands)
+    // 6. Special View for Suppliers
     if (!isDemo && (currentPlanTier === 'SELLER' || currentPlanTier === 'BRAND')) {
         return <DashboardController planTier={currentPlanTier} />;
     }
 
-    // 7. PROVISIONING STATE: If paid but no store yet
+    // 7. PROVISIONING STATE
     if (!isDemo && !storeData) {
         const justLaunched = typeof window !== 'undefined' && sessionStorage.getItem('soma_just_launched') === 'true';
         
@@ -321,7 +320,6 @@ export default function DashboardOverviewPage(props: any) {
             {!isDemo && (
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     <div className="lg:col-span-7 space-y-8">
-                        {/* Live Boutique Inventory Section */}
                         <Card className="border-primary/50 overflow-hidden bg-slate-900/30">
                             <CardHeader className="bg-muted/30 border-b border-primary/10">
                                 <div className="flex items-center justify-between">

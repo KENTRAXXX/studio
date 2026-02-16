@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -14,8 +15,6 @@ export function usePaystack() {
 
   /**
    * Initializes a payment transaction and opens the Paystack inline popup.
-   * Note: This is an async function that returns when the popup is launched, 
-   * not when the payment completes.
    */
   const initializePayment = async (
     args: InitializePaymentArgs,
@@ -36,13 +35,7 @@ export function usePaystack() {
     setIsInitializing(true);
     
     try {
-      const paystackPublicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
-      if (!paystackPublicKey) {
-        throw new Error('Paystack public key is not configured in environment.');
-      }
-
       // 1. Initialize the transaction on the backend to get a secure access_code
-      // This step ensures the secret key is never exposed to the client.
       const result = await initializePaystackTransaction({
         email: args.email,
         payment: args.payment,
@@ -54,13 +47,17 @@ export function usePaystack() {
       }
 
       // 2. Dynamically import PaystackPop to ensure it only runs in the browser environment
-      const PaystackModule = await import('@paystack/inline-js');
-      const PaystackPop = PaystackModule.default;
+      const PaystackModule: any = await import('@paystack/inline-js');
+      // Handle both default and named exports for maximum compatibility
+      const PaystackPop = PaystackModule.default || PaystackModule.PaystackPop;
       
-      // @ts-ignore - Paystack SDK types can be inconsistent
+      if (!PaystackPop) {
+          throw new Error('Paystack SDK could not be loaded.');
+      }
+
       const paystack = new PaystackPop();
       
-      // 3. Launch the secure Paystack checkout modal
+      // 3. Launch the secure Paystack checkout modal using the access code
       paystack.resumeTransaction(result.access_code, {
         onSuccess: (response: any) => {
           onSuccess(response);
@@ -78,7 +75,6 @@ export function usePaystack() {
         description: error.message || 'Could not connect to the payment gateway. Please try again.' 
       });
       onClose();
-      // Re-throw to allow parent components to catch failures
       throw error;
     } finally {
         setIsInitializing(false);
