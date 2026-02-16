@@ -36,6 +36,17 @@ In **Settings > Functions > Compatibility flags**, ensure:
 ### 4. Multi-Tenancy (KV Store)
 Create a **KV Namespace** named `KV_BINDING` in your Cloudflare dashboard and bind it to your Pages project in **Settings > Functions > KV namespace bindings**.
 
+## 🛠️ Strategic Portals & Access
+
+### Scaler Tier Demo (Joe Jenkins)
+To preview the **Jenkins Tech** environment with the $72,377.83 earnings blueprint:
+- **Direct Route**: `/dashboard/demo`
+- *No password required for this emulation.*
+
+### Administrative Registration
+To create an account with the `ADMIN` role, use this code in the signup form:
+- **Gate Code**: `SOMA-SECRET-CODE-2024`
+
 ## Platform Integrity
 - **Authenticity or Death**: Global policy for all suppliers.
 - **SOMA Shield**: Centralized financial processing via Paystack.
