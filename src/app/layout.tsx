@@ -13,7 +13,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: 'SomaDS | The Ultimate Design System for Luxury E-commerce',
+    default: 'SomaDS | Luxury E-commerce Architecture',
     template: '%s | SomaDS',
   },
   description: 'Launch your luxury e-commerce empire instantly with SOMA. High-fidelity boutiques, global catalog synchronization, and integrated financial processing.',
@@ -31,21 +31,21 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: '/',
-    siteName: 'SOMA Executive Platform',
+    siteName: 'SomaDS',
     title: 'SomaDS | Luxury E-commerce Architecture',
-    description: 'The Ultimate Design System for E-commerce.',
+    description: 'Launch your luxury boutique instantly with the SomaDS platform.',
     images: [
       {
         url: 'https://picsum.photos/seed/soma-og/1200/630',
         width: 1200,
         height: 630,
-        alt: 'SOMA Executive Platform',
+        alt: 'SomaDS Executive Platform',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SomaDS | Luxury E-commerce',
+    title: 'SomaDS | Luxury E-commerce Architecture',
     description: 'Launch your luxury boutique instantly.',
     images: ['https://picsum.photos/seed/soma-og/1200/630'],
   },

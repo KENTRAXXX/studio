@@ -359,7 +359,7 @@ export default function Home() {
     <div className="relative flex flex-col items-center justify-center min-h-screen w-full bg-black gold-mesh-gradient overflow-x-hidden">
       <header className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center z-20">
         <Link href="/" className="flex items-center gap-2 group">
-          <SomaLogo aria-hidden="true" className="transition-transform group-hover:scale-110" />
+          <SomaLogo aria-hidden={true} className="transition-transform group-hover:scale-110" />
           <span className="font-headline font-bold text-xl text-primary tracking-tighter uppercase transition-opacity group-hover:opacity-80">SomaDS</span>
         </Link>
         <div className="flex items-center gap-4">
@@ -401,6 +401,30 @@ export default function Home() {
         <HowItWorks />
         <SneakPeek />
         <LiveFeedTicker />
+        
+        <footer className="w-full py-12 px-6 border-t border-primary/20 bg-black/50 backdrop-blur-md">
+            <div className="container mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+                <div className="flex flex-col items-center md:items-start gap-4">
+                    <Link href="/" className="flex items-center gap-2 group">
+                        <SomaLogo aria-hidden={true} className="h-8 w-8 transition-transform group-hover:scale-110" />
+                        <span className="font-headline font-bold text-2xl text-primary tracking-tighter uppercase transition-opacity group-hover:opacity-80">SomaDS</span>
+                    </Link>
+                    <p className="text-neutral-500 text-sm max-w-xs text-center md:text-left">
+                        The ultimate high-fidelity e-commerce architecture for luxury brands.
+                    </p>
+                </div>
+
+                <div className="flex flex-col items-center md:items-end gap-6">
+                    <div className="flex gap-8 text-sm uppercase tracking-widest font-headline">
+                        <Link href="/legal/terms" className="text-neutral-400 hover:text-primary transition-colors">Terms of Protocol</Link>
+                        <Link href="/legal/privacy" className="text-neutral-400 hover:text-primary transition-colors">Privacy Protocol</Link>
+                    </div>
+                    <div className="text-neutral-600 text-[10px] uppercase tracking-[0.2em]">
+                        © 2026 SomaDS Strategic Assets Group. All Protocols Reserved.
+                    </div>
+                </div>
+            </div>
+        </footer>
       </main>
     </div>
   );
