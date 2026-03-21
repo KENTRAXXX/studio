@@ -103,7 +103,7 @@ export async function initializePaystackTransaction(
             throw new Error("Free plans do not require payment initialization.");
         }
 
-        const planCode = getPlanCode(planTier, interval);
+        const planCode = getPlanCode(planTier, interval, input.metadata?.entityType);
 
         // Calculate the amount. 
         // Note: Paystack requires the amount even if a plan is provided for some currency configurations.

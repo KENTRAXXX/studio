@@ -173,62 +173,12 @@ function SignUpFormContent() {
 
     signUp({ ...data, planTier: planTier, plan: interval, metadata }, {
       onSuccess: async (user) => {
-        const onPaystackSuccess = async () => {
-          if (firestore && user.user.uid) {
-              try {
-                  const userRef = doc(firestore, 'users', user.user.uid);
-                  await updateDoc(userRef, { hasAccess: true });
-              } catch (e) {
-                  console.error("Status sync failed:", e);
-              }
-          }
-
-          toast({
-            title: isFreePlan ? 'Access Finalized' : 'Activation Complete',
-            description: 'Please check your inbox to verify your email. Your strategic hub is being prepared.',
-          });
-          
-          router.push('/backstage/return');
-        };
-
-        const onPaystackClose = () => {
-          toast({
-            variant: 'default',
-            title: 'Action Required',
-            description: 'Payment is required to complete portal activation.',
-          });
-          router.push('/backstage/return');
-        };
-
-        if (isFreePlan) {
-            onPaystackSuccess();
-            return;
-        }
-
-        try {
-            await initializePayment({
-                email: data.email,
-                payment: {
-                    type: 'signup',
-                    planTier,
-                    interval
-                },
-                metadata: {
-                  userId: user.user.uid,
-                  plan: interval,
-                  planTier: planTier,
-                  template: 'gold-standard',
-                  entityType: data.entityType,
-                },
-              },
-              onPaystackSuccess,
-              onPaystackClose
-            );
-            
-            setIsSuccess(true);
-        } catch (error: any) {
-            console.error("Signup/Payment failure:", error);
-        }
+        toast({
+          title: 'Account Provisioned',
+          description: 'Please check your inbox to verify your email. Payment and portal activation will follow verification.',
+        });
+        
+        router.push('/auth/verify-email');
       },
       onError: (err) => {
         toast({
@@ -302,62 +252,12 @@ function SignUpFormContent() {
         metadata 
     }, {
       onSuccess: async (user) => {
-        const onPaystackSuccess = async () => {
-          if (firestore && user.user.uid) {
-              try {
-                  const userRef = doc(firestore, 'users', user.user.uid);
-                  await updateDoc(userRef, { hasAccess: true });
-              } catch (e) {
-                  console.error("Status sync failed:", e);
-              }
-          }
-
-          toast({
-            title: isFreePlan ? 'Access Finalized' : 'Activation Complete',
-            description: 'Your strategic hub is being prepared.',
-          });
-          
-          router.push('/backstage/return');
-        };
-
-        const onPaystackClose = () => {
-          toast({
-            variant: 'default',
-            title: 'Action Required',
-            description: 'Payment is required to complete portal activation.',
-          });
-          router.push('/backstage/return');
-        };
-
-        if (isFreePlan) {
-            onPaystackSuccess();
-            return;
-        }
-
-        try {
-            await initializePayment({
-                email: user.user.email || '',
-                payment: {
-                    type: 'signup',
-                    planTier,
-                    interval
-                },
-                metadata: {
-                  userId: user.user.uid,
-                  plan: interval,
-                  planTier: planTier,
-                  template: 'gold-standard',
-                  entityType: form.getValues('entityType'),
-                },
-              },
-              onPaystackSuccess,
-              onPaystackClose
-            );
-            
-            setIsSuccess(true);
-        } catch (error: any) {
-            console.error("Signup/Payment failure:", error);
-        }
+        toast({
+          title: 'Account Provisioned',
+          description: 'Authentication successful. Please verify your identity via email to unlock payment and hub activation.',
+        });
+        
+        router.push('/auth/verify-email');
       },
       onError: (err) => {
         toast({
@@ -748,18 +648,36 @@ function SignUpFormContent() {
                                         )}
                                     />
                                     
-                                    <div className="flex items-center space-x-2 pt-4 mt-6 border-t border-primary/20">
-                                        <Checkbox 
-                                            id="terms" 
-                                            checked={agreedToTerms}
-                                            onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
-                                        />
-                                        <label
-                                            htmlFor="terms"
-                                            className="text-xs font-medium leading-none text-muted-foreground peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                        >
-                                           I agree to the SOMA Terms of Service, Privacy Policy, and No-Refund Standard.
-                                        </label>
+                                    <div className="pt-6 mt-4 border-t border-primary/20 space-y-4">
+                                        <div className="flex items-center justify-between p-4 bg-primary/5 rounded-lg border border-primary/20">
+                                            <div className="space-y-1">
+                                                <p className="text-[10px] uppercase font-black tracking-widest text-primary/60">Selected Strategy</p>
+                                                <p className="text-xl font-headline font-bold text-primary">{planName} Hub</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-[10px] uppercase font-black tracking-widest text-primary/60">Activation Fee</p>
+                                                <p className="text-2xl font-headline font-bold text-white">
+                                                    ${(selectedEntity === 'BUSINESS' ? 49.99 : 0) + (interval === 'monthly' ? 19.99 : 199.90)}
+                                                    <span className="text-[10px] text-muted-foreground ml-1">USD</span>
+                                                </p>
+                                                {selectedEntity === 'BUSINESS' && <p className="text-[9px] text-amber-500 font-bold uppercase tracking-tighter mt-1">+ $49.99 Corporate Surcharge</p>}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center space-x-2">
+                                            <Checkbox 
+                                                id="terms" 
+                                                checked={agreedToTerms}
+                                                onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+                                                className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-black"
+                                            />
+                                            <label
+                                                htmlFor="terms"
+                                                className="text-xs font-medium leading-none text-muted-foreground peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                            >
+                                               I agree to the SOMA Terms of Service, Privacy Policy, and No-Refund Standard.
+                                            </label>
+                                        </div>
                                     </div>
                                     
                                     <Button type="submit" disabled={isPending || !agreedToTerms} className="w-full h-14 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed font-bold">

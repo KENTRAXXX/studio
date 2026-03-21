@@ -120,6 +120,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       pathname === '/access-denied';
       
     const isLegalPage = pathname.startsWith('/legal');
+    const isCheckoutPage = pathname.startsWith('/checkout');
     const isReturnPage = pathname === '/backstage/return';
     
     // WHITELIST: Allow all users to access the support concierge
