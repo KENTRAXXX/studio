@@ -9,46 +9,11 @@ import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect, useState } from 'react';
 
-const LegalContent = () => (
-  <div className="space-y-8 max-w-4xl mx-auto">
-    <div className="space-y-4">
-        <h2 className="text-3xl font-headline text-primary border-b-2 border-primary/50 pb-2">Terms of Service</h2>
-        <div className="space-y-2">
-            <h3 className="font-semibold text-foreground/80">1. License to Use</h3>
-            <p>Upon successful payment of the setup fee, you are granted a non-exclusive, non-transferable, revocable license to use the SOMA store engine for the purpose of creating and operating a single online storefront. This license is contingent upon your adherence to these terms.</p>
-        </div>
-        <div className="space-y-2">
-            <h3 className="font-semibold text-foreground/80">2. Prohibited Content</h3>
-            <p>You may not sell, offer, or display any illegal, counterfeit, or fraudulent goods. This includes, but is not limited to, items that infringe on third-party intellectual property rights. We reserve the right to suspend or terminate any store found in violation of this policy without notice.</p>
-        </div>
-    </div>
-
-    <div className="space-y-4">
-        <h2 className="text-3xl font-headline text-primary border-b-2 border-primary/50 pb-2">The SOMA Platform Governance Framework ⚖️</h2>
-        <div className="space-y-2">
-            <h3 className="font-semibold text-foreground/80">1. The "Authenticity or Death" Policy (For Sellers)</h3>
-            <p><strong>The Rule:</strong> All items uploaded to the Master Catalog must be 100% authentic. <strong>The Penalty:</strong> If a Seller is found to be providing "replicas" or "super-clones," their pending balance is forfeited to refund the victim, and their account is permanently banned. <strong>Indemnification:</strong> Sellers agree that SOMA is a facilitator and the Seller remains legally liable for trademark infringement.</p>
-        </div>
-         <div className="space-y-2">
-            <h3 className="font-semibold text-foreground/80">2. Centralized Financial Processing & Payouts</h3>
-            <p><strong>Centralized Financial Processing</strong>: To ensure security and proper fund distribution, SOMA acts as the central financial processor for all transactions. When a customer purchases from your store, the payment is securely processed through the SOMA platform. We then automatically facilitate the distribution of funds to the product supplier (if applicable) and to your SOMA Wallet, according to the platform's revenue model. <strong>Platform Fee</strong>: For dropshipped items, SOMA deducts a non-negotiable commission from the wholesale price of every transaction. This fee varies based on the seller's tier. <strong>Hold Period</strong>: To prevent fraud, payouts are held for a 7–14 day period before becoming available for withdrawal. <strong>Withdrawals</strong>: Payout requests are processed by SOMA Admin within 24–48 business hours.</p>
-        </div>
-         <div className="space-y-2">
-            <h3 className="font-semibold text-foreground/80">3. Subscription & Store Ownership (For Moguls/Merchants)</h3>
-            <p><strong>No Guarantees:</strong> SOMA provides the infrastructure and training, but does not guarantee sales. <strong>Tier Restrictions:</strong> Merchants ($19.99) are strictly prohibited from using SOMA Master Catalog assets. Moguls ($500) own their customer data but must adhere to SOMA's brand guidelines for "Luxury Presentation." <strong>Cancellation:</strong> Subscriptions are month-to-month. If a subscription lapses, the storefront is "Suspended" (visible to the owner but closed to the public) until payment is restored.</p>
-        </div>
-    </div>
-
-    <div className="space-y-4">
-        <h2 className="text-3xl font-headline text-primary border-b-2 border-primary/50 pb-2">No-Refund Policy</h2>
-        <div className="rounded-lg border-2 border-primary bg-primary/10 p-6">
-            <p className="font-semibold text-foreground">Due to the digital nature of the SOMA platform and the immediate delivery of the Master Catalog assets, all setup fees (including monthly and lifetime plans) are strictly non-refundable once the Store Cloning process has been initiated.</p>
-        </div>
-    </div>
-
-    <div className="space-y-2">
-        <h2 className="text-3xl font-headline text-primary border-b-2 border-primary/50 pb-2">Privacy & Data</h2>
-        <p>We take your security seriously. All payments are processed securely via Paystack, a PCI-compliant payment gateway. SOMA does not store your full credit card details on our servers.</p>
+const TermsSection = ({ title, children }: { title: string, children: React.ReactNode }) => (
+  <div className="space-y-4">
+    <h2 className="text-2xl font-headline text-primary border-b border-primary/20 pb-2 uppercase tracking-widest">{title}</h2>
+    <div className="text-neutral-400 leading-relaxed space-y-4">
+      {children}
     </div>
   </div>
 );
@@ -97,25 +62,56 @@ export default function TermsPage() {
     }
 
     return (
-        <div className="min-h-screen bg-black text-neutral-200 font-body">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
-                <div className="text-center mb-12">
-                    <SomaLogo className="h-12 w-12 mx-auto" />
-                    <h1 className="text-5xl font-bold font-headline mt-4 text-primary">Terms of Service</h1>
-                    <p className="mt-2 text-lg text-neutral-400">Please review and accept the terms to continue.</p>
+        <div className="min-h-screen bg-black text-neutral-200 font-body selection:bg-primary/30">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-20 max-w-5xl">
+                <div className="text-center mb-20 space-y-4">
+                    <SomaLogo className="h-16 w-16 mx-auto text-primary" />
+                    <h1 className="text-5xl md:text-6xl font-black font-headline text-transparent bg-clip-text bg-gradient-to-br from-white via-neutral-200 to-primary tracking-tighter uppercase">
+                        Terms of Protocol
+                    </h1>
+                    <p className="text-neutral-500 uppercase tracking-[0.3em] text-sm">SOMA Strategic Assets Group | Operational Mandate</p>
+                    <div className="w-24 h-1 bg-primary mx-auto mt-8" />
                 </div>
 
-                <LegalContent />
+                <div className="space-y-16">
+                    <TermsSection title="1. Protocol Activation & Node Provisioning">
+                        <p>By initializing a SOMA node (Merchant, Mogul, or Enterprise), you are entering into a strategic partnership with the SOMA Strategic Assets Group. Activation involves the immediate provisioning of high-fidelity store assets, Master Catalog synchronization, and automated domain routing.</p>
+                        <p>You are responsible for the configuration of your node, including the accuracy of your brand identity and the security of your executive credentials. SOMA provides the infrastructure; you provide the vision.</p>
+                    </TermsSection>
 
-                <div className="text-center mt-12">
-                    <Button 
-                        size="lg" 
-                        className="h-14 px-12 text-xl btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground"
-                        onClick={handleAgree}
-                        disabled={isSubmitting}
-                    >
-                        {isSubmitting ? <Loader2 className="animate-spin" /> : 'I Agree and Accept'}
-                    </Button>
+                    <TermsSection title="2. Master Catalog & Authenticity Governance">
+                        <p><strong>Universal Synchronization:</strong> The SOMA Master Catalog is a curated repository of luxury assets. Users are granted a revocable license to synchronize these assets with their storefronts based on their subscription tier.</p>
+                        <p><strong>The "Authenticity or Death" Policy:</strong> SOMA maintains a zero-tolerance mandate regarding counterfeit or "replica" goods. All products introduced by Sellers must be 100% authentic. Violation of this protocol results in immediate node termination, permanent status ban, and the liquidation of all pending treasury balances to indemnify the ecosystem.</p>
+                    </TermsSection>
+
+                    <TermsSection title="3. Financial Orchestration & Treasury Services">
+                        <p><strong>Centralized Processing:</strong> SOMA acts as the primary financial orchestrator for all internal transactions. Payments are processed via Paystack and distributed to your SOMA Wallet after a mandatory 7-14 day maturity window.</p>
+                        <p><strong>Treasury Fees:</strong> SOMA reserves the right to deduct platform orchestration fees and commissions as defined by your active tier. These fees are non-negotiable and are deducted at the point of transaction.</p>
+                    </TermsSection>
+
+                    <TermsSection title="4. Subscription Lifecycle & No-Refund Mandate">
+                        <p><strong>Immediate Yield:</strong> Due to the immediate delivery of digital architecture and Master Catalog access, all setup fees and subscription payments are strictly non-refundable once the node provisioning sequence has commenced.</p>
+                        <p><strong>Operational Continuity:</strong> Lapsed subscriptions result in 'Node Suspension.' Your store front will be hidden from the public, but your data residency is maintained for a grace period of 30 days before permanent archival.</p>
+                    </TermsSection>
+
+                    <TermsSection title="5. Protocol Compliance & Conduct">
+                        <p>Executive users must conduct themselves with the professional integrity expected within the SOMA network. This includes accurate marketing (Ambassador Protocol), ethical customer service, and adherence to global e-commerce regulations.</p>
+                    </TermsSection>
+
+                    <div className="text-center pt-12 space-y-8">
+                        <Button 
+                            size="lg" 
+                            className="h-16 px-16 text-2xl btn-gold-glow bg-primary hover:bg-primary/90 text-black font-black uppercase tracking-widest"
+                            onClick={handleAgree}
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? <Loader2 className="animate-spin" /> : 'Accept Operational Protocol'}
+                        </Button>
+                        <div className="pt-20 border-t border-primary/10">
+                            <p className="text-xs text-neutral-600 uppercase tracking-widest">Effective Date: March 21, 2026</p>
+                            <p className="text-xs text-neutral-600 uppercase tracking-widest mt-2">© 2026 SOMA Strategic Assets Group. All Mandates Active.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

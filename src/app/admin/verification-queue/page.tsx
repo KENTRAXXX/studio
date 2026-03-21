@@ -24,6 +24,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { BackButton } from '@/components/ui/back-button';
 
 type PendingUser = {
   id: string;
@@ -132,6 +133,7 @@ export default function VerificationQueuePage() {
   }, [userProfile, profileLoading, router]);
 
   const pendingUsersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
     return query(collection(firestore, 'users'), where('status', '==', 'pending_review')) as any;
   }, [firestore]);
   
@@ -188,7 +190,10 @@ export default function VerificationQueuePage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 relative">
+      <div className="absolute -top-4 -left-4">
+        <BackButton label="Executive Pulse" href="/admin" />
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <ShieldCheck className="h-8 w-8 text-primary" />

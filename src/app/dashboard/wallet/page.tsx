@@ -6,8 +6,10 @@ import { collection, query, where } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Banknote, Wallet as WalletIcon, Loader2, AlertTriangle, Clock } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { WithdrawalModal } from '@/components/WithdrawalModal';
 import { formatCurrency } from '@/utils/format';
+import { BackButton } from '@/components/ui/back-button';
 
 
 export default function SomaWalletPage() {
@@ -61,7 +63,10 @@ export default function SomaWalletPage() {
             availableBalance={availableBalance}
             userProfile={userProfile}
         />
-        <div className="space-y-8 max-w-md mx-auto">
+        <div className="space-y-8 max-w-md mx-auto relative">
+            <div className="absolute -top-4 -left-4">
+                <BackButton label="Dashboard" href="/dashboard" />
+            </div>
             <h1 className="text-3xl font-bold font-headline text-center">SOMA Wallet</h1>
 
              <Card className="border-primary text-center bg-card relative overflow-hidden">

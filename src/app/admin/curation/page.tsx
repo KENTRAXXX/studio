@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { sendActionRequiredEmail } from '@/ai/flows/send-action-required-email';
+import { BackButton } from '@/components/ui/back-button';
 
 type CurationProduct = {
   id: string;
@@ -74,7 +75,7 @@ export default function ProductCurationPage() {
     );
   }, [firestore]);
 
-  const { data: pendingItems, loading: dataLoading } = useCollection<CurationProduct>(curationQuery);
+  const { data: pendingItems, loading: dataLoading } = useCollection<CurationProduct>(curationQuery as any);
 
   // Calculations
   const getMargin = (retail: number, wholesale: number) => {
@@ -162,7 +163,10 @@ export default function ProductCurationPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 relative">
+      <div className="absolute -top-4 -left-4">
+        <BackButton label="Executive Pulse" href="/admin" />
+      </div>
       {/* Header & Analytics */}
       <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
         <div>

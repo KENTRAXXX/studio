@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter, useSearchParams } from 'next/navigation';
-
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -693,7 +693,7 @@ function SignUpFormContent() {
                                                 htmlFor="terms"
                                                 className="text-xs font-medium leading-none text-muted-foreground peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                                             >
-                                               I agree to the SOMA Terms of Service, Privacy Policy, and No-Refund Standard.
+                                               I agree to the SOMA <Link href="/legal/terms" className="text-primary underline hover:text-primary/80">Terms of Service</Link>, <Link href="/legal/privacy" className="text-primary underline hover:text-primary/80">Privacy Policy</Link>, and No-Refund Standard.
                                             </label>
                                         </div>
                                     </div>

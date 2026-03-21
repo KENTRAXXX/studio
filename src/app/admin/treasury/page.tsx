@@ -73,6 +73,7 @@ import { formatCurrency } from '@/utils/format';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import { BackButton } from '@/components/ui/back-button';
 
 type WithdrawalRequest = {
   id: string;
@@ -141,7 +142,7 @@ export default function TreasuryPage() {
       return doc(firestore, 'platform_metadata', 'treasury');
   }, [firestore]);
 
-  const { data: platformMeta, loading: metaLoading } = useDoc<PlatformMetadata>(metaRef);
+  const { data: platformMeta, loading: metaLoading } = useDoc<PlatformMetadata>(metaRef as any);
 
   useEffect(() => {
       // Auto-initialize if document missing
@@ -180,11 +181,11 @@ export default function TreasuryPage() {
       return query(collection(firestore, 'users'), limit(500));
   }, [firestore]);
 
-  const { data: requests, loading: requestsLoading } = useCollection<WithdrawalRequest>(pendingRequestsQ);
-  const { data: orders, loading: ordersLoading } = useCollection<Order>(allOrdersQ);
+  const { data: requests, loading: requestsLoading } = useCollection<WithdrawalRequest>(pendingRequestsQ as any);
+  const { data: orders, loading: ordersLoading } = useCollection<Order>(allOrdersQ as any);
   const { data: revenueLogs, loading: revenueLoading } = useCollection<any>(revenueLogsQ);
   const { data: allPayouts, loading: payoutsLoading } = useCollection<any>(allPayoutsQ);
-  const { data: allUsers, loading: usersLoading } = useCollection<UserProfile>(usersQ);
+  const { data: allUsers, loading: usersLoading } = useCollection<UserProfile>(usersQ as any);
 
   // 3. Financial Intelligence Aggregation
   const metrics = useMemo(() => {
@@ -347,7 +348,10 @@ export default function TreasuryPage() {
   const subscriptionPct = metrics.netRevenue > 0 ? (metrics.subscriptionRev / metrics.netRevenue) * 100 : 0;
 
   return (
-    <div className="space-y-10 pb-24">
+    <div className="space-y-10 pb-24 relative">
+      <div className="absolute -top-4 -left-4">
+        <BackButton label="Executive Pulse" href="/admin" />
+      </div>
       {/* Liquidity Alert Protocol */}
       {isLiquidityLow && (
         <Alert variant="destructive" className="bg-destructive/10 border-destructive border-2 animate-pulse py-6">

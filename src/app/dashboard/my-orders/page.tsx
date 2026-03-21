@@ -31,6 +31,7 @@ import { collection, query, orderBy } from "firebase/firestore";
 import { Loader2, AlertTriangle, DollarSign, Package, TrendingUp } from "lucide-react";
 import { useMemo } from "react";
 import { formatCurrency } from "@/utils/format";
+import { BackButton } from "@/components/ui/back-button";
 
 const getStatusClasses = (status: string) => {
   switch (status) {
@@ -76,7 +77,7 @@ export default function MyOrdersPage() {
     );
   }, [firestore, user]);
 
-  const { data: orders, loading: ordersLoading } = useCollection<Order>(ordersRef);
+  const { data: orders, loading: ordersLoading } = useCollection<Order>(ordersRef as any);
 
   const { grossRevenue, wholesaleCost, netProfit } = useMemo(() => {
     if (!orders) return { grossRevenue: 0, wholesaleCost: 0, netProfit: 0 };
@@ -101,7 +102,10 @@ export default function MyOrdersPage() {
 
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 relative">
+      <div className="absolute -top-4 -left-4">
+        <BackButton label="Dashboard" href="/dashboard" />
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-3xl font-bold font-headline">My Orders</h1>
       </div>

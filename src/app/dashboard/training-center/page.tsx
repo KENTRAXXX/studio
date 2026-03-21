@@ -36,6 +36,7 @@ import {
 import { GraduationCap, PlayCircle, Crown, Loader2, Check, ExternalLink } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
+import { BackButton } from '@/components/ui/back-button';
 
 type TrainingModule = {
   id: string;
@@ -211,7 +212,10 @@ export default function TrainingCenterPage() {
                 </AlertDialogContent>
             </AlertDialog>
 
-            <div className="space-y-8">
+            <div className="space-y-8 relative">
+                <div className="absolute -top-4 -left-4">
+                    <BackButton label="Dashboard" href="/dashboard" />
+                </div>
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
                         <GraduationCap className="h-8 w-8 text-primary" />

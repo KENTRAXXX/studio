@@ -36,7 +36,7 @@ export const ReferralActivatedEmail = ({
     
     <div style={{ marginTop: '30px', textAlign: 'center' }}>
         <a 
-            href="https://somads.com/dashboard/wallet" 
+            href="https://somatoday.com/dashboard/wallet" 
             style={{ 
                 backgroundColor: '#000', 
                 color: '#fff', 

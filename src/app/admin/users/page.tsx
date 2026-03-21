@@ -40,6 +40,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { BackButton } from '@/components/ui/back-button';
 
 type UserProfile = {
   id: string;
@@ -94,7 +95,7 @@ export default function UserManagementPage() {
   
   const usersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'users'));
+    return query(collection(firestore, 'users')) as any;
   }, [firestore]);
 
   const { data: users, loading: usersLoading } = useCollection<UserProfile>(usersQuery);
@@ -137,7 +138,10 @@ export default function UserManagementPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 relative">
+      <div className="absolute -top-4 -left-4">
+        <BackButton label="Executive Pulse" href="/admin" />
+      </div>
       <h1 className="text-3xl font-bold font-headline text-primary flex items-center gap-2">
         <Users /> User Management
       </h1>

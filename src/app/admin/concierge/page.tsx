@@ -35,6 +35,7 @@ import SomaLogo from '@/components/logo';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { sendConciergeResponseEmail } from '@/ai/flows/send-concierge-response-email';
+import { BackButton } from '@/components/ui/back-button';
 
 type ConciergeTicket = {
     id: string;
@@ -80,7 +81,7 @@ export default function AdminConciergeInbox() {
         );
     }, [firestore]);
 
-    const { data: tickets, loading: ticketsLoading } = useCollection<ConciergeTicket>(ticketsQuery);
+    const { data: tickets, loading: ticketsLoading } = useCollection<ConciergeTicket>(ticketsQuery as any);
 
     const handleSendReply = async () => {
         if (!firestore || !selectedTicket || !replyText.trim()) return;
@@ -154,7 +155,10 @@ export default function AdminConciergeInbox() {
     }
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 relative">
+            <div className="absolute -top-4 -left-4">
+                <BackButton label="Executive Pulse" href="/admin" />
+            </div>
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold font-headline text-primary flex items-center gap-3">

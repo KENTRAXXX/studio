@@ -13,6 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Settings, Loader2, Save, Eye, UploadCloud, X, Globe, Sparkles, CreditCard, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import SomaLogo from '@/components/logo';
+import { BackButton } from '@/components/ui/back-button';
 import { uploadToCloudinary } from '@/lib/utils/upload-image';
 import { usePaystack } from '@/hooks/use-paystack';
 
@@ -207,7 +208,10 @@ export default function StoreSettingsPage() {
     }
 
     return (
-        <div className="space-y-8 max-w-6xl mx-auto">
+        <div className="space-y-8 max-w-6xl mx-auto relative">
+            <div className="absolute -top-4 -left-4">
+                <BackButton label="Dashboard" href="/dashboard" />
+            </div>
             <div className="flex items-center gap-4">
                 <Settings className="h-8 w-8 text-primary" />
                 <h1 className="text-3xl font-bold font-headline">Store Customization</h1>

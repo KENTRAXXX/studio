@@ -47,6 +47,7 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { AddMasterProductModal } from '@/components/AddMasterProductModal';
 import { EditMasterProductModal } from '@/components/EditMasterProductModal';
 import { generateCatalog } from '@/lib/seed-generator';
+import { BackButton } from '@/components/ui/back-button';
 import { useToast } from '@/hooks/use-toast';
 
 type MasterProduct = {
@@ -91,7 +92,7 @@ export default function AdminCatalogPage() {
     return query(collection(firestore, 'Master_Catalog'));
   }, [firestore]);
 
-  const { data: masterCatalog, loading: productsLoading } = useCollection<MasterProduct>(catalogQuery);
+  const { data: masterCatalog, loading: productsLoading } = useCollection<MasterProduct>(catalogQuery as any);
 
   const filteredCatalog = useMemo(() => {
     if (!masterCatalog) return [];
@@ -223,7 +224,10 @@ export default function AdminCatalogPage() {
         product={selectedProduct}
       />
     )}
-    <div className="space-y-8">
+    <div className="space-y-8 relative">
+      <div className="absolute -top-4 -left-4">
+        <BackButton label="Admin Hub" href="/admin" />
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
             <Gem className="h-8 w-8 text-primary" />

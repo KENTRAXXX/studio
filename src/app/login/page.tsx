@@ -202,7 +202,7 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Email Address</FormLabel>
                     <FormControl>
-                      <Input placeholder="executive@somads.com" {...field} className="bg-black/20 border-primary/20" />
+                      <Input placeholder="executive@somatoday.com" {...field} className="bg-black/20 border-primary/20" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

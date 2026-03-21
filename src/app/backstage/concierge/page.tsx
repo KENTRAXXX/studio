@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import SomaLogo from '@/components/logo';
+import { BackButton } from '@/components/ui/back-button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -129,8 +130,11 @@ export default function ConciergePage() {
   }
 
   return (
-    <div className="space-y-10 max-w-7xl mx-auto pb-12">
-      <div className="text-center">
+    <div className="space-y-10 max-w-7xl mx-auto pb-12 relative">
+        <div className="absolute -top-4 -left-4">
+            <BackButton label="Dashboard" href="/dashboard" />
+        </div>
+        <div className="text-center">
         <SomaLogo className="h-12 w-12 mx-auto text-primary" />
         <h1 className="text-4xl font-bold font-headline mt-4 text-primary tracking-tight">Executive Concierge</h1>
         <p className="mt-2 text-lg text-muted-foreground">Direct strategic support for elite partners.</p>

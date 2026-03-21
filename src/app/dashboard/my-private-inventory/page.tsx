@@ -25,6 +25,7 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { AddPrivateProductModal } from '@/components/AddPrivateProductModal';
 import { EditPrivateProductModal } from '@/components/EditPrivateProductModal';
 import { useToast } from '@/hooks/use-toast';
+import { BackButton } from '@/components/ui/back-button';
 
 type PrivateProduct = {
   id: string;
@@ -67,7 +68,7 @@ export default function MyPrivateInventoryPage() {
     );
   }, [firestore, user]);
 
-  const { data: privateProducts, loading: productsLoading } = useCollection<PrivateProduct>(privateProductsRef);
+  const { data: privateProducts, loading: productsLoading } = useCollection<PrivateProduct>(privateProductsRef as any);
 
   const handleEditClick = (product: PrivateProduct) => {
     setSelectedProduct(product);
@@ -165,7 +166,10 @@ export default function MyPrivateInventoryPage() {
         className="hidden"
         accept=".csv"
     />
-    <div className="space-y-8">
+    <div className="space-y-8 relative">
+      <div className="absolute -top-4 -left-4">
+        <BackButton label="Dashboard" href="/dashboard" />
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
             <Package className="h-8 w-8 text-primary" />

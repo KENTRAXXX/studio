@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { PendingProduct } from '@/lib/types';
 import SomaLogo from '@/components/logo';
 import { useState } from 'react';
+import { BackButton } from '@/components/ui/back-button';
 
 export default function ApprovalQueuePage() {
   const firestore = useFirestore();
@@ -26,7 +27,7 @@ export default function ApprovalQueuePage() {
   
   const pendingProductsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'Pending_Master_Catalog'), where('isApproved', '==', false));
+    return query(collection(firestore, 'Pending_Master_Catalog'), where('isApproved', '==', false)) as any;
   }, [firestore]);
 
   const { data: pendingProducts, loading: productsLoading } = useCollection<PendingProduct>(pendingProductsQuery);
@@ -91,7 +92,10 @@ export default function ApprovalQueuePage() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 sm:p-6">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 sm:p-6 relative">
+        <div className="absolute top-8 left-8">
+            <BackButton label="Executive Pulse" href="/admin" />
+        </div>
         <div className="text-center mb-10">
             <SomaLogo className="h-12 w-12 mx-auto" />
             <h1 className="text-4xl font-bold font-headline mt-4 text-primary">Admin Approval Queue</h1>

@@ -280,7 +280,7 @@ export default function StoreLayout({
                         <img src={logoUrl} alt={storeName} className="h-10 w-auto object-contain transition-transform group-hover:scale-105" />
                     </div>
                 ) : (
-                    <SomaLogo className="h-8 w-8 text-primary" aria-hidden="true" />
+                    <SomaLogo className="h-8 w-8 text-primary" aria-hidden={true} />
                 )}
                 <h1 className="font-headline text-2xl font-bold text-primary tracking-tighter transition-colors group-hover:text-primary/80">
                     {storeLoading ? 'Loading...' : storeName}
@@ -335,7 +335,7 @@ export default function StoreLayout({
                 )}
               </div>
               <div className="flex gap-6">
-                <Link href="/legal/terms" className="text-sm text-muted-foreground hover:text-primary">Privacy Policy</Link>
+                <Link href="/legal/privacy" className="text-sm text-muted-foreground hover:text-primary">Privacy Policy</Link>
                 <ContactSheet ownerEmail={ownerData?.email}/>
               </div>
             </div>

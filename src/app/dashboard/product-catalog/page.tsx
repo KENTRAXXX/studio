@@ -30,6 +30,7 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { cn } from '@/lib/utils';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
+import { BackButton } from '@/components/ui/back-button';
 import Link from 'next/link';
 
 type Product = {
@@ -91,7 +92,7 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
     );
   }, [firestore, isDemo]);
   
-  const { data: liveCatalog, loading: catalogLoading } = useCollection<Product>(masterCatalogRef);
+  const { data: liveCatalog, loading: catalogLoading } = useCollection<Product>(masterCatalogRef as any);
   
   // 2. Fetch User's Provisioned Products
   const userProductsQuery = useMemoFirebase(() => {
@@ -216,7 +217,10 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 relative">
+      <div className="absolute -top-4 -left-4">
+        <BackButton label="Dashboard" href="/dashboard" />
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           < Gem className="h-8 w-8 text-primary" />

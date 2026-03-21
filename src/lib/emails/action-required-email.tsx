@@ -30,7 +30,7 @@ export const ActionRequiredEmail = ({ name, feedback }: { name: string, feedback
     
     <div style={{ marginTop: '30px', textAlign: 'center' }}>
         <a 
-            href="https://somads.com/backstage" 
+            href="https://somatoday.com/backstage" 
             style={{ 
                 backgroundColor: '#DAA520', 
                 color: '#fff', 

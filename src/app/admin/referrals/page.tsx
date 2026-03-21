@@ -40,6 +40,7 @@ import { formatCurrency } from '@/utils/format';
 import { differenceInDays, subDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { BackButton } from '@/components/ui/back-button';
 import { sendFundsAvailableEmail } from '@/ai/flows/send-funds-available-email';
 
 type UserData = {
@@ -97,7 +98,7 @@ export default function AdminReferralAuditPage() {
         if (!firestore) return null;
         return query(collection(firestore, 'users'));
     }, [firestore]);
-    const { data: allUsers, loading: usersLoading } = useCollection<UserData>(usersQ);
+    const { data: allUsers, loading: usersLoading } = useCollection<UserData>(usersQ as any);
 
     // 2. Fetch Payout Records (to map actual commissions)
     const payoutsQ = useMemoFirebase(() => {
@@ -107,20 +108,20 @@ export default function AdminReferralAuditPage() {
             where('type', '==', 'referral_reward')
         );
     }, [firestore]);
-    const { data: payoutRecords, loading: payoutsLoading } = useCollection<PayoutRecord>(payoutsQ);
+    const { data: payoutRecords, loading: payoutsLoading } = useCollection<PayoutRecord>(payoutsQ as any);
 
     // 3. Fetch Platform Revenue & Orders for Analytics
     const revenueQ = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(collection(firestore, 'revenue_logs'));
     }, [firestore]);
-    const { data: revenueLogs, loading: revenueLoading } = useCollection<RevenueLog>(revenueQ);
+    const { data: revenueLogs, loading: revenueLoading } = useCollection<RevenueLog>(revenueQ as any);
 
     const ordersQ = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(collectionGroup(firestore, 'orders'));
     }, [firestore]);
-    const { data: allOrders, loading: ordersLoading } = useCollection<OrderRecord>(ordersQ);
+    const { data: allOrders, loading: ordersLoading } = useCollection<OrderRecord>(ordersQ as any);
 
     const auditData = useMemo(() => {
         if (!allUsers) return [];
@@ -317,7 +318,10 @@ export default function AdminReferralAuditPage() {
     }
 
     return (
-        <div className="space-y-8 pb-20">
+        <div className="space-y-8 pb-20 relative">
+            <div className="absolute -top-4 -left-4">
+                <BackButton label="Admin Hub" href="/admin" />
+            </div>
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <h1 className="text-3xl font-bold font-headline text-primary flex items-center gap-3">

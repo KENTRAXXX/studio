@@ -22,6 +22,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { BackButton } from '@/components/ui/back-button';
 
 type Store = {
   id: string;
@@ -67,14 +68,14 @@ export default function AdminOrdersPage() {
     return query(collectionGroup(firestore, 'orders'), orderBy('createdAt', 'desc'));
   }, [firestore]);
 
-  const { data: allOrders, loading: ordersLoading } = useCollection<Order>(allOrdersQuery);
+  const { data: allOrders, loading: ordersLoading } = useCollection<Order>(allOrdersQuery as any);
 
   const allStoresQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'stores'));
   }, [firestore]);
 
-  const { data: allStores, loading: storesLoading } = useCollection<Store>(allStoresQuery);
+  const { data: allStores, loading: storesLoading } = useCollection<Store>(allStoresQuery as any);
 
   const storesMap = useMemo(() => {
     if (!allStores) return new Map();
@@ -98,7 +99,10 @@ export default function AdminOrdersPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 relative">
+      <div className="absolute -top-4 -left-4">
+        <BackButton label="Admin Hub" href="/admin" />
+      </div>
       <h1 className="text-3xl font-bold font-headline text-primary flex items-center gap-2">
         <ShoppingCart /> All Platform Orders
       </h1>

@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { sendTestEmail } from '@/ai/flows/send-test-email';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { BackButton } from '@/components/ui/back-button';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
 
 type PlatformConfig = {
@@ -31,7 +32,7 @@ export default function PlatformSettingsPage() {
       return doc(firestore, 'platform_metadata', 'config');
   }, [firestore]);
 
-  const { data: config, loading: configLoading } = useDoc<PlatformConfig>(configRef);
+  const { data: config, loading: configLoading } = useDoc<PlatformConfig>(configRef as any);
 
   const [testEmail, setTestEmail] = useState('');
   const [isTesting, setIsTesting] = useState(false);
@@ -104,7 +105,10 @@ export default function PlatformSettingsPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-10 pb-20">
+    <div className="max-w-5xl mx-auto space-y-10 pb-20 relative">
+      <div className="absolute -top-4 -left-4">
+        <BackButton label="Admin Hub" href="/admin" />
+      </div>
       <header className="flex items-center justify-between">
         <div>
             <h1 className="text-3xl font-bold font-headline text-primary flex items-center gap-3">

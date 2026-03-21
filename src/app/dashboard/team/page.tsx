@@ -13,6 +13,7 @@ import { UserPlus, Shield, Mail, Trash2, CheckCircle2, Clock, ShieldCheck, Brief
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { getTier } from '@/lib/tiers';
+import { BackButton } from '@/components/ui/back-button';
 
 export default function TeamManagementPage() {
     const { userProfile } = useUserProfile();
@@ -170,7 +171,10 @@ export default function TeamManagementPage() {
     }
 
     return (
-        <div className="space-y-8 max-w-6xl mx-auto">
+        <div className="space-y-8 max-w-6xl mx-auto relative">
+            <div className="absolute -top-4 -left-4">
+                <BackButton label="Dashboard" href="/dashboard" />
+            </div>
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold font-headline text-primary uppercase tracking-tight">Team Hub</h1>
