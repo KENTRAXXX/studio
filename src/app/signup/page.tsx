@@ -72,7 +72,7 @@ function SignUpFormContent() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showAdminCode, setShowAdminCode] = useState(false);
-  const selectedEntity = form.watch('entityType');
+
 
   const planTier = (searchParams.get('planTier') || 'SCALER') as PlanTier;
   const interval = (searchParams.get('interval') as PlanInterval) || 'monthly';
@@ -118,6 +118,8 @@ function SignUpFormContent() {
       governmentId: '',
     },
   });
+
+  const selectedEntity = form.watch('entityType');
 
   useEffect(() => {
     if (refParam) {
