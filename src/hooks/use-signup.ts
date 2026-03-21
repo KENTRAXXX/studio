@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
-import { createUserWithEmailAndPassword, UserCredential } from 'firebase/auth';
-import { doc, setDoc, query, collection, where, getDocs } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, UserCredential } from 'firebase/auth';
+import { doc, setDoc, getDoc, query, collection, where, getDocs } from 'firebase/firestore';
 import { useAuth, useFirestore } from '@/firebase';
 
 type SignUpCredentials = {
@@ -118,5 +118,88 @@ export function useSignUp() {
     }
   };
 
-  return { mutate, isPending, error };
+  const mutateWithGoogle = async (
+    credentials: Omit<SignUpCredentials, 'email' | 'password'>,
+    options?: UseSignUpOptions
+  ) => {
+    if (!auth || !firestore) {
+      const err = new Error('Firebase not initialized');
+      setError(err);
+      options?.onError?.(err);
+      return;
+    }
+
+    setIsPending(true);
+    setError(null);
+
+    try {
+      let referredBy: string | null = null;
+      if (credentials.referralCode) {
+        const referralQuery = query(collection(firestore, 'users'), where('referralCode', '==', credentials.referralCode.toUpperCase()));
+        const querySnapshot = await getDocs(referralQuery);
+        if (querySnapshot.empty) {
+            throw new Error('Invalid referral code.');
+        }
+        referredBy = querySnapshot.docs[0].id;
+      }
+
+      const provider = new GoogleAuthProvider();
+      const userCredential = await signInWithPopup(auth, provider);
+      const user = userCredential.user;
+      
+      const userDocRef = doc(firestore, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+      
+      if (!userDoc.exists()) {
+          // Determine Role
+          let userRole: 'ADMIN' | 'SELLER' | 'MOGUL';
+          if (credentials.planTier === 'ADMIN') {
+            userRole = 'ADMIN';
+          } else if (credentials.planTier === 'SELLER' || credentials.planTier === 'BRAND') {
+            userRole = 'SELLER';
+          } else {
+            userRole = 'MOGUL';
+          }
+          
+          const isFreeTier = (credentials.planTier === 'SELLER' && credentials.plan === 'free') || credentials.planTier === 'ADMIN';
+
+          const statusMap = {
+              ADMIN: 'approved',
+              MOGUL: 'approved',
+              MERCHANT: 'approved',
+              SCALER: 'approved',
+              ENTERPRISE: 'approved',
+              SELLER: 'pending_review',
+              BRAND: 'pending_review'
+          };
+
+          const newUserProfile: any = {
+            email: user.email,
+            hasAccess: isFreeTier,
+            hasAcceptedTerms: true,
+            userRole: userRole,
+            planTier: credentials.planTier,
+            plan: credentials.plan,
+            referralCode: generateReferralCode(6),
+            status: statusMap[credentials.planTier as keyof typeof statusMap] || 'approved'
+          };
+
+          if (referredBy) {
+            newUserProfile.referredBy = referredBy;
+          }
+
+          await setDoc(userDocRef, newUserProfile);
+      }
+
+      options?.onSuccess?.(userCredential);
+      return userCredential;
+    } catch (err: any) {
+      setError(err);
+      options?.onError?.(err);
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return { mutate, mutateWithGoogle, isPending, error };
 }
