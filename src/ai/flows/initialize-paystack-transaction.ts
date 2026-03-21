@@ -16,7 +16,7 @@ const basePrices: Record<string, number> = {
     BRAND: 21.00,
 };
 
-const BUSINESS_SURCHARGE = 49.99.00; // Flat premium for corporate entities
+const BUSINESS_SURCHARGE = 49.99; // Flat premium for corporate entities
 
 /**
  * Resolves the plan code from environment variables.
