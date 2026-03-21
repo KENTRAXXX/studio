@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { doc } from 'firebase/firestore';
+import { doc, DocumentReference } from 'firebase/firestore';
 import { useUser } from './auth/use-user';
 import { useFirestore } from './provider';
 import { useDoc } from './firestore/use-doc';
@@ -34,6 +34,10 @@ type UserProfile = {
   avatarUrl?: string;
   coverPhotoUrl?: string;
   photoURL?: string;
+  twoFactorEnabled?: boolean;
+  twoFactorMethod?: 'authenticator' | 'email';
+  totpSecret?: string;
+  tempEmailOtpExpiry?: number;
   socialLinks?: {
     instagram?: string;
     x?: string;
@@ -92,7 +96,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
 
   const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid);
+    return doc(firestore, 'users', user.uid) as DocumentReference<UserProfile>;
   }, [firestore, user]);
 
   const { data: userProfile, loading: profileLoading } = useDoc<UserProfile>(userDocRef);

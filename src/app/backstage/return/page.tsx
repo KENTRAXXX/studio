@@ -79,7 +79,11 @@ export default function BackstageReturnPage() {
           }
 
           setTimeout(() => {
-            router.push(destination);
+            if (data.twoFactorEnabled !== true) {
+                router.push('/auth/2fa/setup');
+            } else {
+                router.push(destination);
+            }
           }, 3000);
         } else {
             setTimeout(() => setStatusMessage(`Finalizing your ${tierLabel} status...`), 2000);

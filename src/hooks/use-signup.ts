@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { createUserWithEmailAndPassword, UserCredential, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { createUserWithEmailAndPassword, UserCredential, signInWithPopup, GoogleAuthProvider, sendEmailVerification } from 'firebase/auth';
 import { doc, setDoc, query, collection, where, getDocs, increment, updateDoc, getDoc } from 'firebase/firestore';
 import { useAuth, useFirestore } from '@/firebase';
 import { getTier } from '@/lib/tiers';
@@ -83,6 +83,10 @@ export function useSignUp() {
       );
 
       const user = userCredential.user;
+      
+      // Dispatch verification email internally
+      await sendEmailVerification(user).catch(console.error);
+
       const userDocRef = doc(firestore, 'users', user.uid);
       
       // Determine Role

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   SidebarProvider,
@@ -61,6 +61,12 @@ export default function DashboardLayout({
   const auth = useAuth();
   const router = useRouter();
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (userProfile && !userProfile.twoFactorEnabled) {
+        router.push('/auth/2fa/setup');
+    }
+  }, [userProfile, router]);
 
   const handleLogout = async () => {
     if (!auth) return;
@@ -129,7 +135,7 @@ export default function DashboardLayout({
       <Sidebar>
         <SidebarHeader>
           <Link href="/dashboard" className="flex items-center gap-2 group p-2">
-            <SomaLogo className="h-6 w-6 text-primary transition-transform group-hover:scale-110" aria-hidden="true" />
+            <SomaLogo className="h-6 w-6 text-primary transition-transform group-hover:scale-110" aria-hidden={true} />
             <span className="font-headline font-bold text-xl text-primary uppercase tracking-tighter transition-opacity group-hover:opacity-80">SomaDS</span>
           </Link>
         </SidebarHeader>
@@ -139,7 +145,7 @@ export default function DashboardLayout({
               <SidebarMenuItem key={item.href}>
                 <Link href={item.href}>
                   <SidebarMenuButton tooltip={item.label}>
-                    <item.icon aria-hidden="true" />
+                    <item.icon aria-hidden={true} />
                     <span>{item.label}</span>
                   </SidebarMenuButton>
                 </Link>
@@ -156,7 +162,7 @@ export default function DashboardLayout({
                 className="w-full justify-start text-muted-foreground hover:text-red-400 hover:bg-red-400/5 px-2 h-9"
                 onClick={() => setIsLogoutDialogOpen(true)}
               >
-                <LogOut className="h-4 w-4 mr-2" aria-hidden="true" />
+                <LogOut className="h-4 w-4 mr-2" aria-hidden={true} />
                 <span>Sign Out</span>
               </Button>
               

@@ -160,7 +160,7 @@ function SignUpFormContent() {
 
           toast({
             title: isFreePlan ? 'Access Finalized' : 'Activation Complete',
-            description: 'Your strategic hub is being prepared.',
+            description: 'Please check your inbox to verify your email. Your strategic hub is being prepared.',
           });
           
           router.push('/backstage/return');

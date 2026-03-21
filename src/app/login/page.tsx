@@ -3,11 +3,9 @@
 
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { useAuth } from '@/firebase';
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, sendPasswordResetEmail, sendEmailVerification } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { useAuth, useFirestore } from '@/firebase';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +33,7 @@ type FormValues = z.infer<typeof formSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const auth = useAuth();
+  const firestore = useFirestore();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -62,7 +61,28 @@ export default function LoginPage() {
     
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, data.email, data.password);
+      const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
+      
+      if (!userCredential.user.emailVerified) {
+        await sendEmailVerification(userCredential.user).catch(console.error);
+        await auth.signOut();
+        toast({
+          variant: 'destructive',
+          title: 'Verification Required',
+          description: 'You must verify your email before accessing the dashboard. A fresh secure link has been dispatched to your inbox.',
+        });
+        return;
+      }
+
+      const userDoc = await getDoc(doc(firestore!, 'users', userCredential.user.uid));
+      if (userDoc.exists() && userDoc.data().twoFactorEnabled) {
+          router.push('/auth/2fa/verify');
+          return;
+      } else if (userDoc.exists() && !userDoc.data().twoFactorEnabled) {
+          router.push('/auth/2fa/setup');
+          return;
+      }
+
       toast({
         title: 'Welcome Back',
         description: 'Accessing your SOMA dashboard...',
@@ -84,7 +104,27 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const userCredential = await signInWithPopup(auth, provider);
+      
+      if (!userCredential.user.emailVerified) {
+        await auth.signOut();
+        toast({
+          variant: 'destructive',
+          title: 'Verification Required',
+          description: 'Your Google account email is not verified by Google. Please verify it first.',
+        });
+        return;
+      }
+
+      const userDoc = await getDoc(doc(firestore!, 'users', userCredential.user.uid));
+      if (userDoc.exists() && userDoc.data().twoFactorEnabled) {
+          router.push('/auth/2fa/verify');
+          return;
+      } else if (userDoc.exists() && !userDoc.data().twoFactorEnabled) {
+          router.push('/auth/2fa/setup');
+          return;
+      }
+
       toast({
         title: 'Welcome Back',
         description: 'Accessing your SOMA dashboard...',
@@ -95,6 +135,37 @@ export default function LoginPage() {
         variant: 'destructive',
         title: 'Login Failed',
         description: error.message || 'An error occurred during Google sign in.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onForgotPassword = async () => {
+    const email = form.getValues('email');
+    if (!email || !email.includes('@')) {
+      toast({
+        variant: 'destructive',
+        title: 'Identity Required',
+        description: 'Please type your executive email address first before resetting your password.',
+      });
+      return;
+    }
+    
+    if (!auth) return;
+    
+    setIsLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast({
+        title: 'Secure Link Dispatched',
+        description: 'A dedicated terminal link to reset your password has been routed to your email.',
+      });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Reset Failed',
+        description: error.message || 'Could not communicate with the authentication server.',
       });
     } finally {
       setIsLoading(false);
@@ -141,7 +212,17 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <div className="flex items-center justify-between">
+                      <FormLabel>Password</FormLabel>
+                      <button 
+                        type="button" 
+                        onClick={onForgotPassword}
+                        disabled={isLoading}
+                        className="text-[10px] uppercase font-black tracking-widest text-primary/70 hover:text-primary transition-colors disabled:opacity-50"
+                      >
+                        Reset Password?
+                      </button>
+                    </div>
                     <FormControl>
                       <div className="relative">
                         <Input 
