@@ -336,7 +336,7 @@ function SneakPeek() {
                          className="flex flex-col sm:flex-row items-center gap-4"
                     >
                         <Button asChild size="lg" className="h-12 text-lg w-full sm:w-auto btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
-                            <Link href="/plan-selection">Claim Your Lifetime Access</Link>
+                            <Link href="/plan-selection">Claim Your Access</Link>
                         </Button>
                         <Button asChild size="lg" variant="outline" className="h-12 text-lg w-full sm:w-auto border-primary/50 text-primary hover:bg-primary/10">
                             <Link href={`https://ambassador.${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com'}`}>

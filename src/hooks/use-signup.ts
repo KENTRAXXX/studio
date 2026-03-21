@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
-import { createUserWithEmailAndPassword, UserCredential } from 'firebase/auth';
-import { doc, setDoc, query, collection, where, getDocs, increment, updateDoc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, UserCredential, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { doc, setDoc, query, collection, where, getDocs, increment, updateDoc, getDoc } from 'firebase/firestore';
 import { useAuth, useFirestore } from '@/firebase';
 import { getTier } from '@/lib/tiers';
 
@@ -168,5 +168,127 @@ export function useSignUp() {
     }
   };
 
-  return { mutate, isPending, error };
+  const mutateWithGoogle = async (
+    credentials: Omit<SignUpCredentials, 'fullName' | 'email' | 'password'>,
+    options?: UseSignUpOptions
+  ) => {
+    if (!auth || !firestore) {
+      const err = new Error('Firebase not initialized');
+      setError(err);
+      options?.onError?.(err);
+      return;
+    }
+
+    setIsPending(true);
+    setError(null);
+
+    try {
+      const provider = new GoogleAuthProvider();
+      const userCredential = await signInWithPopup(auth, provider);
+      
+      const user = userCredential.user;
+      const userDocRef = doc(firestore, 'users', user.uid);
+      
+      const userDocSnap = await getDoc(userDocRef);
+      
+      if (!userDocSnap.exists()) {
+        let referredBy: string | null = null;
+        if (credentials.referralCode) {
+          const referralQuery = query(collection(firestore, 'users'), where('referralCode', '==', credentials.referralCode.toUpperCase()));
+          const querySnapshot = await getDocs(referralQuery);
+          if (!querySnapshot.empty) {
+              referredBy = querySnapshot.docs[0].id;
+              // Record the successful lead conversion for the ambassador
+              const referrerRef = doc(firestore, 'users', referredBy);
+              await updateDoc(referrerRef, {
+                  "ambassadorData.referralSignups": increment(1)
+              }).catch(console.error);
+          }
+        }
+
+        // Determine Role
+        let userRole: 'ADMIN' | 'SELLER' | 'MOGUL' | 'AMBASSADOR';
+        if (credentials.planTier === 'ADMIN') {
+          userRole = 'ADMIN';
+        } else if (credentials.planTier === 'AMBASSADOR') {
+          userRole = 'AMBASSADOR';
+        } else if (credentials.planTier === 'SELLER' || credentials.planTier === 'BRAND') {
+          userRole = 'SELLER';
+        } else {
+          userRole = 'MOGUL';
+        }
+        
+        const isFreeTier = (credentials.planTier === 'SELLER' && credentials.plan === 'free') || credentials.planTier === 'ADMIN' || credentials.planTier === 'AMBASSADOR';
+
+        // Default status mapping: Ambassadors now require review for KYC/Vetting
+        const statusMap = {
+            ADMIN: 'approved',
+            MOGUL: 'approved',
+            MERCHANT: 'approved',
+            SCALER: 'approved',
+            ENTERPRISE: 'approved',
+            SELLER: 'pending_review',
+            BRAND: 'pending_review',
+            AMBASSADOR: 'pending_review'
+        };
+
+        const tierConfig = getTier(credentials.planTier);
+
+        const newUserProfile: any = {
+          fullName: user.displayName || 'Google User',
+          email: user.email,
+          hasAccess: isFreeTier,
+          hasAcceptedTerms: true,
+          userRole: userRole,
+          planTier: credentials.planTier,
+          plan: credentials.plan,
+          aiCredits: tierConfig.aiCreditsMonthly, // Tier-based allocation
+          referralCode: credentials.ambassadorCode?.toUpperCase() || generateReferralCode(6),
+          status: statusMap[credentials.planTier as keyof typeof statusMap] || 'approved',
+          createdAt: new Date().toISOString(),
+          systemMetadata: credentials.metadata || {},
+        };
+
+        if (referredBy) {
+          newUserProfile.referredBy = referredBy;
+          newUserProfile.referralStatus = 'pending';
+        }
+
+        // Add role specific data
+        if (userRole === 'AMBASSADOR') {
+            newUserProfile.ambassadorData = {
+                socialHandle: credentials.socialHandle || '',
+                targetAudience: credentials.targetAudience || '',
+                governmentIdUrl: credentials.governmentId || '', 
+                payoutDetails: {
+                    bankName: credentials.bankName || '',
+                    accountNumber: credentials.accountNumber || '',
+                    accountHolderName: credentials.accountHolderName || ''
+                },
+                referralClicks: 0,
+                referralSignups: 0
+            };
+        } else {
+            newUserProfile.businessData = {
+                phoneNumber: credentials.phoneNumber || '',
+                storeName: credentials.storeName || '',
+                desiredSubdomain: credentials.desiredSubdomain || '',
+                niche: credentials.niche || 'Luxury'
+            };
+        }
+
+        await setDoc(userDocRef, newUserProfile);
+      }
+
+      options?.onSuccess?.(userCredential);
+      return userCredential;
+    } catch (err: any) {
+      setError(err);
+      options?.onError?.(err);
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return { mutate, mutateWithGoogle, isPending, error };
 }
