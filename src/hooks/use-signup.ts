@@ -28,6 +28,8 @@ type SignUpCredentials = {
   taxId?: string;
   businessDocumentUrl?: string;
   governmentId?: string;
+  parentId?: string;
+  businessRole?: 'OWNER' | 'OPERATIONS' | 'ANALYST' | 'FINANCE' | 'MARKETING';
   metadata?: any;
 };
 
@@ -129,7 +131,7 @@ export function useSignUp() {
         userRole: userRole,
         planTier: credentials.planTier,
         plan: credentials.plan,
-        aiCredits: tierConfig.aiCreditsMonthly, // Tier-based allocation
+        aiCredits: credentials.entityType === 'BUSINESS' ? Math.floor(tierConfig.aiCreditsMonthly * 1.5) : tierConfig.aiCreditsMonthly, 
         referralCode: credentials.ambassadorCode?.toUpperCase() || generateReferralCode(6),
         status: statusMap[credentials.planTier as keyof typeof statusMap] || 'approved',
         createdAt: new Date().toISOString(),
@@ -165,6 +167,9 @@ export function useSignUp() {
       }
 
       newUserProfile.entityType = credentials.entityType || 'INDIVIDUAL';
+      newUserProfile.parentId = credentials.parentId || null;
+      newUserProfile.businessRole = credentials.businessRole || (newUserProfile.entityType === 'BUSINESS' ? 'OWNER' : null);
+      
       newUserProfile.verificationData = credentials.entityType === 'BUSINESS' ? {
           governmentIdUrl: credentials.governmentId || '',
           legalBusinessName: credentials.legalBusinessName || '',
@@ -175,6 +180,23 @@ export function useSignUp() {
       };
 
       await setDoc(userDocRef, newUserProfile);
+
+      // Mark invitation as accepted if applicable
+      if (credentials.parentId) {
+          const inviteQuery = query(
+              collection(firestore, 'invitations'),
+              where('parentId', '==', credentials.parentId),
+              where('email', '==', credentials.email),
+              where('status', '==', 'pending')
+          );
+          const inviteSnap = await getDocs(inviteQuery);
+          if (!inviteSnap.empty) {
+              await updateDoc(doc(firestore, 'invitations', inviteSnap.docs[0].id), {
+                  status: 'accepted',
+                  acceptedAt: new Date().toISOString()
+              });
+          }
+      }
 
       options?.onSuccess?.(userCredential);
       return userCredential;
@@ -260,7 +282,7 @@ export function useSignUp() {
           userRole: userRole,
           planTier: credentials.planTier,
           plan: credentials.plan,
-          aiCredits: tierConfig.aiCreditsMonthly, // Tier-based allocation
+          aiCredits: credentials.entityType === 'BUSINESS' ? Math.floor(tierConfig.aiCreditsMonthly * 1.5) : tierConfig.aiCreditsMonthly,
           referralCode: credentials.ambassadorCode?.toUpperCase() || generateReferralCode(6),
           status: statusMap[credentials.planTier as keyof typeof statusMap] || 'approved',
           createdAt: new Date().toISOString(),
@@ -294,6 +316,18 @@ export function useSignUp() {
                 niche: credentials.niche || 'Luxury'
             };
         }
+        
+        newUserProfile.entityType = credentials.entityType || 'INDIVIDUAL';
+        newUserProfile.parentId = credentials.parentId || null;
+        newUserProfile.businessRole = credentials.businessRole || (newUserProfile.entityType === 'BUSINESS' ? 'OWNER' : null);
+        newUserProfile.verificationData = credentials.entityType === 'BUSINESS' ? {
+            governmentIdUrl: credentials.governmentId || '',
+            legalBusinessName: credentials.legalBusinessName || '',
+            taxId: credentials.taxId || '',
+            businessDocumentUrl: credentials.businessDocumentUrl || '',
+        } : {
+            governmentIdUrl: credentials.governmentId || '',
+        };
 
         await setDoc(userDocRef, newUserProfile);
       }

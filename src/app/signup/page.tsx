@@ -31,6 +31,7 @@ import { useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { ImageUploader } from '@/components/ui/image-uploader';
+import { getTier } from '@/lib/tiers';
 
 const formSchema = z.object({
   fullName: z.string().min(2, 'Legal name is required.'),
@@ -72,15 +73,23 @@ function SignUpFormContent() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showAdminCode, setShowAdminCode] = useState(false);
+    const inviteParentId = searchParams.get('parentId');
+    const inviteRole = searchParams.get('role');
+    const inviteTier = searchParams.get('tier');
+    const referralCode = searchParams.get('ref');
+    
+    const isTeamInvite = referralCode === 'team';
 
-
-  const planTier = (searchParams.get('planTier') || 'SCALER') as PlanTier;
+  const planTier = (inviteTier as PlanTier) || (searchParams.get('planTier') || 'SCALER') as PlanTier;
   const interval = (searchParams.get('interval') as PlanInterval) || 'monthly';
+  const entityTypeParam = isTeamInvite ? 'INDIVIDUAL' : (searchParams.get('entityType') || 'INDIVIDUAL') as 'INDIVIDUAL' | 'BUSINESS';
   const refParam = searchParams.get('ref');
   
+  const tier = getTier(planTier);
+  
   const isAmbassador = planTier === 'AMBASSADOR';
-  const isFreePlan = (planTier === 'SELLER' && interval === 'free') || planTier === 'ADMIN' || planTier === 'AMBASSADOR';
-  const needsBoutiqueConfig = ['MERCHANT', 'SCALER', 'ENTERPRISE'].includes(planTier);
+  const isFreePlan = (planTier === 'SELLER' && interval === 'free') || planTier === 'ADMIN' || planTier === 'AMBASSADOR' || isTeamInvite;
+  const needsBoutiqueConfig = ['MERCHANT', 'SCALER', 'ENTERPRISE'].includes(planTier) && !isTeamInvite;
   
   const planName = {
     MERCHANT: 'Merchant',
@@ -111,7 +120,7 @@ function SignUpFormContent() {
       bankName: '',
       accountNumber: '',
       accountHolderName: '',
-      entityType: 'INDIVIDUAL',
+      entityType: entityTypeParam,
       legalBusinessName: '',
       taxId: '',
       businessDocumentUrl: '',
@@ -171,7 +180,14 @@ function SignUpFormContent() {
         deviceType: typeof window !== 'undefined' && window.innerWidth < 768 ? 'Mobile' : 'Desktop',
     };
 
-    signUp({ ...data, planTier: planTier, plan: interval, metadata }, {
+    signUp({ 
+        ...data, 
+        planTier: planTier, 
+        plan: interval, 
+        metadata,
+        parentId: inviteParentId || undefined,
+        businessRole: (inviteRole as any) || undefined
+    }, {
       onSuccess: async (user) => {
         toast({
           title: 'Account Provisioned',
@@ -249,7 +265,9 @@ function SignUpFormContent() {
         ...restData, 
         planTier: planTier, 
         plan: interval, 
-        metadata 
+        metadata,
+        parentId: inviteParentId || undefined,
+        businessRole: (inviteRole as any) || undefined
     }, {
       onSuccess: async (user) => {
         toast({
@@ -657,10 +675,10 @@ function SignUpFormContent() {
                                             <div className="text-right">
                                                 <p className="text-[10px] uppercase font-black tracking-widest text-primary/60">Activation Fee</p>
                                                 <p className="text-2xl font-headline font-bold text-white">
-                                                    ${(selectedEntity === 'BUSINESS' ? 49.99 : 0) + (interval === 'monthly' ? 19.99 : 199.90)}
+                                                    ${((selectedEntity === 'BUSINESS' ? (tier.businessSurcharge[interval as 'monthly' | 'yearly'] || 0) : 0) + (tier.price[interval as 'monthly' | 'yearly'] || 0)).toFixed(2)}
                                                     <span className="text-[10px] text-muted-foreground ml-1">USD</span>
                                                 </p>
-                                                {selectedEntity === 'BUSINESS' && <p className="text-[9px] text-amber-500 font-bold uppercase tracking-tighter mt-1">+ $49.99 Corporate Surcharge</p>}
+                                                {selectedEntity === 'BUSINESS' && (tier.businessSurcharge[interval as 'monthly' | 'yearly'] || 0) > 0 && <p className="text-[9px] text-amber-500 font-bold uppercase tracking-tighter mt-1">+ ${tier.businessSurcharge[interval as 'monthly' | 'yearly']} Corporate Surcharge</p>}
                                             </div>
                                         </div>
 

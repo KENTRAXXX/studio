@@ -99,8 +99,14 @@ export default function DashboardOverviewPage(props: any) {
 
     const netProfit = useMemo(() => {
         if (isDemo && demoData) return demoData.netProfit;
-        return totalSales * 0.27;
-    }, [totalSales, isDemo, demoData]);
+        return orders?.reduce((acc, order) => {
+            const orderCost = order.cart?.reduce((itemAcc: number, item: any) => {
+                const cost = item.wholesalePrice ?? ((item.suggestedRetailPrice || item.price || 0) * 0.7);
+                return itemAcc + (cost * (item.quantity || 1));
+            }, 0) || 0;
+            return acc + ((order.total || 0) - orderCost);
+        }, 0) || 0;
+    }, [orders, isDemo, demoData]);
 
     // 4. Branded URL Resolution (Hydration Safe)
     const boutiqueUrl = useMemo(() => {

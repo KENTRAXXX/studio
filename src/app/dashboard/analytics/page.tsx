@@ -76,10 +76,17 @@ const CITY_COORDS: Record<string, [number, number]> = {
     "Mumbai": [72.8777, 19.0760],
     "Sao Paulo": [-46.6333, -23.5505],
     "Lagos": [3.3792, 6.5244],
+    "Nairobi": [36.8219, -1.2921],
+    "Johannesburg": [28.0473, -26.2041],
+    "Cape Town": [18.4241, -33.9249],
     "Cairo": [31.2357, 30.0444],
     "Buenos Aires": [-58.3816, -34.6037],
     "Mexico City": [-99.1332, 19.4326],
-    "Istanbul": [28.9784, 41.0082]
+    "Istanbul": [28.9784, 41.0082],
+    "Riyadh": [46.6753, 24.7136],
+    "Abu Dhabi": [54.3773, 24.4539],
+    "Doha": [51.5310, 25.2854],
+    "Tel Aviv": [34.7818, 32.0853]
 };
 
 type OrderProduct = {
@@ -88,10 +95,12 @@ type OrderProduct = {
   quantity: number;
   price: number; 
   wholesalePrice?: number;
+  suggestedRetailPrice?: number;
 };
 
 type Order = {
   id: string;
+  orderId?: string;
   total: number;
   createdAt: any;
   cart: OrderProduct[];
@@ -194,14 +203,14 @@ export default function AnalyticsPage() {
     );
   }, [user, firestore]);
 
-  const { data: orders, loading: ordersLoading } = useCollection<Order>(ordersQuery);
+  const { data: orders, loading: ordersLoading } = useCollection<Order>(ordersQuery as any);
 
   const productsQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return query(collection(firestore, `stores/${user.uid}/products`));
   }, [user, firestore]);
 
-  const { data: products, loading: productsLoading } = useCollection<StorefrontProduct>(productsQuery);
+  const { data: products, loading: productsLoading } = useCollection<StorefrontProduct>(productsQuery as any);
 
   const [processingId, setProcessingId] = useState<string | null>(null);
 
@@ -222,7 +231,8 @@ export default function AnalyticsPage() {
     
     const profit = orders.reduce((acc, order) => {
         const orderCost = order.cart?.reduce((itemAcc, item) => {
-            const cost = item.wholesalePrice ?? item.price * 0.7;
+            // STRATEGIC FALLBACK: Use wholesalePrice if available; otherwise, default to 70% of retail as a governance margin.
+            const cost = item.wholesalePrice ?? ((item.suggestedRetailPrice || item.price || 0) * 0.7);
             return itemAcc + (cost * (item.quantity || 1));
         }, 0) || 0;
         return acc + ((order.total || 0) - orderCost);
@@ -379,8 +389,8 @@ export default function AnalyticsPage() {
               <div className="lg:col-span-8 h-[500px] relative bg-slate-950/50">
                   <ComposableMap projectionConfig={{ scale: 160 }} className="w-full h-full">
                       <Geographies geography={geoUrl}>
-                          {({ geographies }) =>
-                              geographies.map((geo) => (
+                          {({ geographies }: { geographies: any[] }) =>
+                              geographies.map((geo: any) => (
                                   <Geography
                                       key={geo.rsmKey}
                                       geography={geo}

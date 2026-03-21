@@ -8,6 +8,8 @@ import { useUser, useFirestore, useUserProfile, useCollection, useMemoFirebase }
 import { collection, addDoc, serverTimestamp, query, where, orderBy } from 'firebase/firestore';
 import { sendConciergeEmail } from '@/ai/flows/send-concierge-email';
 
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -58,15 +60,15 @@ export default function ConciergePage() {
 
   // Fetch Conversation History
   const ticketsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
+    if (!firestore || !user || !userProfile) return null; // Added userProfile check
     return query(
         collection(firestore, 'concierge_tickets'),
-        where('brandId', '==', user.uid),
+        where('brandId', '==', userProfile.parentId || user.uid),
         orderBy('createdAt', 'desc')
     );
-  }, [firestore, user]);
+  }, [firestore, user, userProfile]); // Added userProfile to dependencies
 
-  const { data: tickets, loading: ticketsLoading } = useCollection<Ticket>(ticketsQuery);
+  const { data: tickets, loading: ticketsLoading } = useCollection<Ticket>(ticketsQuery as any);
 
   const form = useForm<ConciergeFormValues>({
     resolver: zodResolver(conciergeSchema),
@@ -85,7 +87,7 @@ export default function ConciergePage() {
 
       // 1. Log to Firestore
       const docRef = await addDoc(collection(firestore, 'concierge_tickets'), {
-        brandId: user.uid,
+        brandId: userProfile.parentId || user.uid,
         brandName,
         subject: data.subject,
         message: data.message,
@@ -381,15 +383,3 @@ export default function ConciergePage() {
   );
 }
 
-// Minimal Badge Component
-function Badge({ children, variant = 'default', className }: { children: React.ReactNode, variant?: 'default' | 'outline', className?: string }) {
-    return (
-        <div className={cn(
-            "px-2 py-0.5 rounded-full font-bold inline-flex items-center",
-            variant === 'default' ? "bg-primary text-primary-foreground" : "border border-border",
-            className
-        )}>
-            {children}
-        </div>
-    );
-}

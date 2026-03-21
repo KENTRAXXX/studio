@@ -20,8 +20,11 @@ type UserProfile = {
   hasAcceptedTerms?: boolean;
   userRole?: 'ADMIN' | 'MOGUL' | 'SELLER';
   plan?: 'monthly' | 'yearly' | 'lifetime' | 'free';
+  entityType?: 'INDIVIDUAL' | 'BUSINESS';
+  businessRole?: 'OWNER' | 'OPERATIONS' | 'ANALYST' | 'FINANCE' | 'MARKETING';
+  parentId?: string; // Links seat members to their primary Business account 
   paidAt?: string;
-  planTier?: 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND' | 'ADMIN';
+  planTier?: 'MERCHANT' | 'SCALER' | 'SELLER' | 'ENTERPRISE' | 'BRAND' | 'ADMIN' | 'AMBASSADOR';
   status?: 'pending_review' | 'approved' | 'rejected' | 'action_required';
   walletStatus?: 'under_review' | 'active' | 'flagged';
   completedLessons?: string[];
@@ -101,8 +104,36 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
 
   const { data: userProfile, loading: profileLoading } = useDoc<UserProfile>(userDocRef);
 
+  const parentDocRef = useMemoFirebase(() => {
+    if (!firestore || !userProfile?.parentId) return null;
+    return doc(firestore, 'users', userProfile.parentId) as DocumentReference<UserProfile>;
+  }, [firestore, userProfile?.parentId]);
+
+  const { data: parentProfile, loading: parentLoading } = useDoc<UserProfile>(parentDocRef);
+
+  // Inherit properties from parent if this is a seat member
+  const compositeProfile = useMemo(() => {
+    if (!userProfile) return null;
+    if (!userProfile.parentId || !parentProfile) return { ...userProfile, id: user?.uid };
+    
+    return {
+      ...userProfile,
+      id: user?.uid,
+      // Inherit business-wide properties
+      planTier: parentProfile.planTier,
+      plan: parentProfile.plan,
+      hasAccess: parentProfile.hasAccess,
+      // Retain individual properties
+      // status (KYC) is individual
+      // businessRole is individual (assigned by owner)
+    };
+  }, [userProfile, parentProfile, user]);
+
+  const loading = userLoading || profileLoading || (!!userProfile?.parentId && parentLoading);
+
   useEffect(() => {
-    if (userLoading || profileLoading) return;
+    if (loading) return;
+    const profile = compositeProfile;
 
     // 1. PUBLIC ROUTE WHITELIST
     const isPublicRoute = 
@@ -132,15 +163,15 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       return;
     }
 
-    if (userProfile) {
+    if (profile) {
        // 3. ACCOUNT DISABILITY LOCK
-       if (userProfile.isDisabled && pathname !== '/access-denied') {
+       if (profile.isDisabled && pathname !== '/access-denied') {
          router.push('/access-denied');
          return;
        }
 
        // 4. ADMIN BYPASS
-       if (userProfile.userRole === 'ADMIN') {
+       if (profile.userRole === 'ADMIN') {
            if (pathname.startsWith('/dashboard') || pathname.startsWith('/backstage')) {
                router.push('/admin');
            }
@@ -148,8 +179,8 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
        }
       
        // 5. SUBSCRIPTION & PAYMENT GATELOCK
-       if (!userProfile.hasAccess && !isPublicRoute && !isLegalPage && !isReturnPage) {
-           const tier = getTier(userProfile.planTier);
+       if (!profile.hasAccess && !isPublicRoute && !isLegalPage && !isReturnPage) {
+           const tier = getTier(profile.planTier);
            const portalRoot = `/${tier.portal}`;
            if (pathname !== portalRoot) {
                router.push(portalRoot);
@@ -158,11 +189,10 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
        }
 
        // 6. PORTAL SENTINEL: HARD RBAC ISOLATION
-       const tierConfig = getTier(userProfile.planTier);
+       const tierConfig = getTier(profile.planTier);
        const isAtCorrectPortal = pathname.startsWith(`/${tierConfig.portal}`);
        
-       // Fixed: Added isSupportConcierge to the exclusion list to prevent redirect loops for Moguls accessing support
-       if (userProfile.hasAccess && !isAtCorrectPortal && !isPublicRoute && !isLegalPage && !isReturnPage && !isSupportConcierge) {
+       if (profile.hasAccess && !isAtCorrectPortal && !isPublicRoute && !isLegalPage && !isReturnPage && !isSupportConcierge) {
            if (typeof window !== 'undefined') {
                sessionStorage.removeItem('soma_just_launched');
            }
@@ -171,13 +201,14 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
        }
 
        // 7. TERMS GATELOCK
-       if (userProfile.hasAcceptedTerms === false && !isLegalPage && !isPublicRoute && !isReturnPage) {
+       if (profile.hasAcceptedTerms === false && !isLegalPage && !isPublicRoute && !isReturnPage) {
          router.push('/legal/terms');
          return;
        }
 
-       // 8. STATUS GUARD (Supplier Verification Queue)
-       if (userProfile.status === 'pending_review' && !isReturnPage && !isPublicRoute && !isLegalPage) {
+       // 8. STATUS GUARD (Identity & Supplier Verification Queue)
+       // Seats must be 'approved' just like Owners
+       if (profile.status === 'pending_review' && !isReturnPage && !isPublicRoute && !isLegalPage) {
           const isAtPendingPage = pathname === '/backstage/pending-review';
           if (!isAtPendingPage) {
               router.push('/backstage/pending-review');
@@ -186,12 +217,12 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
        }
     }
 
-  }, [user, userLoading, userProfile, profileLoading, pathname, router]);
+  }, [user, loading, compositeProfile, pathname, router]);
 
   const value = useMemo(() => ({
-    userProfile: userProfile ? { ...userProfile, id: user?.uid } : null,
-    loading: userLoading || profileLoading,
-  }), [userProfile, userLoading, profileLoading, user]);
+    userProfile: compositeProfile,
+    loading,
+  }), [compositeProfile, loading]);
 
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/30">

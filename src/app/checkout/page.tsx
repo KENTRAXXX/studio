@@ -85,8 +85,10 @@ export default function CheckoutPage() {
 
     const tier = getTier(userProfile.planTier);
     const isBusiness = userProfile.entityType === 'BUSINESS';
-    const basePrice = userProfile.plan === 'yearly' ? (tier.price * 10) : tier.price;
-    const totalAmount = isBusiness ? (basePrice + 49.99) : basePrice;
+    const interval = (userProfile.plan || 'monthly') as 'monthly' | 'yearly';
+    const basePrice = tier.price[interval] || 0;
+    const surcharge = isBusiness ? (tier.businessSurcharge[interval] || 0) : 0;
+    const totalAmount = basePrice + surcharge;
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-black gold-mesh-gradient p-4 sm:p-6">
@@ -121,7 +123,7 @@ export default function CheckoutPage() {
                                 <p className="text-3xl font-headline font-bold text-white">
                                     ${totalAmount.toFixed(2)}
                                 </p>
-                                {isBusiness && <p className="text-[10px] text-amber-500 font-bold uppercase mt-1">+ $49.99 Corporate Surcharge</p>}
+                                {isBusiness && surcharge > 0 && <p className="text-[10px] text-amber-500 font-bold uppercase mt-1">+ ${surcharge} Corporate Surcharge</p>}
                             </div>
                         </div>
 

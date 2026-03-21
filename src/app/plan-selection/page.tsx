@@ -11,74 +11,32 @@ import { Badge } from "@/components/ui/badge";
 import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
 import { motion } from "framer-motion";
+import { TIER_REGISTRY, PlanTier } from "@/lib/tiers";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 type Interval = 'monthly' | 'yearly';
 
-const plans = [
-    {
-        id: 'SCALER',
-        title: 'Scaler',
-        icon: Rocket,
-        description: 'Dropship Flex. Start dropshipping with standard fulfillment.',
-        features: ['One-Click Cloning', 'Sync from Master Catalog', 'Standard Fulfillment'],
-        bestValue: false,
-        pricing: {
-            monthly: { price: 29 },
-            yearly: { price: 290 },
-        }
-    },
-    {
-        id: 'MERCHANT',
-        title: 'Merchant',
-        icon: ShoppingBag,
-        description: 'Store Only. Perfect for selling your own creations.',
-        features: ['"Add My Own Product" tools', 'Private Inventory Management', 'Standard Support'],
-        bestValue: false,
-        pricing: {
-            monthly: { price: 19.99 },
-            yearly: { price: 199 },
-        }
-    },
-    {
-        id: 'ENTERPRISE',
-        title: 'Enterprise',
-        icon: Building,
-        description: 'The Hybrid. The ultimate flexibility for established businesses.',
-        features: ['Everything Unlocked', 'Mix private & SOMA stock', 'Dedicated Account Manager'],
-        bestValue: false,
-        pricing: {
-            monthly: { price: 33.33 },
-            yearly: { price: 333 },
-        }
-    },
-    {
-        id: 'SELLER',
-        title: 'Seller',
-        icon: Gem,
-        description: 'Supply products with zero upfront cost.',
-        features: ['9% commission on sales', 'Upload items to Master Catalog', 'Sell to all SOMA stores'],
-        bestValue: false,
-        pricing: {
-            free: { price: 0 }
-        }
-    },
-     {
-        id: 'BRAND',
-        title: 'Brand',
-        icon: ShieldCheck,
-        description: 'For established brands. Lower fees & priority.',
-        features: ['3% commission on sales', 'Unlimited product uploads', 'Priority support & review'],
-        bestValue: false,
-        pricing: {
-            monthly: { price: 21 },
-            yearly: { price: 210 },
-        }
-    }
-];
+const planIds: PlanTier[] = ['SCALER', 'MERCHANT', 'ENTERPRISE', 'SELLER', 'BRAND'];
+const planIcons: Record<string, any> = {
+    SCALER: Rocket,
+    MERCHANT: ShoppingBag,
+    ENTERPRISE: Building,
+    SELLER: Gem,
+    BRAND: ShieldCheck
+};
+const planDescriptions: Record<string, string> = {
+    SCALER: 'Dropship Flex. Start dropshipping with standard fulfillment.',
+    MERCHANT: 'Store Only. Perfect for selling your own creations.',
+    ENTERPRISE: 'The Hybrid. The ultimate flexibility for established businesses.',
+    SELLER: 'Supply products with zero upfront cost.',
+    BRAND: 'For established brands. Lower fees & priority.'
+};
 
 function PlanSelectionContent() {
     const [selectedPlan, setSelectedPlan] = useState('SCALER');
     const [interval, setInterval] = useState<Interval>('monthly');
+    const [entityType, setEntityType] = useState<'INDIVIDUAL' | 'BUSINESS'>('INDIVIDUAL');
     const [isReferralValid, setIsReferralValid] = useState(false);
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -118,13 +76,13 @@ function PlanSelectionContent() {
     }, [referralCode, firestore]);
 
     const handleConfirm = () => {
-        const plan = plans.find(p => p.id === selectedPlan);
+        const plan = TIER_REGISTRY[selectedPlan as PlanTier];
         if (!plan) return;
         
         let planInterval: string = interval;
-        if (plan.pricing.free) planInterval = 'free';
+        if (plan.price.free) planInterval = 'free';
 
-        router.push(`/signup?planTier=${selectedPlan}&interval=${planInterval}${referralCode ? `&ref=${referralCode}` : ''}`);
+        router.push(`/signup?planTier=${selectedPlan}&interval=${planInterval}&entityType=${entityType}${referralCode ? `&ref=${referralCode}` : ''}`);
     }
 
     return (
@@ -145,68 +103,136 @@ function PlanSelectionContent() {
                 )}
             </div>
 
-            <Tabs value={interval} onValueChange={(value) => setInterval(value as Interval)} className="w-full max-w-sm mb-8">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="monthly">Monthly</TabsTrigger>
-                    <TabsTrigger value="yearly">Yearly</TabsTrigger>
-                </TabsList>
-            </Tabs>
+            <div className="flex flex-col items-center gap-6 mb-8">
+                <Tabs value={interval} onValueChange={(value) => setInterval(value as Interval)} className="w-full max-w-sm">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                        <TabsTrigger value="yearly">Yearly</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+
+                <div className="flex items-center space-x-4 bg-muted/30 p-2 px-4 rounded-full border border-border/50 backdrop-blur-sm">
+                    <Label htmlFor="entity-toggle" className={cn("text-sm font-bold transition-colors", entityType === 'INDIVIDUAL' ? "text-primary" : "text-muted-foreground")}>Individual</Label>
+                    <Switch 
+                        id="entity-toggle" 
+                        checked={entityType === 'BUSINESS'} 
+                        onCheckedChange={(checked) => setEntityType(checked ? 'BUSINESS' : 'INDIVIDUAL')} 
+                    />
+                    <Label htmlFor="entity-toggle" className={cn("text-sm font-bold transition-colors", entityType === 'BUSINESS' ? "text-primary" : "text-muted-foreground")}>Business / Corporate</Label>
+                </div>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl w-full">
-                {plans.map(plan => {
-                    const Icon = plan.icon;
-                    // @ts-ignore
-                    const priceInfo = plan.pricing.free || plan.pricing[interval];
-                    const isYearly = !plan.pricing.free && interval === 'yearly';
+                {planIds.map(id => {
+                    const tier = TIER_REGISTRY[id];
+                    const Icon = planIcons[id];
+                    const isYearly = !tier.price.free && interval === 'yearly';
                     
-                    const basePrice = priceInfo.price;
-                    const finalPrice = isReferralValid && plan.id !== 'SELLER' ? basePrice * discountMultiplier : basePrice;
+                    const basePrice = tier.price[interval] || 0;
+                    const surcharge = entityType === 'BUSINESS' ? (tier.businessSurcharge[interval] || 0) : 0;
+                    const totalPrice = basePrice + surcharge;
+                    const isFree = tier.price.free;
+                    
+                    const finalPrice = isReferralValid && id !== 'SELLER' ? totalPrice * discountMultiplier : totalPrice;
 
                     return (
-                    <Card 
-                        key={plan.id}
-                        onClick={() => setSelectedPlan(plan.id)}
-                        className={cn(
-                            "relative cursor-pointer transition-all duration-300 border-2 bg-card flex flex-col",
-                            selectedPlan === plan.id ? 'border-primary shadow-2xl shadow-primary/20' : 'border-border/20 hover:border-primary/40'
-                        )}
-                    >
-                         {isYearly && !isReferralValid && (
-                             <Badge className="absolute top-3 left-3 bg-green-500/20 text-green-400 border-green-500/50">Save 15%</Badge>
-                        )}
-                        {isReferralValid && plan.id !== 'SELLER' && (
-                             <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground font-black">{config?.recruitDiscount || 20}% DISCOUNT APPLIED</Badge>
-                        )}
-                        <CardHeader className="text-center items-center">
-                            <div className="bg-primary/10 rounded-full p-4 mb-4 border border-primary/20">
-                                <Icon className="h-10 w-10 text-primary"/>
-                            </div>
-                            <CardTitle className="font-headline text-2xl text-foreground">{plan.title}</CardTitle>
-                            <CardDescription>{plan.description}</CardDescription>
-                             <div className="flex items-baseline gap-2">
-                               <span className="text-4xl font-extrabold text-primary">
-                                   ${finalPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                               </span> 
-                               <span className="text-muted-foreground">
-                                    {plan.pricing.free ? '' : `/${interval === 'monthly' ? 'mo' : 'yr'}`}
-                                </span>
-                            </div>
-                            {isReferralValid && plan.id !== 'SELLER' && (
-                                <p className="text-[10px] text-muted-foreground line-through font-mono">Was ${basePrice.toFixed(2)}</p>
+                        <Card 
+                            key={id}
+                            onClick={() => setSelectedPlan(id)}
+                            className={cn(
+                                "relative cursor-pointer transition-all duration-300 border-2 bg-card/50 backdrop-blur-md flex flex-col group",
+                                selectedPlan === id ? 'border-primary shadow-2xl shadow-primary/20 scale-[1.02] z-10' : 'border-border/20 hover:border-primary/40'
                             )}
-                        </CardHeader>
-                        <CardContent className="flex-grow">
-                            <ul className="space-y-3">
-                                {plan.features.map(feature => (
-                                    <li key={feature} className="flex items-center gap-3">
-                                        <Check className="h-5 w-5 text-primary flex-shrink-0" />
-                                        <span className="text-muted-foreground text-sm">{feature}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </CardContent>
-                    </Card>
-                )})}
+                        >
+                             {isYearly && !isReferralValid && !isFree && (
+                                 <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-500/20 text-green-400 border-green-500/50">Save 15%</Badge>
+                            )}
+                            {isReferralValid && id !== 'SELLER' && (
+                                 <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground font-black">{config?.recruitDiscount || 20}% DISCOUNT</Badge>
+                            )}
+                            
+                            <CardHeader className="text-center items-center pb-2">
+                                <div className={cn(
+                                    "rounded-full p-4 mb-4 border transition-colors",
+                                    selectedPlan === id ? "bg-primary/20 border-primary/40" : "bg-primary/5 border-primary/10 group-hover:bg-primary/10"
+                                )}>
+                                    <Icon className="h-8 w-8 text-primary"/>
+                                </div>
+                                <CardTitle className="font-headline text-2xl text-foreground uppercase italic tracking-tight">{tier.label}</CardTitle>
+                                <CardDescription className="min-h-[40px] text-xs leading-relaxed">{planDescriptions[id]}</CardDescription>
+                            </CardHeader>
+
+                            <CardContent className="flex-grow space-y-6">
+                                <div className="text-center border-y border-primary/10 py-4 my-2">
+                                    <div className="flex items-baseline justify-center gap-1">
+                                        <span className="text-4xl font-headline font-black text-white">
+                                            {isFree ? "FREE" : `$${finalPrice.toFixed(2)}`}
+                                        </span>
+                                        {!isFree && <span className="text-xs text-muted-foreground font-bold tracking-widest uppercase">/ {interval}</span>}
+                                    </div>
+                                    {entityType === 'BUSINESS' && surcharge > 0 && (
+                                        <p className="text-[10px] text-amber-500 font-bold uppercase tracking-tighter mt-1">
+                                            Includes ${surcharge.toFixed(2)} Corporate Surcharge
+                                        </p>
+                                    )}
+                                    {isReferralValid && id !== 'SELLER' && (
+                                        <p className="text-[10px] text-muted-foreground line-through font-mono mt-1 opacity-50">Was ${totalPrice.toFixed(2)}</p>
+                                    )}
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <p className="text-[10px] uppercase font-black tracking-widest text-primary/60">Tier Benefits</p>
+                                        <ul className="space-y-2">
+                                            <li className="flex items-baseline gap-2 text-xs text-muted-foreground">
+                                                <Check className="h-3 w-3 text-primary flex-shrink-0 translate-y-0.5" />
+                                                <span>{entityType === 'BUSINESS' ? tier.teamSeats.business : tier.teamSeats.individual} Included User Seat(s)</span>
+                                            </li>
+                                            <li className="flex items-baseline gap-2 text-xs text-muted-foreground capitalize">
+                                                <Check className="h-3 w-3 text-primary flex-shrink-0 translate-y-0.5" />
+                                                <span>{tier.supportLevel} Strategic Support</span>
+                                            </li>
+                                            {tier.aiCreditsMonthly > 0 && (
+                                                <li className="flex items-baseline gap-2 text-xs text-muted-foreground">
+                                                    <Check className="h-3 w-3 text-primary flex-shrink-0 translate-y-0.5" />
+                                                    <span>{entityType === 'BUSINESS' ? Math.floor(tier.aiCreditsMonthly * 1.5) : tier.aiCreditsMonthly} Monthly AI Credits</span>
+                                                </li>
+                                            )}
+                                        </ul>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <p className="text-[10px] uppercase font-black tracking-widest text-primary/60">Core Capabilities</p>
+                                        <ul className="space-y-1.5">
+                                            {tier.features.dropshipping && (
+                                                <li className="flex items-baseline gap-2 text-xs text-muted-foreground">
+                                                    <div className="h-1 w-1 bg-primary rounded-full translate-y-1.5" />
+                                                    <span>Global Dropshipping Flex</span>
+                                                </li>
+                                            )}
+                                            {tier.features.privateInventory && (
+                                                <li className="flex items-baseline gap-2 text-xs text-muted-foreground">
+                                                    <div className="h-1 w-1 bg-primary rounded-full translate-y-1.5" />
+                                                    <span>Private Inventory Vault</span>
+                                                </li>
+                                            )}
+                                            {tier.features.customDomains && (
+                                                <li className="flex items-baseline gap-2 text-xs text-muted-foreground">
+                                                    <div className="h-1 w-1 bg-primary rounded-full translate-y-1.5" />
+                                                    <span>Custom Boutique Domain</span>
+                                                </li>
+                                            )}
+                                            <li className="flex items-baseline gap-2 text-xs text-muted-foreground">
+                                                <div className="h-1 w-1 bg-primary rounded-full translate-y-1.5" />
+                                                <span className="capitalize">{tier.features.analytics} Analytics Suite</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    );
+                })}
             </div>
 
             <Button size="lg" className="mt-10 w-full max-w-xs h-12 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold" onClick={handleConfirm}>

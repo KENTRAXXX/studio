@@ -20,6 +20,10 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    function isStaff(parentId) {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.parentId == parentId;
+    }
+
     match /users/{userId} {
       allow read: if isAuthenticated();
       allow create: if isOwner(userId);
@@ -28,20 +32,24 @@ service cloud.firestore {
       allow delete: if isRole('ADMIN');
     }
 
+    match /invitations/{invitationId} {
+      allow read: if true; // Guest users need to read to join
+      allow create, update, delete: if isOwner(request.resource.data.businessId) || isRole('ADMIN');
+    }
+
     match /stores/{storeId} {
       allow read;
-      // Owners can manage their own store configuration
-      allow write: if isOwner(storeId) || isRole('ADMIN');
+      // Owners and their team members can manage their own store configuration
+      allow write: if isOwner(storeId) || isStaff(storeId) || isRole('ADMIN');
 
       match /products/{productId} {
         allow read;
-        // Owners (including SCALER and ENTERPRISE tiers) can manage their boutique inventory
-        // This authorizes the 'Deep Copy' synchronization from the Master Catalog
-        allow write: if isOwner(storeId) || isRole('ADMIN');
+        // Owners and team members can manage their boutique inventory
+        allow write: if isOwner(storeId) || isStaff(storeId) || isRole('ADMIN');
       }
       
       match /orders/{orderId} {
-        allow read: if isOwner(storeId) || isRole('ADMIN');
+        allow read: if isOwner(storeId) || isStaff(storeId) || isRole('ADMIN');
         allow create: if true; // Allow customers to create orders
       }
 
@@ -100,8 +108,10 @@ service cloud.firestore {
     }
 
     match /concierge_tickets/{ticketId} {
-        allow create: if isAuthenticated() && request.auth.uid == request.resource.data.brandId;
-        allow read: if isAuthenticated() && (request.auth.uid == resource.data.brandId || isRole('ADMIN'));
+        // Allow creation if the user is the owner (brandId) or a team member of the owner
+        allow create: if isAuthenticated() && (request.auth.uid == request.resource.data.brandId || isStaff(request.resource.data.brandId));
+        // Allow reading if the user is the owner, a team member, or an admin
+        allow read: if isAuthenticated() && (request.auth.uid == resource.data.brandId || isStaff(resource.data.brandId) || isRole('ADMIN'));
         allow update: if isRole('ADMIN');
     }
 

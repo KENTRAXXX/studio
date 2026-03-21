@@ -44,7 +44,8 @@ import {
   Landmark,
   Warehouse,
   FolderOpen,
-  MessageSquare
+  MessageSquare,
+  Users
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
@@ -96,33 +97,62 @@ export default function DashboardLayout({
         return [{ href: '/dashboard', icon: LayoutDashboard, label: 'Overview' }];
     }
     
-    // Core navigation available to all Moguls
+    // Core navigation available to all Moguls (Individual or Business)
     const items = [
         { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
         { href: '/dashboard/profile-settings', icon: User, label: 'Profile' },
-        { href: '/dashboard/storefront-settings', icon: Palette, label: 'Visual Identity' },
-        { href: '/dashboard/settings', icon: Settings, label: 'Store Settings' },
-        { href: '/dashboard/my-orders', icon: ShoppingBag, label: 'My Orders' },
-        { href: '/dashboard/domain-settings', icon: Globe, label: 'Domain Settings' },
-        { href: '/dashboard/analytics', icon: BarChart2, label: 'Analytics' },
-        { href: '/dashboard/wallet', icon: Wallet, label: 'SOMA Wallet' },
-        { href: '/dashboard/referrals', icon: Globe, label: 'Referrals' },
-        { href: '/dashboard/accessibility-checker', icon: Accessibility, label: 'A11y Checker' },
         { href: '/backstage/concierge', icon: MessageSquare, label: 'Help & Support' },
     ];
 
-    // Entitlement-based injection
-    if (tier.features.dropshipping) {
-        items.splice(4, 0, { href: '/dashboard/product-catalog', icon: Boxes, label: 'Global Catalog' });
-        items.splice(5, 0, { href: '/dashboard/marketing', icon: ImageIcon, label: 'Marketing Toolkit' });
+    const isOwner = userProfile.businessRole === 'OWNER' || userProfile.entityType === 'INDIVIDUAL';
+    const role = userProfile.businessRole;
+
+    // RBAC: Role-Based Access Control
+    // Add items based on specific business roles or if the user is an Individual (who acts as their own Owner)
+    
+    // 1. Team Management (OWNER Only)
+    if (userProfile.entityType === 'BUSINESS' && role === 'OWNER') {
+        items.push({ href: '/dashboard/team', icon: Users, label: 'Team Hub' });
     }
 
-    if (tier.features.privateInventory) {
-        items.splice(4, 0, { href: '/dashboard/my-private-inventory', icon: Package, label: 'Private Inventory' });
+    // 2. Financials (OWNER, FINANCE)
+    if (isOwner || role === 'FINANCE') {
+        items.push({ href: '/dashboard/wallet', icon: Wallet, label: 'SOMA Wallet' });
+        items.push({ href: '/dashboard/my-orders', icon: ShoppingBag, label: 'My Orders' });
     }
 
-    if (tier.features.academyAccess) {
-        items.splice(7, 0, { href: '/dashboard/training-center', icon: GraduationCap, label: 'Mogul Academy' });
+    // 3. Marketing & Domain (OWNER, MARKETING)
+    if (isOwner || role === 'MARKETING') {
+        items.push({ href: '/dashboard/storefront-settings', icon: Palette, label: 'Visual Identity' });
+        items.push({ href: '/dashboard/domain-settings', icon: Globe, label: 'Domain Settings' });
+        items.push({ href: '/dashboard/settings', icon: Settings, label: 'Store Settings' });
+    }
+
+    // 4. Analytics (OWNER, ANALYST)
+    if (isOwner || role === 'ANALYST') {
+        items.push({ href: '/dashboard/analytics', icon: BarChart2, label: 'Analytics' });
+    }
+
+    // 5. Utility
+    if (isOwner) {
+        items.push({ href: '/dashboard/referrals', icon: Globe, label: 'Referrals' });
+        items.push({ href: '/dashboard/accessibility-checker', icon: Accessibility, label: 'A11y Checker' });
+    }
+
+    // Tier-based & Operations injection (OWNER, OPERATIONS)
+    const canDoOps = isOwner || role === 'OPERATIONS';
+    
+    if (canDoOps && tier.features.dropshipping) {
+        items.push({ href: '/dashboard/product-catalog', icon: Boxes, label: 'Global Catalog' });
+        items.push({ href: '/dashboard/marketing', icon: ImageIcon, label: 'Marketing Toolkit' });
+    }
+
+    if (canDoOps && tier.features.privateInventory) {
+        items.push({ href: '/dashboard/my-private-inventory', icon: Package, label: 'Private Inventory' });
+    }
+
+    if (canDoOps && tier.features.academyAccess) {
+        items.push({ href: '/dashboard/training-center', icon: GraduationCap, label: 'Mogul Academy' });
     }
 
     return items;

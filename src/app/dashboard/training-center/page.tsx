@@ -87,7 +87,7 @@ export default function TrainingCenterPage() {
     const router = useRouter();
 
     const trainingModulesRef = firestore ? collection(firestore, 'Training_Modules') : null;
-    const { data: trainingModules, loading: modulesLoading } = useCollection<TrainingModule>(trainingModulesRef);
+    const { data: trainingModules, loading: modulesLoading } = useCollection<TrainingModule>(trainingModulesRef as any);
     
     const [selectedVideo, setSelectedVideo] = useState<TrainingModule | null>(null);
     const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
@@ -230,17 +230,15 @@ export default function TrainingCenterPage() {
                     </CardContent>
                 </Card>
 
-                <Accordion type="multiple" defaultValue={categories.map(c => c.toLowerCase().replace(/ /g, '-'))} className="w-full space-y-6">
-                    {categories.map(category => (
-                        <AccordionItem key={category} value={category.toLowerCase().replace(/ /g, '-')} className="border-b-0">
-                            <Card className="border-primary/20 overflow-hidden bg-card/50">
-                            <AccordionTrigger className="px-6 py-5 bg-card/80 hover:no-underline hover:bg-muted/50 group">
-                                <h2 className="text-xl font-bold font-headline group-hover:text-primary transition-colors">{category}</h2>
-                            </AccordionTrigger>
-                            <AccordionContent className="p-6">
-                                {isLoading ? (
-                                    <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
-                                ) : (
+                {categories.length > 0 ? (
+                    <Accordion type="multiple" defaultValue={categories.map(c => c.toLowerCase().replace(/ /g, '-'))} className="w-full space-y-6">
+                        {categories.map(category => (
+                            <AccordionItem key={category} value={category.toLowerCase().replace(/ /g, '-')} className="border-b-0">
+                                <Card className="border-primary/20 overflow-hidden bg-card/50">
+                                <AccordionTrigger className="px-6 py-5 bg-card/80 hover:no-underline hover:bg-muted/50 group">
+                                    <h2 className="text-xl font-bold font-headline group-hover:text-primary transition-colors">{category}</h2>
+                                </AccordionTrigger>
+                                <AccordionContent className="p-6">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                         {trainingModules?.filter(v => v.category === category).map(video => (
                                             <VideoCard 
@@ -251,12 +249,22 @@ export default function TrainingCenterPage() {
                                             />
                                         ))}
                                     </div>
-                                )}
-                            </AccordionContent>
-                            </Card>
-                        </AccordionItem>
-                    ))}
-                </Accordion>
+                                </AccordionContent>
+                                </Card>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
+                ) : (
+                    <Card className="border-dashed border-primary/20 bg-primary/5 p-20 text-center">
+                        <div className="mx-auto bg-primary/10 rounded-full p-6 w-fit mb-6">
+                            <GraduationCap className="h-12 w-12 text-primary/40" />
+                        </div>
+                        <h3 className="text-2xl font-bold font-headline text-primary">Academy Registry Empty</h3>
+                        <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
+                            The SOMA Masterclass curriculum is currently being synchronized. Check back shortly for updated tactical training.
+                        </p>
+                    </Card>
+                )}
             </div>
         </>
     );
