@@ -23,6 +23,10 @@ type SignUpCredentials = {
   bankName?: string;
   accountNumber?: string;
   accountHolderName?: string;
+  entityType?: 'INDIVIDUAL' | 'BUSINESS';
+  legalBusinessName?: string;
+  taxId?: string;
+  businessDocumentUrl?: string;
   governmentId?: string;
   metadata?: any;
 };
@@ -103,13 +107,13 @@ export function useSignUp() {
       
       const isFreeTier = (credentials.planTier === 'SELLER' && credentials.plan === 'free') || credentials.planTier === 'ADMIN' || credentials.planTier === 'AMBASSADOR';
 
-      // Default status mapping: Ambassadors now require review for KYC/Vetting
+      // Universal KYC: All users except Admins are placed into pending_review
       const statusMap = {
           ADMIN: 'approved',
-          MOGUL: 'approved',
-          MERCHANT: 'approved',
-          SCALER: 'approved',
-          ENTERPRISE: 'approved',
+          MOGUL: 'pending_review',
+          MERCHANT: 'pending_review',
+          SCALER: 'pending_review',
+          ENTERPRISE: 'pending_review',
           SELLER: 'pending_review',
           BRAND: 'pending_review',
           AMBASSADOR: 'pending_review'
@@ -159,6 +163,16 @@ export function useSignUp() {
               niche: credentials.niche || 'Luxury'
           };
       }
+
+      newUserProfile.entityType = credentials.entityType || 'INDIVIDUAL';
+      newUserProfile.verificationData = credentials.entityType === 'BUSINESS' ? {
+          governmentIdUrl: credentials.governmentId || '',
+          legalBusinessName: credentials.legalBusinessName || '',
+          taxId: credentials.taxId || '',
+          businessDocumentUrl: credentials.businessDocumentUrl || '',
+      } : {
+          governmentIdUrl: credentials.governmentId || '',
+      };
 
       await setDoc(userDocRef, newUserProfile);
 

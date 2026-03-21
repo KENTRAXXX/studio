@@ -7,7 +7,7 @@ import { collection, query, where, doc, updateDoc, setDoc, getDoc } from 'fireba
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, ShieldCheck, Check, X, FileText, MapPin, MessageSquareText, Users, ShoppingBag, Globe, Share2 } from 'lucide-react';
+import { Loader2, ShieldCheck, Check, X, FileText, MapPin, MessageSquareText, Users, ShoppingBag, Globe, Share2, Landmark } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { sendWelcomeEmail } from '@/ai/flows/send-welcome-email';
 import { sendActionRequiredEmail } from '@/ai/flows/send-action-required-email';
@@ -29,17 +29,13 @@ type PendingUser = {
   id: string;
   email: string;
   userRole: 'SELLER' | 'AMBASSADOR' | 'MOGUL';
-  status: 'pending_review' | 'approved' | 'rejected' | 'action_required';
-  verificationFeedback?: string;
+  entityType?: 'INDIVIDUAL' | 'BUSINESS';
   verificationData?: {
-    legalBusinessName: string;
-    warehouseAddress: string;
-    governmentIdUrl: string;
-    contactPhone: string;
-    structuredAddress?: {
-        city: string;
-        country: string;
-    };
+    legalBusinessName?: string;
+    taxId?: string;
+    businessDocumentUrl?: string;
+    governmentIdUrl?: string;
+    warehouseAddress?: string; // Legacy field
   };
   ambassadorData?: {
     socialHandle: string;
@@ -136,8 +132,7 @@ export default function VerificationQueuePage() {
   }, [userProfile, profileLoading, router]);
 
   const pendingUsersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'users'), where('status', '==', 'pending_review'));
+    return query(collection(firestore, 'users'), where('status', '==', 'pending_review')) as any;
   }, [firestore]);
   
   const { data: pendingUsers, loading: usersLoading } = useCollection<PendingUser>(pendingUsersQuery);
@@ -234,12 +229,20 @@ export default function VerificationQueuePage() {
                     <TableRow key={pUser.id}>
                       <TableCell>
                         <div className="flex flex-col gap-1">
-                            <Badge className={cn(
-                                "w-fit text-[10px] font-black uppercase tracking-widest h-5",
-                                isAmbassador ? "bg-blue-500/20 text-blue-400 border-blue-500/50" : "bg-primary/20 text-primary border-primary/50"
-                            )}>
-                                {pUser.userRole}
-                            </Badge>
+                            <div className="flex items-center gap-1">
+                                <Badge className={cn(
+                                    "w-fit text-[10px] font-black uppercase tracking-widest h-5",
+                                    isAmbassador ? "bg-blue-500/20 text-blue-400 border-blue-500/50" : "bg-primary/20 text-primary border-primary/50"
+                                )}>
+                                    {pUser.userRole}
+                                </Badge>
+                                <Badge variant="outline" className={cn(
+                                    "w-fit text-[9px] font-bold uppercase tracking-tighter h-5 border-white/10",
+                                    pUser.entityType === 'BUSINESS' ? "text-amber-500 bg-amber-500/5" : "text-sky-400 bg-sky-400/5"
+                                )}>
+                                    {pUser.entityType || 'INDIVIDUAL'}
+                                </Badge>
+                            </div>
                             <span className="font-bold text-slate-200">{pUser.email}</span>
                             <code className="text-[9px] text-muted-foreground font-mono">UID: {pUser.id.slice(0, 8)}</code>
                         </div>
@@ -259,24 +262,32 @@ export default function VerificationQueuePage() {
                                 <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
                                     <ShoppingBag className="h-3 w-3 text-primary" /> {pUser.verificationData?.legalBusinessName || 'N/A'}
                                 </div>
-                                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                                    <MapPin className="h-3 w-3" /> 
-                                    <span className="truncate">{pUser.verificationData?.warehouseAddress || 'No Address'}</span>
-                                </div>
+                                {pUser.verificationData?.taxId && (
+                                    <div className="text-[10px] font-mono text-muted-foreground">EIN: {pUser.verificationData.taxId}</div>
+                                )}
                             </div>
                         )}
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-2">
-                            {idUrl ? (
-                                <Button variant="outline" size="sm" asChild className="h-7 text-[10px] border-primary/20">
-                                    <a href={idUrl} target="_blank" rel="noopener noreferrer">
-                                        <FileText className="mr-1 h-3 w-3" /> Inspect KYC
-                                    </a>
-                                </Button>
-                            ) : (
-                                <Badge variant="destructive" className="text-[9px] h-5">NO IDENTITY ASSET</Badge>
-                            )}
+                            <div className="flex flex-col gap-1.5">
+                                {idUrl ? (
+                                    <Button variant="outline" size="sm" asChild className="h-7 text-[10px] border-primary/20 bg-primary/5">
+                                        <a href={idUrl} target="_blank" rel="noopener noreferrer">
+                                            <ShieldCheck className="mr-1 h-3 w-3" /> Representative ID
+                                        </a>
+                                    </Button>
+                                ) : (
+                                    <Badge variant="destructive" className="text-[9px] h-5">NO IDENTITY ASSET</Badge>
+                                )}
+                                {pUser.verificationData?.businessDocumentUrl && (
+                                    <Button variant="outline" size="sm" asChild className="h-7 text-[10px] border-amber-500/20 bg-amber-500/5 text-amber-500 hover:text-amber-400">
+                                        <a href={pUser.verificationData.businessDocumentUrl} target="_blank" rel="noopener noreferrer">
+                                            <Landmark className="mr-1 h-3 w-3" /> Corporate Docs
+                                        </a>
+                                    </Button>
+                                )}
+                            </div>
                             {isAmbassador && (
                                 <div className="text-[9px] font-mono text-muted-foreground uppercase">
                                     {pUser.ambassadorData?.payoutDetails.bankName} • ****{pUser.ambassadorData?.payoutDetails.accountNumber.slice(-4)}

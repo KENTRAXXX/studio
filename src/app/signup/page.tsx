@@ -49,6 +49,10 @@ const formSchema = z.object({
   bankName: z.string().optional(),
   accountNumber: z.string().optional(),
   accountHolderName: z.string().optional(),
+  entityType: z.enum(['INDIVIDUAL', 'BUSINESS']).default('INDIVIDUAL'),
+  legalBusinessName: z.string().optional(),
+  taxId: z.string().optional(),
+  businessDocumentUrl: z.string().optional(),
   governmentId: z.string().optional(),
 });
 
@@ -68,6 +72,7 @@ function SignUpFormContent() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showAdminCode, setShowAdminCode] = useState(false);
+  const selectedEntity = form.watch('entityType');
 
   const planTier = (searchParams.get('planTier') || 'SCALER') as PlanTier;
   const interval = (searchParams.get('interval') as PlanInterval) || 'monthly';
@@ -106,6 +111,10 @@ function SignUpFormContent() {
       bankName: '',
       accountNumber: '',
       accountHolderName: '',
+      entityType: 'INDIVIDUAL',
+      legalBusinessName: '',
+      taxId: '',
+      businessDocumentUrl: '',
       governmentId: '',
     },
   });
@@ -117,13 +126,27 @@ function SignUpFormContent() {
   }, [refParam, form]);
 
   const onSubmit = (data: FormValues) => {
-    if (isAmbassador && !data.governmentId) {
-        toast({
-            variant: 'destructive',
-            title: 'KYC Document Required',
-            description: 'Please upload a verified government identity document to continue.',
-        });
-        return;
+    // Universal KYC enforcement
+    if (planTier !== 'ADMIN') {
+        if (!data.governmentId) {
+            toast({
+                variant: 'destructive',
+                title: 'KYC Document Required',
+                description: 'Please upload a verified government identity document (Passport/ID) to continue.',
+            });
+            return;
+        }
+        
+        if (data.entityType === 'BUSINESS') {
+            if (!data.legalBusinessName || !data.taxId || !data.businessDocumentUrl) {
+                toast({
+                    variant: 'destructive',
+                    title: 'Business KYC Incomplete',
+                    description: 'Please provide all required corporate verification documents (Legal Name, EIN, Registration Document).',
+                });
+                return;
+            }
+        }
     }
 
     if (planTier === 'ADMIN') {
@@ -193,6 +216,7 @@ function SignUpFormContent() {
                   plan: interval,
                   planTier: planTier,
                   template: 'gold-standard',
+                  entityType: data.entityType,
                 },
               },
               onPaystackSuccess,
@@ -224,13 +248,27 @@ function SignUpFormContent() {
         return;
     }
 
-    if (isAmbassador && !form.getValues('governmentId')) {
-        toast({
-            variant: 'destructive',
-            title: 'KYC Document Required',
-            description: 'Please upload a verified government identity document to continue.',
-        });
-        return;
+    const data = form.getValues();
+    if (planTier !== 'ADMIN') {
+        if (!data.governmentId) {
+            toast({
+                variant: 'destructive',
+                title: 'KYC Document Required',
+                description: 'Please upload a verified government identity document (Passport/ID) to continue.',
+            });
+            return;
+        }
+        
+        if (data.entityType === 'BUSINESS') {
+            if (!data.legalBusinessName || !data.taxId || !data.businessDocumentUrl) {
+                toast({
+                    variant: 'destructive',
+                    title: 'Business KYC Incomplete',
+                    description: 'Please provide all required corporate verification documents (Legal Name, EIN, Registration Document).',
+                });
+                return;
+            }
+        }
     }
 
     if (planTier === 'ADMIN') {
@@ -307,6 +345,7 @@ function SignUpFormContent() {
                   plan: interval,
                   planTier: planTier,
                   template: 'gold-standard',
+                  entityType: form.getValues('entityType'),
                 },
               },
               onPaystackSuccess,
@@ -516,36 +555,7 @@ function SignUpFormContent() {
                                                 </div>
                                             </div>
 
-                                            <FormField
-                                                control={form.control}
-                                                name="governmentId"
-                                                render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className="flex items-center gap-2">
-                                                        <FileText className="h-3.5 w-3.5 text-primary" />
-                                                        Identity Verification (KYC)
-                                                    </FormLabel>
-                                                    <FormControl>
-                                                        <div className="space-y-4">
-                                                            <ImageUploader 
-                                                                onSuccess={(url) => field.onChange(url)}
-                                                                label="Upload Government ID / Passport"
-                                                                aspectRatio="aspect-[16/9]"
-                                                            />
-                                                            {field.value && (
-                                                                <div className="flex items-center gap-2 text-green-500 text-[10px] font-black uppercase tracking-widest bg-green-500/10 p-2 rounded border border-green-500/20">
-                                                                    <CheckCircle2 className="h-3 w-3" />
-                                                                    KYC Asset Secured
-                                                                </div>
-                                                            )}
-                                                            <Input type="hidden" {...field} />
-                                                        </div>
-                                                    </FormControl>
-                                                    <FormDescription>Official ID document required for payout validation.</FormDescription>
-                                                    <FormMessage />
-                                                </FormItem>
-                                                )}
-                                            />
+
                                         </div>
                                     )}
 
@@ -609,6 +619,110 @@ function SignUpFormContent() {
                                             )}
                                         />
                                     )}
+                                   
+                                   {/* Universal Identity Verification (KYC) */}
+                                   {planTier !== 'ADMIN' && (
+                                       <div className="space-y-6 pt-6 mt-4 border-t border-primary/20">
+                                           <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-widest">
+                                               <FileText className="h-4 w-4" /> Global Identity Vetting
+                                           </div>
+                                           
+                                           <FormField
+                                               control={form.control}
+                                               name="entityType"
+                                               render={({ field }) => (
+                                               <FormItem className="space-y-3">
+                                                   <FormLabel>Legal Entity Type</FormLabel>
+                                                   <FormControl>
+                                                       <div className="grid grid-cols-2 gap-4">
+                                                           <div 
+                                                               className={cn("flex flex-col items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all hover:bg-primary/5", field.value === 'INDIVIDUAL' ? "border-primary bg-primary/10" : "border-muted bg-black/20")}
+                                                               onClick={() => field.onChange('INDIVIDUAL')}
+                                                           >
+                                                               <User className={cn("h-6 w-6 mb-2", field.value === 'INDIVIDUAL' ? "text-primary" : "text-muted-foreground")} />
+                                                               <span className={cn("font-bold text-sm", field.value === 'INDIVIDUAL' ? "text-primary" : "text-white")}>Individual</span>
+                                                           </div>
+                                                           <div 
+                                                               className={cn("flex flex-col items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all hover:bg-primary/5", field.value === 'BUSINESS' ? "border-primary bg-primary/10" : "border-muted bg-black/20")}
+                                                               onClick={() => field.onChange('BUSINESS')}
+                                                           >
+                                                               <Landmark className={cn("h-6 w-6 mb-2", field.value === 'BUSINESS' ? "text-primary" : "text-muted-foreground")} />
+                                                               <span className={cn("font-bold text-sm", field.value === 'BUSINESS' ? "text-primary" : "text-white")}>Business / LLC</span>
+                                                           </div>
+                                                       </div>
+                                                   </FormControl>
+                                               </FormItem>
+                                               )}
+                                           />
+
+                                           <AnimatePresence mode="popLayout">
+                                               {selectedEntity === 'BUSINESS' && (
+                                                   <motion.div 
+                                                       initial={{ opacity: 0, height: 0 }} 
+                                                       animate={{ opacity: 1, height: 'auto' }} 
+                                                       exit={{ opacity: 0, height: 0 }}
+                                                       className="space-y-4"
+                                                   >
+                                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                           <FormField control={form.control} name="legalBusinessName" render={({ field }) => (
+                                                               <FormItem><FormLabel>Legal Business Name</FormLabel><FormControl><Input placeholder="Soma Corp LLC" {...field} className="bg-black/20 border-primary/20" /></FormControl><FormMessage /></FormItem>
+                                                           )} />
+                                                           <FormField control={form.control} name="taxId" render={({ field }) => (
+                                                               <FormItem><FormLabel>Tax ID / EIN</FormLabel><FormControl><Input placeholder="XX-XXXXXXX" {...field} className="bg-black/20 border-primary/20" /></FormControl><FormMessage /></FormItem>
+                                                           )} />
+                                                       </div>
+                                                       <FormField
+                                                           control={form.control}
+                                                           name="businessDocumentUrl"
+                                                           render={({ field }) => (
+                                                           <FormItem>
+                                                               <FormLabel>Official Registration Document</FormLabel>
+                                                               <FormControl>
+                                                                   <div className="space-y-2">
+                                                                       <ImageUploader onSuccess={(url) => field.onChange(url)} label="Upload Articles of Incorporation / Registration" aspectRatio="aspect-[16/9]" />
+                                                                       {field.value && <div className="flex items-center gap-2 text-green-500 text-[10px] font-black uppercase tracking-widest bg-green-500/10 p-2 rounded border border-green-500/20"><CheckCircle2 className="h-3 w-3" /> Corporate Document Secured</div>}
+                                                                       <Input type="hidden" {...field} />
+                                                                   </div>
+                                                               </FormControl>
+                                                               <FormDescription>Must display your active business registration, company seal, or articles of incorporation.</FormDescription>
+                                                               <FormMessage />
+                                                           </FormItem>
+                                                           )}
+                                                       />
+                                                   </motion.div>
+                                               )}
+                                           </AnimatePresence>
+
+                                           <FormField
+                                               control={form.control}
+                                               name="governmentId"
+                                               render={({ field }) => (
+                                               <FormItem>
+                                                   <FormLabel>
+                                                       {selectedEntity === 'BUSINESS' ? "Authorized Representative ID" : "Personal Government ID"}
+                                                   </FormLabel>
+                                                   <FormControl>
+                                                       <div className="space-y-2">
+                                                           <ImageUploader 
+                                                               onSuccess={(url) => field.onChange(url)}
+                                                               label={selectedEntity === 'BUSINESS' ? "Upload Executive Passport / ID" : "Upload Passport / Driver's License"}
+                                                               aspectRatio="aspect-[16/9]"
+                                                           />
+                                                           {field.value && (
+                                                               <div className="flex items-center gap-2 text-green-500 text-[10px] font-black uppercase tracking-widest bg-green-500/10 p-2 rounded border border-green-500/20">
+                                                                   <CheckCircle2 className="h-3 w-3" /> Identity Asset Secured
+                                                               </div>
+                                                           )}
+                                                           <Input type="hidden" {...field} />
+                                                       </div>
+                                                   </FormControl>
+                                                   <FormDescription>Global AML regulations require a clear, uncut image of official government identification.</FormDescription>
+                                                   <FormMessage />
+                                               </FormItem>
+                                               )}
+                                           />
+                                       </div>
+                                   )}
 
                                      <FormField
                                         control={form.control}
@@ -632,7 +746,7 @@ function SignUpFormContent() {
                                         )}
                                     />
                                     
-                                    <div className="flex items-center space-x-2 pt-4">
+                                    <div className="flex items-center space-x-2 pt-4 mt-6 border-t border-primary/20">
                                         <Checkbox 
                                             id="terms" 
                                             checked={agreedToTerms}

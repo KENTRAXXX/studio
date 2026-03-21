@@ -12,25 +12,22 @@ export default function PendingReviewPage() {
     const handleDownloadGuide = () => {
         const content = `
 SOMA STRATEGIC ASSETS GROUP
-OFFICIAL ONBOARDING GUIDE FOR ELITE SUPPLIERS
+OFFICIAL PLATFORM ACTIVATION GUIDE
 
-Welcome to the SOMA Ecosystem. Your application is currently being reviewed by our Concierge Team.
+Welcome to the SOMA Ecosystem. Your application is currently being verified by our Global Compliance Team.
 
-To prepare for your launch, please review these key operational standards:
+Your access is currently in 'Pending Review' status. This is a mandatory security step for all Individual and Business entities.
 
-1. BRAND PRESENTATION
-Your products will be displayed in high-end boutiques. Ensure your product descriptions are evocative and your image URLs point to professional, high-resolution photography.
+1. COMPLIANCE & VERIFICATION
+We verify all government IDs and corporate registration documents to maintain the highest standards of platform integrity.
 
-2. LOGISTICS & FULFILLMENT
-Reliability is our hallmark. Orders must be acknowledged within 24 hours and shipped within 3 business days using tracked courier services.
+2. PLATFORM ACTIVATION
+Once approved, you will receive full access to your respective strategic hub (Dashboard, Backstage, or Ambassador Portal).
 
-3. FINANCES & PAYOUTS
-SOMA handles all payment processing. Payouts are logged to your ledger immediately and become available for withdrawal after the 7-day return window.
+3. SECURITY STANDARDS
+SOMA maintains a zero-tolerance policy for fraudulent activities. Please ensure your provided documentation is authentic and clear.
 
-4. THE SOMA SHIELD
-We maintain a zero-tolerance policy for replicas. Authenticity is non-negotiable.
-
-Your dedicated concierge will notify you via email once your luxury hub is activated.
+Your account will be activated automatically once the verification process concludes.
 
 SOMA - The Ultimate Design System for E-commerce.
         `;
@@ -39,7 +36,7 @@ SOMA - The Ultimate Design System for E-commerce.
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'SOMA_Supplier_Onboarding_Guide.txt';
+        link.download = 'SOMA_Platform_Activation_Guide.txt';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -71,9 +68,9 @@ SOMA - The Ultimate Design System for E-commerce.
                     >
                         <Clock className="h-12 w-12 text-primary animate-pulse" />
                     </motion.div>
-                    <CardTitle className="text-3xl font-headline font-bold text-primary tracking-tight">Concierge Verification</CardTitle>
+                    <CardTitle className="text-3xl font-headline font-bold text-primary tracking-tight">Global Audit Pending</CardTitle>
                     <CardDescription className="text-lg text-muted-foreground mt-4 max-w-md mx-auto leading-relaxed">
-                        The SOMA Concierge is currently verifying your credentials to ensure platform integrity.
+                        The SOMA Compliance Team is currently auditing your credentials to ensure platform security and regulatory alignment.
                     </CardDescription>
                 </CardHeader>
                 
