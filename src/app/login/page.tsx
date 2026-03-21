@@ -60,29 +60,28 @@ export default function LoginPage() {
 
   const onSubmit = async (data: FormValues) => {
     if (!auth) return;
-    
+
     setIsLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
-      
+
       if (!userCredential.user.emailVerified) {
         await sendEmailVerification(userCredential.user).catch(console.error);
-        await auth.signOut();
         toast({
-          variant: 'destructive',
           title: 'Verification Required',
-          description: 'You must verify your email before accessing the dashboard. A fresh secure link has been dispatched to your inbox.',
+          description: 'A secure link was dispatched to your inbox.',
         });
+        router.push('/auth/verify-email');
         return;
       }
 
       const userDoc = await getDoc(doc(firestore!, 'users', userCredential.user.uid));
       if (userDoc.exists() && userDoc.data().twoFactorEnabled) {
-          router.push('/auth/2fa/verify');
-          return;
+        router.push('/auth/2fa/verify');
+        return;
       } else if (userDoc.exists() && !userDoc.data().twoFactorEnabled) {
-          router.push('/auth/2fa/setup');
-          return;
+        router.push('/auth/2fa/setup');
+        return;
       }
 
       toast({
@@ -107,24 +106,24 @@ export default function LoginPage() {
     try {
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
-      
+
       if (!userCredential.user.emailVerified) {
-        await auth.signOut();
         toast({
           variant: 'destructive',
           title: 'Verification Required',
-          description: 'Your Google account email is not verified by Google. Please verify it first.',
+          description: 'Your Google account email is not mathematically verified by Google.',
         });
+        router.push('/auth/verify-email');
         return;
       }
 
       const userDoc = await getDoc(doc(firestore!, 'users', userCredential.user.uid));
       if (userDoc.exists() && userDoc.data().twoFactorEnabled) {
-          router.push('/auth/2fa/verify');
-          return;
+        router.push('/auth/2fa/verify');
+        return;
       } else if (userDoc.exists() && !userDoc.data().twoFactorEnabled) {
-          router.push('/auth/2fa/setup');
-          return;
+        router.push('/auth/2fa/setup');
+        return;
       }
 
       toast({
@@ -153,9 +152,9 @@ export default function LoginPage() {
       });
       return;
     }
-    
+
     if (!auth) return;
-    
+
     setIsLoading(true);
     try {
       await sendPasswordResetEmail(auth, email);
@@ -178,8 +177,8 @@ export default function LoginPage() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-black gold-mesh-gradient p-4 sm:p-6">
       <div className="text-center mb-10">
         <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <SomaLogo className="h-12 w-12" />
-            <span className="font-headline text-3xl font-bold text-primary tracking-widest uppercase">SOMA</span>
+          <SomaLogo className="h-12 w-12" />
+          <span className="font-headline text-3xl font-bold text-primary tracking-widest uppercase">SOMA</span>
         </Link>
         <h1 className="text-4xl font-bold font-headline text-white">Executive Login</h1>
         <p className="mt-2 text-muted-foreground">Access your luxury commerce control center.</p>
@@ -216,8 +215,8 @@ export default function LoginPage() {
                   <FormItem>
                     <div className="flex items-center justify-between">
                       <FormLabel>Password</FormLabel>
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={onForgotPassword}
                         disabled={isLoading}
                         className="text-[10px] uppercase font-black tracking-widest text-primary/70 hover:text-primary transition-colors disabled:opacity-50"
@@ -227,11 +226,11 @@ export default function LoginPage() {
                     </div>
                     <FormControl>
                       <div className="relative">
-                        <Input 
-                          type={showPassword ? "text" : "password"} 
-                          placeholder="••••••••" 
-                          {...field} 
-                          className="bg-black/20 border-primary/20 pr-10" 
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          {...field}
+                          className="bg-black/20 border-primary/20 pr-10"
                         />
                         <button
                           type="button"
@@ -246,7 +245,7 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
-              
+
               <Button type="submit" disabled={isLoading} className="w-full h-12 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
                 {isLoading ? <Loader2 className="animate-spin" /> : 'Enter Ecosystem'}
               </Button>
@@ -262,10 +261,10 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <Button 
-            type="button" 
-            variant="outline" 
-            disabled={isLoading} 
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isLoading}
             onClick={onGoogleSignIn}
             className="w-full h-12 text-md border border-primary/50 bg-primary/10 text-primary hover:bg-primary/20 font-bold transition-all shadow-[0_0_15px_rgba(212,175,55,0.15)]"
           >
@@ -283,18 +282,18 @@ export default function LoginPage() {
               Don't have an account yet?
             </p>
             <Button asChild variant="outline" className="w-full border-primary/30 text-primary hover:bg-primary/10">
-                <Link href={signupLink}>
-                    Claim Your Access <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
+              <Link href={signupLink}>
+                Claim Your Access <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
             </Button>
-            
+
             <div className="pt-6 border-t border-white/5">
-                <Link 
-                    href="/signup?planTier=ADMIN&interval=free" 
-                    className="text-[10px] uppercase font-black tracking-widest text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-1"
-                >
-                    <ShieldCheck className="h-3 w-3" /> Platform Administration Gateway
-                </Link>
+              <Link
+                href="/signup?planTier=ADMIN&interval=free"
+                className="text-[10px] uppercase font-black tracking-widest text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-1"
+              >
+                <ShieldCheck className="h-3 w-3" /> Platform Administration Gateway
+              </Link>
             </div>
           </div>
         </CardContent>

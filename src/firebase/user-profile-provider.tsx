@@ -113,6 +113,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       pathname.startsWith('/store') || 
       pathname.startsWith('/brand') || 
       pathname.startsWith('/api') ||
+      pathname.startsWith('/auth') ||
       pathname.startsWith('/product') ||
       pathname.startsWith('/checkout') ||
       pathname === '/payout-confirmed' ||

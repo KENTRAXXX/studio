@@ -63,10 +63,14 @@ export default function DashboardLayout({
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
   useEffect(() => {
+    if (auth?.currentUser && !auth.currentUser.emailVerified) {
+        router.push('/auth/verify-email');
+        return;
+    }
     if (userProfile && !userProfile.twoFactorEnabled) {
         router.push('/auth/2fa/setup');
     }
-  }, [userProfile, router]);
+  }, [userProfile, auth, router]);
 
   const handleLogout = async () => {
     if (!auth) return;

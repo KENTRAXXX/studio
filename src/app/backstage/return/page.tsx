@@ -79,7 +79,9 @@ export default function BackstageReturnPage() {
           }
 
           setTimeout(() => {
-            if (data.twoFactorEnabled !== true) {
+            if (user && !user.emailVerified) {
+                router.push('/auth/verify-email');
+            } else if (data.twoFactorEnabled !== true) {
                 router.push('/auth/2fa/setup');
             } else {
                 router.push(destination);

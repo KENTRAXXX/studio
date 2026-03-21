@@ -36,8 +36,11 @@ function AuthActionHandler() {
       try {
         if (mode === 'verifyEmail') {
           await applyActionCode(auth, oobCode);
+          if (auth.currentUser) {
+              await auth.currentUser.reload();
+          }
           setStatus('success');
-          setMessage('Identity verified. Your email has been successfully secured.');
+          setMessage('Identity verified. Your email has been successfully secured. You may now return to your original tab or log in.');
         } else if (mode === 'resetPassword') {
           // Verify code exists and is valid before showing input
           await verifyPasswordResetCode(auth, oobCode);
