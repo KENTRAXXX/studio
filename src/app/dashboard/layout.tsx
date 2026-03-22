@@ -170,7 +170,7 @@ export default function DashboardLayout({
         <SidebarHeader>
           <Link href="/dashboard" className="flex items-center gap-2 group p-2">
             <SomaLogo className="h-6 w-6 text-primary transition-transform group-hover:scale-110" aria-hidden={true} />
-            <span className="font-headline font-bold text-xl text-primary uppercase tracking-tighter transition-opacity group-hover:opacity-80">SomaDS</span>
+            <span className="font-headline font-bold text-xl text-primary tracking-tighter transition-opacity group-hover:opacity-80">SomaDS</span>
           </Link>
         </SidebarHeader>
         <SidebarContent>

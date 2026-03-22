@@ -77,7 +77,7 @@ export default function VerifyEmailWaitPage() {
       <div className="text-center mb-10">
         <Link href="/" className="inline-flex items-center gap-2 mb-6 pointer-events-none">
             <SomaLogo className="h-12 w-12" />
-            <span className="font-headline text-3xl font-bold text-primary tracking-widest uppercase">SOMA</span>
+            <span className="font-headline text-3xl font-bold text-primary tracking-tighter">SomaDS</span>
         </Link>
       </div>
 

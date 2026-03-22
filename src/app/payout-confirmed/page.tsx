@@ -18,7 +18,7 @@ function PayoutConfirmationContent() {
         <div className="flex flex-col items-center justify-center min-h-screen bg-background text-center p-4">
             <div className="flex items-center gap-2 mb-8">
                  <SomaLogo className="h-10 w-10 text-primary" />
-                 <span className="font-headline text-3xl font-bold text-primary">SOMA</span>
+                 <span className="font-headline text-3xl font-bold text-primary tracking-tighter">SomaDS</span>
             </div>
 
             <Card className="w-full max-w-lg border-primary/50 text-center">

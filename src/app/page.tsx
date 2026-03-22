@@ -360,7 +360,7 @@ export default function Home() {
       <header className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center z-20">
         <Link href="/" className="flex items-center gap-2 group">
           <SomaLogo aria-hidden={true} className="transition-transform group-hover:scale-110" />
-          <span className="font-headline font-bold text-xl text-primary tracking-tighter uppercase transition-opacity group-hover:opacity-80">SomaDS</span>
+          <span className="font-headline font-bold text-xl text-primary tracking-tighter transition-opacity group-hover:opacity-80">SomaDS</span>
         </Link>
         <div className="flex items-center gap-4">
             <Button variant="ghost" asChild className="font-headline text-primary hover:text-primary/80 hover:bg-primary/5">
@@ -407,7 +407,7 @@ export default function Home() {
                 <div className="flex flex-col items-center md:items-start gap-4">
                     <Link href="/" className="flex items-center gap-2 group">
                         <SomaLogo aria-hidden={true} className="h-8 w-8 transition-transform group-hover:scale-110" />
-                        <span className="font-headline font-bold text-2xl text-primary tracking-tighter uppercase transition-opacity group-hover:opacity-80">SomaDS</span>
+                        <span className="font-headline font-bold text-2xl text-primary tracking-tighter transition-opacity group-hover:opacity-80">SomaDS</span>
                     </Link>
                     <p className="text-neutral-500 text-sm max-w-xs text-center md:text-left">
                         The ultimate high-fidelity e-commerce architecture for luxury brands.
