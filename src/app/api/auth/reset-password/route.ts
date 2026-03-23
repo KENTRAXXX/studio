@@ -44,10 +44,7 @@ export async function POST(req: Request) {
   // Generate password reset link
   let resetLink: string;
   try {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.somatoday.com';
-    resetLink = await adminAuth.generatePasswordResetLink(email, {
-      url: `${appUrl}/auth/action`,
-    });
+    resetLink = await adminAuth.generatePasswordResetLink(email);
   } catch (e: any) {
     return NextResponse.json({ success: false, message: `generatePasswordResetLink failed: [${e.code}] ${e.message}` }, { status: 500 });
   }
