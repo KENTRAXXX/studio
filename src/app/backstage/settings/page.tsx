@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAuth, useUser, useFirestore, useUserProfile } from '@/firebase';
-import { sendPasswordResetEmail } from 'firebase/auth';
+
 import { doc, updateDoc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -95,7 +95,12 @@ export default function BackstageSettingsPage() {
 
     setIsSendingReset(true);
     try {
-      await sendPasswordResetEmail(auth, user.email);
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email }),
+      });
+      if (!res.ok) throw new Error('Server error — please try again.');
       toast({
         title: 'Reset Email Sent',
         description: `A security link has been dispatched to ${user.email}.`,

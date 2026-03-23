@@ -18,38 +18,45 @@ export type SendOrderEmailOutput = {
   id?: string;
 };
 
-const getEmailContent = (status: 'Pending' | 'Shipped' | 'Cancelled', orderId: string, storeName: string) => {
+const getEmailContent = async (status: 'Pending' | 'Shipped' | 'Cancelled', orderId: string, storeName: string) => {
+    const { getLuxuryEmailHtml } = await import('@/lib/emails/luxury-wrapper');
+    
     switch (status) {
         case 'Pending':
             return {
-                subject: `Your order #${orderId} from ${storeName} is confirmed!`,
-                html: `
-                  <div style="font-family: sans-serif; color: #333;">
-                    <h1 style="color: #D4AF37;">Order Confirmed: #${orderId}</h1>
-                    <p>Thank you for your purchase from ${storeName}!</p>
-                    <p>We've received your order and are getting it ready for shipment. We'll notify you again once it's on its way.</p>
-                  </div>
-                `
+                subject: `Order Confirmed: #${orderId}`,
+                html: getLuxuryEmailHtml({
+                  title: "Order Confirmation",
+                  heading: "Acquisition Confirmed",
+                  body: `
+                    <p style="font-size: 16px; color: #CCCCCC;">Thank you for your purchase from <strong style="color: #D4AF37;">${storeName}</strong>.</p>
+                    <p style="font-size: 16px; color: #CCCCCC;">We've received your order <strong style="color: #D4AF37;">#${orderId}</strong> and are preparing it for shipment. You will receive a notification once your items have been dispatched.</p>
+                  `,
+                })
             };
         case 'Shipped':
             return {
-                subject: `Your order #${orderId} from ${storeName} has shipped!`,
-                html: `
-                  <div style="font-family: sans-serif; color: #333;">
-                    <h1 style="color: #D4AF37;">Your Order #${orderId} from ${storeName} Has Shipped!</h1>
-                    <p>Your items are on their way. You can track your package using the link in the shipping confirmation email.</p>
-                  </div>
-                `
+                subject: `Order Dispatched: #${orderId}`,
+                html: getLuxuryEmailHtml({
+                  title: "Shipping Notification",
+                  heading: "Assets in Transit",
+                  body: `
+                    <p style="font-size: 16px; color: #CCCCCC;">Your order <strong style="color: #D4AF37;">#${orderId}</strong> from ${storeName} has been dispatched.</p>
+                    <p style="font-size: 16px; color: #CCCCCC;">Our logistics team has released your package. You can track your assets via the tracking link provided in your shipping dashboard.</p>
+                  `,
+                })
             };
         case 'Cancelled':
              return {
-                subject: `Your order #${orderId} from ${storeName} has been cancelled.`,
-                html: `
-                  <div style="font-family: sans-serif; color: #333;">
-                    <h1 style="color: #D4AF37;">Order Cancelled: #${orderId}</h1>
-                    <p>Your order from ${storeName} has been cancelled as requested. If you have any questions, please contact support.</p>
-                  </div>
-                `
+                subject: `Order Nullified: #${orderId}`,
+                html: getLuxuryEmailHtml({
+                  title: "Cancellation Notice",
+                  heading: "Order Cancelled",
+                  body: `
+                    <p style="font-size: 16px; color: #CCCCCC;">Your order <strong style="color: #D4AF37;">#${orderId}</strong> from ${storeName} has been nullified per request.</p>
+                    <p style="font-size: 16px; color: #CCCCCC;">If this was unintended, please contact our support department immediately to restore your transaction.</p>
+                  `,
+                })
             };
     }
 }
@@ -66,7 +73,7 @@ export async function sendOrderEmail(input: SendOrderEmailInput): Promise<SendOr
         };
     }
 
-    const { subject, html } = getEmailContent(status, orderId, storeName);
+    const { subject, html } = await getEmailContent(status, orderId, storeName);
     
     try {
         const response = await fetch('https://api.resend.com/emails', {

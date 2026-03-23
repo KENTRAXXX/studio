@@ -26,17 +26,18 @@ export async function sendWelcomeEmail(input: SendWelcomeEmailInput): Promise<Se
     }
 
     try {
-      const htmlContent = `
-        <div style="font-family: sans-serif; padding: 40px; line-height: 1.6; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 12px;">
-          <h1 style="color: #D4AF37; margin-bottom: 24px;">Welcome to SOMA! Your Store is LIVE!</h1>
-          <p style="font-size: 16px; color: #333;">Congratulations! Your payment was successful and your luxury store, "<strong>${input.storeName}</strong>", has been provisioned.</p>
-          <div style="margin-top: 32px; text-align: center;">
-            <a href="https://${ROOT_DOMAIN}/dashboard" style="background: #000; color: #fff; padding: 16px 32px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Go to Executive Dashboard</a>
-          </div>
-          <hr style="border: 0; border-top: 1px solid #eee; margin: 32px 0;">
-          <p style="font-size: 12px; color: #999; text-align: center;">SOMA - The Ultimate Design System for E-commerce.</p>
-        </div>
-      `;
+      const { getLuxuryEmailHtml } = await import('@/lib/emails/luxury-wrapper');
+
+      const htmlContent = getLuxuryEmailHtml({
+        title: "Welcome to SOMA",
+        heading: "Your Empire is Live",
+        body: `
+          <p style="font-size: 16px; color: #CCCCCC;">Congratulations. Your payment was successful and your luxury store, <strong style="color: #D4AF37;">${input.storeName}</strong>, has been successfully provisioned within the SOMA ecosystem.</p>
+          <p style="font-size: 16px; color: #CCCCCC;">Your digital assets are ready for deployment. You may now access your executive control center to begin your operations.</p>
+        `,
+        buttonText: "Enter Dashboard",
+        buttonUrl: `https://${ROOT_DOMAIN}/dashboard`,
+      });
 
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',

@@ -25,6 +25,8 @@ export function middleware(request: NextRequest) {
     path.startsWith('/backstage') ||
     path.startsWith('/login') ||
     path.startsWith('/signup') ||
+    path.startsWith('/auth') ||
+    path.startsWith('/verify-email') ||
     path.startsWith('/plan-selection') ||
     path.startsWith('/legal') ||
     path.startsWith('/payout-confirmed') ||

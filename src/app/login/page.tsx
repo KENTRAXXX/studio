@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, sendPasswordResetEmail, sendEmailVerification } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, sendEmailVerification } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { useAuth, useFirestore } from '@/firebase';
 
@@ -157,7 +157,12 @@ export default function LoginPage() {
 
     setIsLoading(true);
     try {
-      await sendPasswordResetEmail(auth, email);
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) throw new Error('Server error — please try again.');
       toast({
         title: 'Secure Link Dispatched',
         description: 'A dedicated terminal link to reset your password has been routed to your email.',
