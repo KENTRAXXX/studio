@@ -43,10 +43,16 @@ async function getAdminAuth() {
   if (serviceAccountJson) {
     // Option 1: explicit service account JSON secret
     const serviceAccount = JSON.parse(serviceAccountJson);
+
+    // VERCEL FIX: Vercel encodes newlines in env vars as literal \\n instead of \n.
+    // This breaks the RSA private key. We normalize it here.
+    if (serviceAccount.private_key) {
+      serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+    }
+
     app = initializeApp({ credential: cert(serviceAccount) }, 'admin-auth');
   } else {
-    // Option 2: Application Default Credentials (works on Firebase App Hosting
-    // if the service account has Firebase Authentication Admin role in IAM)
+    // Option 2: Application Default Credentials (works on Firebase App Hosting / GCP)
     app = initializeApp({ credential: applicationDefault() }, 'admin-auth');
   }
 
