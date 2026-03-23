@@ -36,7 +36,7 @@ const nextConfig: NextConfig = {
     ],
   },
   // Ensure heavy AI and Node-dependent libraries are not bundled into the client/edge
-  serverExternalPackages: ['genkit', '@genkit-ai/google-genai', 'express', 'google-auth-library'],
+  serverExternalPackages: ['genkit', '@genkit-ai/google-genai', 'express', 'google-auth-library', 'firebase-admin'],
 };
 
 export default nextConfig;
