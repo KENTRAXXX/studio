@@ -162,7 +162,8 @@ export default function LoginPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
-      if (!res.ok) throw new Error('Server error — please try again.');
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || 'Server error — please try again.');
       toast({
         title: 'Secure Link Dispatched',
         description: 'A dedicated terminal link to reset your password has been routed to your email.',
