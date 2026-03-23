@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, notFound } from 'next/navigation';
 import Image from 'next/image';
 import { useDoc, useFirestore, useCollection, useUser, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, where, limit, or, orderBy } from 'firebase/firestore';
@@ -680,23 +680,7 @@ export default function TenantBoutiquePage() {
     }
 
     if (!storeData) {
-        const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
-        return (
-            <div className="flex flex-col items-center justify-center h-screen space-y-4 bg-background px-4">
-                <div className="bg-primary/10 p-6 rounded-full">
-                    <Box className="h-16 w-16 text-primary opacity-20" />
-                </div>
-                <h1 className="text-3xl font-bold font-headline text-primary uppercase tracking-widest text-center">Boutique Not Found</h1>
-                <p className="text-muted-foreground text-center max-w-sm">
-                    The boutique at "{identifier}" is not currently provisioned in our network.
-                </p>
-                <Button variant="outline" className="border-primary/50" asChild>
-                    <Link href={`https://${rootDomain}`}>
-                        <ArrowLeft className="mr-2 h-4 w-4" /> Platform Home
-                    </Link>
-                </Button>
-            </div>
-        );
+        notFound();
     }
 
     const storeName = storeData.storeName || "Elite Boutique";

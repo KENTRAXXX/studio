@@ -17,7 +17,6 @@ export const metadata: Metadata = {
     template: '%s | SomaDS',
   },
   description: 'Launch your luxury e-commerce empire instantly with SOMA. High-fidelity boutiques, global catalog synchronization, and integrated financial processing.',
-  metadataBase: new URL(process.env.NEXT_PUBLIC_ROOT_DOMAIN ? `https://${process.env.NEXT_PUBLIC_ROOT_DOMAIN}` : 'https://somatoday.com'),
   keywords: ['e-commerce', 'luxury', 'dropshipping', 'design system', 'boutique', 'SOMA', 'Mogul'],
   authors: [{ name: 'SOMA Strategic Assets Group' }],
   creator: 'SOMA',

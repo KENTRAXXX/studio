@@ -21,8 +21,12 @@ export async function generateMetadata({ params }: { params: Promise<{ domain: s
 
     if (isAmbassador) {
         return {
+            metadataBase: new URL(`https://${domain}`),
             title: 'SOMA Ambassador Program | Performance Marketing Force',
             description: 'Earn high-yield $5.00 bounties by expanding the SOMA luxury ecosystem. Join our elite performance marketing force and track your results in real-time.',
+            alternates: {
+                canonical: '/',
+            },
             openGraph: {
                 title: 'SOMA Ambassador Program',
                 description: 'The executive choice for performance marketers.',
@@ -49,8 +53,12 @@ export async function generateMetadata({ params }: { params: Promise<{ domain: s
         if (!store) return { title: 'SOMA Boutique' };
 
         return {
+            metadataBase: new URL(`https://${domain}`),
             title: `${store.storeName} | SOMA Boutique`,
             description: store.heroSubtitle || 'Discover our curated luxury collection.',
+            alternates: {
+                canonical: '/',
+            },
             openGraph: {
                 title: store.storeName,
                 description: store.heroSubtitle,
@@ -58,7 +66,10 @@ export async function generateMetadata({ params }: { params: Promise<{ domain: s
             }
         };
     } catch (e) {
-        return { title: 'SOMA Boutique' };
+        return { 
+            metadataBase: new URL(`https://${domain}`),
+            title: 'SOMA Boutique' 
+        };
     }
 }
 
