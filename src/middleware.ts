@@ -38,7 +38,7 @@ export function middleware(request: NextRequest) {
 
   // 3. Perform the Rewrite: If the hostname is NOT the root domain
   if (currentHost !== rootDomain && currentHost !== `www.${rootDomain}`) {
-    console.log('Middleware Path:', currentHost, 'Rewriting to:', `/_sites/${currentHost}${path}`);
+    console.log('Middleware Path:', currentHost, 'Rewriting to:', `/${currentHost}${path}`);
     
     let targetPath = path;
     
@@ -50,7 +50,7 @@ export function middleware(request: NextRequest) {
 
     // Internal Rewrite maintains the branded URL in the browser
     // This handles both boutique subdomains and specialized portals like ambassador.
-    const rewriteUrl = new URL(`/_sites/${currentHost}${targetPath}${url.search}`, request.url);
+    const rewriteUrl = new URL(`/${currentHost}${targetPath}${url.search}`, request.url);
     return NextResponse.rewrite(rewriteUrl);
   }
   
