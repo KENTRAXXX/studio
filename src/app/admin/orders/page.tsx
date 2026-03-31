@@ -82,6 +82,7 @@ export default function AdminOrdersPage() {
   }, [allStores]);
 
   const getStoreIdFromPath = (path: string) => {
+    if (!path) return 'Unknown';
     const parts = path.split('/');
     const storesIndex = parts.indexOf('stores');
     if (storesIndex !== -1 && storesIndex + 1 < parts.length) {
@@ -133,14 +134,14 @@ export default function AdminOrdersPage() {
                   return (
                     <TableRow key={order.id}>
                       <TableCell className="font-medium">{storeName}</TableCell>
-                      <TableCell className="font-mono text-xs">{order.orderId}</TableCell>
-                      <TableCell>{new Date(order.createdAt).toLocaleString()}</TableCell>
+                      <TableCell className="font-mono text-xs">{order.orderId || '---'}</TableCell>
+                      <TableCell>{order.createdAt ? new Date(order.createdAt).toLocaleString() : '--'}</TableCell>
                       <TableCell className="text-center">
                           <Badge className={cn("text-xs", getStatusClasses(order.status))}>
-                            {order.status}
+                            {order.status || 'Pending'}
                           </Badge>
                       </TableCell>
-                      <TableCell className="text-right font-mono">${order.total.toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-mono">${(order.total || 0).toFixed(2)}</TableCell>
                     </TableRow>
                   );
                 })

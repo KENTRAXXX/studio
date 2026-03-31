@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -27,7 +28,8 @@ import {
   Accessibility,
   LogOut,
   Settings,
-  ChevronRight
+  ChevronRight,
+  Headset
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { Badge } from '@/components/ui/badge';
@@ -38,6 +40,7 @@ const navHierarchy = {
     { href: '/admin', icon: LayoutDashboard, label: 'Overview', description: 'The Heartbeat' },
     { href: '/admin/users', icon: Users, label: 'User Manager', description: 'Moguls & Sellers' },
     { href: '/admin/concierge', icon: MessageSquare, label: 'Concierge Inbox', description: 'Brand Support' },
+    { href: '/admin/support', icon: Headset, label: 'Global Support', description: 'Platform Tickets' },
   ],
   MARKETPLACE: [
     { href: '/admin/catalog', icon: Gem, label: 'Global Catalog', description: 'Curate & Edit' },

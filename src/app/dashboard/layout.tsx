@@ -41,9 +41,7 @@ import {
   ImageIcon,
   LogOut,
   Palette,
-  Landmark,
-  Warehouse,
-  FolderOpen
+  Megaphone
 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
@@ -95,7 +93,6 @@ export default function DashboardLayout({
         { href: '/dashboard/domain-settings', icon: Globe, label: 'Domain Settings' },
         { href: '/dashboard/analytics', icon: BarChart2, label: 'Analytics' },
         { href: '/dashboard/wallet', icon: Wallet, label: 'SOMA Wallet' },
-        { href: '/dashboard/referrals', icon: Globe, label: 'Referrals' },
         { href: '/dashboard/accessibility-checker', icon: Accessibility, label: 'A11y Checker' },
     ];
 
@@ -112,6 +109,9 @@ export default function DashboardLayout({
     if (tier.features.academyAccess) {
         items.splice(7, 0, { href: '/dashboard/training-center', icon: GraduationCap, label: 'Mogul Academy' });
     }
+
+    // AMBASSADOR LINK (For Moguls who want to join)
+    items.push({ href: '/ambassador', icon: Megaphone, label: 'Earn as Ambassador' });
 
     return items;
   }, [userProfile]);

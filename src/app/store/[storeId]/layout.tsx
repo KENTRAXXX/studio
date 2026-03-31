@@ -4,16 +4,21 @@ import { useState, createContext, useContext, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { Search, ShoppingCart, X, Loader2, Mail, Instagram, Twitter } from 'lucide-react';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { Search, ShoppingCart, X, Loader2, Mail, Instagram, Twitter, MessageSquare, Send, CheckCircle2 } from 'lucide-react';
+import { useFirestore, useDoc, useMemoFirebase, useCollection, useUser } from '@/firebase';
+import { doc, collection, query, where, limit, or, addDoc, serverTimestamp } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import SomaLogo from '@/components/logo';
 import { PlaceHolderImages, type ImagePlaceholder } from '@/lib/placeholder-images';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { formatCurrency } from '@/utils/format';
+import { useToast } from '@/hooks/use-toast';
+import { sendSupportTicketCustomerEmail } from '@/ai/flows/send-support-ticket-customer-email';
+import { sendSupportTicketOwnerEmail } from '@/ai/flows/send-support-ticket-owner-email';
 
 type CartItem = {
   product: any;
@@ -79,7 +84,7 @@ function CartSheet({storeId}: {storeId: string}) {
     return (
         <Sheet>
             <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative text-primary-foreground hover:bg-primary/20 hover:text-primary">
+                <Button variant="ghost" size="icon" className="relative text-primary hover:bg-primary/20">
                     <ShoppingCart className="h-6 w-6" aria-label={`Shopping Cart, ${cart.reduce((acc, item) => acc + item.quantity, 0)} items`} />
                     {cart.length > 0 && (
                         <span className="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
@@ -140,31 +145,170 @@ function CartSheet({storeId}: {storeId: string}) {
     );
 }
 
-function ContactSheet({ ownerEmail }: { ownerEmail?: string }) {
+function ContactSheet({ storeId, storeName, ownerEmail, trigger }: { storeId: string, storeName: string, ownerEmail?: string, trigger?: React.ReactNode }) {
+    const { user } = useUser();
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [subject, setSubject] = useState('');
+    const [message, setMessage] = useState('');
+
+    useEffect(() => {
+        if (user) {
+            setName(user.displayName || '');
+            setEmail(user.email || '');
+        }
+    }, [user]);
+
+    const handleSubmitTicket = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!firestore || !storeId) return;
+
+        setIsSubmitting(true);
+        try {
+            const bundledMessage = `Customer: ${name}\nEmail: ${email}\n\n${message}`;
+            
+            const ticketsRef = collection(firestore, 'stores', storeId, 'supportTickets');
+            const ticketDoc = await addDoc(ticketsRef, {
+                subject,
+                message: bundledMessage,
+                status: 'OPEN',
+                storeId,
+                customerId: user?.uid || null,
+                messages: [bundledMessage],
+                createdAt: serverTimestamp(),
+            });
+
+            // Trigger Notifications
+            const storeUrl = typeof window !== 'undefined' ? window.location.origin : `https://somatoday.com/store/${storeId}`;
+            
+            await sendSupportTicketCustomerEmail({
+                to: email,
+                customerName: name,
+                storeName: storeName,
+                ticketId: ticketDoc.id,
+                storeUrl: storeUrl
+            });
+
+            if (ownerEmail) {
+                await sendSupportTicketOwnerEmail({
+                    to: ownerEmail,
+                    customerName: name,
+                    customerEmail: email,
+                    subject: subject,
+                    storeName: storeName
+                });
+            }
+
+            setIsSuccess(true);
+            toast({
+                title: 'Inquiry Dispatched',
+                description: 'Your strategic request has been logged in the boutique registry.',
+            });
+        } catch (error: any) {
+            toast({
+                variant: 'destructive',
+                title: 'Transmission Failed',
+                description: error.message,
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
-        <Sheet>
+        <Sheet onOpenChange={(open) => !open && setIsSuccess(false)}>
             <SheetTrigger asChild>
-                <Button variant="link" className="text-sm text-muted-foreground hover:text-primary p-0 h-auto">Contact Us</Button>
+                {trigger || <Button variant="link" className="text-sm text-muted-foreground hover:text-primary p-0 h-auto">Contact Us</Button>}
             </SheetTrigger>
-            <SheetContent className="bg-background border-primary/20">
+            <SheetContent className="bg-background border-primary/20 sm:max-w-md">
                 <SheetHeader>
-                    <SheetTitle className="text-primary font-headline text-2xl">Contact Us</SheetTitle>
+                    <SheetTitle className="text-primary font-headline text-2xl">Boutique Support</SheetTitle>
                 </SheetHeader>
-                <div className="py-8 text-center space-y-6">
-                     <Mail className="h-12 w-12 text-primary mx-auto" aria-hidden="true" />
-                     <div>
-                        <h3 className="font-semibold">Have a question?</h3>
-                        <p className="text-muted-foreground">Reach out to the store owner directly at:</p>
-                        {ownerEmail ?
-                            <a href={`mailto:${ownerEmail}`} className="font-bold text-primary text-lg">{ownerEmail}</a>
-                            : <Loader2 className="h-6 w-6 animate-spin mx-auto mt-2" />
-                        }
-                     </div>
-                     <Separator className="my-4 bg-primary/20"/>
-                     <div className="text-xs text-muted-foreground">
-                        <p>Support Powered by <span className="font-bold text-primary">SOMA</span></p>
-                     </div>
-                </div>
+                
+                {isSuccess ? (
+                    <div className="py-20 text-center space-y-6 animate-in fade-in zoom-in duration-500">
+                        <div className="mx-auto h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+                            <CheckCircle2 className="h-10 w-10 text-primary" />
+                        </div>
+                        <div className="space-y-2">
+                            <h3 className="text-xl font-bold text-slate-200">Request Logged</h3>
+                            <p className="text-sm text-muted-foreground">The boutique curator has been notified. Check your email for a reference ID.</p>
+                        </div>
+                        <Button variant="outline" onClick={() => setIsSuccess(false)} className="border-primary/20">Send Another</Button>
+                    </div>
+                ) : (
+                    <div className="py-8 space-y-8">
+                        <div className="text-center space-y-2">
+                            <Mail className="h-12 w-12 text-primary mx-auto opacity-50" aria-hidden="true" />
+                            <h3 className="font-bold text-lg text-slate-200 uppercase tracking-widest">Strategic Inquiry</h3>
+                            <p className="text-xs text-muted-foreground">Your request will be recorded in the store's executive ledger.</p>
+                        </div>
+
+                        <form onSubmit={handleSubmitTicket} className="space-y-4">
+                            {!user && (
+                                <>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Your Name</label>
+                                        <Input 
+                                            placeholder="John Doe" 
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
+                                            required
+                                            className="bg-primary/5 border-primary/10"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Email Address</label>
+                                        <Input 
+                                            type="email"
+                                            placeholder="john@example.com" 
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            required
+                                            className="bg-primary/5 border-primary/10"
+                                        />
+                                    </div>
+                                </>
+                            )}
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Subject</label>
+                                <Input 
+                                    placeholder="e.g., Private Viewing Request" 
+                                    value={subject}
+                                    onChange={(e) => setSubject(e.target.value)}
+                                    required
+                                    className="bg-primary/5 border-primary/10"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Detailed Message</label>
+                                <Textarea 
+                                    placeholder="Please provide specifics regarding your inquiry..." 
+                                    value={message}
+                                    onChange={(e) => setMessage(e.target.value)}
+                                    required
+                                    className="min-h-[150px] bg-primary/5 border-primary/10 resize-none"
+                                />
+                            </div>
+                            <Button type="submit" disabled={isSubmitting} className="w-full h-12 btn-gold-glow bg-primary font-bold">
+                                {isSubmitting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}
+                                Transmit Inquiry
+                            </Button>
+                        </form>
+
+                        <Separator className="my-4 bg-primary/10"/>
+                        
+                        <div className="text-center">
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em]">Boutique Authority</p>
+                            <p className="text-sm font-bold text-primary mt-1">{storeName}</p>
+                        </div>
+                    </div>
+                )}
             </SheetContent>
         </Sheet>
     )
@@ -177,23 +321,48 @@ export default function StoreLayout({
   children: React.ReactNode;
 }) {
   const params = useParams();
-  const rawStoreId = (params.storeId || params.domain) as string;
+  const identifier = (params.storeId || params.domain || params.site) as string;
   const firestore = useFirestore();
 
-  const storeRef = useMemoFirebase(() => {
-    return firestore && rawStoreId ? doc(firestore, 'stores', rawStoreId) : null;
-  }, [firestore, rawStoreId]);
-  const { data: storeData, loading: storeLoading } = useDoc<any>(storeRef);
+  const storeQuery = useMemoFirebase(() => {
+    if (!firestore || !identifier) return null;
+    
+    const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
+    const normalizedIdentifier = identifier.toLowerCase();
+    
+    let slug = normalizedIdentifier;
+    if (normalizedIdentifier.endsWith(`.${rootDomain}`)) {
+        slug = normalizedIdentifier.replace(`.${rootDomain}`, '');
+    }
+    if (slug.startsWith('www.')) {
+        slug = slug.replace('www.', '');
+    }
+
+    return query(
+        collection(firestore, 'stores'),
+        or(
+            where('userId', '==', slug),
+            where('customDomain', '==', normalizedIdentifier),
+            where('slug', '==', slug)
+        ),
+        limit(1)
+    );
+  }, [firestore, identifier]);
+
+  const { data: storeDocs, loading: storeLoading } = useCollection<any>(storeQuery);
+  const storeData = storeDocs?.[0];
+  const storeId = storeData?.userId;
   
   const ownerRef = useMemoFirebase(() => {
-    if (!firestore || !storeData?.userId) return null;
-    return doc(firestore, 'users', storeData.userId);
-  }, [firestore, storeData?.userId]);
+    if (!firestore || !storeId) return null;
+    return doc(firestore, 'users', storeId);
+  }, [firestore, storeId]);
   const { data: ownerData } = useDoc<any>(ownerRef);
 
-  const storeName = storeData?.storeName || "SOMA Store";
+  const storeName = storeData?.storeName || "Boutique";
   const logoUrl = storeData?.logoUrl;
   const themeColors = storeData?.themeConfig?.colors;
+  const contactEmail = storeData?.contactEmail || ownerData?.email;
 
   const customStyles = themeColors ? {
     '--primary': themeColors.primary,
@@ -214,7 +383,7 @@ export default function StoreLayout({
         >
           <header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-sm border-b border-primary/20">
             <div className="container mx-auto flex h-20 items-center justify-between px-4 sm:px-6 lg:px-8">
-              <Link href={rawStoreId ? `/store/${rawStoreId}` : '/'} className="flex items-center gap-2 group">
+              <Link href={identifier ? (params.domain ? '/' : `/store/${identifier}`) : '/'} className="flex items-center gap-2 group">
                 {storeLoading ? (
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 ) : logoUrl ? (
@@ -228,16 +397,30 @@ export default function StoreLayout({
                     {storeLoading ? 'Loading...' : storeName}
                 </h1>
               </Link>
-              <div className="flex items-center gap-4">
-                <div className="relative hidden md:block">
+              <div className="flex items-center gap-2 md:gap-4">
+                <div className="relative hidden lg:block">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" aria-hidden="true" />
                   <input
                     placeholder="Search products..."
                     aria-label="Search products"
-                    className="h-10 w-full rounded-md border border-primary/30 bg-transparent pl-10 pr-4 text-sm placeholder:text-muted-foreground focus:ring-primary"
+                    className="h-10 w-full min-w-[200px] rounded-md border border-primary/30 bg-transparent pl-10 pr-4 text-sm placeholder:text-muted-foreground focus:ring-primary"
                   />
                 </div>
-                <CartSheet storeId={rawStoreId} />
+                
+                {storeId && (
+                    <ContactSheet 
+                        storeId={storeId}
+                        storeName={storeName}
+                        ownerEmail={contactEmail} 
+                        trigger={
+                            <Button variant="ghost" size="icon" className="text-primary hover:bg-primary/20">
+                                <MessageSquare className="h-6 w-6" />
+                            </Button>
+                        }
+                    />
+                )}
+                
+                <CartSheet storeId={storeId} />
               </div>
             </div>
           </header>
@@ -268,7 +451,7 @@ export default function StoreLayout({
               </div>
               <div className="flex gap-6">
                 <Link href="/legal/terms" className="text-sm text-muted-foreground hover:text-primary">Privacy Policy</Link>
-                <ContactSheet ownerEmail={ownerData?.email}/>
+                {storeId && <ContactSheet storeId={storeId} storeName={storeName} ownerEmail={contactEmail}/>}
               </div>
             </div>
           </footer>

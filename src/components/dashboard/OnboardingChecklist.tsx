@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useUser, useFirestore, useDoc, useCollection, useUserProfile, useMemoFirebase } from '@/firebase';
 import { doc, collection, updateDoc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';

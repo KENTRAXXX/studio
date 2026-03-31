@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { initializeApp, getApps } from 'firebase/app';
-import { doc, updateDoc, getFirestore } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, getFirestore } from 'firebase/firestore';
 import { firebaseConfig } from '@/firebase/config';
 import { addDomainToVercel } from '@/lib/vercel-domains';
+import { getTier } from '@/lib/tiers';
 
 /**
- * @fileOverview API route to register custom hostnames via Vercel API
- * and sync verification records to Firestore.
+ * @fileOverview API route to register custom hostnames via Vercel API.
+ * Flow: Auth Check -> Tier Check -> Vercel Call -> Database Link.
  */
 
 const getDb = () => {
@@ -28,28 +29,47 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing domain or storeId' }, { status: 400 });
     }
 
-    // 1. Register with Vercel Project Domains API
-    let vercelData;
+    const firestore = getDb();
+
+    // 1. Auth & Tier Check: Verify user exists and is allowed to have a custom domain
+    const userRef = doc(firestore, 'users', storeId);
+    const userSnap = await getDoc(userRef);
+    const userData = userSnap.data();
+
+    if (!userSnap.exists() || !userData) {
+        return NextResponse.json({ error: 'Identity not found.' }, { status: 404 });
+    }
+
+    if (!userData.hasAccess) {
+        return NextResponse.json({ error: 'Subscription required for custom domain mapping.' }, { status: 403 });
+    }
+
+    const tier = getTier(userData.planTier);
+    if (!tier.features.customDomains && userData.userRole !== 'ADMIN') {
+        return NextResponse.json({ 
+            error: `Your current tier (${tier.label}) does not support custom domains. Please upgrade to Scaler or Enterprise.` 
+        }, { status: 403 });
+    }
+
+    // 2. Vercel Call: Register with Vercel Project Domains API
     try {
-        vercelData = await addDomainToVercel(domain);
+        await addDomainToVercel(domain);
     } catch (e: any) {
         console.error("Vercel Domain Add Error:", e);
         return NextResponse.json({ 
-            error: `Vercel Integration Error: ${e.message}. Ensure VERCEL_TOKEN and VERCEL_PROJECT_ID are configured.` 
+            error: `Vercel Integration Error: ${e.message}` 
         }, { status: 500 });
     }
 
-    // 2. Update Firestore status with Vercel verification intent
-    const firestore = getDb();
+    // 3. Database: Link the domain to the store record
     const storeRef = doc(firestore, 'stores', storeId);
     
-    // We store standard Vercel DNS targets for the UI to display
     const isSubdomain = domain.split('.').length > 2;
     const dnsTarget = isSubdomain ? 'cname.vercel-dns.com' : '76.76.21.21';
     const dnsType = isSubdomain ? 'CNAME' : 'A';
 
     const verificationInfo = {
-      customDomain: domain.toLowerCase(),
+      customDomain: domain.toLowerCase().trim(),
       domainStatus: 'pending_dns',
       vercelVerified: false,
       dnsRecord: {
@@ -64,7 +84,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ 
       success: true, 
-      message: 'Domain registered on Vercel and records synced.',
+      message: 'Domain registered on Vercel and records synchronized.',
       data: verificationInfo
     });
 

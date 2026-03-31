@@ -20,7 +20,9 @@ import {
     RefreshCw,
     ShieldAlert,
     Clock,
-    Trash2
+    Trash2,
+    Info,
+    ArrowRight
 } from 'lucide-react';
 import {
   Table,
@@ -182,8 +184,8 @@ export default function DomainSettingsPage() {
                 <Globe className="h-8 w-8 text-primary" />
             </div>
             <div>
-                <h1 className="text-3xl font-bold font-headline">Vercel Custom Domains</h1>
-                <p className="text-muted-foreground mt-1 text-sm">Attach and verify your unique web identity via Vercel Edge.</p>
+                <h1 className="text-3xl font-bold font-headline">Custom Domain Management</h1>
+                <p className="text-muted-foreground mt-1 text-sm">Connect your unique brand identity to the SOMA global network.</p>
             </div>
         </div>
         
@@ -197,7 +199,7 @@ export default function DomainSettingsPage() {
                     className="border-primary/20 hover:bg-primary/5"
                 >
                     {isCheckingStatus ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                    Refresh Vercel Status
+                    Sync Vercel Status
                 </Button>
                 <Button 
                     variant="ghost" 
@@ -213,155 +215,179 @@ export default function DomainSettingsPage() {
         )}
       </div>
 
-       <Card className="border-primary/50 bg-primary/5 border-2 shadow-gold-glow">
-        <CardHeader className="flex flex-row items-center gap-4">
-            <ShieldCheck className="h-10 w-10 text-primary" />
-            <div>
-                <CardTitle className="text-primary text-xl">Vercel Edge Resolver</CardTitle>
-                <CardDescription className="text-primary/80 font-medium">Use these records to point your domain to our Vercel infrastructure.</CardDescription>
-            </div>
-        </CardHeader>
-      </Card>
-
-      <Card className="border-primary/50 overflow-hidden bg-slate-900/20">
-        <CardHeader className="bg-muted/30 border-b border-primary/10">
-          <CardTitle>Step 1: Domain Attachment</CardTitle>
-          <CardDescription>Enter your root domain (brand.com) or subdomain (shop.brand.com).</CardDescription>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row items-end gap-4">
-            <div className="w-full sm:flex-1 space-y-2">
-                 <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Public Web Address</Label>
-                <Input
-                  placeholder="e.g., my-luxury-boutique.com"
-                  value={domainInput}
-                  onChange={(e) => setDomainInput(e.target.value)}
-                  disabled={domainStatus === 'connected' || isSaving}
-                  className="h-12 border-primary/20 bg-slate-950 font-mono"
-                />
-            </div>
-             <Button onClick={handleSave} disabled={isSaving || domainStatus === 'connected' || !domainInput} className="h-12 px-8 btn-gold-glow bg-primary font-bold">
-                {isSaving ? <Loader2 className="animate-spin" /> : 'Connect to Vercel'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {(domainStatus === 'pending_dns' || domainStatus === 'connected' || storeData?.vercelMisconfigured) && (
-        <Card className={cn(
-            "border-primary overflow-hidden bg-slate-900/40",
-            (domainStatus === 'pending_dns' || storeData?.vercelMisconfigured) && "card-gold-pulse"
-        )}>
-            <CardHeader className="bg-primary/5 border-b border-primary/10">
-                <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2 text-primary font-headline">
-                        <AlertTriangle className={cn("h-5 w-5", storeData?.vercelMisconfigured ? "text-destructive" : "text-primary")}/> 
-                        Step 2: DNS Configuration
-                    </CardTitle>
-                    {storeData?.lastVercelSync && (
-                        <p className="text-[10px] font-mono text-muted-foreground uppercase">Last Sync: {new Date(storeData.lastVercelSync).toLocaleTimeString()}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-8">
+            <Card className="border-primary/50 overflow-hidden bg-slate-900/20">
+                <CardHeader className="bg-muted/30 border-b border-primary/10">
+                <CardTitle>1. Domain Attachment</CardTitle>
+                <CardDescription>Enter the domain you purchased from your registrar (e.g., GoDaddy, Namecheap).</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6">
+                <div className="flex flex-col sm:flex-row items-end gap-4">
+                    <div className="w-full sm:flex-1 space-y-2">
+                        <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Public Web Address</Label>
+                        <Input
+                        placeholder="e.g., my-luxury-boutique.com"
+                        value={domainInput}
+                        onChange={(e) => setDomainInput(e.target.value)}
+                        disabled={domainStatus === 'connected' || isSaving}
+                        className="h-12 border-primary/20 bg-slate-950 font-mono"
+                        />
+                    </div>
+                    {domainStatus === 'unverified' && (
+                        <Button onClick={handleSave} disabled={isSaving || !domainInput} className="h-12 px-8 btn-gold-glow bg-primary font-bold">
+                            {isSaving ? <Loader2 className="animate-spin" /> : 'Attach Domain'}
+                        </Button>
                     )}
                 </div>
-                <CardDescription className="text-slate-300">
-                    Update these records at your registrar (GoDaddy, Namecheap, etc) to point to Vercel.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6 space-y-8">
-                <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400">
-                        <ShieldAlert className="h-3.5 w-3.5" /> Required DNS Record
-                    </div>
-                    <div className="rounded-xl border border-primary/20 bg-black/40 overflow-hidden">
-                        <Table>
-                            <TableHeader className="bg-primary/5">
-                                <TableRow className="border-primary/10">
-                                    <TableHead className="text-primary font-bold text-[10px]">TYPE</TableHead>
-                                    <TableHead className="text-primary font-bold text-[10px]">HOST / NAME</TableHead>
-                                    <TableHead className="text-primary font-bold text-[10px]">VALUE / TARGET</TableHead>
-                                    <TableHead className="text-right"></TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                <TableRow className="border-transparent">
-                                    <TableCell>
-                                        <Badge variant="outline" className="border-primary/50 text-primary">
-                                            {storeData?.dnsRecord?.type || (domainInput.split('.').length > 2 ? 'CNAME' : 'A')}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="font-mono text-xs text-slate-200">
-                                        {storeData?.dnsRecord?.name || (domainInput.split('.').length > 2 ? domainInput.split('.')[0] : '@')}
-                                    </TableCell>
-                                    <TableCell className="max-w-xs">
-                                        <code className="text-[10px] text-primary font-bold">
-                                            {storeData?.dnsRecord?.value || (domainInput.split('.').length > 2 ? 'cname.vercel-dns.com' : '76.76.21.21')}
-                                        </code>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            className="h-8 w-8 hover:bg-primary/10"
-                                            onClick={() => copyToClipboard(storeData?.dnsRecord?.value || (domainInput.split('.').length > 2 ? 'cname.vercel-dns.com' : '76.76.21.21'), 'DNS')}
-                                        >
-                                            <Copy className="h-3 w-3" />
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            </TableBody>
-                        </Table>
-                    </div>
-                </div>
-                
-                <div className="p-6 rounded-xl bg-primary/5 border border-primary/20 flex flex-col sm:flex-row items-center justify-between gap-6">
-                    <div className="space-y-1">
-                        <p className="text-sm font-bold text-slate-200">Edge Verification Status</p>
-                        <p className={cn(
-                            "text-xs font-bold leading-relaxed",
-                            storeData?.vercelVerified ? "text-green-500" : "text-yellow-500"
-                        )}>
-                            {storeData?.vercelVerified ? 'VERIFIED' : 'PENDING PROPAGATION'}
-                        </p>
-                    </div>
-                     <Button onClick={checkStatus} disabled={isCheckingStatus} className="w-full sm:w-auto h-12 px-8 btn-gold-glow bg-primary font-bold">
-                        {isCheckingStatus ? <Loader2 className="animate-spin mr-2 h-4 w-4"/> : <CheckCircle2 className="mr-2 h-4 w-4"/>}
-                        Verify DNS Readiness
-                    </Button>
-                </div>
-            </CardContent>
-        </Card>
-      )}
+                </CardContent>
+            </Card>
 
-      {domainStatus === 'connected' && (
-           <Card className="border-green-500/50 bg-green-500/5 overflow-hidden">
-            <CardHeader className="bg-green-500/10 border-b border-green-500/20">
-                <CardTitle className="flex items-center gap-2 text-green-400">
-                    <CheckCircle2 className="h-5 w-5"/> 
-                    Identity Globally Resolved
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
-                 <p className="text-slate-300 leading-relaxed">
-                    Success. Your custom domain is now live on the Vercel Edge.
-                    <br />
-                    <Link href={`https://${storeData?.customDomain || domainInput}`} target="_blank" className="inline-flex items-center font-black text-primary hover:text-primary/80 mt-4 text-lg tracking-tight uppercase">
-                        {storeData?.customDomain || domainInput} 
-                        <ExternalLink className="ml-2 h-4 w-4"/>
-                    </Link>
-              </p>
-            </CardContent>
-        </Card>
-      )}
-      
-      <div className="p-6 border border-slate-800 rounded-2xl bg-slate-900/20 flex items-start gap-4">
-          <div className="p-2 rounded-lg bg-slate-800 text-slate-400">
-              <LinkIcon className="h-5 w-5" />
-          </div>
-          <div>
-              <h4 className="text-sm font-bold text-slate-200 mb-1 uppercase tracking-widest">Vercel Proxy Note</h4>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                  SSL certificates are automatically generated and managed by Vercel. Once DNS propagation is complete (usually 5-15 minutes), your store will automatically serve traffic over HTTPS.
-              </p>
-          </div>
+            {(domainStatus === 'pending_dns' || domainStatus === 'connected' || storeData?.vercelMisconfigured) && (
+                <Card className={cn(
+                    "border-primary overflow-hidden bg-slate-900/40",
+                    (domainStatus === 'pending_dns' || storeData?.vercelMisconfigured) && "card-gold-pulse"
+                )}>
+                    <CardHeader className="bg-primary/5 border-b border-primary/10">
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="flex items-center gap-2 text-primary font-headline">
+                                <AlertTriangle className={cn("h-5 w-5", storeData?.vercelMisconfigured ? "text-destructive" : "text-primary")}/> 
+                                2. DNS Configuration
+                            </CardTitle>
+                            {storeData?.lastVercelSync && (
+                                <p className="text-[10px] font-mono text-muted-foreground uppercase">Verified: {new Date(storeData.lastVercelSync).toLocaleTimeString()}</p>
+                            )}
+                        </div>
+                        <CardDescription className="text-slate-300">
+                            Log into your domain registrar and add the following record to point your domain to SOMA.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-6 space-y-8">
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400">
+                                <ShieldAlert className="h-3.5 w-3.5" /> Required DNS Record
+                            </div>
+                            <div className="rounded-xl border border-primary/20 bg-black/40 overflow-hidden">
+                                <Table>
+                                    <TableHeader className="bg-primary/5">
+                                        <TableRow className="border-primary/10">
+                                            <TableHead className="text-primary font-bold text-[10px]">TYPE</TableHead>
+                                            <TableHead className="text-primary font-bold text-[10px]">HOST / NAME</TableHead>
+                                            <TableHead className="text-primary font-bold text-[10px]">VALUE / TARGET</TableHead>
+                                            <TableHead className="text-right"></TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        <TableRow className="border-transparent">
+                                            <TableCell>
+                                                <Badge variant="outline" className="border-primary/50 text-primary">
+                                                    {storeData?.dnsRecord?.type || (domainInput.split('.').length > 2 ? 'CNAME' : 'A')}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="font-mono text-xs text-slate-200">
+                                                {storeData?.dnsRecord?.name || (domainInput.split('.').length > 2 ? domainInput.split('.')[0] : '@')}
+                                            </TableCell>
+                                            <TableCell className="max-w-xs">
+                                                <code className="text-[10px] text-primary font-bold">
+                                                    {storeData?.dnsRecord?.value || (domainInput.split('.').length > 2 ? 'cname.vercel-dns.com' : '76.76.21.21')}
+                                                </code>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    className="h-8 w-8 hover:bg-primary/10"
+                                                    onClick={() => copyToClipboard(storeData?.dnsRecord?.value || (domainInput.split('.').length > 2 ? 'cname.vercel-dns.com' : '76.76.21.21'), 'DNS')}
+                                                >
+                                                    <Copy className="h-3 w-3" />
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </div>
+                        
+                        <div className="p-6 rounded-xl bg-primary/5 border border-primary/20 flex flex-col sm:flex-row items-center justify-between gap-6">
+                            <div className="space-y-1">
+                                <p className="text-sm font-bold text-slate-200">Edge Verification Status</p>
+                                <p className={cn(
+                                    "text-xs font-bold leading-relaxed",
+                                    storeData?.vercelVerified ? "text-green-500" : "text-yellow-500"
+                                )}>
+                                    {storeData?.vercelVerified ? 'IDENTITY VERIFIED' : 'AWAITING PROPAGATION'}
+                                </p>
+                            </div>
+                            <Button onClick={checkStatus} disabled={isCheckingStatus} className="w-full sm:w-auto h-12 px-8 btn-gold-glow bg-primary font-bold">
+                                {isCheckingStatus ? <Loader2 className="animate-spin mr-2 h-4 w-4"/> : <CheckCircle2 className="mr-2 h-4 w-4"/>}
+                                Verify DNS Readiness
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {domainStatus === 'connected' && (
+                <Card className="border-green-500/50 bg-green-500/5 overflow-hidden">
+                    <CardHeader className="bg-green-500/10 border-b border-green-500/20">
+                        <CardTitle className="flex items-center gap-2 text-green-400">
+                            <ShieldCheck className="h-5 w-5"/> 
+                            Identity Successfully Mapped
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                        <p className="text-slate-300 leading-relaxed">
+                            Your luxury boutique is now officially live on your custom domain. SSL certificates have been provisioned and secured.
+                            <br />
+                            <Link href={`https://${storeData?.customDomain || domainInput}`} target="_blank" className="inline-flex items-center font-black text-primary hover:text-primary/80 mt-4 text-lg tracking-tight uppercase">
+                                {storeData?.customDomain || domainInput} 
+                                <ExternalLink className="ml-2 h-4 w-4"/>
+                            </Link>
+                        </p>
+                    </CardContent>
+                </Card>
+            )}
+        </div>
+
+        <div className="space-y-8">
+            <Card className="bg-primary/5 border-primary/20">
+                <CardHeader>
+                    <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-primary flex items-center gap-2">
+                        <Info className="h-3 w-3" /> Strategic Guide
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="text-xs text-muted-foreground space-y-4 leading-relaxed">
+                    <p>
+                        <span className="text-slate-200 font-bold">1. Registrar:</span> Your domain is owned at a registrar (GoDaddy, etc). This is the "Origin."
+                    </p>
+                    <p>
+                        <span className="text-slate-200 font-bold">2. Pointer:</span> Entering your domain here alerts SOMA to expect traffic.
+                    </p>
+                    <p>
+                        <span className="text-slate-200 font-bold">3. DNS Record:</span> You must manually enter the provided A Record or CNAME into your Registrar's dashboard.
+                    </p>
+                    <p>
+                        <span className="text-slate-200 font-bold">4. Secure:</span> Once records match, SOMA automatically applies high-fidelity SSL encryption.
+                    </p>
+                    <div className="pt-4">
+                        <Button asChild variant="link" className="p-0 h-auto text-[10px] font-black uppercase text-primary">
+                            <a href="https://vercel.com/docs/concepts/projects/custom-domains" target="_blank">
+                                Read Detailed Guide <ArrowRight className="ml-1 h-2 w-2" />
+                            </a>
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card className="border-slate-800 bg-slate-900/50">
+                <CardHeader>
+                    <CardTitle className="text-xs font-bold uppercase text-slate-400">Security Note</CardTitle>
+                </CardHeader>
+                <CardContent className="text-[11px] text-slate-500 leading-relaxed">
+                    Custom domain resolution is processed at the Edge. Most DNS updates resolve within 15 minutes, but global propagation may take up to 24 hours depending on your registrar.
+                </CardContent>
+            </Card>
+        </div>
       </div>
     </div>
   );

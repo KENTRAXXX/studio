@@ -4,10 +4,13 @@ import { useSearchParams, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Loader2 } from 'lucide-react';
 import SomaLogo from '@/components/logo';
+import { Suspense } from 'react';
 
-export default function OrderConfirmationPage() {
+export const dynamic = 'force-dynamic';
+
+function OrderConfirmationContent() {
     const searchParams = useSearchParams();
     const orderId = searchParams.get('orderId');
 
@@ -16,7 +19,7 @@ export default function OrderConfirmationPage() {
     }
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-background text-center p-4">
+        <div className="flex flex-col items-center justify-center min-h-screen bg-background text-center p-4 text-foreground">
             <div className="flex items-center gap-2 mb-8">
                  <SomaLogo className="h-10 w-10 text-primary" />
                  <span className="font-headline text-3xl font-bold text-primary">SOMA Store</span>
@@ -45,5 +48,17 @@ export default function OrderConfirmationPage() {
                 </CardContent>
             </Card>
         </div>
+    );
+}
+
+export default function OrderConfirmationPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex h-screen w-full items-center justify-center bg-background">
+                <Loader2 className="h-12 w-12 animate-spin text-primary opacity-20" />
+            </div>
+        }>
+            <OrderConfirmationContent />
+        </Suspense>
     );
 }

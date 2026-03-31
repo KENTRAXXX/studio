@@ -1,12 +1,12 @@
+
 'use client';
 
 import { createContext, useContext, useEffect, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { doc } from 'firebase/firestore';
 import { useUser } from './auth/use-user';
-import { useFirestore } from './provider';
+import { useFirestore, useMemoFirebase } from './provider';
 import { useDoc } from './firestore/use-doc';
-import { useMemoFirebase } from '../lib/use-memo-firebase';
 import { getTier } from '@/lib/tiers';
 
 type UserProfile = {
@@ -100,8 +100,6 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (userLoading || profileLoading) return;
 
-    // 1. PUBLIC ROUTE WHITELIST
-    // Expanded to include root-level product and checkout paths for custom domains
     const isPublicRoute = 
       pathname === '/' || 
       pathname === '/login' ||
@@ -118,20 +116,17 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
     const isLegalPage = pathname.startsWith('/legal');
     const isReturnPage = pathname === '/backstage/return';
 
-    // 2. AUTH GUARD: Basic presence
     if (!user && !isPublicRoute && !isLegalPage) {
       router.push('/');
       return;
     }
 
     if (userProfile) {
-       // 3. ACCOUNT DISABILITY LOCK
        if (userProfile.isDisabled && pathname !== '/access-denied') {
          router.push('/access-denied');
          return;
        }
 
-       // 4. ADMIN BYPASS
        if (userProfile.userRole === 'ADMIN') {
            if (pathname.startsWith('/dashboard') || pathname.startsWith('/backstage')) {
                router.push('/admin');
@@ -139,8 +134,6 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
            return;
        }
       
-       // 5. SUBSCRIPTION & PAYMENT GATELOCK
-       // If they haven't paid, they are pinned to their portal root.
        if (!userProfile.hasAccess && !isPublicRoute && !isLegalPage && !isReturnPage) {
            const tier = getTier(userProfile.planTier);
            const portalRoot = `/${tier.portal}`;
@@ -150,13 +143,10 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
            }
        }
 
-       // 6. PORTAL SENTINEL: HARD RBAC ISOLATION
-       // Verifies the user is in the correct portal (Dashboard vs Backstage) based on Tier Registry
        const tierConfig = getTier(userProfile.planTier);
        const isAtCorrectPortal = pathname.startsWith(`/${tierConfig.portal}`);
        
        if (userProfile.hasAccess && !isAtCorrectPortal && !isPublicRoute && !isLegalPage && !isReturnPage) {
-           // Clear any local storage flags from previous role sessions
            if (typeof window !== 'undefined') {
                sessionStorage.removeItem('soma_just_launched');
            }
@@ -164,13 +154,11 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
            return;
        }
 
-       // 7. TERMS GATELOCK
        if (userProfile.hasAcceptedTerms === false && !isLegalPage && !isPublicRoute && !isReturnPage) {
          router.push('/legal/terms');
          return;
        }
 
-       // 8. STATUS GUARD (Supplier Verification Queue)
        if (userProfile.status === 'pending_review' && !isReturnPage && !isPublicRoute && !isLegalPage) {
           const isAtPendingPage = pathname === '/backstage/pending-review';
           if (!isAtPendingPage) {

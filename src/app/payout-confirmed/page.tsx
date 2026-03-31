@@ -8,6 +8,8 @@ import SomaLogo from '@/components/logo';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 
+export const dynamic = 'force-dynamic';
+
 function PayoutConfirmationContent() {
     const searchParams = useSearchParams();
     const status = searchParams.get('status');

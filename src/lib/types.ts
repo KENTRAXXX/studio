@@ -1,3 +1,4 @@
+
 export type PendingProduct = {
   id: string;
   productName: string;
@@ -12,4 +13,15 @@ export type PendingProduct = {
   submittedAt: any; // Firestore Timestamp
   categories: string[];
   tags: string[];
+};
+
+export type SupportTicket = {
+  id: string;
+  subject: string;
+  message: string;
+  status: 'OPEN' | 'RESOLVED';
+  storeId: string;
+  customerId?: string;
+  messages: string[];
+  createdAt: any; // Firestore Timestamp or ISO string
 };

@@ -7,17 +7,13 @@ import { useEffect, useState, useRef } from 'react';
 import { AnimatePresence, motion, useInView } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Globe, DollarSign, Boxes, Check, Rocket, Gem, Users, ShieldCheck, Loader2 } from 'lucide-react';
+import { Globe, DollarSign, Boxes, Check, Rocket, Gem, Users, ShieldCheck, Loader2, Megaphone } from 'lucide-react';
 import AnimatedCounter from '@/components/ui/animated-counter';
 import Image from 'next/image';
 import { useToastWithRandomCity } from '@/hooks/use-toast-with-random-city';
 import { LiveFeedTicker } from '@/components/ui/live-feed-ticker';
 import { useUser } from '@/firebase';
 
-/**
- * Constants for deterministic growth calculation.
- * Using a fixed launch date: July 1, 2024.
- */
 const LAUNCH_DATE = new Date('2024-07-01T00:00:00Z');
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
@@ -29,10 +25,8 @@ function LiveCounter() {
     const calculateStoreCount = () => {
       const now = new Date();
       const daysSinceLaunch = Math.max(0, (now.getTime() - LAUNCH_DATE.getTime()) / MS_PER_DAY);
-      
       const initialStores = 184;
-      const growthPerDay = 12.4; // Stable average growth
-      
+      const growthPerDay = 12.4;
       return Math.floor(initialStores + (daysSinceLaunch * growthPerDay));
     };
     
@@ -40,7 +34,7 @@ function LiveCounter() {
 
     const updateCount = () => {
         setCount((prev) => (prev || 0) + 1);
-        const randomInterval = Math.random() * (600000 - 300000) + 300000; // 5 to 10 minutes
+        const randomInterval = Math.random() * (600000 - 300000) + 300000;
         timerRef.current = setTimeout(updateCount, randomInterval);
     };
 
@@ -50,7 +44,6 @@ function LiveCounter() {
         if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
-
 
   return (
     <div className="inline-flex items-center gap-2 rounded-full border border-primary/50 bg-primary/10 px-4 py-1.5 text-sm">
@@ -91,60 +84,43 @@ function PlatformPulse() {
     const [isGlowing, setIsGlowing] = useState(false);
     const { showRandomCityToast } = useToastWithRandomCity();
 
-
     useEffect(() => {
         const getDeterministicValues = () => {
             const now = new Date();
             const daysSinceLaunch = Math.max(0, (now.getTime() - LAUNCH_DATE.getTime()) / MS_PER_DAY);
-
-            // Baseline figures from July 1, 2024
             const initialSales = 4455321.98;
             const initialSellers = 127;
             const initialBrands = 89;
-
-            // Stable growth rates
             const salesGrowthPerDay = 32450.50;
             const sellersGrowthPerDay = 8.2;
             const brandsGrowthPerDay = 2.1;
-
             const currentSales = initialSales + (daysSinceLaunch * salesGrowthPerDay);
             const currentSellers = Math.floor(initialSellers + (daysSinceLaunch * sellersGrowthPerDay));
             const currentBrands = Math.floor(initialBrands + (daysSinceLaunch * brandsGrowthPerDay));
-            
             return { currentSales, currentSellers, currentBrands };
         };
-
         const values = getDeterministicValues();
         setInitialValues(values);
         setGlobalSalesSum(values.currentSales);
     }, []);
 
-
     useEffect(() => {
         if (globalSalesSum === null) return;
-
         const updateSales = () => {
             const saleAmount = Math.random() * (185.00 - 14.50) + 14.50;
             setGlobalSalesSum(prev => (prev || 0) + saleAmount);
-            
-            // Only show pop-up toasts for anonymous visitors to reduce annoyance for logged-in users
             if (!user) {
                 showRandomCityToast(saleAmount);
             }
-
             setIsGlowing(true);
-            setTimeout(() => setIsGlowing(false), 2000); // Glow duration
-
+            setTimeout(() => setIsGlowing(false), 2000);
             const randomInterval = Math.random() * (15000 - 8000) + 8000;
             timerRef.current = setTimeout(updateSales, randomInterval);
         };
-        
         timerRef.current = setTimeout(updateSales, Math.random() * (15000 - 5000) + 5000);
-        
         return () => {
             if (timerRef.current) clearTimeout(timerRef.current);
         };
-
     }, [globalSalesSum, showRandomCityToast, user]);
 
     return (
@@ -291,7 +267,7 @@ function SneakPeek() {
                         <div className="h-full w-full rounded-2xl overflow-hidden bg-black">
                              <Image 
                                 src="https://picsum.photos/seed/store-mockup/400/800" 
-                                alt="Visual representation of a live SOMA boutique on a mobile device"
+                                alt="Live boutique mockup"
                                 width={400}
                                 height={800}
                                 className="object-cover w-full h-full"
@@ -344,8 +320,10 @@ function SneakPeek() {
     );
 }
 
-
 export default function Home() {
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
+  const ambassadorUrl = `https://ambassador.${rootDomain}`;
+
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen w-full bg-black gold-mesh-gradient overflow-x-hidden">
       <header className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center z-20">
@@ -353,9 +331,16 @@ export default function Home() {
           <SomaLogo aria-hidden="true" />
           <span className="font-headline font-bold text-xl text-primary tracking-tighter uppercase">SomaDS</span>
         </div>
-        <Button variant="ghost" asChild className="font-headline text-primary hover:text-primary/80 hover:bg-primary/5">
-          <Link href="/login">Sign In</Link>
-        </Button>
+        <div className="flex gap-4">
+            <Button variant="ghost" asChild className="hidden md:flex font-headline text-primary/60 hover:text-primary hover:bg-primary/5 border border-primary/10">
+                <Link href={ambassadorUrl} className="flex items-center gap-2">
+                    <Megaphone className="h-4 w-4" /> Be an Ambassador
+                </Link>
+            </Button>
+            <Button variant="ghost" asChild className="font-headline text-primary hover:text-primary/80 hover:bg-primary/5">
+                <Link href="/login">Sign In</Link>
+            </Button>
+        </div>
       </header>
 
       <main id="main-content" className="w-full">
@@ -380,6 +365,14 @@ export default function Home() {
             <Button asChild size="lg" variant="outline" className="h-12 text-lg w-full sm:w-auto border-primary/50 text-primary hover:bg-primary/10 hover:text-primary">
                 <Link href="/dashboard/demo">View Dashboard Demo</Link>
             </Button>
+            </div>
+            
+            <div className="mt-12 md:hidden">
+                <Button variant="outline" asChild className="w-full border-primary/20 text-primary h-12">
+                    <Link href={ambassadorUrl} className="flex items-center justify-center gap-2">
+                        <Megaphone className="h-4 w-4" /> Become a Soma Ambassador
+                    </Link>
+                </Button>
             </div>
         </section>
 
