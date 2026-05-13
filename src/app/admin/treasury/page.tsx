@@ -226,7 +226,7 @@ export default function TreasuryPage() {
               ...order,
               storeId,
               mogulName: mogul?.displayName || mogul?.email || 'System Store',
-              Trade WyseFee: feeRecord?.amount || 0
+              TradeWyseFee: feeRecord?.amount || 0
           };
       });
   }, [orders, usersMap, revenueLogs]);
@@ -735,7 +735,7 @@ export default function TreasuryPage() {
                                       {formatCurrency(Math.round(order.total * 100))}
                                   </TableCell>
                                   <TableCell className="text-right font-bold text-primary">
-                                      {formatCurrency(Math.round(order.Trade WyseFee * 100))}
+                                      {formatCurrency(Math.round(order.TradeWyseFee * 100))}
                                   </TableCell>
                                   <TableCell className="text-center">
                                       <Badge variant="outline" className="border-green-500/30 text-green-500 bg-green-500/5 text-[10px] font-black">
@@ -779,7 +779,7 @@ export default function TreasuryPage() {
                                                                   </div>
                                                               </div>
                                                               <span className="font-mono text-sm font-bold text-slate-300">
-                                                                  {formatCurrency(Math.round((order.total - order.Trade WyseFee - (order.total * 0.4)) * 100))}
+                                                                  {formatCurrency(Math.round((order.total - order.TradeWyseFee - (order.total * 0.4)) * 100))}
                                                               </span>
                                                           </div>
 
@@ -811,7 +811,7 @@ export default function TreasuryPage() {
                                                                   </div>
                                                               </div>
                                                               <span className="font-mono text-sm font-bold text-primary">
-                                                                  {formatCurrency(Math.round(order.Trade WyseFee * 100))}
+                                                                  {formatCurrency(Math.round(order.TradeWyseFee * 100))}
                                                               </span>
                                                           </div>
                                                       </div>

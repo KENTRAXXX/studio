@@ -64,7 +64,7 @@ export default function MyPrivateInventoryPage() {
     if (!firestore || !user) return null;
     return query(
       collection(firestore, 'stores', user.uid, 'products'),
-      where('isManagedByTrade Wyse', '==', false)
+      where('isManagedByTradeWyse', '==', false)
     );
   }, [firestore, user]);
 
@@ -107,7 +107,7 @@ export default function MyPrivateInventoryPage() {
                         suggestedRetailPrice: parseFloat(price),
                         stock: parseInt(stock, 10),
                         imageUrl: imageUrl || '',
-                        isManagedByTrade Wyse: false,
+                        isManagedByTradeWyse: false,
                         wholesalePrice: 0,
                         vendorId: user.uid,
                         productType: 'INTERNAL',

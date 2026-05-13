@@ -12,7 +12,7 @@ import { formatCurrency } from '@/utils/format';
 import { BackButton } from '@/components/ui/back-button';
 
 
-export default function Trade WyseWalletPage() {
+export default function TradeWyseWalletPage() {
     const { user, loading: userLoading } = useUser();
     const { userProfile, loading: profileLoading } = useUserProfile();
     const firestore = useFirestore();

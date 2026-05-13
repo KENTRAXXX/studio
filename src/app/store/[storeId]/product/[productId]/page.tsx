@@ -118,8 +118,8 @@ export default function ProductDetailPage() {
     notFound();
   }
   
-  const Trade WyseFee = wholesalePrice * 0.03;
-  const floorPrice = wholesalePrice + Trade WyseFee;
+  const TradeWyseFee = wholesalePrice * 0.03;
+  const floorPrice = wholesalePrice + TradeWyseFee;
   const profit = currentPrice - wholesalePrice;
   const isPriceInvalid = currentPrice < floorPrice;
 
@@ -196,7 +196,7 @@ export default function ProductDetailPage() {
                 {gallery.length > 0 ? (
                     <Carousel className="w-full" setApi={setCarouselApi}>
                         <CarouselContent>
-                            {gallery.map((asset, index) => (
+                            {gallery.map((asset: string, index: number) => (
                                 <CarouselItem key={index}>
                                     <div className="relative aspect-square">
                                         <Image
@@ -233,7 +233,7 @@ export default function ProductDetailPage() {
                       </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                      {product.isManagedByTrade Wyse && (
+                      {product.isManagedByTradeWyse && (
                         <div className="flex justify-between items-center p-4 rounded-md bg-muted/50 border border-border/50">
                             <div className="flex items-center gap-2">
                                 <DollarSign className="h-5 w-5 text-muted-foreground"/>
@@ -278,10 +278,10 @@ export default function ProductDetailPage() {
                         </span>
                       </div>
 
-                       {product.isManagedByTrade Wyse && isPriceInvalid && (
+                       {product.isManagedByTradeWyse && isPriceInvalid && (
                             <p className="text-[10px] text-destructive font-bold uppercase p-2 bg-destructive/10 rounded border border-destructive/20 text-center">Retail price too low (Floor: {formatCurrency(Math.round(floorPrice * 100))})</p>
                         )}
-                      <Button onClick={handlePriceSave} disabled={(product.isManagedByTrade Wyse && isPriceInvalid) || isSaving} className="w-full h-12 btn-gold-glow">
+                      <Button onClick={handlePriceSave} disabled={(product.isManagedByTradeWyse && isPriceInvalid) || isSaving} className="w-full h-12 btn-gold-glow">
                           {isSaving ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Check className="mr-2 h-4 w-4" />}
                           Synchronize Pricing
                       </Button>

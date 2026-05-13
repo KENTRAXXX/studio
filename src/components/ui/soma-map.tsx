@@ -6,7 +6,7 @@ import 'leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility
 import 'leaflet-defaulticon-compatibility';
 import { useEffect } from 'react';
 
-interface Trade WyseMapProps {
+interface TradeWyseMapProps {
   center: [number, number];
   zoom?: number;
   className?: string;
@@ -25,7 +25,7 @@ function ChangeView({ center, zoom }: { center: [number, number]; zoom: number }
   return null;
 }
 
-export default function Trade WyseMap({ center, zoom = 13, className }: Trade WyseMapProps) {
+export default function TradeWyseMap({ center, zoom = 13, className }: TradeWyseMapProps) {
   return (
     <div className={className}>
       <MapContainer
@@ -37,14 +37,14 @@ export default function Trade WyseMap({ center, zoom = 13, className }: Trade Wy
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          className="Trade Wyse-map-tiles"
+          className="TradeWyse-map-tiles"
         />
         <Marker position={center} />
         <ChangeView center={center} zoom={zoom} />
       </MapContainer>
       <style jsx global>{`
         /* Trade Wyse 'Gold and Slate' Map Filter */
-        .Trade Wyse-map-tiles {
+        .TradeWyse-map-tiles {
           filter: grayscale(100%) sepia(40%) invert(90%) brightness(0.9) contrast(1.1);
         }
         .leaflet-container {

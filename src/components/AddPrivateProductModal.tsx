@@ -124,7 +124,7 @@ export function AddPrivateProductModal({ isOpen, onOpenChange }: AddPrivateProdu
         suggestedRetailPrice: data.price,
         stock: data.stock,
         imageUrl: data.imageUrl,
-        isManagedByTrade Wyse: false,
+        isManagedByTradeWyse: false,
         wholesalePrice: 0, 
         vendorId: user.uid,
         productType: 'INTERNAL',

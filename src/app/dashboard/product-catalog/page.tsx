@@ -147,7 +147,7 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
       colorOptions: product.colorOptions || [],
       productType: product.productType,
       vendorId: product.vendorId,
-      isManagedByTrade Wyse: true,
+      isManagedByTradeWyse: true,
       categories: product.categories || [],
       tags: product.tags || [],
       originalCatalogId: product.id,

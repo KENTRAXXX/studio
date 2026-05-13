@@ -100,7 +100,7 @@ async function executePaymentSplit(eventData: any) {
                     wholesalePrice: wholesalePrice
                 });
                 
-                if (vendorId !== 'admin' && productData.isManagedByTrade Wyse) { 
+                if (vendorId !== 'admin' && productData.isManagedByTradeWyse) { 
                     const vendorRef = doc(firestore, "users", vendorId);
                     const vendorSnap = await transaction.get(vendorRef);
                     if (!vendorSnap.exists()) {

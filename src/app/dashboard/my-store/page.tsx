@@ -297,7 +297,7 @@ const ProductUploadStep = ({ onBack, onLaunch }: { onBack: () => void, onLaunch:
             stock: parseInt(stock, 10),
             description,
             imageUrl,
-            isManagedByTrade Wyse: false,
+            isManagedByTradeWyse: false,
             productType: 'INTERNAL',
         };
         onLaunch(firstProduct);
@@ -444,7 +444,7 @@ export default function MyStorePage() {
     setIsLaunching(true);
     // Set sticky flag to bridge the gap between creation and data synchronization
     if (typeof window !== 'undefined') {
-        sessionStorage.setItem('Trade Wyse_just_launched', 'true');
+        sessionStorage.setItem('TradeWyse_just_launched', 'true');
     }
 
     try {
@@ -517,7 +517,7 @@ export default function MyStorePage() {
                         imageUrl: masterData.imageId,
                         productType: masterData.productType || 'INTERNAL',
                         vendorId: masterData.vendorId || 'admin',
-                        isManagedByTrade Wyse: true,
+                        isManagedByTradeWyse: true,
                     });
                 }
             }
@@ -534,7 +534,7 @@ export default function MyStorePage() {
     } catch (error: any) {
         setIsLaunching(false);
         if (typeof window !== 'undefined') {
-            sessionStorage.removeItem('Trade Wyse_just_launched');
+            sessionStorage.removeItem('TradeWyse_just_launched');
         }
         toast({
             variant: "destructive",

@@ -4,17 +4,17 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
-type Trade WyseImageProps = React.ComponentProps<typeof Image> & {
+type TradeWyseImageProps = React.ComponentProps<typeof Image> & {
   containerClassName?: string;
 };
 
-export const Trade WyseImage = ({
+export const TradeWyseImage = ({
   src,
   alt,
   className,
   containerClassName,
   ...props
-}: Trade WyseImageProps) => {
+}: TradeWyseImageProps) => {
   const [isLoading, setIsLoading] = useState(true);
 
   return (

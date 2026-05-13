@@ -69,6 +69,8 @@ type UserProfile = {
     contactPhone: string;
     governmentIdUrl: string;
     isPhoneVerified: boolean;
+    latitude?: number;
+    longitude?: number;
     feedback?: string;
   };
   legalAgreements?: {

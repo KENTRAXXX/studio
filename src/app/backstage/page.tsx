@@ -27,7 +27,7 @@ import { AddressSearch, type AddressResult } from '@/components/ui/address-searc
 import { CompletePaymentPrompt } from '@/components/complete-payment-prompt';
 
 // Lazy load the map component to ensure edge compatibility and prevent SSR errors
-const Trade WyseMap = dynamic(() => import('@/components/ui/Trade Wyse-map'), { 
+const TradeWyseMap = dynamic(() => import('@/components/ui/soma-map'), { 
   ssr: false,
   loading: () => (
     <div className="h-48 w-full rounded-xl bg-slate-900/50 border border-primary/10 flex items-center justify-center">
@@ -50,7 +50,7 @@ const onboardingSchema = z.object({
 
 type OnboardingFormValues = z.infer<typeof onboardingSchema>;
 
-const Trade WyseShieldTerms = () => (
+const TradeWyseShieldTerms = () => (
     <div className="space-y-3 text-sm text-muted-foreground">
         <div className="space-y-1">
             <h4 className="font-semibold text-foreground">1. Authenticity Guarantee</h4>
@@ -303,7 +303,7 @@ export default function BackstagePage() {
                                         
                                         {mapCoords && (
                                             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
-                                                <Trade WyseMap 
+                                                <TradeWyseMap 
                                                     center={mapCoords} 
                                                     className="h-48 w-full mt-2 grayscale-[0.5] rounded-xl overflow-hidden border border-primary/20"
                                                 />
@@ -388,7 +388,7 @@ export default function BackstagePage() {
                                     <div className="space-y-4 pt-4">
                                         <h3 className="font-semibold text-primary">Trade Wyse Shield: Seller Terms of Service</h3>
                                         <ScrollArea className="h-48 w-full rounded-md border border-border p-4">
-                                            <Trade WyseShieldTerms />
+                                            <TradeWyseShieldTerms />
                                         </ScrollArea>
                                         <div className="flex items-start space-x-3 pt-2">
                                             <Checkbox 
