@@ -23,7 +23,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Loader2 } from 'lucide-react';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 import { usePaystack } from '@/hooks/use-paystack';
 import { useToast } from '@/hooks/use-toast';
 
@@ -162,7 +162,7 @@ const PaymentStep = ({ onBack, storeId, checkoutData }: { onBack: () => void; st
         }
       },
       (reference) => {
-         const orderId = `SOMA-${reference.trxref.slice(-6).toUpperCase()}`;
+         const orderId = `Trade Wyse-${reference.trxref.slice(-6).toUpperCase()}`;
          // Dynamic routing for custom domains vs platform links
          const params = new URLSearchParams(window.location.search);
          const isCustomDomain = !window.location.pathname.startsWith('/store');
@@ -225,8 +225,8 @@ export default function CheckoutPage() {
       <header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-sm border-b border-primary/20">
             <div className="container mx-auto flex h-20 items-center justify-center px-4 sm:px-6 lg:px-8">
                <div className="flex items-center gap-2">
-                 <SomaLogo className="h-8 w-8 text-primary" />
-                 <span className="font-headline text-2xl font-bold text-primary">SOMA Checkout</span>
+                 <TradeWyseLogo className="h-8 w-8 text-primary" />
+                 <span className="font-headline text-2xl font-bold text-primary">Trade Wyse Checkout</span>
                </div>
             </div>
       </header>

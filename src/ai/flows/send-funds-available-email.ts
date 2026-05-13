@@ -30,13 +30,13 @@ export async function sendFundsAvailableEmail(input: SendFundsAvailableEmailInpu
             <p style="margin: 0 0 10px 0; text-transform: uppercase; font-size: 12px; font-weight: bold; letter-spacing: 1px; color: #666;">Amount Released to Wallet</p>
             <p style="margin: 0; font-size: 36px; font-weight: bold; color: #000;">${amount}</p>
           </div>
-          <p>These funds have been moved to your active balance. You can request a payout directly to your bank account via the SOMA Wallet dashboard.</p>
+          <p>These funds have been moved to your active balance. You can request a payout directly to your bank account via the Trade Wyse Wallet dashboard.</p>
           <div style="margin-top: 30px; text-align: center;">
-              <a href="https://somatoday.com/dashboard/wallet" style="background-color: #000; color: #fff; padding: 16px 32px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Access My Wallet</a>
+              <a href="https://tradewysetoday.com/dashboard/wallet" style="background-color: #000; color: #fff; padding: 16px 32px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Access My Wallet</a>
           </div>
           <p style="margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px; font-size: 14px; color: #999;">
               Thank you for your continued strategic partnership.<br/>
-              <strong>SOMA Strategic Assets Group</strong>
+              <strong>Trade Wyse Strategic Assets Group</strong>
           </p>
         </div>
       `;
@@ -48,7 +48,7 @@ export async function sendFundsAvailableEmail(input: SendFundsAvailableEmailInpu
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          from: `"SOMA Ecosystem" <no-reply@somatoday.com>`,
+          from: `"Trade Wyse Ecosystem" <no-reply@tradewysetoday.com>`,
           to: to,
           subject: `Funds Released: Your referral rewards are ready`,
           html: htmlContent,

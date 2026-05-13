@@ -1,9 +1,9 @@
-# SOMA Executive Administrator: Role & Work Audit
+# Trade Wyse Executive Administrator: Role & Work Audit
 
-This document serves as the official operational guide for the **Administrator** role within the SOMA ecosystem.
+This document serves as the official operational guide for the **Administrator** role within the Trade Wyse ecosystem.
 
 ## 1. Executive Role & Access
-Admins are the "Master Architects" of SOMA.
+Admins are the "Master Architects" of Trade Wyse.
 - **Identity**: Identified by `userRole: 'ADMIN'` in Firestore.
 - **Permissions**: Full CRUD access across all platform collections.
 - **Bypass Logic**: Admins bypass the `hasAccess` (payment) requirement and do not require a provisioned store instance to access their dashboard.

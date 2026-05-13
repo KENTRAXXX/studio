@@ -28,7 +28,7 @@ import {
     CreditCard
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
@@ -320,7 +320,7 @@ export default function AddProductPage() {
                 <CheckCircle2 className="h-12 w-12 text-primary animate-pulse" />
             </div>
             <DialogTitle className="text-2xl font-bold font-headline text-primary text-center">
-                Product sent to SOMA Curation Team
+                Product sent to Trade Wyse Curation Team
             </DialogTitle>
             <DialogDescription className="text-lg font-semibold text-foreground pt-2">
                 Status: <span className="text-primary">Pending Review</span>
@@ -366,9 +366,9 @@ export default function AddProductPage() {
       </Dialog>
 
       <div className="text-center mb-10">
-        <SomaLogo className="h-12 w-12 mx-auto" />
+        <TradeWyseLogo className="h-12 w-12 mx-auto" />
         <h1 className="text-4xl font-bold font-headline mt-4 text-primary">Supplier Submission</h1>
-        <p className="mt-2 text-lg text-muted-foreground">Add a new luxury item to the SOMA Master Catalog.</p>
+        <p className="mt-2 text-lg text-muted-foreground">Add a new luxury item to the Trade Wyse Master Catalog.</p>
       </div>
 
       <Card className="w-full max-w-6xl border-primary/50 overflow-hidden">

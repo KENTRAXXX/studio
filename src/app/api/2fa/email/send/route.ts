@@ -35,9 +35,9 @@ export async function POST(req: Request) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            from: 'SOMA Gatekeeper <noreply@somatoday.com>',
+            from: 'Trade Wyse Gatekeeper <noreply@tradewysetoday.com>',
             to: email,
-            subject: `${code} is your SOMA verification code`,
+            subject: `${code} is your Trade Wyse verification code`,
             html: htmlContent
         })
     });

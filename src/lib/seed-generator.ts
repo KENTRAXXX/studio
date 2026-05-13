@@ -1,6 +1,6 @@
 
 /**
- * @fileOverview SOMA Automated Seed Engine.
+ * @fileOverview Trade Wyse Automated Seed Engine.
  * Translates Python generation logic into a high-performance TypeScript utility.
  * Features a deep vault of 200 luxury blueprints across 20 elite categories.
  */
@@ -31,7 +31,7 @@ const VAULT: Record<string, [string, [number, number], string][]> = {
         ["Leather Passport & Tech Folio", [65, 160], "Securely holds travel documents and a tablet with dedicated slots for cables and pens."]
     ],
     "Jewelry": [
-        ["1.0ct Diamond Stud Earrings", [1500, 4500], "Certified brilliant-cut diamonds set in 18k white gold. SOMA authenticity guaranteed."],
+        ["1.0ct Diamond Stud Earrings", [1500, 4500], "Certified brilliant-cut diamonds set in 18k white gold. Trade Wyse authenticity guaranteed."],
         ["Solid Gold Curb Chain", [600, 1800], "Hand-finished 14k yellow gold links with a high-polish shine and heavy-duty lobster clasp."],
         ["Infinity Diamond Band", [800, 2200], "A continuous circle of channel-set diamonds representing enduring commitment and power."],
         ["Pearl & White Gold Necklace", [250, 750], "Ethically sourced South Sea pearls paired with a delicate white gold adjustable chain."],
@@ -93,7 +93,7 @@ const VAULT: Record<string, [string, [number, number], string][]> = {
     "Fine Art": [
         ["Limited Edition Signed Lithograph", [300, 1200], "Contemporary abstract composition numbered and signed by the artist. Includes COA."],
         ["Modernist Bronze Desk Sculpture", [400, 1500], "Hand-cast bronze figure with a natural volcanic rock base. Part of a limited signature series."],
-        ["Original Oil on Canvas", [1200, 5000], "Textured landscape work by an emerging SOMA-curated artist. Museum-grade framing."],
+        ["Original Oil on Canvas", [1200, 5000], "Textured landscape work by an emerging Trade Wyse-curated artist. Museum-grade framing."],
         ["Fine Art Photography Print", [250, 850], "Large format monochrome cityscape on archival luster paper. Signed and numbered."],
         ["Digital Masterpiece (Physical Frame)", [550, 1800], "Ultra-thin high-res screen pre-loaded with curated motion art. Changes with the light."],
         ["Hand-Blown Glass Installation", [600, 2200], "Vibrant multi-piece glass sculpture for wall or table. Each piece is unique."],
@@ -116,12 +116,12 @@ const VAULT: Record<string, [string, [number, number], string][]> = {
     ],
     "Collectibles": [
         ["Graded Vintage Comic Book", [500, 2500], "Pristine CGC-certified golden age issue. A blue-chip collectible for the serious curator."],
-        ["Investment-Grade Gold Coin", [800, 2200], "Historically significant currency asset in near-mint condition. Authenticity verified by SOMA."],
+        ["Investment-Grade Gold Coin", [800, 2200], "Historically significant currency asset in near-mint condition. Authenticity verified by Trade Wyse."],
         ["First Edition Rare Novel", [1200, 4500], "Signed by the author with a pristine original dust jacket. Housed in a custom case."],
         ["Authentic Movie Prop (Framed)", [600, 1800], "Significant artifact from a major production. Includes a certificate of provenance."],
         ["Limited Series Designer Toy", [150, 450], "Hand-painted vinyl figure by a renowned streetwear artist. Numbered edition."],
         ["Vintage Mechanical Camera", [300, 950], "Fully operational classic 35mm rangefinder with a leather case and lens set."],
-        ["Autographed Sport Memorabilia", [450, 1500], "Game-used equipment signed by a hall-of-famer. Authenticated via SOMA Shield."],
+        ["Autographed Sport Memorabilia", [450, 1500], "Game-used equipment signed by a hall-of-famer. Authenticated via Trade Wyse Shield."],
         ["Numismatic Error Coin", [200, 750], "A rare minting anomaly, graded and sealed. A fascinating piece of currency history."],
         ["Vintage Fountain Pen (Restored)", [180, 550], "Iconic model from the 1950s with a flexible 14k gold nib. Fully functional."],
         ["Original Soundtrack Vinyl (Rare)", [110, 320], "Limited color-press release of an iconic film score. Factory sealed."]
@@ -167,7 +167,7 @@ const VAULT: Record<string, [string, [number, number], string][]> = {
         ["Celestial White Floral Eau", [120, 350], "Light and airy jasmine and tuberose balanced by a crisp musk base."],
         ["Dark Cacao Room Spray", [45, 110], "Instantly transforms a space with notes of bitter chocolate and vanilla."],
         ["Volcanic Rock Scent Diffuser", [85, 220], "Naturally porous rocks that absorb and slowly release concentrated fragrance."],
-        ["Signature Discovery Set", [60, 150], "Ten 2ml vials of the SOMA legacy collection for scent exploration."],
+        ["Signature Discovery Set", [60, 150], "Ten 2ml vials of the Trade Wyse legacy collection for scent exploration."],
         ["Beeswax Scented Candle", [50, 130], "Burn time of 60 hours with a lead-free cotton wick and complex layering."],
         ["Solid Perfume Bronze Compact", [75, 180], "Concentrated scent in a hand-crafted metal case. Perfect for travel."],
         ["Wild Lavender Sachet Set", [30, 85], "Three silk sachets filled with organic French lavender for linens."],

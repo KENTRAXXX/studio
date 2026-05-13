@@ -4,15 +4,15 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Lock } from 'lucide-react';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 
 export default function AccessDeniedPage() {
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-background text-center p-4">
             <div className="flex items-center gap-2 mb-8">
-                 <SomaLogo className="h-10 w-10 text-primary" />
-                 <span className="font-headline text-3xl font-bold text-primary">SOMA</span>
+                 <TradeWyseLogo className="h-10 w-10 text-primary" />
+                 <span className="font-headline text-3xl font-bold text-primary">Trade Wyse</span>
             </div>
 
             <Card className="w-full max-w-lg border-destructive/50 text-center">

@@ -67,7 +67,7 @@ export function ProductGrid({ products, storeId }: ProductGridProps) {
   if (products.length === 0) {
     return (
         <div className="flex flex-col items-center justify-center text-center h-64 border-2 border-dashed border-primary/20 rounded-lg p-8">
-            <Warehouse className="h-16 w-16 text-muted-foreground mb-4" aria-hidden="true" />
+            <Warehouse className="h-16 w-16 text-muted-foreground mb-4" aria-hidden={true} />
             <h3 className="text-xl font-bold font-headline text-primary">A Collection in the Making</h3>
             <p className="text-muted-foreground mt-2">This boutique is currently curating its collection. Check back soon.</p>
         </div>

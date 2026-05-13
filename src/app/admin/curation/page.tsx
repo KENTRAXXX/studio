@@ -126,7 +126,7 @@ export default function ProductCurationPage() {
       // Notification logic
       await sendActionRequiredEmail({
         to: selectedProduct.vendorId, // Assuming vendorId is the email or linked to one
-        name: 'SOMA Supplier',
+        name: 'Trade Wyse Supplier',
         feedback: rejectionReason.trim(),
       }).catch(console.error);
 
@@ -349,7 +349,7 @@ export default function ProductCurationPage() {
           <DialogHeader>
             <DialogTitle className="text-destructive font-headline">Provide Rejection Reason</DialogTitle>
             <DialogDescription>
-              Explain to the seller why this product does not meet SOMA standards.
+              Explain to the seller why this product does not meet Trade Wyse standards.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">

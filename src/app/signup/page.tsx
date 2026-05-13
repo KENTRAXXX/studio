@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 import { useSignUp } from '@/hooks/use-signup';
 import { usePaystack } from '@/hooks/use-paystack';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -211,7 +211,7 @@ function SignUpFormContent() {
         toast({
             variant: 'destructive',
             title: 'Terms Required',
-            description: 'Please agree to the SOMA Terms of Service to continue.',
+            description: 'Please agree to the Trade Wyse Terms of Service to continue.',
         });
         return;
     }
@@ -307,8 +307,8 @@ function SignUpFormContent() {
                             </CardTitle>
                             <CardDescription>
                                 {isAmbassador 
-                                    ? 'Join the SOMA Ambassador force and scale your digital yields.' 
-                                    : 'Enter your executive credentials to initialize your SOMA boutique.'
+                                    ? 'Join the Trade Wyse Ambassador force and scale your digital yields.' 
+                                    : 'Enter your executive credentials to initialize your Trade Wyse boutique.'
                                 }
                             </CardDescription>
                         </CardHeader>
@@ -336,7 +336,7 @@ function SignUpFormContent() {
                                             <FormItem>
                                                 <FormLabel>Email Address</FormLabel>
                                                 <FormControl>
-                                                <Input placeholder="executive@somatoday.com" {...field} className="bg-black/20 border-primary/20" />
+                                                <Input placeholder="executive@tradewysetoday.com" {...field} className="bg-black/20 border-primary/20" />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -372,7 +372,7 @@ function SignUpFormContent() {
                                                         <FormControl>
                                                         <Input placeholder="emporium" {...field} className="bg-black/20 border-primary/20 font-mono" />
                                                         </FormControl>
-                                                        <FormDescription>emporium.somatoday.com</FormDescription>
+                                                        <FormDescription>emporium.tradewysetoday.com</FormDescription>
                                                         <FormMessage />
                                                     </FormItem>
                                                     )}
@@ -423,7 +423,7 @@ function SignUpFormContent() {
                                                     <FormItem>
                                                         <FormLabel>Unique Ambassador Handle</FormLabel>
                                                         <FormControl>
-                                                        <Input placeholder="SOMA_HERO" {...field} className="bg-black/20 border-primary/20 font-mono" />
+                                                        <Input placeholder="Trade Wyse_HERO" {...field} className="bg-black/20 border-primary/20 font-mono" />
                                                         </FormControl>
                                                         <FormDescription>Your custom link suffix.</FormDescription>
                                                         <FormMessage />
@@ -585,7 +585,7 @@ function SignUpFormContent() {
                                                    >
                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                            <FormField control={form.control} name="legalBusinessName" render={({ field }) => (
-                                                               <FormItem><FormLabel>Legal Business Name</FormLabel><FormControl><Input placeholder="Soma Corp LLC" {...field} className="bg-black/20 border-primary/20" /></FormControl><FormMessage /></FormItem>
+                                                               <FormItem><FormLabel>Legal Business Name</FormLabel><FormControl><Input placeholder="Trade Wyse Corp LLC" {...field} className="bg-black/20 border-primary/20" /></FormControl><FormMessage /></FormItem>
                                                            )} />
                                                            <FormField control={form.control} name="taxId" render={({ field }) => (
                                                                <FormItem><FormLabel>Tax ID / EIN</FormLabel><FormControl><Input placeholder="XX-XXXXXXX" {...field} className="bg-black/20 border-primary/20" /></FormControl><FormMessage /></FormItem>
@@ -693,7 +693,7 @@ function SignUpFormContent() {
                                                 htmlFor="terms"
                                                 className="text-xs font-medium leading-none text-muted-foreground peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                                             >
-                                               I agree to the SOMA <Link href="/legal/terms" className="text-primary underline hover:text-primary/80">Terms of Service</Link>, <Link href="/legal/privacy" className="text-primary underline hover:text-primary/80">Privacy Policy</Link>, and No-Refund Standard.
+                                               I agree to the Trade Wyse <Link href="/legal/terms" className="text-primary underline hover:text-primary/80">Terms of Service</Link>, <Link href="/legal/privacy" className="text-primary underline hover:text-primary/80">Privacy Policy</Link>, and No-Refund Standard.
                                             </label>
                                         </div>
                                     </div>
@@ -763,9 +763,9 @@ export default function SignUpPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-black gold-mesh-gradient p-4 sm:p-6">
       <div className="text-center mb-10">
-        <SomaLogo className="h-12 w-12 mx-auto" />
+        <TradeWyseLogo className="h-12 w-12 mx-auto" />
         <h1 className="text-4xl font-bold font-headline mt-4 text-white tracking-tight">Executive Provisioning</h1>
-        <p className="mt-2 text-lg text-muted-foreground">Synchronize your identity with the SOMA ecosystem.</p>
+        <p className="mt-2 text-lg text-muted-foreground">Synchronize your identity with the Trade Wyse ecosystem.</p>
       </div>
       <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
          <SignUpFormContent />

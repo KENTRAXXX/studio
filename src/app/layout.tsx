@@ -13,14 +13,14 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: 'SomaDS | Luxury E-commerce Architecture',
-    template: '%s | SomaDS',
+    default: 'Trade Wyse | Luxury E-commerce Architecture',
+    template: '%s | Trade Wyse',
   },
-  description: 'Launch your luxury e-commerce empire instantly with SOMA. High-fidelity boutiques, global catalog synchronization, and integrated financial processing.',
-  keywords: ['e-commerce', 'luxury', 'dropshipping', 'design system', 'boutique', 'SOMA', 'Mogul'],
-  authors: [{ name: 'SOMA Strategic Assets Group' }],
-  creator: 'SOMA',
-  publisher: 'SOMA',
+  description: 'Launch your luxury e-commerce empire instantly with Trade Wyse. High-fidelity boutiques, global catalog synchronization, and integrated financial processing.',
+  keywords: ['e-commerce', 'luxury', 'dropshipping', 'design system', 'boutique', 'Trade Wyse', 'Mogul'],
+  authors: [{ name: 'Trade Wyse Strategic Assets Group' }],
+  creator: 'Trade Wyse',
+  publisher: 'Trade Wyse',
   formatDetection: {
     email: false,
     address: false,
@@ -30,23 +30,23 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: '/',
-    siteName: 'SomaDS',
-    title: 'SomaDS | Luxury E-commerce Architecture',
-    description: 'Launch your luxury boutique instantly with the SomaDS platform.',
+    siteName: 'Trade Wyse',
+    title: 'Trade Wyse | Luxury E-commerce Architecture',
+    description: 'Launch your luxury boutique instantly with the Trade Wyse platform.',
     images: [
       {
-        url: 'https://picsum.photos/seed/soma-og/1200/630',
+        url: 'https://picsum.photos/seed/Trade Wyse-og/1200/630',
         width: 1200,
         height: 630,
-        alt: 'SomaDS Executive Platform',
+        alt: 'Trade Wyse Executive Platform',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SomaDS | Luxury E-commerce Architecture',
+    title: 'Trade Wyse | Luxury E-commerce Architecture',
     description: 'Launch your luxury boutique instantly.',
-    images: ['https://picsum.photos/seed/soma-og/1200/630'],
+    images: ['https://picsum.photos/seed/Trade Wyse-og/1200/630'],
   },
   robots: {
     index: true,
@@ -69,7 +69,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <head>
-        <meta name="soma-platform-verification" content="true" />
+        <meta name="trade-wyse-platform-verification" content="true" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" crossOrigin="anonymous" />

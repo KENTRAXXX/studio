@@ -21,7 +21,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 import { Eye, EyeOff, Loader2, Lock, ArrowRight, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 
@@ -86,7 +86,7 @@ export default function LoginPage() {
 
       toast({
         title: 'Welcome Back',
-        description: 'Accessing your SOMA dashboard...',
+        description: 'Accessing your Trade Wyse dashboard...',
       });
       router.push('/dashboard');
     } catch (error: any) {
@@ -128,7 +128,7 @@ export default function LoginPage() {
 
       toast({
         title: 'Welcome Back',
-        description: 'Accessing your SOMA dashboard...',
+        description: 'Accessing your Trade Wyse dashboard...',
       });
       router.push('/dashboard');
     } catch (error: any) {
@@ -182,8 +182,8 @@ export default function LoginPage() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-black gold-mesh-gradient p-4 sm:p-6">
       <div className="text-center mb-10">
         <Link href="/" className="inline-flex items-center gap-2 mb-6">
-          <SomaLogo className="h-12 w-12" />
-          <span className="font-headline text-3xl font-bold text-primary tracking-tighter">SomaDS</span>
+          <TradeWyseLogo className="h-12 w-12" />
+          <span className="font-headline text-3xl font-bold text-primary tracking-tighter">Trade Wyse</span>
         </Link>
         <h1 className="text-4xl font-bold font-headline text-white">Executive Login</h1>
         <p className="mt-2 text-muted-foreground">Access your luxury commerce control center.</p>
@@ -207,7 +207,7 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Email Address</FormLabel>
                     <FormControl>
-                      <Input placeholder="executive@somatoday.com" {...field} className="bg-black/20 border-primary/20" />
+                      <Input placeholder="executive@tradewysetoday.com" {...field} className="bg-black/20 border-primary/20" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

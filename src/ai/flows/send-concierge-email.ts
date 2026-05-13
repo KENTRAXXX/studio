@@ -17,7 +17,7 @@ export type SendConciergeEmailInput = {
 export async function sendConciergeEmail(input: SendConciergeEmailInput) {
     const { fromEmail, brandName, subject, message, priority, ticketId } = input;
     const resendApiKey = process.env.RESEND_API_KEY;
-    const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
+    const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'tradewysetoday.com';
     
     if (!resendApiKey) {
       console.error("Resend API key is missing.");
@@ -35,8 +35,8 @@ export async function sendConciergeEmail(input: SendConciergeEmailInput) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          from: `"SOMA Executive Concierge" <no-reply@somatoday.com>`,
-          to: 'tedd@somatoday.com', 
+          from: `"Trade Wyse Executive Concierge" <no-reply@tradewysetoday.com>`,
+          to: 'tedd@tradewysetoday.com', 
           subject: `[${priority.toUpperCase()}] New Concierge Message from ${brandName}`,
           html: `
             <div style="font-family: sans-serif; padding: 40px; line-height: 1.6; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 12px;">
@@ -65,7 +65,7 @@ export async function sendConciergeEmail(input: SendConciergeEmailInput) {
 
       return {
         success: true,
-        message: 'Message delivered to SOMA Founder.',
+        message: 'Message delivered to Trade Wyse Founder.',
       };
     } catch (error: any) {
       console.error("Error sending concierge email:", error);

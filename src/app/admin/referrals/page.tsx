@@ -189,7 +189,7 @@ export default function AdminReferralAuditPage() {
         const cpa = referredUsers.length > 0 ? totalRewards / referredUsers.length : 0;
 
         // LTV Logic: Map order revenue to storeId
-        // SOMA Revenue = Subscription Fees + Platform Cut
+        // Trade Wyse Revenue = Subscription Fees + Platform Cut
         const orderToStoreMap = new Map<string, string>();
         allOrders.forEach(o => {
             // Path looks like stores/{storeId}/orders/{orderId}

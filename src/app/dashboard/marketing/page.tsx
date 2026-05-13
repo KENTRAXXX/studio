@@ -18,7 +18,7 @@ import { Loader2, Download, Image as ImageIcon, Sparkles, Share2 } from 'lucide-
 import { toJpeg } from 'html-to-image';
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 import { cn } from '@/lib/utils';
 
 type Product = {
@@ -82,7 +82,7 @@ export default function MarketingToolkitPage() {
       });
 
       const link = document.createElement('a');
-      link.download = `SOMA-Poster-${selectedProduct.name.replace(/\s+/g, '-')}.jpg`;
+      link.download = `Trade Wyse-Poster-${selectedProduct.name.replace(/\s+/g, '-')}.jpg`;
       link.href = dataUrl;
       link.click();
 
@@ -205,11 +205,11 @@ export default function MarketingToolkitPage() {
               {/* Header: Store Identity */}
               <div className="text-center space-y-4 z-10">
                 <div className="flex items-center justify-center gap-4">
-                  <SomaLogo className={cn("h-16 w-16", isGoldTheme ? "text-primary" : "text-black")} />
+                  <TradeWyseLogo className={cn("h-16 w-16", isGoldTheme ? "text-primary" : "text-black")} />
                   <span className="h-px w-24 bg-current opacity-30" />
                 </div>
                 <h2 className="text-5xl font-headline font-bold uppercase tracking-[0.2em] pt-4">
-                  {storeData?.storeName || 'SOMA BOUTIQUE'}
+                  {storeData?.storeName || 'Trade Wyse BOUTIQUE'}
                 </h2>
               </div>
 

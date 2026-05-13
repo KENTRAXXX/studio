@@ -9,7 +9,7 @@ import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 import { PlaceHolderImages, type ImagePlaceholder } from '@/lib/placeholder-images';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
@@ -151,7 +151,7 @@ function ContactSheet({ ownerEmail }: { ownerEmail?: string }) {
                     <SheetTitle className="text-primary font-headline text-2xl">Contact Us</SheetTitle>
                 </SheetHeader>
                 <div className="py-8 text-center space-y-6">
-                     <Mail className="h-12 w-12 text-primary mx-auto" aria-hidden="true" />
+                     <Mail className="h-12 w-12 text-primary mx-auto" aria-hidden={true} />
                      <div>
                         <h3 className="font-semibold">Have a question?</h3>
                         <p className="text-muted-foreground">Reach out to the store owner directly at:</p>
@@ -162,7 +162,7 @@ function ContactSheet({ ownerEmail }: { ownerEmail?: string }) {
                      </div>
                      <Separator className="my-4 bg-primary/20"/>
                      <div className="text-xs text-muted-foreground">
-                        <p>Support Powered by <span className="font-bold text-primary">SOMA</span></p>
+                        <p>Support Powered by <span className="font-bold text-primary">Trade Wyse</span></p>
                      </div>
                 </div>
             </SheetContent>
@@ -191,7 +191,7 @@ export default function StoreLayout({
   }, [firestore, storeData?.userId]);
   const { data: ownerData } = useDoc<any>(ownerRef);
 
-  const storeName = storeData?.storeName || "SOMA Store";
+  const storeName = storeData?.storeName || "Trade Wyse Store";
   const logoUrl = storeData?.logoUrl;
   const themeColors = storeData?.themeConfig?.colors;
 
@@ -222,7 +222,7 @@ export default function StoreLayout({
                         <img src={logoUrl} alt={storeName} className="h-10 w-auto object-contain transition-transform group-hover:scale-105" />
                     </div>
                 ) : (
-                    <SomaLogo className="h-8 w-8 text-primary" aria-hidden={true} />
+                    <TradeWyseLogo className="h-8 w-8 text-primary" aria-hidden={true} />
                 )}
                 <h1 className="font-headline text-2xl font-bold text-primary tracking-tighter transition-colors group-hover:text-primary/80">
                     {storeLoading ? 'Loading...' : storeName}
@@ -230,7 +230,7 @@ export default function StoreLayout({
               </Link>
               <div className="flex items-center gap-4">
                 <div className="relative hidden md:block">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" aria-hidden={true} />
                   <input
                     placeholder="Search products..."
                     aria-label="Search products"
@@ -255,7 +255,7 @@ export default function StoreLayout({
                         )}
                         {socials.tiktok && (
                             <Link href={`https://tiktok.com/@${socials.tiktok}`} target="_blank" className="text-muted-foreground hover:text-primary transition-colors" aria-label="Visit our TikTok">
-                                <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.83 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.33 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.04-.1z"/></svg>
+                                <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden={true}><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.83 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.33 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.04-.1z"/></svg>
                             </Link>
                         )}
                         {socials.x && (

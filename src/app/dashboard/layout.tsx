@@ -47,7 +47,7 @@ import {
   MessageSquare,
   Users
 } from 'lucide-react';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 import { useUserProfile } from '@/firebase/user-profile-provider';
 import { useAuth } from '@/firebase';
 import { Button } from '@/components/ui/button';
@@ -117,7 +117,7 @@ export default function DashboardLayout({
 
     // 2. Financials (OWNER, FINANCE)
     if (isOwner || role === 'FINANCE') {
-        items.push({ href: '/dashboard/wallet', icon: Wallet, label: 'SOMA Wallet' });
+        items.push({ href: '/dashboard/wallet', icon: Wallet, label: 'Trade Wyse Wallet' });
         items.push({ href: '/dashboard/my-orders', icon: ShoppingBag, label: 'My Orders' });
     }
 
@@ -169,8 +169,8 @@ export default function DashboardLayout({
       <Sidebar>
         <SidebarHeader>
           <Link href="/dashboard" className="flex items-center gap-2 group p-2">
-            <SomaLogo className="h-6 w-6 text-primary transition-transform group-hover:scale-110" aria-hidden={true} />
-            <span className="font-headline font-bold text-xl text-primary tracking-tighter transition-opacity group-hover:opacity-80">SomaDS</span>
+            <TradeWyseLogo className="h-6 w-6 text-primary transition-transform group-hover:scale-110" aria-hidden={true} />
+            <span className="font-headline font-bold text-xl text-primary tracking-tighter transition-opacity group-hover:opacity-80">Trade Wyse</span>
           </Link>
         </SidebarHeader>
         <SidebarContent>
@@ -205,7 +205,7 @@ export default function DashboardLayout({
                   <AlertDialogHeader>
                     <AlertDialogTitle className="font-headline text-xl text-primary text-center">Executive Departure</AlertDialogTitle>
                     <AlertDialogDescription className="text-center text-slate-400 pt-2">
-                      Are you sure you wish to exit the SOMA ecosystem?
+                      Are you sure you wish to exit the Trade Wyse ecosystem?
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter className="flex flex-col sm:flex-row gap-3 pt-6 sm:justify-center">

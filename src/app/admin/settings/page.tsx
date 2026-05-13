@@ -87,7 +87,7 @@ export default function PlatformSettingsPage() {
         if (result.success) {
             toast({
                 title: 'Transmission Success',
-                description: 'Check your inbox for the SOMA Digital Handshake.',
+                description: 'Check your inbox for the Trade Wyse Digital Handshake.',
                 action: <CheckCircle2 className="h-4 w-4 text-green-500" />
             });
         } else {
@@ -187,7 +187,7 @@ export default function PlatformSettingsPage() {
                         <Input 
                             id="test-email" 
                             type="email" 
-                            placeholder="executive@somatoday.com" 
+                            placeholder="executive@tradewysetoday.com" 
                             value={testEmail}
                             onChange={(e) => setTestEmail(e.target.value)}
                             className="bg-black/40 border-primary/10"

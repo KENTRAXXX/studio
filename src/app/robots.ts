@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'tradewysetoday.com';
   
   return {
     rules: [

@@ -4,17 +4,17 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Clock, FileText, ArrowRight } from 'lucide-react';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 import { motion } from 'framer-motion';
 
 export default function PendingReviewPage() {
     
     const handleDownloadGuide = () => {
         const content = `
-SOMA STRATEGIC ASSETS GROUP
+Trade Wyse STRATEGIC ASSETS GROUP
 OFFICIAL PLATFORM ACTIVATION GUIDE
 
-Welcome to the SOMA Ecosystem. Your application is currently being verified by our Global Compliance Team.
+Welcome to the Trade Wyse Ecosystem. Your application is currently being verified by our Global Compliance Team.
 
 Your access is currently in 'Pending Review' status. This is a mandatory security step for all Individual and Business entities.
 
@@ -25,18 +25,18 @@ We verify all government IDs and corporate registration documents to maintain th
 Once approved, you will receive full access to your respective strategic hub (Dashboard, Backstage, or Ambassador Portal).
 
 3. SECURITY STANDARDS
-SOMA maintains a zero-tolerance policy for fraudulent activities. Please ensure your provided documentation is authentic and clear.
+Trade Wyse maintains a zero-tolerance policy for fraudulent activities. Please ensure your provided documentation is authentic and clear.
 
 Your account will be activated automatically once the verification process concludes.
 
-SOMA - The Ultimate Design System for E-commerce.
+Trade Wyse - The Ultimate Design System for E-commerce.
         `;
         
         const blob = new Blob([content], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'SOMA_Platform_Activation_Guide.txt';
+        link.download = 'Trade Wyse_Platform_Activation_Guide.txt';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -46,8 +46,8 @@ SOMA - The Ultimate Design System for E-commerce.
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-background text-center p-4">
             <div className="flex items-center gap-2 mb-12">
-                 <SomaLogo className="h-10 w-10 text-primary" />
-                 <span className="font-headline text-3xl font-bold text-primary tracking-widest uppercase">SOMA</span>
+                 <TradeWyseLogo className="h-10 w-10 text-primary" />
+                 <span className="font-headline text-3xl font-bold text-primary tracking-widest uppercase">Trade Wyse</span>
             </div>
 
             <Card className="w-full max-w-xl border-primary/30 shadow-2xl bg-card/50 backdrop-blur-sm overflow-hidden relative">
@@ -70,7 +70,7 @@ SOMA - The Ultimate Design System for E-commerce.
                     </motion.div>
                     <CardTitle className="text-3xl font-headline font-bold text-primary tracking-tight">Global Audit Pending</CardTitle>
                     <CardDescription className="text-lg text-muted-foreground mt-4 max-w-md mx-auto leading-relaxed">
-                        The SOMA Compliance Team is currently auditing your credentials to ensure platform security and regulatory alignment.
+                        The Trade Wyse Compliance Team is currently auditing your credentials to ensure platform security and regulatory alignment.
                     </CardDescription>
                 </CardHeader>
                 
@@ -107,7 +107,7 @@ SOMA - The Ultimate Design System for E-commerce.
                 transition={{ delay: 0.8 }}
                 className="mt-16 text-xs uppercase tracking-[0.3em] text-muted-foreground/40 font-bold"
             >
-                SOMA STRATEGIC ASSETS GROUP
+                Trade Wyse STRATEGIC ASSETS GROUP
             </motion.div>
         </div>
     );

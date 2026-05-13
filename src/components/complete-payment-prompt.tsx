@@ -98,7 +98,7 @@ export function CompletePaymentPrompt() {
             </CardHeader>
             <CardContent className="space-y-6">
                 <p className="text-sm leading-relaxed opacity-80">
-                    SOMA acts as the central Merchant of Record. Completing this transaction authorizes your boutique instance and grants full sync permissions to the Master Catalog.
+                    Trade Wyse acts as the central Merchant of Record. Completing this transaction authorizes your boutique instance and grants full sync permissions to the Master Catalog.
                 </p>
                 <Button onClick={handleRetryPayment} disabled={isInitializing} size="lg" className="w-full h-16 text-lg bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold shadow-2xl">
                     {isInitializing ? <Loader2 className="animate-spin" /> : (

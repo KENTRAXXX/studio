@@ -27,7 +27,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 import { ImageUploader } from '@/components/ui/image-uploader';
 
 const storefrontSchema = z.object({
@@ -93,7 +93,7 @@ const BoutiqueLivePreview = ({ storeName, tagline, logoUrl, themeId }: { storeNa
                             {logoUrl ? (
                                 <img src={logoUrl} alt="Logo" className="h-5 w-auto object-contain" />
                             ) : (
-                                <SomaLogo className="h-4 w-4" style={{ color: `hsl(${theme.colors.primary})` }} />
+                                <TradeWyseLogo className="h-4 w-4" style={{ color: `hsl(${theme.colors.primary})` }} />
                             )}
                             <span className="text-[10px] font-headline font-bold uppercase tracking-tighter" style={{ color: `hsl(${theme.colors.primary})` }}>
                                 {storeName || 'Boutique'}
@@ -107,7 +107,7 @@ const BoutiqueLivePreview = ({ storeName, tagline, logoUrl, themeId }: { storeNa
 
                     <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-3">
                         <div className="relative w-full h-24 rounded-lg bg-slate-800 overflow-hidden">
-                            <img src="https://picsum.photos/seed/soma-hero/600/400" className="w-full h-full object-cover opacity-40" alt="Hero" />
+                            <img src="https://picsum.photos/seed/Trade Wyse-hero/600/400" className="w-full h-full object-cover opacity-40" alt="Hero" />
                             <div className="absolute inset-0 flex flex-col items-center justify-center p-2">
                                 <h3 className="text-sm font-headline font-black uppercase tracking-tight leading-none" style={{ color: `hsl(${theme.colors.primary})` }}>
                                     {tagline || 'Timeless Luxury'}
@@ -361,7 +361,7 @@ export default function StorefrontSettingsPage() {
                                         <Search className="h-3 w-3" /> Search Result Preview
                                     </div>
                                     <p className="text-blue-400 text-sm font-medium hover:underline cursor-pointer truncate">
-                                        {watchedStoreName || 'Boutique Name'} | SOMA Luxury
+                                        {watchedStoreName || 'Boutique Name'} | Trade Wyse Luxury
                                     </p>
                                     <p className="text-green-600 text-[10px] truncate">
                                         https://{storeData?.customDomain || 'your-boutique.com'}

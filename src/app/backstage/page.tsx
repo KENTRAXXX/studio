@@ -19,7 +19,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Loader2, Send, ShieldCheck, CheckCircle2, UploadCloud, MapPin, AlertTriangle, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { uploadToCloudinary } from '@/lib/utils/upload-image';
@@ -27,7 +27,7 @@ import { AddressSearch, type AddressResult } from '@/components/ui/address-searc
 import { CompletePaymentPrompt } from '@/components/complete-payment-prompt';
 
 // Lazy load the map component to ensure edge compatibility and prevent SSR errors
-const SomaMap = dynamic(() => import('@/components/ui/soma-map'), { 
+const Trade WyseMap = dynamic(() => import('@/components/ui/Trade Wyse-map'), { 
   ssr: false,
   loading: () => (
     <div className="h-48 w-full rounded-xl bg-slate-900/50 border border-primary/10 flex items-center justify-center">
@@ -50,11 +50,11 @@ const onboardingSchema = z.object({
 
 type OnboardingFormValues = z.infer<typeof onboardingSchema>;
 
-const SomaShieldTerms = () => (
+const Trade WyseShieldTerms = () => (
     <div className="space-y-3 text-sm text-muted-foreground">
         <div className="space-y-1">
             <h4 className="font-semibold text-foreground">1. Authenticity Guarantee</h4>
-            <p>The Seller warrants that all items listed are 100% authentic and legally obtained. SOMA maintains a Zero-Tolerance Policy for counterfeits. If a fake is detected, the Seller's account will be banned, and all pending payouts will be frozen for legal review.</p>
+            <p>The Seller warrants that all items listed are 100% authentic and legally obtained. Trade Wyse maintains a Zero-Tolerance Policy for counterfeits. If a fake is detected, the Seller's account will be banned, and all pending payouts will be frozen for legal review.</p>
         </div>
          <div className="space-y-1">
             <h4 className="font-semibold text-foreground">2. Fulfillment & Shipping</h4>
@@ -62,15 +62,15 @@ const SomaShieldTerms = () => (
         </div>
          <div className="space-y-1">
             <h4 className="font-semibold text-foreground">3. The "No-Circumvention" Rule</h4>
-            <p>Sellers must not attempt to contact Moguls or Customers to complete transactions outside of the SOMA platform. Any attempt to bypass the SOMA/Paystack fee structure will result in immediate termination of the partnership.</p>
+            <p>Sellers must not attempt to contact Moguls or Customers to complete transactions outside of the Trade Wyse platform. Any attempt to bypass the Trade Wyse/Paystack fee structure will result in immediate termination of the partnership.</p>
         </div>
          <div className="space-y-1">
             <h4 className="font-semibold text-foreground">4. Financial Processing & Payouts</h4>
-            <p><strong>Centralized Financial Processing</strong>: SOMA serves as the Merchant of Record for all transactions. Customer payments are processed centrally through our secure system. Your earnings (Wholesale Price minus the applicable SOMA commission) are logged to your `payouts_pending` ledger immediately after a sale. <strong>Payout Availability</strong>: To protect against fraud and accommodate customer returns, these pending funds become available for withdrawal only after the order's return window has closed (typically 7 days). <strong>Hold Period</strong>: To prevent fraud, payouts are held for a 7–14 day period before becoming available for withdrawal. <strong>Withdrawals</strong>: Payout requests are processed by SOMA Admin within 24–48 business hours.</p>
+            <p><strong>Centralized Financial Processing</strong>: Trade Wyse serves as the Merchant of Record for all transactions. Customer payments are processed centrally through our secure system. Your earnings (Wholesale Price minus the applicable Trade Wyse commission) are logged to your `payouts_pending` ledger immediately after a sale. <strong>Payout Availability</strong>: To protect against fraud and accommodate customer returns, these pending funds become available for withdrawal only after the order's return window has closed (typically 7 days). <strong>Hold Period</strong>: To prevent fraud, payouts are held for a 7–14 day period before becoming available for withdrawal. <strong>Withdrawals</strong>: Payout requests are processed by Trade Wyse Admin within 24–48 business hours.</p>
         </div>
          <div className="space-y-1">
             <h4 className="font-semibold text-foreground">5. Return Policy</h4>
-            <p>Sellers must define their return policy (e.g., "Returns accepted for 14 days" or "Final Sale"). However, SOMA reserves the right to force a refund if the item is "Not as Described."</p>
+            <p>Sellers must define their return policy (e.g., "Returns accepted for 14 days" or "Final Sale"). However, Trade Wyse reserves the right to force a refund if the item is "Not as Described."</p>
         </div>
     </div>
 );
@@ -189,7 +189,7 @@ export default function BackstagePage() {
     }
 
     if (!agreedToTerms) {
-        toast({ variant: 'destructive', title: 'Agreement Required', description: 'Please read and agree to the SOMA Shield Terms.' });
+        toast({ variant: 'destructive', title: 'Agreement Required', description: 'Please read and agree to the Trade Wyse Shield Terms.' });
         return;
     }
     
@@ -251,8 +251,8 @@ export default function BackstagePage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 sm:p-6">
         <div className="text-center mb-10">
-            <SomaLogo className="h-12 w-12 mx-auto" />
-            <h1 className="text-4xl font-bold font-headline mt-4 text-primary">SOMA Seller Hub</h1>
+            <TradeWyseLogo className="h-12 w-12 mx-auto" />
+            <h1 className="text-4xl font-bold font-headline mt-4 text-primary">Trade Wyse Seller Hub</h1>
             <p className="mt-2 text-lg text-muted-foreground">Supplier Onboarding</p>
         </div>
       
@@ -303,7 +303,7 @@ export default function BackstagePage() {
                                         
                                         {mapCoords && (
                                             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
-                                                <SomaMap 
+                                                <Trade WyseMap 
                                                     center={mapCoords} 
                                                     className="h-48 w-full mt-2 grayscale-[0.5] rounded-xl overflow-hidden border border-primary/20"
                                                 />
@@ -386,9 +386,9 @@ export default function BackstagePage() {
                                     )} />
 
                                     <div className="space-y-4 pt-4">
-                                        <h3 className="font-semibold text-primary">SOMA Shield: Seller Terms of Service</h3>
+                                        <h3 className="font-semibold text-primary">Trade Wyse Shield: Seller Terms of Service</h3>
                                         <ScrollArea className="h-48 w-full rounded-md border border-border p-4">
-                                            <SomaShieldTerms />
+                                            <Trade WyseShieldTerms />
                                         </ScrollArea>
                                         <div className="flex items-start space-x-3 pt-2">
                                             <Checkbox 
@@ -401,7 +401,7 @@ export default function BackstagePage() {
                                                     htmlFor="terms"
                                                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                                                 >
-                                                I have read and agree to the SOMA Seller Terms of Service.
+                                                I have read and agree to the Trade Wyse Seller Terms of Service.
                                                 </label>
                                             </div>
                                         </div>

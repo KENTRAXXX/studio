@@ -2,15 +2,12 @@ import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
 
 /**
- * Optimized Genkit initialization for Cloudflare Edge.
- * Disables telemetry and logging to minimize gRPC/Node.js dependencies
- * which often cause timeouts or crashes on the edge.
+ * Genkit initialization for Trade Wyse.
+ * Configured for standard Node.js runtime on Vercel.
+ * Telemetry is enabled by default for production observability.
  */
 export const ai = genkit({
   plugins: [
     googleAI({ apiKey: process.env.GEMINI_API_KEY })
   ],
-  telemetry: {
-    disabled: true,
-  },
 });

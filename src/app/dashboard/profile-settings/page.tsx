@@ -61,7 +61,7 @@ export default function ProfileSettingsPage() {
 
     const boutiqueUrl = useMemo(() => {
         if (!storeData) return '#';
-        const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
+        const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'tradewysetoday.com';
         if (storeData.customDomain && storeData.domainStatus === 'connected') {
             return `https://${storeData.customDomain}`;
         }
@@ -174,7 +174,7 @@ export default function ProfileSettingsPage() {
                             )}
                             {userProfile?.walletStatus === 'active' && (
                                 <Badge className="bg-primary/20 text-primary border-primary/50 flex items-center gap-1">
-                                    <ShieldCheck className="h-3 w-3" /> SOMA Verified Mogul
+                                    <ShieldCheck className="h-3 w-3" /> Trade Wyse Verified Mogul
                                 </Badge>
                             )}
                         </div>
@@ -308,7 +308,7 @@ export default function ProfileSettingsPage() {
                                 <div className="space-y-2">
                                     <FormLabel className="text-xs uppercase font-bold text-muted-foreground tracking-widest">System Identity (Email)</FormLabel>
                                     <Input value={userProfile?.email || ''} disabled className="bg-muted/20 border-primary/10 font-mono text-sm" />
-                                    <FormDescription>Contact SOMA Concierge to change your registered email address.</FormDescription>
+                                    <FormDescription>Contact Trade Wyse Concierge to change your registered email address.</FormDescription>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

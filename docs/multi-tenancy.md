@@ -1,12 +1,12 @@
-# SOMA Multi-Tenancy Architecture
+# Trade Wyse Multi-Tenancy Architecture
 
-This document explains how the SOMA platform handles multiple tenant storefronts using a single Next.js application, providing a seamless white-label experience for store owners.
+This document explains how the Trade Wyse platform handles multiple tenant storefronts using a single Next.js application, providing a seamless white-label experience for store owners.
 
 ## The Core Concepts
 
 Think of the platform using a **Landlord and Tenant** analogy:
 
-1.  **The Root Domain (The Mall)**: This is the main application domain where the SOMA platform itself operates (e.g., `somatoday.com` in production or `localhost:9002` in development).
+1.  **The Root Domain (The Mall)**: This is the main application domain where the Trade Wyse platform itself operates (e.g., `Trade Wysetoday.com` in production or `localhost:9002` in development).
     *   It hosts the administrative dashboards for tenants (`/dashboard`).
     *   It hosts the platform's main landing page.
     *   It is the central "headquarters" for all tenants.
@@ -26,7 +26,7 @@ Customer visits `my-luxury-brand.com`
        │
        │
        ▼
-[ SOMA Platform / Vercel Edge ]
+[ Trade Wyse Platform / Vercel Edge ]
        │
        ├─ Middleware (`src/middleware.ts`) runs first
        │

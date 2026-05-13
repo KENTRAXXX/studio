@@ -32,6 +32,11 @@ type UserProfile = {
   live?: boolean;
   referralCode?: string;
   referredBy?: string;
+  totalReferralEarnings?: number;
+  ambassadorData?: {
+    referralSignups: number;
+    referralClicks: number;
+  };
   verificationFeedback?: string;
   brandBio?: string;
   avatarUrl?: string;
@@ -194,7 +199,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
        
        if (profile.hasAccess && !isAtCorrectPortal && !isPublicRoute && !isLegalPage && !isReturnPage && !isSupportConcierge) {
            if (typeof window !== 'undefined') {
-               sessionStorage.removeItem('soma_just_launched');
+               sessionStorage.removeItem('Trade Wyse_just_launched');
            }
            router.push(`/${tierConfig.portal}`);
            return;

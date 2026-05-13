@@ -6,14 +6,14 @@ import 'leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility
 import 'leaflet-defaulticon-compatibility';
 import { useEffect } from 'react';
 
-interface SomaMapProps {
+interface Trade WyseMapProps {
   center: [number, number];
   zoom?: number;
   className?: string;
 }
 
 /**
- * @fileOverview A high-fidelity OpenStreetMap component for the SOMA ecosystem.
+ * @fileOverview A high-fidelity OpenStreetMap component for the Trade Wyse ecosystem.
  * Features a custom 'Gold and Slate' visual filter to match the brand standards.
  */
 
@@ -25,7 +25,7 @@ function ChangeView({ center, zoom }: { center: [number, number]; zoom: number }
   return null;
 }
 
-export default function SomaMap({ center, zoom = 13, className }: SomaMapProps) {
+export default function Trade WyseMap({ center, zoom = 13, className }: Trade WyseMapProps) {
   return (
     <div className={className}>
       <MapContainer
@@ -37,14 +37,14 @@ export default function SomaMap({ center, zoom = 13, className }: SomaMapProps) 
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          className="soma-map-tiles"
+          className="Trade Wyse-map-tiles"
         />
         <Marker position={center} />
         <ChangeView center={center} zoom={zoom} />
       </MapContainer>
       <style jsx global>{`
-        /* SOMA 'Gold and Slate' Map Filter */
-        .soma-map-tiles {
+        /* Trade Wyse 'Gold and Slate' Map Filter */
+        .Trade Wyse-map-tiles {
           filter: grayscale(100%) sepia(40%) invert(90%) brightness(0.9) contrast(1.1);
         }
         .leaflet-container {

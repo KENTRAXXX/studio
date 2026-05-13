@@ -135,9 +135,9 @@
                     "type": "string",
                     "description": "The ID of the user who owns/supplies the product."
                 },
-                 "isManagedBySoma": {
+                 "isManagedByTrade Wyse": {
                     "type": "boolean",
-                    "description": "True if the product is a dropshipped item from the SOMA catalog."
+                    "description": "True if the product is a dropshipped item from the Trade Wyse catalog."
                 },
                 "categories": {
                     "type": "array",
@@ -439,7 +439,7 @@
         },
         "conciergeTicket": {
             "title": "Concierge Ticket",
-            "description": "A high-priority message from a brand to SOMA Admin.",
+            "description": "A high-priority message from a brand to Trade Wyse Admin.",
             "type": "object",
             "properties": {
                 "brandId": { "type": "string" },
@@ -524,7 +524,7 @@
         },
         "/concierge_tickets/{ticketId}": {
             "schema": { "$ref": "#/entities/conciergeTicket" },
-            "description": "Strategic messages sent to the SOMA Founder/Support."
+            "description": "Strategic messages sent to the Trade Wyse Founder/Support."
         },
         "/platform_metadata/{docId}": {
             "schema": { "$ref": "#/entities/platformMetadata" },

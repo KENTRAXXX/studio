@@ -62,7 +62,7 @@ async function executePaymentSplit(eventData: any) {
     }
 
     try {
-        const orderId = `SOMA-${reference.slice(-6).toUpperCase()}`;
+        const orderId = `Trade Wyse-${reference.slice(-6).toUpperCase()}`;
 
         await runTransaction(firestore, async (transaction) => {
             const ordersRef = collection(firestore, `stores/${storeId}/orders`);
@@ -100,7 +100,7 @@ async function executePaymentSplit(eventData: any) {
                     wholesalePrice: wholesalePrice
                 });
                 
-                if (vendorId !== 'admin' && productData.isManagedBySoma) { 
+                if (vendorId !== 'admin' && productData.isManagedByTrade Wyse) { 
                     const vendorRef = doc(firestore, "users", vendorId);
                     const vendorSnap = await transaction.get(vendorRef);
                     if (!vendorSnap.exists()) {
@@ -187,7 +187,7 @@ async function executePaymentSplit(eventData: any) {
         
         const storeRef = doc(firestore, 'stores', storeId);
         const storeSnap = await getDoc(storeRef);
-        const storeName = storeSnap.data()?.storeName || 'SOMA Store';
+        const storeName = storeSnap.data()?.storeName || 'Trade Wyse Store';
 
         await sendOrderEmail({
             to: customer.email,
@@ -284,7 +284,7 @@ export async function POST(req: Request) {
                     if (referrerSnap.exists() && referrerSnap.data().hasAccess === true) {
                         const referrerData = referrerSnap.data();
                         
-                        // SOMA Ambassador Program: Dynamic Reward
+                        // Trade Wyse Ambassador Program: Dynamic Reward
                         const isAmbassador = referrerData.userRole === 'AMBASSADOR';
                         const referralReward = isAmbassador ? dynamicBounty : 0; 
 
@@ -343,7 +343,7 @@ export async function POST(req: Request) {
                 await createClientStore({
                     userId,
                     email: customer.email,
-                    storeName: 'Your SOMA Store',
+                    storeName: 'Your Trade Wyse Store',
                 });
             }
 

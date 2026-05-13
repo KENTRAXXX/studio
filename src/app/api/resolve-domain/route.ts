@@ -14,11 +14,11 @@ function getDb() {
 }
 
 /**
- * Resolves a hostname or subdomain slug to a SOMA storeId (UID).
+ * Resolves a hostname or subdomain slug to a Trade Wyse storeId (UID).
  * Supports:
  * 1. Full Custom Domains (brand.com)
- * 2. Branded Subdomains (deluxeinc.somatoday.com)
- * 3. Raw Store IDs ([UID].somatoday.com)
+ * 2. Branded Subdomains (deluxeinc.tradewysetoday.com)
+ * 3. Raw Store IDs ([UID].tradewysetoday.com)
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -33,9 +33,9 @@ export async function GET(request: NextRequest) {
   // Platform Domain Detection
   const hostHeader = request.headers.get('host') || '';
   const detectedRoot = hostHeader.split('.').slice(-2).join('.');
-  const ROOT_DOMAIN = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || detectedRoot || 'somatoday.com').toLowerCase();
+  const ROOT_DOMAIN = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || detectedRoot || 'tradewysetoday.com').toLowerCase();
 
-  console.log(`[SOMA Resolver] Domain: ${currentHost} | Root: ${ROOT_DOMAIN}`);
+  console.log(`[Trade Wyse Resolver] Domain: ${currentHost} | Root: ${ROOT_DOMAIN}`);
 
   // Extract the slug (subdomain prefix) if the request is coming via the platform domain
   let slug = currentHost;
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
-      console.warn(`[SOMA Resolver] No boutique found for: ${currentHost} (slug: ${slug})`);
+      console.warn(`[Trade Wyse Resolver] No boutique found for: ${currentHost} (slug: ${slug})`);
       return NextResponse.json({ storeId: null }, { status: 404 });
     }
 
@@ -91,14 +91,14 @@ export async function GET(request: NextRequest) {
     // Entitlement check: allow platform subdomains for all Moguls, restrict custom domains by tier
     const isCustomDomain = currentHost !== `${slug}.${ROOT_DOMAIN}` && !isPlatformRoot;
     if (isCustomDomain && !tier.features.customDomains && userData.userRole !== 'ADMIN') {
-        console.warn(`[SOMA Resolver] Tier '${userData.planTier}' unauthorized for custom domain: ${currentHost}`);
+        console.warn(`[Trade Wyse Resolver] Tier '${userData.planTier}' unauthorized for custom domain: ${currentHost}`);
         return NextResponse.json({ error: 'Plan tier unauthorized for branded routing' }, { status: 403 });
     }
 
-    console.log(`[SOMA Resolver] Success: ${currentHost} -> ${userId}`);
+    console.log(`[Trade Wyse Resolver] Success: ${currentHost} -> ${userId}`);
     return NextResponse.json({ storeId: userId });
   } catch (error) {
-    console.error(`[SOMA Resolver] Internal error for '${domain}':`, error);
+    console.error(`[Trade Wyse Resolver] Internal error for '${domain}':`, error);
     return NextResponse.json({ error: 'Internal server error during domain handshake' }, { status: 500 });
   }
 }

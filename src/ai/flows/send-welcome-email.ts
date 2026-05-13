@@ -16,7 +16,7 @@ export type SendWelcomeEmailOutput = {
   id?: string;
 };
 
-const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
+const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'tradewysetoday.com';
 
 export async function sendWelcomeEmail(input: SendWelcomeEmailInput): Promise<SendWelcomeEmailOutput> {
     const resendApiKey = process.env.RESEND_API_KEY;
@@ -29,10 +29,10 @@ export async function sendWelcomeEmail(input: SendWelcomeEmailInput): Promise<Se
       const { getLuxuryEmailHtml } = await import('@/lib/emails/luxury-wrapper');
 
       const htmlContent = getLuxuryEmailHtml({
-        title: "Welcome to SOMA",
+        title: "Welcome to Trade Wyse",
         heading: "Your Empire is Live",
         body: `
-          <p style="font-size: 16px; color: #CCCCCC;">Congratulations. Your payment was successful and your luxury store, <strong style="color: #D4AF37;">${input.storeName}</strong>, has been successfully provisioned within the SOMA ecosystem.</p>
+          <p style="font-size: 16px; color: #CCCCCC;">Congratulations. Your payment was successful and your luxury store, <strong style="color: #D4AF37;">${input.storeName}</strong>, has been successfully provisioned within the Trade Wyse ecosystem.</p>
           <p style="font-size: 16px; color: #CCCCCC;">Your digital assets are ready for deployment. You may now access your executive control center to begin your operations.</p>
         `,
         buttonText: "Enter Dashboard",
@@ -46,9 +46,9 @@ export async function sendWelcomeEmail(input: SendWelcomeEmailInput): Promise<Se
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          from: `"SOMA Platform" <no-reply@somatoday.com>`,
+          from: `"Trade Wyse Platform" <no-reply@tradewysetoday.com>`,
           to: input.to,
-          subject: 'Welcome to SOMA! Your Store is LIVE!',
+          subject: 'Welcome to Trade Wyse! Your Store is LIVE!',
           html: htmlContent,
         })
       });

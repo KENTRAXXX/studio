@@ -1,5 +1,5 @@
 /**
- * SOMA Luxury Email System
+ * Trade Wyse Luxury Email System
  * Centralized branding for all platform communications.
  */
 
@@ -20,7 +20,7 @@ export function getLuxuryEmailHtml({
   body,
   buttonText,
   buttonUrl,
-  footerText = "This is a secure communication from SOMA DS. Confidentiality protocols active.",
+  footerText = "This is a secure communication from Trade Wyse DS. Confidentiality protocols active.",
 }: EmailTemplateOptions): string {
   return `
 <!DOCTYPE html>
@@ -126,7 +126,7 @@ export function getLuxuryEmailHtml({
   <div class="container">
     <div class="email-card">
       <div class="header">
-        <img src="https://www.somatoday.com/logo.svg" alt="SOMA" class="logo">
+        <img src="https://www.tradewysetoday.com/logo.svg" alt="Trade Wyse" class="logo">
         <div class="divider"></div>
       </div>
       
@@ -145,7 +145,7 @@ export function getLuxuryEmailHtml({
       
       <div class="footer">
         ${footerText}
-        <p style="margin-top: 20px;">&copy; ${new Date().getFullYear()} SOMA DS. ALL RIGHTS RESERVED.</p>
+        <p style="margin-top: 20px;">&copy; ${new Date().getFullYear()} Trade Wyse DS. ALL RIGHTS RESERVED.</p>
       </div>
     </div>
   </div>

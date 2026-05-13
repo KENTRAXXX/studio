@@ -27,7 +27,7 @@ import {
     AlertCircle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 import { BackButton } from '@/components/ui/back-button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -110,13 +110,13 @@ export default function ConciergePage() {
       setView('success');
       toast({
         title: 'Mission Dispatched',
-        description: 'Your request is being routed to the SOMA support team.',
+        description: 'Your request is being routed to the Trade Wyse support team.',
       });
     } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Transmission Error',
-        description: error.message || 'Could not reach SOMA HQ. Please try again.',
+        description: error.message || 'Could not reach Trade Wyse HQ. Please try again.',
       });
     }
   };
@@ -135,7 +135,7 @@ export default function ConciergePage() {
             <BackButton label="Dashboard" href="/dashboard" />
         </div>
         <div className="text-center">
-        <SomaLogo className="h-12 w-12 mx-auto text-primary" />
+        <TradeWyseLogo className="h-12 w-12 mx-auto text-primary" />
         <h1 className="text-4xl font-bold font-headline mt-4 text-primary tracking-tight">Executive Concierge</h1>
         <p className="mt-2 text-lg text-muted-foreground">Direct strategic support for elite partners.</p>
       </div>
@@ -195,7 +195,7 @@ export default function ConciergePage() {
             <Card className="bg-primary/5 border-primary/20">
                 <CardHeader>
                     <CardTitle className="text-[10px] font-headline uppercase tracking-widest flex items-center gap-2 text-primary">
-                        <Sparkles className="h-3 w-3" /> SOMA Service SLA
+                        <Sparkles className="h-3 w-3" /> Trade Wyse Service SLA
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="text-[11px] text-muted-foreground space-y-3 leading-relaxed">
@@ -267,7 +267,7 @@ export default function ConciergePage() {
                                 </div>
                                 <h2 className="text-3xl font-bold font-headline text-primary">Message Secured</h2>
                                 <p className="text-muted-foreground max-w-md mx-auto">
-                                    Your executive request has been transmitted directly to SOMA HQ. 
+                                    Your executive request has been transmitted directly to Trade Wyse HQ. 
                                     Our support team will respond shortly.
                                 </p>
                                 <Button 
@@ -370,7 +370,7 @@ export default function ConciergePage() {
                                             ) : (
                                                 <>
                                                     <Send className="mr-3 h-6 w-6" />
-                                                    Dispatched to SOMA HQ
+                                                    Dispatched to Trade Wyse HQ
                                                 </>
                                             )}
                                         </Button>

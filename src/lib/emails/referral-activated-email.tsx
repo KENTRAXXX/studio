@@ -18,7 +18,7 @@ export const ReferralActivatedEmail = ({
     
     <p>Hello {referrerName},</p>
     
-    <p>Success has resonated within your network. Your protege, <strong>{protegeName}</strong>, has just officially launched their SOMA boutique!</p>
+    <p>Success has resonated within your network. Your protege, <strong>{protegeName}</strong>, has just officially launched their Trade Wyse boutique!</p>
     
     <div style={{ 
       padding: '30px', 
@@ -32,11 +32,11 @@ export const ReferralActivatedEmail = ({
       <p style={{ margin: 0, fontSize: '36px', fontWeight: 'bold', color: '#000' }}>{creditAmount}</p>
     </div>
 
-    <p>This credit has been instantly deposited into your <strong>SOMA Wallet</strong> as a reward for expanding the elite ecosystem. Your mentorship is helping build the future of luxury commerce.</p>
+    <p>This credit has been instantly deposited into your <strong>Trade Wyse Wallet</strong> as a reward for expanding the elite ecosystem. Your mentorship is helping build the future of luxury commerce.</p>
     
     <div style={{ marginTop: '30px', textAlign: 'center' }}>
         <a 
-            href="https://somatoday.com/dashboard/wallet" 
+            href="https://tradewysetoday.com/dashboard/wallet" 
             style={{ 
                 backgroundColor: '#000', 
                 color: '#fff', 
@@ -52,8 +52,8 @@ export const ReferralActivatedEmail = ({
     </div>
 
     <p style={{ marginTop: '40px', borderTop: '1px solid #eee', paddingTop: '20px', fontSize: '14px', color: '#999' }}>
-        Thank you for your continued leadership in the SOMA network.<br/>
-        <strong>SOMA Strategic Assets Group</strong>
+        Thank you for your continued leadership in the Trade Wyse network.<br/>
+        <strong>Trade Wyse Strategic Assets Group</strong>
     </p>
   </div>
 );

@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-const SomaLogo = ({ className, "aria-hidden": ariaHidden }: { className?: string, "aria-hidden"?: boolean }) => (
+const TradeWyseLogo = ({ className, "aria-hidden": ariaHidden }: { className?: string, "aria-hidden"?: boolean }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
@@ -11,7 +11,7 @@ const SomaLogo = ({ className, "aria-hidden": ariaHidden }: { className?: string
     strokeLinejoin="round"
     className={cn("h-6 w-6 text-primary", className)}
     role={ariaHidden ? "presentation" : "img"}
-    aria-label={ariaHidden ? undefined : "SOMA Design System Logo"}
+    aria-label={ariaHidden ? undefined : "Trade Wyse Design System Logo"}
     aria-hidden={ariaHidden}
   >
     <path d="M12 2L2 7l10 5 10-5-10-5z" />
@@ -20,4 +20,4 @@ const SomaLogo = ({ className, "aria-hidden": ariaHidden }: { className?: string
   </svg>
 );
 
-export default SomaLogo;
+export default TradeWyseLogo;

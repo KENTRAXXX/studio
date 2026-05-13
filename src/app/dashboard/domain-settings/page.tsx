@@ -185,7 +185,7 @@ export default function DomainSettingsPage() {
             </div>
             <div>
                 <h1 className="text-3xl font-bold font-headline">Custom Domain Management</h1>
-                <p className="text-muted-foreground mt-1 text-sm">Connect your unique brand identity to the SOMA global network.</p>
+                <p className="text-muted-foreground mt-1 text-sm">Connect your unique brand identity to the Trade Wyse global network.</p>
             </div>
         </div>
         
@@ -259,7 +259,7 @@ export default function DomainSettingsPage() {
                             )}
                         </div>
                         <CardDescription className="text-slate-300">
-                            Log into your domain registrar and add the following record to point your domain to SOMA.
+                            Log into your domain registrar and add the following record to point your domain to Trade Wyse.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="pt-6 space-y-8">
@@ -361,13 +361,13 @@ export default function DomainSettingsPage() {
                         <span className="text-slate-200 font-bold">1. Registrar:</span> Your domain is owned at a registrar (GoDaddy, etc). This is the "Origin."
                     </p>
                     <p>
-                        <span className="text-slate-200 font-bold">2. Pointer:</span> Entering your domain here alerts SOMA to expect traffic.
+                        <span className="text-slate-200 font-bold">2. Pointer:</span> Entering your domain here alerts Trade Wyse to expect traffic.
                     </p>
                     <p>
                         <span className="text-slate-200 font-bold">3. DNS Record:</span> You must manually enter the provided A Record or CNAME into your Registrar's dashboard.
                     </p>
                     <p>
-                        <span className="text-slate-200 font-bold">4. Secure:</span> Once records match, SOMA automatically applies high-fidelity SSL encryption.
+                        <span className="text-slate-200 font-bold">4. Secure:</span> Once records match, Trade Wyse automatically applies high-fidelity SSL encryption.
                     </p>
                     <div className="pt-4">
                         <Button asChild variant="link" className="p-0 h-auto text-[10px] font-black uppercase text-primary">

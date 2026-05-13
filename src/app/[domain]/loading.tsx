@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 
 /**
  * @fileOverview Boutique Tenant Loader.
@@ -22,12 +22,12 @@ export default function BoutiqueLoading() {
             transition={{ duration: 3, repeat: Infinity }}
           />
           <div className="absolute inset-0 flex items-center justify-center">
-            <SomaLogo className="h-10 w-10 text-primary animate-pulse" />
+            <TradeWyseLogo className="h-10 w-10 text-primary animate-pulse" />
           </div>
         </div>
 
         <div className="text-center">
-          <h2 className="text-sm font-headline font-bold uppercase tracking-[0.4em] text-primary mb-2">SOMA BOUTIQUE</h2>
+          <h2 className="text-sm font-headline font-bold uppercase tracking-[0.4em] text-primary mb-2">Trade Wyse BOUTIQUE</h2>
           <div className="flex items-center justify-center gap-2">
             <div className="h-1 w-1 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
             <div className="h-1 w-1 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />

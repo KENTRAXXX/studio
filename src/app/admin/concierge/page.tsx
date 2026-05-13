@@ -31,7 +31,7 @@ import {
     Filter
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { sendConciergeResponseEmail } from '@/ai/flows/send-concierge-response-email';

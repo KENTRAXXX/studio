@@ -14,7 +14,7 @@ function getDb() {
 }
 
 /**
- * Resolves an email address to a SOMA storeId by querying Firestore.
+ * Resolves an email address to a Trade Wyse storeId by querying Firestore.
  * This is used for identity-based routing in middleware.
  * @param request The incoming Next.js request.
  * @returns A JSON response with the storeId or an error.

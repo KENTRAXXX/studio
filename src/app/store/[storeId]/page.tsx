@@ -39,7 +39,7 @@ export default function StorefrontPage() {
   // 1. Resolve Store Identity (Real-time with Normalization)
   const storeQuery = useMemoFirebase(() => {
     if (!firestore || isDemoMode) return null;
-    const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
+    const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'tradewysetoday.com').toLowerCase();
     
     // STRICT FIX: Preserve casing for the raw identifier when matching UIDs
     const normalizedSlug = identifier.toLowerCase().replace(`.${rootDomain}`, '').replace('www.', '');
@@ -81,7 +81,7 @@ export default function StorefrontPage() {
   }
 
   if (!storeData && !isDemoMode) {
-    const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
+    const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'tradewysetoday.com';
     return (
         <div className="flex flex-col items-center justify-center h-screen space-y-4 bg-background px-4 text-center">
             <div className="bg-primary/10 p-6 rounded-full border border-primary/20">
@@ -89,7 +89,7 @@ export default function StorefrontPage() {
             </div>
             <h1 className="text-3xl font-bold font-headline text-primary uppercase tracking-widest">Boutique Not Found</h1>
             <p className="text-muted-foreground max-w-sm leading-relaxed">
-                The boutique at "{identifier}" is not currently provisioned in the SOMA network.
+                The boutique at "{identifier}" is not currently provisioned in the Trade Wyse network.
             </p>
             <Button variant="outline" className="border-primary/50 text-primary mt-4" asChild>
                 <Link href={`https://${rootDomain}`}>
@@ -101,8 +101,8 @@ export default function StorefrontPage() {
   }
 
   const finalStoreData = isDemoMode ? {
-    heroTitle: 'The SOMA Experience',
-    heroSubtitle: 'This is a preview of a live SOMA storefront.',
+    heroTitle: 'The Trade Wyse Experience',
+    heroSubtitle: 'This is a preview of a live Trade Wyse storefront.',
     heroImageUrl: PlaceHolderImages.find(img => img.id === 'storefront-hero')?.imageUrl,
   } : storeData;
 

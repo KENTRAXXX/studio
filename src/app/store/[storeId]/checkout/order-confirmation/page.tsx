@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle2 } from 'lucide-react';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 
 export default function OrderConfirmationPage() {
     const searchParams = useSearchParams();
@@ -20,8 +20,8 @@ export default function OrderConfirmationPage() {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-background text-center p-4">
             <div className="flex items-center gap-2 mb-8">
-                 <SomaLogo className="h-10 w-10 text-primary" />
-                 <span className="font-headline text-3xl font-bold text-primary">SOMA Store</span>
+                 <TradeWyseLogo className="h-10 w-10 text-primary" />
+                 <span className="font-headline text-3xl font-bold text-primary">Trade Wyse Store</span>
             </div>
 
             <Card className="w-full max-w-lg border-primary/50 text-center">

@@ -16,7 +16,7 @@ import { Check, Loader2, X, Tags, Layers, Package } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import type { PendingProduct } from '@/lib/types';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 import { useState } from 'react';
 import { BackButton } from '@/components/ui/back-button';
 
@@ -97,7 +97,7 @@ export default function ApprovalQueuePage() {
             <BackButton label="Executive Pulse" href="/admin" />
         </div>
         <div className="text-center mb-10">
-            <SomaLogo className="h-12 w-12 mx-auto" />
+            <TradeWyseLogo className="h-12 w-12 mx-auto" />
             <h1 className="text-4xl font-bold font-headline mt-4 text-primary">Admin Approval Queue</h1>
             <p className="mt-2 text-lg text-muted-foreground">Review and approve new supplier products.</p>
         </div>

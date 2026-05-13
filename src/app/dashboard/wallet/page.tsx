@@ -12,7 +12,7 @@ import { formatCurrency } from '@/utils/format';
 import { BackButton } from '@/components/ui/back-button';
 
 
-export default function SomaWalletPage() {
+export default function Trade WyseWalletPage() {
     const { user, loading: userLoading } = useUser();
     const { userProfile, loading: profileLoading } = useUserProfile();
     const firestore = useFirestore();
@@ -67,7 +67,7 @@ export default function SomaWalletPage() {
             <div className="absolute -top-4 -left-4">
                 <BackButton label="Dashboard" href="/dashboard" />
             </div>
-            <h1 className="text-3xl font-bold font-headline text-center">SOMA Wallet</h1>
+            <h1 className="text-3xl font-bold font-headline text-center">Trade Wyse Wallet</h1>
 
              <Card className="border-primary text-center bg-card relative overflow-hidden">
                 <CardHeader>

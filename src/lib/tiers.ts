@@ -1,5 +1,5 @@
 /**
- * @fileOverview SOMA Strategic Tier Registry
+ * @fileOverview Trade Wyse Strategic Tier Registry
  * Single Source of Truth for platform economics, feature entitlements, and routing.
  */
 
@@ -9,7 +9,7 @@ export interface TierConfig {
     id: PlanTier;
     label: string;
     portal: 'dashboard' | 'backstage' | 'admin' | 'ambassador';
-    commissionRate: number; // The percentage SOMA takes (0.03 = 3%)
+    commissionRate: number; // The percentage Trade Wyse takes (0.03 = 3%)
     entitlements: string[];
     aiCreditsMonthly: number;
     businessSurcharge: {

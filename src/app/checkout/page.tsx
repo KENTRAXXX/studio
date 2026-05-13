@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { usePaystack } from '@/hooks/use-paystack';
 import { Loader2, ShieldCheck, Lock, CreditCard, ChevronRight } from 'lucide-react';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 import { getTier } from '@/lib/tiers';
 
 export default function CheckoutPage() {
@@ -93,7 +93,7 @@ export default function CheckoutPage() {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-black gold-mesh-gradient p-4 sm:p-6">
             <div className="text-center mb-10">
-                <SomaLogo className="h-12 w-12 mx-auto" />
+                <TradeWyseLogo className="h-12 w-12 mx-auto" />
                 <h1 className="text-4xl font-bold font-headline mt-4 text-white tracking-tight uppercase">Portal Activation</h1>
                 <p className="mt-2 text-lg text-muted-foreground uppercase tracking-widest text-[10px] font-black">Strategic Assets Group • Payment Gateway</p>
             </div>

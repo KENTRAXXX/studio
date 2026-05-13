@@ -13,7 +13,7 @@ export function StoreVisitorTracker({ storeId }: { storeId: string }) {
       return;
     }
 
-    const sessionKey = `soma-visited-${storeId}`;
+    const sessionKey = `Trade Wyse-visited-${storeId}`;
     const hasVisited = sessionStorage.getItem(sessionKey);
 
     if (!hasVisited) {

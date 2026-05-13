@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
- * @fileOverview SOMA Multi-Tenancy Resolver
+ * @fileOverview Trade Wyse Multi-Tenancy Resolver
  * Robust rewrite logic for Custom Domains, Subdomains, and specialized portals.
  */
 export function middleware(request: NextRequest) {
@@ -12,7 +12,7 @@ export function middleware(request: NextRequest) {
   const currentHost = hostname.split(':')[0].toLowerCase();
   
   // 2. Define the Root: Ensure process.env.NEXT_PUBLIC_ROOT_DOMAIN is being compared correctly.
-  const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
+  const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'tradewysetoday.com').toLowerCase();
 
   const path = url.pathname;
 
@@ -42,7 +42,7 @@ export function middleware(request: NextRequest) {
     
     let targetPath = path;
     
-    // Fix for ambassador.somatoday.com/ambassador 404
+    // Fix for ambassador.tradewysetoday.com/ambassador 404
     // We strip the redundant /ambassador path for ambassador subdomains to resolve the portal correctly.
     if (currentHost.startsWith('ambassador') && path === '/ambassador') {
       targetPath = '/';

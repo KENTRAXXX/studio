@@ -26,7 +26,7 @@ export default function AccessibilityCheckerPage() {
                 <CardHeader className="bg-muted/30 border-b border-primary/10">
                     <CardTitle>Inclusive Commerce Standards</CardTitle>
                     <CardDescription>
-                        Ensure your luxury storefront is usable for every customer globally. SOMA automatically secures your core structure, while this tool audits your custom content and color stories.
+                        Ensure your luxury storefront is usable for every customer globally. Trade Wyse automatically secures your core structure, while this tool audits your custom content and color stories.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-10">

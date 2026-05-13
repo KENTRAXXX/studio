@@ -199,7 +199,7 @@ export function AddMasterProductModal({ isOpen, onOpenChange }: AddMasterProduct
 
   const uploadToCloudinaryWithProgress = (file: File, id: string) => {
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'SomaDS';
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'TradeWyse';
 
     const xhr = new XMLHttpRequest();
     const formData = new FormData();

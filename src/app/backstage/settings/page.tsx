@@ -28,7 +28,7 @@ import {
     Trash2,
     Image as ImageIcon
 } from 'lucide-react';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
 import {
@@ -236,7 +236,7 @@ export default function BackstageSettingsPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-10 pb-20">
       <div className="text-center">
-        <SomaLogo className="h-12 w-12 mx-auto text-primary" />
+        <TradeWyseLogo className="h-12 w-12 mx-auto text-primary" />
         <h1 className="text-4xl font-bold font-headline mt-4 text-primary tracking-tight">Account & Security</h1>
         <p className="mt-2 text-lg text-muted-foreground">Manage your credentials and platform security protocols.</p>
       </div>
@@ -354,7 +354,7 @@ export default function BackstageSettingsPage() {
                 <Bell className="h-5 w-5 text-primary" />
                 Global Preferences
                 </CardTitle>
-                <CardDescription className="text-slate-500">Control how and when SOMA contacts you.</CardDescription>
+                <CardDescription className="text-slate-500">Control how and when Trade Wyse contacts you.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 <div className="space-y-4">
@@ -523,7 +523,7 @@ export default function BackstageSettingsPage() {
         <div className="space-y-1">
           <h4 className="text-sm font-bold text-slate-200 uppercase tracking-widest">Global Security Standard</h4>
           <p className="text-xs text-slate-500 leading-relaxed">
-            SOMA employs advanced encryption and session management to protect the integrity of the Master Catalog. 
+            Trade Wyse employs advanced encryption and session management to protect the integrity of the Master Catalog. 
             Passwords must contain at least 8 characters, including a special symbol.
           </p>
         </div>

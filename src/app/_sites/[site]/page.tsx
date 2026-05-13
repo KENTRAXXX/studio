@@ -26,7 +26,7 @@ type StorefrontProduct = {
     imageUrl: string;
     productType: 'INTERNAL' | 'EXTERNAL';
     vendorId: string;
-    isManagedBySoma: boolean;
+    isManagedByTrade Wyse: boolean;
 };
 
 export async function generateMetadata(
@@ -38,14 +38,14 @@ export async function generateMetadata(
 
   if (isDemoMode) {
     return {
-      title: 'SOMA Demo Store',
-      description: 'A preview of a live SOMA storefront experience.',
+      title: 'Trade Wyse Demo Store',
+      description: 'A preview of a live Trade Wyse storefront experience.',
     }
   }
   
   if (!siteId) {
     return {
-        title: 'SOMA Store',
+        title: 'Trade Wyse Store',
         description: 'Luxury goods and fine wares.'
     }
   }
@@ -62,7 +62,7 @@ export async function generateMetadata(
     }
 
     return {
-      title: storeData.storeName || 'SOMA Store',
+      title: storeData.storeName || 'Trade Wyse Store',
       description: storeData.heroSubtitle || 'Discover curated collections of timeless luxury.',
       openGraph: {
         images: [storeData.heroImageUrl || ''],
@@ -70,7 +70,7 @@ export async function generateMetadata(
     }
   } catch (error) {
      return {
-        title: 'SOMA Store',
+        title: 'Trade Wyse Store',
         description: 'An error occurred while fetching store details.'
     }
   }
@@ -109,8 +109,8 @@ export default async function StorefrontPage({ params }: { params: { site: strin
 
   if (isDemoMode) {
     storeData = {
-        heroTitle: 'The SOMA Experience',
-        heroSubtitle: 'This is a preview of a live SOMA storefront.',
+        heroTitle: 'The Trade Wyse Experience',
+        heroSubtitle: 'This is a preview of a live Trade Wyse storefront.',
         heroImageUrl: PlaceHolderImages.find(img => img.id === 'storefront-hero')?.imageUrl,
     };
     products = demoProducts.map(p => ({ 

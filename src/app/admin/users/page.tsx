@@ -150,7 +150,7 @@ export default function UserManagementPage() {
         <CardHeader>
           <CardTitle>All Users</CardTitle>
           <CardDescription>
-            Search, filter, and manage all users on the SOMA platform.
+            Search, filter, and manage all users on the Trade Wyse platform.
           </CardDescription>
           <div className="flex flex-col md:flex-row gap-4 pt-4">
             <div className="relative flex-1">

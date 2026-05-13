@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Settings, Loader2, Save, Eye, UploadCloud, X, Globe, Sparkles, CreditCard, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 import { BackButton } from '@/components/ui/back-button';
 import { uploadToCloudinary } from '@/lib/utils/upload-image';
 import { usePaystack } from '@/hooks/use-paystack';
@@ -51,7 +51,7 @@ const StorePreview = ({ formData }: { formData: Partial<SettingsFormValues> }) =
                                 <img src={formData.logoUrl} alt="logo" className="h-full w-full object-contain" />
                             </div>
                         ) : (
-                            <SomaLogo className="h-8 w-8" />
+                            <TradeWyseLogo className="h-8 w-8" />
                         )}
                         <span className="font-headline text-xl font-bold text-primary">{formData.storeName || 'Your Store'}</span>
                     </div>
@@ -74,7 +74,7 @@ export default function StoreSettingsPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
     const { initializePayment, isInitializing } = usePaystack();
-    const ROOT_DOMAIN = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
+    const ROOT_DOMAIN = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'tradewysetoday.com').toLowerCase();
 
     const logoInputRef = useRef<HTMLInputElement>(null);
     const faviconInputRef = useRef<HTMLInputElement>(null);

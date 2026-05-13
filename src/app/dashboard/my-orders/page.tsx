@@ -118,7 +118,7 @@ export default function MyOrdersPage() {
                     Action Required: Your wallet is currently under review
                 </CardTitle>
                 <CardDescription className="text-destructive/80">
-                    To protect the integrity of the SOMA platform, your wallet has been flagged for a manual review by our treasury team.
+                    To protect the integrity of the Trade Wyse platform, your wallet has been flagged for a manual review by our treasury team.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -139,7 +139,7 @@ export default function MyOrdersPage() {
         </Card>
         <Card className="border-primary/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">SOMA Wholesale Cost</CardTitle>
+            <CardTitle className="text-sm font-medium">Trade Wyse Wholesale Cost</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>

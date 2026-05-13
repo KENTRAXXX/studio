@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Box } from 'lucide-react';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 
 export default function NotFound() {
-  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'tradewysetoday.com';
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen space-y-8 bg-background px-4 text-center selection:bg-primary/30">
@@ -17,8 +17,8 @@ export default function NotFound() {
 
         <div className="space-y-4 max-w-md relative z-10">
             <div className="flex items-center justify-center gap-2 mb-6">
-                <SomaLogo className="h-8 w-8 text-primary" />
-                <span className="font-headline font-bold text-2xl text-primary tracking-tighter uppercase transition-opacity">SOMA</span>
+                <TradeWyseLogo className="h-8 w-8 text-primary" />
+                <span className="font-headline font-bold text-2xl text-primary tracking-tighter uppercase transition-opacity">Trade Wyse</span>
             </div>
             
             <h1 className="text-4xl md:text-5xl font-bold font-headline text-white uppercase tracking-tighter leading-none">
@@ -26,7 +26,7 @@ export default function NotFound() {
             </h1>
             
             <p className="text-slate-400 text-lg font-medium leading-relaxed">
-                The requested resource is not currently provisioned within the SOMA ecosystem.
+                The requested resource is not currently provisioned within the Trade Wyse ecosystem.
             </p>
         </div>
 
@@ -44,7 +44,7 @@ export default function NotFound() {
         </div>
 
         <footer className="fixed bottom-12 w-full text-center">
-            <p className="text-[10px] uppercase tracking-[0.6em] text-slate-700 font-black">SOMA Strategic Assets Group</p>
+            <p className="text-[10px] uppercase tracking-[0.6em] text-slate-700 font-black">Trade Wyse Strategic Assets Group</p>
         </footer>
     </div>
   );

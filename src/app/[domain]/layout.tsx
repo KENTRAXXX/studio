@@ -22,13 +22,13 @@ export async function generateMetadata({ params }: { params: Promise<{ domain: s
     if (isAmbassador) {
         return {
             metadataBase: new URL(`https://${domain}`),
-            title: 'SOMA Ambassador Program | Performance Marketing Force',
-            description: 'Earn high-yield $5.00 bounties by expanding the SOMA luxury ecosystem. Join our elite performance marketing force and track your results in real-time.',
+            title: 'Trade Wyse Ambassador Program | Performance Marketing Force',
+            description: 'Earn high-yield $5.00 bounties by expanding the Trade Wyse luxury ecosystem. Join our elite performance marketing force and track your results in real-time.',
             alternates: {
                 canonical: '/',
             },
             openGraph: {
-                title: 'SOMA Ambassador Program',
+                title: 'Trade Wyse Ambassador Program',
                 description: 'The executive choice for performance marketers.',
                 images: [{ url: 'https://picsum.photos/seed/ambassador-og/1200/630' }]
             }
@@ -50,11 +50,11 @@ export async function generateMetadata({ params }: { params: Promise<{ domain: s
         const snap = await getDocs(q);
         const store = snap.empty ? null : snap.docs[0].data();
 
-        if (!store) return { title: 'SOMA Boutique' };
+        if (!store) return { title: 'Trade Wyse Boutique' };
 
         return {
             metadataBase: new URL(`https://${domain}`),
-            title: `${store.storeName} | SOMA Boutique`,
+            title: `${store.storeName} | Trade Wyse Boutique`,
             description: store.heroSubtitle || 'Discover our curated luxury collection.',
             alternates: {
                 canonical: '/',
@@ -68,7 +68,7 @@ export async function generateMetadata({ params }: { params: Promise<{ domain: s
     } catch (e) {
         return { 
             metadataBase: new URL(`https://${domain}`),
-            title: 'SOMA Boutique' 
+            title: 'Trade Wyse Boutique' 
         };
     }
 }

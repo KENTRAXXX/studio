@@ -175,7 +175,7 @@ export default function AdminOverviewPage() {
             if (!storeSnap.exists()) {
                 await setDoc(storeRef, {
                     userId: seller.id,
-                    storeName: seller.verificationData?.legalBusinessName || 'SOMA Supplier',
+                    storeName: seller.verificationData?.legalBusinessName || 'Trade Wyse Supplier',
                     status: 'Live',
                     createdAt: new Date().toISOString(),
                     theme: 'Minimalist',
@@ -185,7 +185,7 @@ export default function AdminOverviewPage() {
 
             await sendWelcomeEmail({
                 to: seller.email,
-                storeName: seller.verificationData?.legalBusinessName || 'Your SOMA Store',
+                storeName: seller.verificationData?.legalBusinessName || 'Your Trade Wyse Store',
             });
 
             toast({ title: 'Brand Approved', description: `${seller.email} is now verified.` });
@@ -437,7 +437,7 @@ export default function AdminOverviewPage() {
 
                     <Card className="border-slate-800 bg-slate-900/20 backdrop-blur-sm relative overflow-hidden">
                         <CardHeader>
-                            <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">SOMA Net Revenue</CardTitle>
+                            <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Trade Wyse Net Revenue</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="text-3xl font-bold text-primary font-mono">{formatCurrency(Math.round(metrics.netRevenue * 100))}</div>

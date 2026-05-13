@@ -7,7 +7,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { Loader2, Crown, Rocket } from 'lucide-react';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import { getTier } from '@/lib/tiers';
@@ -75,7 +75,7 @@ export default function BackstageReturnPage() {
 
           // Cleanup temporary provisioning state
           if (typeof window !== 'undefined') {
-              sessionStorage.removeItem('soma_just_launched');
+              sessionStorage.removeItem('Trade Wyse_just_launched');
           }
 
           setTimeout(() => {
@@ -117,8 +117,8 @@ export default function BackstageReturnPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-black gold-mesh-gradient text-white p-4">
       <div className="flex items-center gap-2 mb-12">
-        <SomaLogo className="h-10 w-10 text-primary" />
-        <span className="font-headline text-3xl font-bold text-primary tracking-widest">SOMA</span>
+        <TradeWyseLogo className="h-10 w-10 text-primary" />
+        <span className="font-headline text-3xl font-bold text-primary tracking-widest">Trade Wyse</span>
       </div>
 
       <div className="relative flex flex-col items-center max-w-md w-full text-center">
@@ -173,7 +173,7 @@ export default function BackstageReturnPage() {
       </div>
 
       <div className="absolute bottom-8 left-0 right-0 text-center">
-        <p className="text-xs uppercase tracking-widest text-primary/40 font-semibold">SOMA Strategic Assets Group</p>
+        <p className="text-xs uppercase tracking-widest text-primary/40 font-semibold">Trade Wyse Strategic Assets Group</p>
       </div>
     </div>
   );

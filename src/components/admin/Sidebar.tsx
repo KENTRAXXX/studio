@@ -29,25 +29,25 @@ import {
   Settings,
   ChevronRight
 } from 'lucide-react';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 const navHierarchy = {
-  COMMAND: [
-    { href: '/admin', icon: LayoutDashboard, label: 'Overview', description: 'The Heartbeat' },
-    { href: '/admin/users', icon: Users, label: 'User Manager', description: 'Moguls & Sellers' },
-    { href: '/admin/concierge', icon: MessageSquare, label: 'Concierge Inbox', description: 'Brand Support' },
+  MANAGEMENT: [
+    { href: '/admin', icon: LayoutDashboard, label: 'Overview', description: 'Live Stats' },
+    { href: '/admin/users', icon: Users, label: 'Users', description: 'All Platform Users' },
+    { href: '/admin/concierge', icon: MessageSquare, label: 'Support', description: 'User Inbox' },
   ],
   MARKETPLACE: [
-    { href: '/admin/catalog', icon: Gem, label: 'Global Catalog', description: 'Curate & Edit' },
-    { href: '/admin/approval-queue', icon: ShieldCheck, label: 'Approvals Queue', description: 'Gatekeeping' },
-    { href: '/dashboard/accessibility-checker', icon: Accessibility, label: 'Storefront Audit', description: 'A11y & Brand Check' },
+    { href: '/admin/catalog', icon: Gem, label: 'Products', description: 'Manage Items' },
+    { href: '/admin/approval-queue', icon: ShieldCheck, label: 'Approvals', description: 'Review Queue' },
+    { href: '/dashboard/accessibility-checker', icon: Accessibility, label: 'Quality Check', description: 'Store Audit' },
   ],
-  FINANCIALS: [
-    { href: '/admin/treasury', icon: PiggyBank, label: 'Treasury', description: 'Global Revenue' },
-    { href: '/admin/orders', icon: ShoppingBag, label: 'Order Log', description: 'Every Transaction' },
-    { href: '/admin/referrals', icon: ShieldAlert, label: 'Referral Audit', description: 'Payout Management' },
+  PAYMENTS: [
+    { href: '/admin/treasury', icon: PiggyBank, label: 'Earnings', description: 'Platform Revenue' },
+    { href: '/admin/orders', icon: ShoppingBag, label: 'Sales History', description: 'All Orders' },
+    { href: '/admin/referrals', icon: ShieldAlert, label: 'Referrals', description: 'Manage Rewards' },
   ],
   SYSTEM: [
     { href: '/admin/settings', icon: Settings, label: 'Platform Settings', description: 'Global Fees, API Keys' },
@@ -61,10 +61,10 @@ export function AdminSidebar({ onLogout }: { onLogout: () => void }) {
     <Sidebar className="border-r border-primary/10">
       <SidebarHeader className="p-6 border-b border-primary/10">
         <Link href="/admin" className="flex items-center gap-3 group">
-          <SomaLogo className="h-7 w-7 text-primary transition-transform group-hover:scale-110" aria-hidden={true} />
+          <TradeWyseLogo className="h-7 w-7 text-primary transition-transform group-hover:scale-110" aria-hidden={true} />
           <div className="flex flex-col">
-            <span className="font-headline font-bold text-lg text-primary tracking-tighter leading-none transition-opacity group-hover:opacity-80">SomaDS</span>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] mt-1">Executive Suite</span>
+            <span className="font-headline font-bold text-lg text-primary tracking-tighter leading-none transition-opacity group-hover:opacity-80">Trade Wyse</span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] mt-1">Admin Panel</span>
           </div>
           <Badge className="ml-auto bg-primary text-primary-foreground text-[9px] font-black h-5 px-1.5 rounded-full border-none shadow-gold-glow">ADMIN</Badge>
         </Link>
@@ -93,7 +93,7 @@ export function AdminSidebar({ onLogout }: { onLogout: () => void }) {
                           <item.icon className={cn(
                             "h-5 w-5 transition-colors",
                             isActive ? "text-primary" : "text-slate-400 group-hover:text-primary"
-                          )} aria-hidden="true" />
+                          )} aria-hidden={true} />
                           <div className="flex flex-col items-start ml-3">
                             <span className={cn(
                               "text-sm font-bold",
@@ -124,7 +124,7 @@ export function AdminSidebar({ onLogout }: { onLogout: () => void }) {
               onClick={onLogout}
               className="h-11 text-slate-400 hover:text-red-400 hover:bg-red-400/5 transition-all group"
             >
-              <LogOut className="h-5 w-5 group-hover:rotate-12 transition-transform" aria-hidden="true" />
+              <LogOut className="h-5 w-5 group-hover:rotate-12 transition-transform" aria-hidden={true} />
               <span className="font-bold ml-3">System Logout</span>
             </SidebarMenuButton>
           </SidebarMenuItem>

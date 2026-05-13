@@ -28,7 +28,7 @@ import {
   History
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 import { formatCurrency } from '@/utils/format';
 
 type InventoryProduct = {
@@ -136,7 +136,7 @@ export default function SupplierInventoryPage() {
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       <div className="text-center mb-10">
-        <SomaLogo className="h-12 w-12 mx-auto text-primary" />
+        <TradeWyseLogo className="h-12 w-12 mx-auto text-primary" />
         <h1 className="text-4xl font-bold font-headline mt-4 text-primary tracking-tight text-white">Inventory Manager</h1>
         <p className="mt-2 text-lg text-muted-foreground">Maintain global stock availability for your boutique network.</p>
       </div>
@@ -166,7 +166,7 @@ export default function SupplierInventoryPage() {
       <Card className="border-primary/20 bg-slate-900/50 overflow-hidden">
         <CardHeader className="border-b border-primary/10">
           <CardTitle className="text-slate-200 font-headline">Master Inventory Control</CardTitle>
-          <CardDescription className="text-slate-500">Updates here affect availability across all SOMA boutiques instantly.</CardDescription>
+          <CardDescription className="text-slate-500">Updates here affect availability across all Trade Wyse boutiques instantly.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {!products || products.length === 0 ? (

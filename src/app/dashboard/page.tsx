@@ -114,7 +114,7 @@ export default function DashboardOverviewPage(props: any) {
         if (isDemo) return '#';
         if (!storeData) return '#';
 
-        const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com').toLowerCase();
+        const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'tradewysetoday.com').toLowerCase();
         const protocol = typeof window !== 'undefined' ? window.location.protocol : 'https:';
         
         if (storeData.customDomain && storeData.domainStatus === 'connected') {
@@ -179,7 +179,7 @@ export default function DashboardOverviewPage(props: any) {
 
     // 7. PROVISIONING STATE
     if (!isDemo && !storeData) {
-        const justLaunched = typeof window !== 'undefined' && sessionStorage.getItem('soma_just_launched') === 'true';
+        const justLaunched = typeof window !== 'undefined' && sessionStorage.getItem('Trade Wyse_just_launched') === 'true';
         
         if (justLaunched) {
             return <ProvisioningLoader />;
@@ -205,7 +205,7 @@ export default function DashboardOverviewPage(props: any) {
                         <CardTitle className="font-headline text-2xl text-white">Activate Blueprint</CardTitle>
                         <CardContent className="p-0 mt-4 space-y-6">
                             <p className="text-slate-300 text-sm leading-relaxed">
-                                Deploy your high-fidelity theme and synchronize your initial product collection from the SOMA Global Registry.
+                                Deploy your high-fidelity theme and synchronize your initial product collection from the Trade Wyse Global Registry.
                             </p>
                             <Button asChild size="lg" className="w-full h-14 text-lg btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest">
                                 <Link href="/dashboard/my-store">
@@ -316,7 +316,7 @@ export default function DashboardOverviewPage(props: any) {
                             </CardHeader>
                             <CardContent className="text-xs text-slate-400 leading-relaxed">
                                 You are viewing the <span className="text-primary font-bold">Jenkins Tech</span> architecture. 
-                                This store utilizes the Scaler tier to dropship luxury tech and fine wares from the SOMA Global Catalog with a realized profit margin of ~27%.
+                                This store utilizes the Scaler tier to dropship luxury tech and fine wares from the Trade Wyse Global Catalog with a realized profit margin of ~27%.
                             </CardContent>
                         </Card>
                     </div>

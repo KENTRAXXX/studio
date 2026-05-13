@@ -98,7 +98,7 @@ export function OnboardingChecklist() {
 
     const boutiqueUrl = useMemo(() => {
         if (!storeData) return '';
-        const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
+        const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'tradewysetoday.com';
         if (storeData.customDomain && storeData.domainStatus === 'connected') {
             return `https://${storeData.customDomain}`;
         }
@@ -155,7 +155,7 @@ export function OnboardingChecklist() {
             setIsSuccessModalOpen(false);
             toast({
                 title: 'Empire Activated',
-                description: 'Your store is now officially live on the SOMA network.',
+                description: 'Your store is now officially live on the Trade Wyse network.',
             });
         } catch (e) {
             console.error("Failed to update live status", e);
@@ -192,7 +192,7 @@ export function OnboardingChecklist() {
                             Your Boutique is Live!
                         </DialogTitle>
                         <DialogDescription className="text-xl font-medium text-foreground pt-4">
-                            You are now an official <span className="text-primary font-black uppercase tracking-widest">SOMA Mogul</span>.
+                            You are now an official <span className="text-primary font-black uppercase tracking-widest">Trade Wyse Mogul</span>.
                         </DialogDescription>
                     </DialogHeader>
                     

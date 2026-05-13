@@ -154,7 +154,7 @@ export default function CheckerForm() {
           <div className="p-4 rounded-xl border border-blue-500/20 bg-blue-500/5 flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
             <p className="text-[11px] text-blue-300/80 leading-relaxed italic">
-              SOMA automated components are pre-optimized. This tool specifically audits your unique content and external integrations to ensure "Luxury for All".
+              Trade Wyse automated components are pre-optimized. This tool specifically audits your unique content and external integrations to ensure "Luxury for All".
             </p>
           </div>
         </div>

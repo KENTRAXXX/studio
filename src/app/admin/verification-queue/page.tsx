@@ -154,7 +154,7 @@ export default function VerificationQueuePage() {
         if (!storeSnap.exists()) {
             await setDoc(storeRef, {
                 userId: targetUser.id,
-                storeName: targetUser.verificationData?.legalBusinessName || 'SOMA Supplier',
+                storeName: targetUser.verificationData?.legalBusinessName || 'Trade Wyse Supplier',
                 status: 'Live',
                 createdAt: new Date().toISOString(),
                 theme: 'Minimalist',
@@ -164,7 +164,7 @@ export default function VerificationQueuePage() {
 
         await sendWelcomeEmail({
           to: targetUser.email,
-          storeName: targetUser.verificationData?.legalBusinessName || 'Your SOMA Store',
+          storeName: targetUser.verificationData?.legalBusinessName || 'Your Trade Wyse Store',
         });
       }
 

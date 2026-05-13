@@ -147,7 +147,7 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
       colorOptions: product.colorOptions || [],
       productType: product.productType,
       vendorId: product.vendorId,
-      isManagedBySoma: true,
+      isManagedByTrade Wyse: true,
       categories: product.categories || [],
       tags: product.tags || [],
       originalCatalogId: product.id,
@@ -241,7 +241,7 @@ export default function GlobalProductCatalogPage({ isDemo = false }: { isDemo?: 
             <div>
                 <CardTitle>Discovery Engine</CardTitle>
                 <CardDescription>
-                    Browse the SOMA Master Catalog for your next best-selling luxury items.
+                    Browse the Trade Wyse Master Catalog for your next best-selling luxury items.
                 </CardDescription>
             </div>
             <div className="relative w-full md:max-w-xs">

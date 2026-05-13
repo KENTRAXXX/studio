@@ -1,10 +1,10 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 
 /**
- * @fileOverview Global SOMA Root Loader.
+ * @fileOverview Global Trade Wyse Root Loader.
  * Triggers during major route transitions to provide a premium wait experience.
  */
 export default function RootLoading() {
@@ -37,7 +37,7 @@ export default function RootLoading() {
               ease: "easeInOut" 
             }}
           >
-            <SomaLogo className="h-10 w-10 text-primary" />
+            <TradeWyseLogo className="h-10 w-10 text-primary" />
           </motion.div>
         </div>
       </div>
@@ -48,7 +48,7 @@ export default function RootLoading() {
           animate={{ opacity: 1, y: 0 }}
           className="text-[10px] font-black uppercase tracking-[0.6em] text-primary"
         >
-          SOMA STRATEGIC ASSETS
+          Trade Wyse STRATEGIC ASSETS
         </motion.p>
         <motion.p
           animate={{ opacity: [0.3, 0.7, 0.3] }}

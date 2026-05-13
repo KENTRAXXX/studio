@@ -13,7 +13,7 @@ export function ProductViewTracker({ storeId, productId }: { storeId: string; pr
       return;
     }
 
-    const sessionKey = `soma-viewed-${productId}-${storeId}`;
+    const sessionKey = `Trade Wyse-viewed-${productId}-${storeId}`;
     const hasViewed = sessionStorage.getItem(sessionKey);
 
     if (!hasViewed) {

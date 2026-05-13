@@ -31,7 +31,7 @@ import {
     Clock,
     AlertTriangle
 } from 'lucide-react';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { WithdrawalModal } from '@/components/WithdrawalModal';
@@ -257,7 +257,7 @@ export default function BackstageFinancesPage() {
             />
             
             <div className="text-center mb-10">
-                <SomaLogo className="h-12 w-12 mx-auto text-slate-400" />
+                <TradeWyseLogo className="h-12 w-12 mx-auto text-slate-400" />
                 <h1 className="text-4xl font-bold font-headline mt-4 text-slate-300">Seller Finances</h1>
                 <p className="mt-2 text-lg text-slate-500">Track your earnings and request payouts.</p>
             </div>
@@ -297,7 +297,7 @@ export default function BackstageFinancesPage() {
                                                     <p className="text-xs font-bold uppercase tracking-wider text-primary">Fee Breakdown</p>
                                                     <div className="text-[11px] space-y-1">
                                                         <div className="flex justify-between gap-4">
-                                                            <span>SOMA Platform Fee</span>
+                                                            <span>Trade Wyse Platform Fee</span>
                                                             <span className="font-mono">{commissionRate * 100}%</span>
                                                         </div>
                                                         <div className="flex justify-between gap-4">

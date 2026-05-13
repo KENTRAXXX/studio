@@ -6,11 +6,11 @@ import React from 'react';
 
 export const ActionRequiredEmail = ({ name, feedback }: { name: string, feedback: string }) => (
   <div style={{ fontFamily: 'sans-serif', color: '#333', lineHeight: '1.6' }}>
-    <h1 style={{ color: '#DAA520', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>Action Required: SOMA Seller Application</h1>
+    <h1 style={{ color: '#DAA520', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>Action Required: Trade Wyse Seller Application</h1>
     
     <p>Hello {name},</p>
     
-    <p>Thank you for your application to join SOMA as an authorized brand.</p>
+    <p>Thank you for your application to join Trade Wyse as an authorized brand.</p>
     
     <p>Our concierge team has reviewed your submission. To maintain the high standards of authenticity within our marketplace, we require a small update to your documentation before we can fully activate your store:</p>
     
@@ -26,11 +26,11 @@ export const ActionRequiredEmail = ({ name, feedback }: { name: string, feedback
     </div>
 
     <h3 style={{ color: '#000' }}>Next Steps:</h3>
-    <p>Please log back into your SOMA Backstage portal to re-upload the requested information. Once received, we will prioritize your final approval.</p>
+    <p>Please log back into your Trade Wyse Backstage portal to re-upload the requested information. Once received, we will prioritize your final approval.</p>
     
     <div style={{ marginTop: '30px', textAlign: 'center' }}>
         <a 
-            href="https://somatoday.com/backstage" 
+            href="https://tradewysetoday.com/backstage" 
             style={{ 
                 backgroundColor: '#DAA520', 
                 color: '#fff', 
@@ -41,7 +41,7 @@ export const ActionRequiredEmail = ({ name, feedback }: { name: string, feedback
                 display: 'inline-block'
             }}
         >
-            Access SOMA Backstage
+            Access Trade Wyse Backstage
         </a>
     </div>
 
@@ -49,7 +49,7 @@ export const ActionRequiredEmail = ({ name, feedback }: { name: string, feedback
 
     <p style={{ marginTop: '40px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
         Warmly,<br/>
-        <strong>The SOMA Concierge Team</strong>
+        <strong>The Trade Wyse Concierge Team</strong>
     </p>
   </div>
 );

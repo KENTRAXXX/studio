@@ -62,7 +62,7 @@ async function sendViaResend(email: string, htmlContent: string, resendApiKey: s
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'SOMA Gatekeeper <noreply@somatoday.com>',
+      from: 'Trade Wyse Gatekeeper <noreply@tradewysetoday.com>',
       to: email,
       subject: 'Password Reset — Action Required',
       html: htmlContent,
@@ -88,7 +88,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, message: 'Email service is not configured.' }, { status: 500 });
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.somatoday.com';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.tradewysetoday.com';
 
   // ── STRATEGY 1: Admin SDK generates link → embed in Resend email ──────────
   try {
@@ -115,7 +115,7 @@ export async function POST(req: Request) {
       `,
       buttonText: 'Reset Password',
       buttonUrl: resetLink,
-      footerText: 'SOMA Security Division. Unauthorized access is monitored and reported.'
+      footerText: 'Trade Wyse Security Division. Unauthorized access is monitored and reported.'
     });
 
     await sendViaResend(email, htmlContent, resendApiKey);
@@ -165,7 +165,7 @@ export async function POST(req: Request) {
           If you did not initiate this request, your credentials remain unchanged.
         </p>
       `,
-      footerText: 'SOMA Security Division. Unauthorized access is monitored and reported.'
+      footerText: 'Trade Wyse Security Division. Unauthorized access is monitored and reported.'
     });
 
     await sendViaResend(email, htmlContent, resendApiKey);

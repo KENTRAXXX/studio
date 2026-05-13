@@ -33,7 +33,7 @@ export async function getAccessibilitySuggestions(input: AccessibilitySuggestion
         const { output } = await ai.generate({
             model: 'googleai/gemini-2.5-flash',
             output: { schema: AccessibilitySuggestionsOutputSchema },
-            prompt: `Review the following UI code for accessibility improvements and provide a concise list of suggestions to meet SOMA luxury standards. Focus on semantic HTML, ARIA attributes, and keyboard navigation integrity:\n\n${input.componentCode}`,
+            prompt: `Review the following UI code for accessibility improvements and provide a concise list of suggestions to meet Trade Wyse luxury standards. Focus on semantic HTML, ARIA attributes, and keyboard navigation integrity:\n\n${input.componentCode}`,
         });
 
         if (!output) {

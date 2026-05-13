@@ -81,8 +81,8 @@ export default function ProductDetailPage() {
     notFound();
   }
   
-  const somaFee = wholesalePrice * 0.03;
-  const floorPrice = wholesalePrice + somaFee;
+  const Trade WyseFee = wholesalePrice * 0.03;
+  const floorPrice = wholesalePrice + Trade WyseFee;
   const profit = currentPrice - wholesalePrice;
   const isPriceInvalid = currentPrice < floorPrice;
 
@@ -196,7 +196,7 @@ export default function ProductDetailPage() {
                       </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                      {product.isManagedBySoma && (
+                      {product.isManagedByTrade Wyse && (
                         <div className="flex justify-between items-center p-4 rounded-md bg-muted/50 border border-border/50">
                             <div className="flex items-center gap-2">
                                 <DollarSign className="h-5 w-5 text-muted-foreground"/>
@@ -241,10 +241,10 @@ export default function ProductDetailPage() {
                         </span>
                       </div>
 
-                       {product.isManagedBySoma && isPriceInvalid && (
+                       {product.isManagedByTrade Wyse && isPriceInvalid && (
                             <p className="text-[10px] text-destructive font-bold uppercase p-2 bg-destructive/10 rounded border border-destructive/20 text-center">Retail price too low (Floor: {formatCurrency(Math.round(floorPrice * 100))})</p>
                         )}
-                      <Button onClick={handlePriceSave} disabled={(product.isManagedBySoma && isPriceInvalid) || isSaving} className="w-full h-12 btn-gold-glow">
+                      <Button onClick={handlePriceSave} disabled={(product.isManagedByTrade Wyse && isPriceInvalid) || isSaving} className="w-full h-12 btn-gold-glow">
                           {isSaving ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Check className="mr-2 h-4 w-4" />}
                           Synchronize Pricing
                       </Button>
@@ -316,7 +316,7 @@ export default function ProductDetailPage() {
             </div>
             <div className="space-y-1 text-right">
                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Provenance</p>
-                <p className="text-sm font-medium">SOMA Authenticity Guaranteed</p>
+                <p className="text-sm font-medium">Trade Wyse Authenticity Guaranteed</p>
             </div>
           </div>
         </div>

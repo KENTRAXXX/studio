@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 import { useEffect, useState, useRef } from 'react';
 import { AnimatePresence, motion, useInView } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -153,7 +153,7 @@ function PlatformPulse() {
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.5, delay: 0.1 }}>
                     <Card className="h-full bg-card/50 border-primary/20 text-center">
                         <CardHeader>
-                            <Users className="h-10 w-10 mx-auto text-primary" aria-hidden="true" />
+                            <Users className="h-10 w-10 mx-auto text-primary" aria-hidden={true} />
                             <CardTitle className="font-headline text-2xl text-primary">Verified Sellers</CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -167,7 +167,7 @@ function PlatformPulse() {
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.5, delay: 0.2 }}>
                     <Card className={cn("h-full bg-card/50 border-primary/20 text-center transition-all duration-500", isGlowing && "card-gold-pulse")}>
                         <CardHeader>
-                            <DollarSign className="h-10 w-10 mx-auto text-primary" aria-hidden="true" />
+                            <DollarSign className="h-10 w-10 mx-auto text-primary" aria-hidden={true} />
                             <CardTitle className="font-headline text-2xl text-primary">Total Sales Processed</CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -186,7 +186,7 @@ function PlatformPulse() {
                  <motion.div initial={{ opacity: 0, y: 20 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.5, delay: 0.3 }}>
                     <Card className="h-full bg-card/50 border-primary/20 text-center">
                         <CardHeader>
-                            <ShieldCheck className="h-10 w-10 mx-auto text-primary" aria-hidden="true" />
+                            <ShieldCheck className="h-10 w-10 mx-auto text-primary" aria-hidden={true} />
                             <CardTitle className="font-headline text-2xl text-primary">Partner Brands</CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -207,19 +207,19 @@ const HowItWorks = () => {
     const isInView = useInView(ref, { once: true, amount: 0.5 });
     const steps = [
         {
-            icon: <Gem className="h-10 w-10 text-primary" aria-hidden="true" />,
-            title: "1. Select Your Plan",
-            description: "Choose a tier that fits your ambition, from a starting Merchant to a global Mogul."
+            icon: <Gem className="h-10 w-10 text-primary" aria-hidden={true} />,
+            title: "1. Choose Your Plan",
+            description: "Pick a plan that works for you, whether you are just starting or ready to grow."
         },
         {
-            icon: <Rocket className="h-10 w-10 text-primary" aria-hidden="true" />,
+            icon: <Rocket className="h-10 w-10 text-primary" aria-hidden={true} />,
             title: "2. Launch Your Store",
-            description: "Use our intuitive wizard to name your brand, upload your logo, and sync your first luxury products in minutes."
+            description: "Use our simple setup to name your store, upload a logo, and add your first products in minutes."
         },
         {
-            icon: <Globe className="h-10 w-10 text-primary" aria-hidden="true" />,
-            title: "3. Go Live Worldwide",
-            description: "Connect your custom domain and start selling to a global audience. SOMA handles the payments and logistics."
+            icon: <Globe className="h-10 w-10 text-primary" aria-hidden={true} />,
+            title: "3. Go Live",
+            description: "Connect your own domain name and start selling. Trade Wyse handles the payments and shipping details."
         }
     ];
 
@@ -233,7 +233,7 @@ const HowItWorks = () => {
                     animate={isInView ? { opacity: 1, y: 0 } : {}}
                     transition={{ duration: 0.5 }}
                 >
-                    Three Steps to Your Empire
+                    Three simple steps to launch your store
                 </motion.h2>
                 <motion.p 
                     className="mt-4 text-lg text-muted-foreground"
@@ -291,7 +291,7 @@ function SneakPeek() {
                         <div className="h-full w-full rounded-2xl overflow-hidden bg-black">
                              <Image 
                                 src="https://picsum.photos/seed/store-mockup/400/800" 
-                                alt="Visual representation of a live SOMA boutique on a mobile device"
+                                alt="Visual representation of a live Trade Wyse boutique on a mobile device"
                                 width={400}
                                 height={800}
                                 className="object-cover w-full h-full"
@@ -309,7 +309,7 @@ function SneakPeek() {
                         animate={isInView ? { opacity: 1, y: 0 } : {}}
                         transition={{ duration: 0.5, delay: 0.4 }}
                     >
-                        Everything You Need. Nothing You Don't.
+                        Everything you need to run a professional store.
                     </motion.h2>
                     <motion.ul 
                         className="space-y-4"
@@ -324,7 +324,7 @@ function SneakPeek() {
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={isInView ? { opacity: 1, x: 0 } : {}}
                             >
-                                <Check className="h-6 w-6 text-primary flex-shrink-0" aria-hidden="true" />
+                                <Check className="h-6 w-6 text-primary flex-shrink-0" aria-hidden={true} />
                                 <span className="text-muted-foreground">{feature}</span>
                             </motion.li>
                         ))}
@@ -336,11 +336,11 @@ function SneakPeek() {
                          className="flex flex-col sm:flex-row items-center gap-4"
                     >
                         <Button asChild size="lg" className="h-12 text-lg w-full sm:w-auto btn-gold-glow bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
-                            <Link href="/plan-selection">Claim Your Access</Link>
+                            <Link href="/plan-selection">Get Started</Link>
                         </Button>
                         <Button asChild size="lg" variant="outline" className="h-12 text-lg w-full sm:w-auto border-primary/50 text-primary hover:bg-primary/10">
-                            <Link href={`https://ambassador.${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com'}`}>
-                                <Award className="mr-2 h-5 w-5" /> Become an Ambassador
+                            <Link href={`https://ambassador.${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'tradewysetoday.com'}`}>
+                                <Award className="mr-2 h-5 w-5" /> Referral Program
                             </Link>
                         </Button>
                     </motion.div>
@@ -352,19 +352,19 @@ function SneakPeek() {
 
 
 export default function Home() {
-  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'tradewysetoday.com';
   const ambassadorUrl = `https://ambassador.${rootDomain}`;
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen w-full bg-black gold-mesh-gradient overflow-x-hidden">
       <header className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center z-20">
         <Link href="/" className="flex items-center gap-2 group">
-          <SomaLogo aria-hidden={true} className="transition-transform group-hover:scale-110" />
-          <span className="font-headline font-bold text-xl text-primary tracking-tighter transition-opacity group-hover:opacity-80">SomaDS</span>
+          <TradeWyseLogo aria-hidden={true} className="transition-transform group-hover:scale-110" />
+          <span className="font-headline font-bold text-xl text-primary tracking-tighter transition-opacity group-hover:opacity-80">Trade Wyse</span>
         </Link>
         <div className="flex items-center gap-4">
             <Button variant="ghost" asChild className="font-headline text-primary hover:text-primary/80 hover:bg-primary/5">
-                <Link href={ambassadorUrl}>Become an Ambassador</Link>
+                <Link href={ambassadorUrl}>Referral Program</Link>
             </Button>
             <Button variant="ghost" asChild className="font-headline text-primary hover:text-primary/80 hover:bg-primary/5">
                 <Link href="/login">Sign In</Link>
@@ -377,11 +377,11 @@ export default function Home() {
             <LiveCounter />
 
             <h1 className="mt-6 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold font-headline max-w-4xl text-transparent bg-clip-text bg-gradient-to-br from-white via-neutral-200 to-primary">
-            Launch Your Luxury E-Commerce Empire, Instantly.
+            Launch Your Professional Online Store, Instantly.
             </h1>
 
             <p className="mt-6 max-w-2xl text-base md:text-lg text-muted-foreground">
-            SOMA provides the tools, the technology, and the top-tier products to launch a sophisticated online brand. No code, no inventory, no limits.
+            Trade Wyse gives you the tools and the products to launch a professional online brand. No coding, no inventory, no hassle.
             </p>
 
             <div className="mt-10 flex flex-col sm:flex-row items-center gap-4">
@@ -392,7 +392,7 @@ export default function Home() {
                 <Link href="/store/demo">View Store Demo</Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="h-12 text-lg w-full sm:w-auto border-primary/50 text-primary hover:bg-primary/10 hover:text-primary">
-                <Link href={ambassadorUrl}>Become an Ambassador</Link>
+                <Link href={ambassadorUrl}>Referral Program</Link>
             </Button>
             </div>
         </section>
@@ -406,11 +406,11 @@ export default function Home() {
             <div className="container mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
                 <div className="flex flex-col items-center md:items-start gap-4">
                     <Link href="/" className="flex items-center gap-2 group">
-                        <SomaLogo aria-hidden={true} className="h-8 w-8 transition-transform group-hover:scale-110" />
-                        <span className="font-headline font-bold text-2xl text-primary tracking-tighter transition-opacity group-hover:opacity-80">SomaDS</span>
+                        <TradeWyseLogo aria-hidden={true} className="h-8 w-8 transition-transform group-hover:scale-110" />
+                        <span className="font-headline font-bold text-2xl text-primary tracking-tighter transition-opacity group-hover:opacity-80">Trade Wyse</span>
                     </Link>
                     <p className="text-neutral-500 text-sm max-w-xs text-center md:text-left">
-                        The ultimate high-fidelity e-commerce architecture for luxury brands.
+                        The simple way to create a premium online store.
                     </p>
                 </div>
 
@@ -420,7 +420,7 @@ export default function Home() {
                         <Link href="/legal/privacy" className="text-neutral-400 hover:text-primary transition-colors">Privacy Protocol</Link>
                     </div>
                     <div className="text-neutral-600 text-[10px] uppercase tracking-[0.2em]">
-                        © 2026 SomaDS Strategic Assets Group. All Protocols Reserved.
+                        © 2026 Trade Wyse. All rights reserved.
                     </div>
                 </div>
             </div>

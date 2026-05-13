@@ -26,7 +26,7 @@ import {
     Layers,
     ArrowUpRight
 } from 'lucide-react';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 import { formatCurrency } from '@/utils/format';
 import { cn } from '@/lib/utils';
 
@@ -135,7 +135,7 @@ export default function SupplierAnalyticsPage() {
     return (
         <div className="space-y-8 p-4 md:p-6">
             <div className="text-center mb-10">
-                <SomaLogo className="h-12 w-12 mx-auto text-slate-400" />
+                <TradeWyseLogo className="h-12 w-12 mx-auto text-slate-400" />
                 <h1 className="text-4xl font-bold font-headline mt-4 text-slate-300 tracking-tight">Supplier Insights</h1>
                 <p className="mt-2 text-lg text-slate-500">Analyze your brand's global reach and Mogul adoption.</p>
             </div>

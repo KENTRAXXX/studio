@@ -52,7 +52,7 @@ const ReferralAgreement = () => (
         </div>
         <div className="space-y-1">
             <h4 className="font-bold text-slate-200 uppercase tracking-tighter">2. Self-Referral Policy</h4>
-            <p>Creating multiple accounts to refer yourself is strictly prohibited. SOMA’s Identity Provisioning system flags duplicate IP addresses and payment methods; discovery results in immediate account suspension and forfeiture of all pending rewards.</p>
+            <p>Creating multiple accounts to refer yourself is strictly prohibited. Trade Wyse’s Identity Provisioning system flags duplicate IP addresses and payment methods; discovery results in immediate account suspension and forfeiture of all pending rewards.</p>
         </div>
         <div className="space-y-1">
             <h4 className="font-bold text-slate-200 uppercase tracking-tighter">3. Payout Maturity (14-Day Hold)</h4>
@@ -60,7 +60,7 @@ const ReferralAgreement = () => (
         </div>
         <div className="space-y-1">
             <h4 className="font-bold text-slate-200 uppercase tracking-tighter">4. Anti-Spam & Brand Standards</h4>
-            <p>Referrers must not use "SOMA" in paid search advertising (e.g., Google Ads) or engage in bulk automated spamming. High-end, relationship-based growth is the SOMA standard. Violation of brand standards may result in status revocation.</p>
+            <p>Referrers must not use "Trade Wyse" in paid search advertising (e.g., Google Ads) or engage in bulk automated spamming. High-end, relationship-based growth is the Trade Wyse standard. Violation of brand standards may result in status revocation.</p>
         </div>
     </div>
 );
@@ -329,7 +329,7 @@ export default function ReferralsPage() {
                                 </ScrollArea>
                             </div>
 
-                            <p className="text-[9px] text-muted-foreground italic text-center">By sharing your link, you agree to the SOMA Strategic Assets Group Referral Standards.</p>
+                            <p className="text-[9px] text-muted-foreground italic text-center">By sharing your link, you agree to the Trade Wyse Strategic Assets Group Referral Standards.</p>
                         </CardContent>
                     </Card>
                 </div>

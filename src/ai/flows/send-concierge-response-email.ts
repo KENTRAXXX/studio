@@ -1,7 +1,7 @@
 'use server';
 
 /**
- * @fileOverview Utility for sending a response email to a brand partner from SOMA Admin.
+ * @fileOverview Utility for sending a response email to a brand partner from Trade Wyse Admin.
  * Decoupled from Genkit to support Edge Runtime.
  */
 
@@ -30,7 +30,7 @@ export async function sendConciergeResponseEmail(input: SendConciergeResponseEma
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          from: `"SOMA Executive Support" <no-reply@somatoday.com>`,
+          from: `"Trade Wyse Executive Support" <no-reply@tradewysetoday.com>`,
           to: to,
           subject: `RE: ${subject} [Ref: ${ticketId.slice(0, 8)}]`,
           html: `
@@ -45,7 +45,7 @@ export async function sendConciergeResponseEmail(input: SendConciergeResponseEma
 
               <hr style="border: 0; border-top: 1px solid #eee; margin: 32px 0;">
               <p style="font-size: 12px; color: #999; text-align: center;">
-                This is a secure communication from the SOMA Strategic Assets Group. 
+                This is a secure communication from the Trade Wyse Strategic Assets Group. 
                 Please log into your dashboard to view the full conversation history.
               </p>
             </div>

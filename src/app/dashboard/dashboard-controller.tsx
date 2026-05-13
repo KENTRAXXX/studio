@@ -76,7 +76,7 @@ const PrivateInventoryCard = () => {
         if (!firestore || !user) return null;
         return query(
         collection(firestore, 'stores', user.uid, 'products'),
-        where('isManagedBySoma', '==', false)
+        where('isManagedByTrade Wyse', '==', false)
         );
     }, [firestore, user]);
 
@@ -118,7 +118,7 @@ const DropshipCatalogCard = () => {
             <CardContent>
                 <CardTitle className="text-2xl font-headline">Global Catalog</CardTitle>
                 <p className="text-muted-foreground mt-4 mb-6 text-sm leading-relaxed">
-                    Clone thousands of premium assets from the SOMA Luxury Catalog.
+                    Clone thousands of premium assets from the Trade Wyse Luxury Catalog.
                 </p>
                 <Button asChild size="lg" className="w-full btn-gold-glow bg-primary font-bold">
                     <Link href="/dashboard/product-catalog">Browse Collection <ArrowRight className="ml-2 h-4 w-4" /></Link>
@@ -373,7 +373,7 @@ const SupplierUploadView = ({ planTier }: { planTier: string }) => {
                         </div>
                         <h3 className="text-2xl font-bold font-headline text-primary">Master Catalog Clear</h3>
                         <p className="text-muted-foreground max-md mx-auto leading-relaxed">
-                            Initialize your global presence by submitting your first masterpiece to the SOMA ecosystem.
+                            Initialize your global presence by submitting your first masterpiece to the Trade Wyse ecosystem.
                         </p>
                         <Button asChild size="lg" className="btn-gold-glow mt-4 font-bold">
                             <Link href="/backstage/add-product">Submit My First Asset</Link>
@@ -555,7 +555,7 @@ export default function DashboardController({ planTier }: { planTier?: string, i
             </CardHeader>
             <CardContent>
                 <p className="text-muted-foreground mt-2 max-w-sm mx-auto leading-relaxed">
-                    Your current plan configuration '{planTier}' is not provisioned for this hub. Contact SOMA Concierge for reassignment.
+                    Your current plan configuration '{planTier}' is not provisioned for this hub. Contact Trade Wyse Concierge for reassignment.
                 </p>
             </CardContent>
         </Card>

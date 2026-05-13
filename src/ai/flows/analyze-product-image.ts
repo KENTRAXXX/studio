@@ -101,7 +101,7 @@ const AnalyzeProductImageOutputSchema = z.object({
   description: z.string().describe('An evocative, luxury-standard product description.'),
   suggestedCategories: z.array(z.string()).describe('The most relevant categories.'),
   suggestedTags: z.array(z.string()).describe('A list of SEO tags.'),
-  enterpriseDeepSchemes: z.string().optional().describe('Strategic market positioning advice.'),
+  marketAdvice: z.string().optional().describe('Simple advice on how this product compares to others.'),
 });
 export type AnalyzeProductImageOutput = z.infer<typeof AnalyzeProductImageOutputSchema>;
 
@@ -112,8 +112,8 @@ const generateFallbackMetadata = (): AnalyzeProductImageOutput => ({
         colors: ["Neutral"],
         technicalSpecs: ["Luxury Craftsmanship"]
     },
-    suggestedName: "New Luxury Discovery",
-    description: "An exquisite addition to your collection, defined by its timeless silhouette and premium craftsmanship. This piece embodies the SOMA standard of excellence and heritage design.",
+    suggestedName: "New Product",
+    description: "A professional and attractive addition to your store. This product is well-made and ready for your customers to enjoy.",
     suggestedCategories: ["Accessories"],
     suggestedTags: ["Luxury", "Curated", "New Arrival"],
 });
@@ -141,19 +141,19 @@ export async function analyzeProductImage(input: AnalyzeProductImageInput): Prom
             tools: [getMarketInsights],
             output: { schema: AnalyzeProductImageOutputSchema },
             prompt: [
-                { text: `You are an elite luxury commerce curator. 
+                { text: `You are a helpful assistant for online store owners.
 
-MANDATORY 5-STEP CURATION PROTOCOL:
-1. PERFORM A VISUAL-FIRST ANALYSIS: Deeply analyze the provided image to identify specific materials (silk, titanium, mahogany, etc.), textures, and manufacturing signatures.
-2. MARKET RESEARCH: Use the 'getMarketInsights' tool to search for this specific item or identical premium models across the global web index.
-3. ENRICHMENT: Synthesize visual data with research findings to identify technical specifications (movement type, fabric weight, heritage origin) that the photo alone cannot confirm.
-4. RESTRICT BRANDING: Ensure the 'suggestedName' and 'description' are brand-agnostic. DO NOT mention 'SOMA' or any specific marketplace branding.
-5. EXECUTIVE MARKETING COPY: Compose a narrative 'description' that targets high-net-worth individuals. Use evocative, precise language that justifies a premium price point.
+YOUR GOAL:
+1. ANALYZE THE IMAGE: Look closely at the image to identify what the product is made of, its texture, and how it was made.
+2. MARKET RESEARCH: Use the 'getMarketInsights' tool to search for this specific item or similar ones online.
+3. ADD DETAILS: Combine what you see with what you found online to identify specific details (like weight, material, or origin) that aren't obvious from the photo.
+4. BRANDING: Make sure the 'suggestedName' and 'description' are independent. DO NOT mention 'Trade Wyse' or any specific marketplace branding.
+5. WRITE A PROFESSIONAL DESCRIPTION: Write an attractive and clear description that helps potential buyers understand the value and quality of the product. Use everyday language that is easy to understand.
 
 NEGATIVE CONSTRAINT:
-NEVER assume the product is a SOMA brand item during the analysis.
+NEVER assume the product is a Trade Wyse brand item during the analysis.
 
-${isEnterprise ? '6. DEEP MARKET SCHEMING (ENTERPRISE UNLOCKED): Provide strategic advice on where this product sits in the current luxury competitive landscape.' : ''}
+${isEnterprise ? '6. MARKET ADVICE: Provide simple advice on where this product sits compared to others in the market.' : ''}
 
 Available categories for selection: ${AVAILABLE_CATEGORIES.join(', ')}` },
                 { media: { url: input.imageUrl } }

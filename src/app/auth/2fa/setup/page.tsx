@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Mail, Smartphone, ArrowRight, ShieldCheck } from 'lucide-react';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 import Link from 'next/link';
 
 export default function TwoFactorSetupPage() {
@@ -107,7 +107,7 @@ export default function TwoFactorSetupPage() {
       
       if (!data.success) throw new Error(data.message);
       
-      toast({ title: 'Code Dispatched', description: 'Check your email inbox for the 6-digit SOMA code.' });
+      toast({ title: 'Code Dispatched', description: 'Check your email inbox for the 6-digit Trade Wyse code.' });
     } catch (error) {
       toast({ variant: 'destructive', title: 'Dispatch Error', description: 'Failed to transmit verification email.' });
       setSetupMode('selection');
@@ -191,8 +191,8 @@ export default function TwoFactorSetupPage() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-black gold-mesh-gradient p-4 sm:p-6">
       <div className="text-center mb-10">
         <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <SomaLogo className="h-12 w-12" />
-            <span className="font-headline text-3xl font-bold text-primary tracking-tighter">SomaDS</span>
+            <TradeWyseLogo className="h-12 w-12" />
+            <span className="font-headline text-3xl font-bold text-primary tracking-tighter">Trade Wyse</span>
         </Link>
       </div>
 
@@ -202,7 +202,7 @@ export default function TwoFactorSetupPage() {
             <ShieldCheck className="w-7 h-7" /> Account Security
           </CardTitle>
           <CardDescription>
-            SOMA mandates Two-Factor Authentication (2FA) for all executives. Select your trusted security protocol.
+            Trade Wyse mandates Two-Factor Authentication (2FA) for all executives. Select your trusted security protocol.
           </CardDescription>
         </CardHeader>
 

@@ -1,6 +1,6 @@
 /**
  * Formats a currency amount into a localized USD string.
- * This utility ensures consistent financial presentation across the SOMA platform.
+ * This utility ensures consistent financial presentation across the Trade Wyse platform.
  * 
  * @param amountInCents The amount in cents (e.g., 100 for $1.00).
  * @returns A formatted string like "$1,234.56".

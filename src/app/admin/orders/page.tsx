@@ -111,7 +111,7 @@ export default function AdminOrdersPage() {
         <CardHeader>
           <CardTitle>Live Order Stream</CardTitle>
           <CardDescription>
-            A real-time view of all orders placed across all SOMA storefronts.
+            A real-time view of all orders placed across all Trade Wyse storefronts.
           </CardDescription>
         </CardHeader>
         <CardContent>

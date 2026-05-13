@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, MailOpen, ShieldAlert } from 'lucide-react';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 import Link from 'next/link';
 
 export default function VerifyEmailWaitPage() {
@@ -76,8 +76,8 @@ export default function VerifyEmailWaitPage() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-black gold-mesh-gradient p-4 sm:p-6">
       <div className="text-center mb-10">
         <Link href="/" className="inline-flex items-center gap-2 mb-6 pointer-events-none">
-            <SomaLogo className="h-12 w-12" />
-            <span className="font-headline text-3xl font-bold text-primary tracking-tighter">SomaDS</span>
+            <TradeWyseLogo className="h-12 w-12" />
+            <span className="font-headline text-3xl font-bold text-primary tracking-tighter">Trade Wyse</span>
         </Link>
       </div>
 

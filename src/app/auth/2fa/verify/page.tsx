@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ShieldAlert } from 'lucide-react';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 import Link from 'next/link';
 
 export default function TwoFactorVerifyPage() {
@@ -76,7 +76,7 @@ export default function TwoFactorVerifyPage() {
         const resData = await response.json();
         if (!resData.success) throw new Error(resData.message);
         
-        toast({ title: 'Code Dispatched', description: 'A fresh 6-digit SOMA authorization code was sent to your email.' });
+        toast({ title: 'Code Dispatched', description: 'A fresh 6-digit Trade Wyse authorization code was sent to your email.' });
       } catch (err) {
         toast({ variant: 'destructive', title: 'Dispatch Error', description: 'Failed to transmit authorization email.' });
       }
@@ -104,7 +104,7 @@ export default function TwoFactorVerifyPage() {
             if (data.success) {
                 toast({ title: 'Clearance Granted', description: 'Authentication successful. Entering portal.' });
                 // We must mark the current login session as fully verified!
-                // SOMA's dashboard expects the user to just have access if they are logged into Firebase.
+                // Trade Wyse's dashboard expects the user to just have access if they are logged into Firebase.
                 // By updating a session timestamp, we easily know they passed 2FA for this login.
                 const userRef = doc(firestore!, 'users', auth.currentUser.uid);
                 await updateDoc(userRef, { lastLogin2faVerifiedAt: new Date().toISOString() });
@@ -155,8 +155,8 @@ export default function TwoFactorVerifyPage() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-black gold-mesh-gradient p-4 sm:p-6">
       <div className="text-center mb-10">
         <Link href="/" className="inline-flex items-center gap-2 mb-6 pointer-events-none">
-            <SomaLogo className="h-12 w-12" />
-            <span className="font-headline text-3xl font-bold text-primary tracking-tighter">SomaDS</span>
+            <TradeWyseLogo className="h-12 w-12" />
+            <span className="font-headline text-3xl font-bold text-primary tracking-tighter">Trade Wyse</span>
         </Link>
       </div>
 

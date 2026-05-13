@@ -13,7 +13,7 @@ interface ImageUploaderProps {
 }
 
 /**
- * @fileOverview A high-fidelity image upload component for the SOMA ecosystem.
+ * @fileOverview A high-fidelity image upload component for the Trade Wyse ecosystem.
  * Features real-time XHR progress tracking and a premium luxury aesthetic.
  */
 export function ImageUploader({ onSuccess, label, className, aspectRatio = "aspect-square" }: ImageUploaderProps) {
@@ -23,7 +23,7 @@ export function ImageUploader({ onSuccess, label, className, aspectRatio = "aspe
 
   const handleUpload = (file: File) => {
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'SomaDS';
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'TradeWyse';
 
     if (!cloudName) {
       console.error("Cloudinary Cloud Name is missing from environment variables.");

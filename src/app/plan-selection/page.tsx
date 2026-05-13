@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Check, Building, Gem, Rocket, ShoppingBag, ShieldCheck, Loader2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
-import SomaLogo from "@/components/logo";
+import TradeWyseLogo from "@/components/logo";
 import { Badge } from "@/components/ui/badge";
 import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
@@ -88,7 +88,7 @@ function PlanSelectionContent() {
     return (
         <div className="flex flex-col items-center min-h-screen bg-background p-4 sm:p-6">
             <div className="text-center mb-10">
-                <SomaLogo className="h-12 w-12 mx-auto"/>
+                <TradeWyseLogo className="h-12 w-12 mx-auto"/>
                 <h1 className="text-4xl font-bold font-headline mt-4 text-primary">Choose Your Empire's Foundation</h1>
                 <p className="mt-2 text-lg text-muted-foreground">Select a plan that scales with your ambition.</p>
                 {isReferralValid && (

@@ -63,7 +63,7 @@ export function AddressSearch({ onSelect, placeholder, className, defaultValue }
         {
           headers: {
             'Accept-Language': 'en',
-            'User-Agent': 'Soma-Ecosystem-Builder',
+            'User-Agent': 'Trade Wyse-Ecosystem-Builder',
           },
         }
       );

@@ -30,11 +30,11 @@ export const FundsAvailableEmail = ({
       <p style={{ margin: 0, fontSize: '36px', fontWeight: 'bold', color: '#000' }}>{amount}</p>
     </div>
 
-    <p>These funds have been moved to your active balance. You can request a payout directly to your bank account via the SOMA Wallet dashboard.</p>
+    <p>These funds have been moved to your active balance. You can request a payout directly to your bank account via the Trade Wyse Wallet dashboard.</p>
     
     <div style={{ marginTop: '30px', textAlign: 'center' }}>
         <a 
-            href="https://somatoday.com/dashboard/wallet" 
+            href="https://tradewysetoday.com/dashboard/wallet" 
             style={{ 
                 backgroundColor: '#000', 
                 color: '#fff', 
@@ -51,7 +51,7 @@ export const FundsAvailableEmail = ({
 
     <p style={{ marginTop: '40px', borderTop: '1px solid #eee', paddingTop: '20px', fontSize: '14px', color: '#999' }}>
         Thank you for your continued strategic partnership.<br/>
-        <strong>SOMA Strategic Assets Group</strong>
+        <strong>Trade Wyse Strategic Assets Group</strong>
     </p>
   </div>
 );

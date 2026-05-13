@@ -495,7 +495,7 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-primary">{formatCurrency(Math.round(stats.netProfit * 100))}</div>
-             <p className="text-[10px] text-muted-foreground uppercase mt-1">After SOMA fees</p>
+             <p className="text-[10px] text-muted-foreground uppercase mt-1">After Trade Wyse fees</p>
           </CardContent>
         </Card>
          <Card className="border-primary/20 bg-card/50">

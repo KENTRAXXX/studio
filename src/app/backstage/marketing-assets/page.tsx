@@ -21,7 +21,7 @@ import {
     AlertCircle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import SomaLogo from '@/components/logo';
+import TradeWyseLogo from '@/components/logo';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { uploadToCloudinary } from '@/lib/utils/upload-image';
@@ -148,7 +148,7 @@ export default function MarketingAssetsPage() {
     return (
         <div className="space-y-8 max-w-7xl mx-auto">
             <div className="text-center mb-10">
-                <SomaLogo className="h-12 w-12 mx-auto text-primary" />
+                <TradeWyseLogo className="h-12 w-12 mx-auto text-primary" />
                 <h1 className="text-4xl font-bold font-headline mt-4 text-primary tracking-tight">Brand Assets Portal</h1>
                 <p className="mt-2 text-lg text-muted-foreground">Distribute premium lifestyle content to your global Mogul network.</p>
             </div>

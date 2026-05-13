@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     
     // Generate secure secret
     const secret = speakeasy.generateSecret({
-      name: `SOMA Gateway (${email || 'Executive'})`,
+      name: `Trade Wyse Gateway (${email || 'Executive'})`,
       length: 20
     });
 

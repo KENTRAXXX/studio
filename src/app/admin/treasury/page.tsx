@@ -226,7 +226,7 @@ export default function TreasuryPage() {
               ...order,
               storeId,
               mogulName: mogul?.displayName || mogul?.email || 'System Store',
-              somaFee: feeRecord?.amount || 0
+              Trade WyseFee: feeRecord?.amount || 0
           };
       });
   }, [orders, usersMap, revenueLogs]);
@@ -446,7 +446,7 @@ export default function TreasuryPage() {
 
         <Card className="border-primary bg-primary/5 relative overflow-hidden group min-h-[180px] flex flex-col justify-center shadow-gold-glow">
           <CardHeader className="pb-2">
-            <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">SOMA Net Profit</CardTitle>
+            <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Trade Wyse Net Profit</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold font-mono text-primary tracking-tighter">
@@ -620,7 +620,7 @@ export default function TreasuryPage() {
                                     </div>
                                     <DialogTitle className="text-2xl font-headline text-center text-primary">Authorize Executive Transfer</DialogTitle>
                                     <DialogDescription className="text-center pt-2 text-base text-slate-400">
-                                        Confirm extraction of <span className="text-white font-bold font-mono">{formatCurrency(Math.round(transferAmountNum * 100))}</span> to the SOMA corporate account.
+                                        Confirm extraction of <span className="text-white font-bold font-mono">{formatCurrency(Math.round(transferAmountNum * 100))}</span> to the Trade Wyse corporate account.
                                     </DialogDescription>
                                 </DialogHeader>
                                 <div className="py-6 border-y border-primary/10 my-4 space-y-4">
@@ -711,7 +711,7 @@ export default function TreasuryPage() {
                           <TableHead className="px-8">Order ID</TableHead>
                           <TableHead>Mogul Name</TableHead>
                           <TableHead className="text-right">Total Amount</TableHead>
-                          <TableHead className="text-right">SOMA Fee</TableHead>
+                          <TableHead className="text-right">Trade Wyse Fee</TableHead>
                           <TableHead className="text-center">Status</TableHead>
                           <TableHead className="text-right px-8">Actions</TableHead>
                       </TableRow>
@@ -735,7 +735,7 @@ export default function TreasuryPage() {
                                       {formatCurrency(Math.round(order.total * 100))}
                                   </TableCell>
                                   <TableCell className="text-right font-bold text-primary">
-                                      {formatCurrency(Math.round(order.somaFee * 100))}
+                                      {formatCurrency(Math.round(order.Trade WyseFee * 100))}
                                   </TableCell>
                                   <TableCell className="text-center">
                                       <Badge variant="outline" className="border-green-500/30 text-green-500 bg-green-500/5 text-[10px] font-black">
@@ -779,7 +779,7 @@ export default function TreasuryPage() {
                                                                   </div>
                                                               </div>
                                                               <span className="font-mono text-sm font-bold text-slate-300">
-                                                                  {formatCurrency(Math.round((order.total - order.somaFee - (order.total * 0.4)) * 100))}
+                                                                  {formatCurrency(Math.round((order.total - order.Trade WyseFee - (order.total * 0.4)) * 100))}
                                                               </span>
                                                           </div>
 
@@ -799,19 +799,19 @@ export default function TreasuryPage() {
                                                               </span>
                                                           </div>
 
-                                                          {/* Fee to SOMA */}
+                                                          {/* Fee to Trade Wyse */}
                                                           <div className="flex items-center justify-between">
                                                               <div className="flex items-center gap-3">
                                                                   <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                                                                       <Percent className="h-4 w-4" />
                                                                   </div>
                                                                   <div>
-                                                                      <p className="text-xs font-bold text-slate-200">Fee to SOMA</p>
+                                                                      <p className="text-xs font-bold text-slate-200">Fee to Trade Wyse</p>
                                                                       <p className="text-[9px] text-muted-foreground">Platform Infrastructure Cut</p>
                                                                   </div>
                                                               </div>
                                                               <span className="font-mono text-sm font-bold text-primary">
-                                                                  {formatCurrency(Math.round(order.somaFee * 100))}
+                                                                  {formatCurrency(Math.round(order.Trade WyseFee * 100))}
                                                               </span>
                                                           </div>
                                                       </div>
@@ -819,7 +819,7 @@ export default function TreasuryPage() {
 
                                                   <div className="p-4 rounded-lg bg-slate-900/50 border border-white/5 flex items-center gap-3 text-xs italic text-slate-500">
                                                       <Info className="h-4 w-4 text-primary shrink-0" />
-                                                      <p>Calculation based on real-time ledger records from the SOMA financial core.</p>
+                                                      <p>Calculation based on real-time ledger records from the Trade Wyse financial core.</p>
                                                   </div>
                                               </div>
 

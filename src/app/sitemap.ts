@@ -11,7 +11,7 @@ const getDb = () => {
 };
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'tradewysetoday.com';
   const baseUrl = `https://${rootDomain}`;
 
   // 1. Core Platform Routes

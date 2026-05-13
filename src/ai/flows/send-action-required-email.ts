@@ -23,23 +23,23 @@ export async function sendActionRequiredEmail(input: SendActionRequiredEmailInpu
     try {
       const htmlContent = `
         <div style="font-family: sans-serif; color: #333; line-height: 1.6;">
-          <h1 style="color: #D4AF37; border-bottom: 1px solid #eee; padding-bottom: 10px;">Action Required: SOMA Seller Application</h1>
+          <h1 style="color: #D4AF37; border-bottom: 1px solid #eee; padding-bottom: 10px;">Action Required: Trade Wyse Seller Application</h1>
           <p>Hello ${name},</p>
-          <p>Thank you for your application to join SOMA as an authorized brand.</p>
+          <p>Thank you for your application to join Trade Wyse as an authorized brand.</p>
           <p>Our concierge team has reviewed your submission. To maintain the high standards of authenticity within our marketplace, we require a small update to your documentation before we can fully activate your store:</p>
           <div style="padding: 20px; background-color: #f9f9f9; border-radius: 8px; border-left: 4px solid #D4AF37; margin: 25px 0;">
             <strong style="display: block; margin-bottom: 10px; color: #000;">Reason for hold:</strong>
             <p style="margin: 0; font-style: italic; font-size: 16px;">"${feedback}"</p>
           </div>
           <h3 style="color: #000;">Next Steps:</h3>
-          <p>Please log back into your SOMA Backstage portal to re-upload the requested information. Once received, we will prioritize your final approval.</p>
+          <p>Please log back into your Trade Wyse Backstage portal to re-upload the requested information. Once received, we will prioritize your final approval.</p>
           <div style="margin-top: 30px; text-align: center;">
-              <a href="https://somatoday.com/backstage" style="background-color: #D4AF37; color: #fff; padding: 14px 28px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Access SOMA Backstage</a>
+              <a href="https://tradewysetoday.com/backstage" style="background-color: #D4AF37; color: #fff; padding: 14px 28px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Access Trade Wyse Backstage</a>
           </div>
           <p>We look forward to seeing your collection live on the platform.</p>
           <p style="margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
               Warmly,<br/>
-              <strong>The SOMA Concierge Team</strong>
+              <strong>The Trade Wyse Concierge Team</strong>
           </p>
         </div>
       `;
@@ -51,9 +51,9 @@ export async function sendActionRequiredEmail(input: SendActionRequiredEmailInpu
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          from: `"SOMA Concierge" <no-reply@somatoday.com>`,
+          from: `"Trade Wyse Concierge" <no-reply@tradewysetoday.com>`,
           to: to,
-          subject: 'Action Required: Finalizing your SOMA Seller Hub',
+          subject: 'Action Required: Finalizing your Trade Wyse Seller Hub',
           html: htmlContent,
         })
       });

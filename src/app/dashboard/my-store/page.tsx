@@ -59,7 +59,7 @@ const ChoosePathStep = ({ onSelectPath, planTier }: { onSelectPath: (path: 'MERC
                          <CardHeader className="items-center">
                             <Boxes className="h-12 w-12 text-primary mb-4" />
                             <CardTitle>I want to dropship.</CardTitle>
-                            <CardDescription>Sell products from the SOMA Luxury Catalog without holding inventory.</CardDescription>
+                            <CardDescription>Sell products from the Trade Wyse Luxury Catalog without holding inventory.</CardDescription>
                         </CardHeader>
                     </Card>
                 )}
@@ -69,7 +69,7 @@ const ChoosePathStep = ({ onSelectPath, planTier }: { onSelectPath: (path: 'MERC
 };
 
 const NameStep = ({ storeName, setStoreName, onNext }: { storeName: string, setStoreName: (name: string) => void, onNext: () => void }) => {
-    const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'somatoday.com';
+    const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'tradewysetoday.com';
     const slug = storeName.toLowerCase().replace(/[^a-z0-9]/g, '');
 
     return (
@@ -228,7 +228,7 @@ const CollectionStep = ({ onBack, onLaunch, selectedProducts, setSelectedProduct
         >
              <div>
                 <h2 className="text-2xl font-bold font-headline text-primary">Curate Your Collection</h2>
-                <p className="text-muted-foreground">Select at least 3 signature pieces from the SOMA Global Registry to feature on your homepage.</p>
+                <p className="text-muted-foreground">Select at least 3 signature pieces from the Trade Wyse Global Registry to feature on your homepage.</p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {products && products.length > 0 ? products.map((product) => (
@@ -297,7 +297,7 @@ const ProductUploadStep = ({ onBack, onLaunch }: { onBack: () => void, onLaunch:
             stock: parseInt(stock, 10),
             description,
             imageUrl,
-            isManagedBySoma: false,
+            isManagedByTrade Wyse: false,
             productType: 'INTERNAL',
         };
         onLaunch(firstProduct);
@@ -444,7 +444,7 @@ export default function MyStorePage() {
     setIsLaunching(true);
     // Set sticky flag to bridge the gap between creation and data synchronization
     if (typeof window !== 'undefined') {
-        sessionStorage.setItem('soma_just_launched', 'true');
+        sessionStorage.setItem('Trade Wyse_just_launched', 'true');
     }
 
     try {
@@ -478,7 +478,7 @@ export default function MyStorePage() {
             },
             currency: 'USD',
             createdAt: new Date().toISOString(),
-            storeName: storeName || "My SOMA Store",
+            storeName: storeName || "My Trade Wyse Store",
             logoUrl: logoUrl,
             faviconUrl: faviconUrl,
             heroImageUrl: '',
@@ -517,7 +517,7 @@ export default function MyStorePage() {
                         imageUrl: masterData.imageId,
                         productType: masterData.productType || 'INTERNAL',
                         vendorId: masterData.vendorId || 'admin',
-                        isManagedBySoma: true,
+                        isManagedByTrade Wyse: true,
                     });
                 }
             }
@@ -534,7 +534,7 @@ export default function MyStorePage() {
     } catch (error: any) {
         setIsLaunching(false);
         if (typeof window !== 'undefined') {
-            sessionStorage.removeItem('soma_just_launched');
+            sessionStorage.removeItem('Trade Wyse_just_launched');
         }
         toast({
             variant: "destructive",
@@ -548,7 +548,7 @@ export default function MyStorePage() {
       setIsLaunching(false);
       toast({
           title: 'Empire Activated',
-          description: 'Your storefront has been successfully deployed to the SOMA network.',
+          description: 'Your storefront has been successfully deployed to the Trade Wyse network.',
       });
       router.push('/dashboard');
   }, [router, toast]);
@@ -593,7 +593,7 @@ export default function MyStorePage() {
       </AnimatePresence>
 
       <div className="mb-12">
-        <h1 className="text-3xl font-bold font-headline text-primary">SOMA Launch Wizard</h1>
+        <h1 className="text-3xl font-bold font-headline text-primary">Trade Wyse Launch Wizard</h1>
         <p className="text-muted-foreground">Orchestrate your high-end boutique configuration.</p>
         <Progress value={storeType ? (step / (wizardSteps.length || 1)) * 100 : 0} className="w-full h-2 mt-4 bg-muted border border-primary/20" />
       </div>

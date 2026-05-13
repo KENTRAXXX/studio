@@ -265,7 +265,7 @@ export default function TrainingCenterPage() {
                         </div>
                         <h3 className="text-2xl font-bold font-headline text-primary">Academy Registry Empty</h3>
                         <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
-                            The SOMA Masterclass curriculum is currently being synchronized. Check back shortly for updated tactical training.
+                            The Trade Wyse Masterclass curriculum is currently being synchronized. Check back shortly for updated tactical training.
                         </p>
                     </Card>
                 )}

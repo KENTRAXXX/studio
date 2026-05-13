@@ -7,5 +7,5 @@ import { redirect } from 'next/navigation';
 export default async function LegacyBrandPage({ params }: { params: Promise<{ brandUsername: string }> }) {
     const { brandUsername } = await params;
     // Attempt to redirect to the new subdomain-style URL for continuity
-    redirect(`https://${brandUsername}.somatoday.com`);
+    redirect(`https://${brandUsername}.tradewysetoday.com`);
 }
